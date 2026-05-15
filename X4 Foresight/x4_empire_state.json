@@ -1,0 +1,201 @@
+{
+  "player_name": "Val Selton",
+  "player_credits": "13066417",
+  "player_sector": "The Void",
+  "stations": [
+    {
+      "name": "Void Defence 1",
+      "code": "OSJ-714",
+      "class": "station",
+      "macro": "station_gen_factory_base_01_macro",
+      "sector": "The Void",
+      "production": ""
+    },
+    {
+      "name": "Station #2",
+      "code": "SIZ-939",
+      "class": "station",
+      "macro": "station_gen_factory_base_01_macro",
+      "sector": "The Void",
+      "production": "Advanced Electronics, Energy Cells, Microchips, Quantum Tubes"
+    },
+    {
+      "name": "Player HQ",
+      "code": "QVR-654",
+      "class": "station",
+      "macro": "station_pla_headquarters_base_01_macro",
+      "sector": "Grand Exchange I",
+      "production": "Advanced Composites, Advanced Electronics, Antimatter Cells, Energy Cells"
+    },
+    {
+      "name": "Station #3",
+      "code": "CAB-143",
+      "class": "station",
+      "macro": "station_gen_factory_base_01_macro",
+      "sector": "Black Hole Sun V",
+      "production": "Energy Cells, Ore, Refined Metals"
+    }
+  ],
+  "reputation": [
+    {
+      "faction_id": "argon",
+      "faction_name": "Argon Federation",
+      "value": 25.94,
+      "base": 0.32,
+      "booster": 25.62,
+      "tier": "Allied"
+    },
+    {
+      "faction_id": "antigone",
+      "faction_name": "Antigone Republic",
+      "value": 18.45,
+      "base": 0.32,
+      "booster": 18.13,
+      "tier": "Friendly"
+    },
+    {
+      "faction_id": "teladi",
+      "faction_name": "Teladi Company",
+      "value": 13.43,
+      "base": 0.0,
+      "booster": 13.43,
+      "tier": "Friendly"
+    },
+    {
+      "faction_id": "paranid",
+      "faction_name": "Godrealm of the Paranid",
+      "value": 9.48,
+      "base": 0.0,
+      "booster": 9.48,
+      "tier": "Neutral"
+    },
+    {
+      "faction_id": "pioneers",
+      "faction_name": "Segaris Pioneers",
+      "value": 0.99,
+      "base": 0.0,
+      "booster": 0.99,
+      "tier": "Neutral"
+    },
+    {
+      "faction_id": "ministry",
+      "faction_name": "Ministry of Finance",
+      "value": 0.39,
+      "base": 0.0,
+      "booster": 0.39,
+      "tier": "Neutral"
+    },
+    {
+      "faction_id": "boron",
+      "faction_name": "Boron Kingdom",
+      "value": 0.32,
+      "base": 0.32,
+      "booster": 0.0,
+      "tier": "Neutral"
+    },
+    {
+      "faction_id": "hatikvah",
+      "faction_name": "Hatikvah Free League",
+      "value": 0.21,
+      "base": 0.0,
+      "booster": 0.21,
+      "tier": "Neutral"
+    },
+    {
+      "faction_id": "loanshark",
+      "faction_name": "Riptide Rakers",
+      "value": -0.32,
+      "base": -0.32,
+      "booster": 0.0,
+      "tier": "Hostile"
+    },
+    {
+      "faction_id": "freesplit",
+      "faction_name": "Free Split",
+      "value": -0.32,
+      "base": -0.32,
+      "booster": 0.0,
+      "tier": "Hostile"
+    },
+    {
+      "faction_id": "fallensplit",
+      "faction_name": "Fallen Families (Split)",
+      "value": -0.32,
+      "base": -0.32,
+      "booster": 0.0,
+      "tier": "Hostile"
+    },
+    {
+      "faction_id": "scaleplate",
+      "faction_name": "Scale Plate Pact",
+      "value": -0.32,
+      "base": -0.32,
+      "booster": 0.0,
+      "tier": "Hostile"
+    },
+    {
+      "faction_id": "split",
+      "faction_name": "Free Families (Split)",
+      "value": -3.2,
+      "base": -3.2,
+      "booster": 0.0,
+      "tier": "Hostile"
+    },
+    {
+      "faction_id": "buccaneers",
+      "faction_name": "Hewa's Twin Duchies",
+      "value": -3.2,
+      "base": -3.2,
+      "booster": 0.0,
+      "tier": "Hostile"
+    },
+    {
+      "faction_id": "terran",
+      "faction_name": "Terran Protectorate",
+      "value": -3.2,
+      "base": -3.2,
+      "booster": 0.0,
+      "tier": "Hostile"
+    },
+    {
+      "faction_id": "holyorder",
+      "faction_name": "Holy Order of the Pontifex",
+      "value": -12.35,
+      "base": -3.2,
+      "booster": -9.15,
+      "tier": "At War"
+    },
+    {
+      "faction_id": "holyorderfanatic",
+      "faction_name": "Holy Order Fanatics",
+      "value": -30.0,
+      "base": -30.0,
+      "booster": 0.0,
+      "tier": "At War"
+    },
+    {
+      "faction_id": "yaki",
+      "faction_name": "Yaki",
+      "value": -30.0,
+      "base": -30.0,
+      "booster": 0.0,
+      "tier": "At War"
+    },
+    {
+      "faction_id": "xenon",
+      "faction_name": "Xenon",
+      "value": -30.0,
+      "base": -30.0,
+      "booster": 0.0,
+      "tier": "At War"
+    },
+    {
+      "faction_id": "khaak",
+      "faction_name": "Kha'ak",
+      "value": -30.0,
+      "base": -30.0,
+      "booster": 0.0,
+      "tier": "At War"
+    }
+  ]
+}
