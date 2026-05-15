@@ -110,6 +110,14 @@
       "tier": "Hostile"
     },
     {
+      "faction_id": "fallensplit",
+      "faction_name": "[FAF] Fallen Families",
+      "value": -0.32,
+      "base": -0.32,
+      "booster": 0.0,
+      "tier": "Hostile"
+    },
+    {
       "faction_id": "loanshark",
       "faction_name": "[RIP] Riptide Rakers",
       "value": -0.32,
@@ -122,22 +130,6 @@
       "faction_name": "[SCA] Scale Plate Pact",
       "value": -0.32,
       "base": -0.32,
-      "booster": 0.0,
-      "tier": "Hostile"
-    },
-    {
-      "faction_id": "fallensplit",
-      "faction_name": "[FAF] Fallen Families",
-      "value": -0.32,
-      "base": -0.32,
-      "booster": 0.0,
-      "tier": "Hostile"
-    },
-    {
-      "faction_id": "terran",
-      "faction_name": "[TER] Terran Protectorate",
-      "value": -3.2,
-      "base": -3.2,
       "booster": 0.0,
       "tier": "Hostile"
     },
@@ -158,6 +150,14 @@
       "tier": "Hostile"
     },
     {
+      "faction_id": "terran",
+      "faction_name": "[TER] Terran Protectorate",
+      "value": -3.2,
+      "base": -3.2,
+      "booster": 0.0,
+      "tier": "Hostile"
+    },
+    {
       "faction_id": "holyorder",
       "faction_name": "[HOP] Holy Order of the Pontifex",
       "value": -12.35,
@@ -166,16 +166,8 @@
       "tier": "At War"
     },
     {
-      "faction_id": "khaak",
-      "faction_name": "[KHK] Kha'ak",
-      "value": -30.0,
-      "base": -30.0,
-      "booster": 0.0,
-      "tier": "At War"
-    },
-    {
-      "faction_id": "holyorderfanatic",
-      "faction_name": "[HOF] Holy Order Faithful",
+      "faction_id": "xenon",
+      "faction_name": "[XEN] Xenon",
       "value": -30.0,
       "base": -30.0,
       "booster": 0.0,
@@ -190,8 +182,16 @@
       "tier": "At War"
     },
     {
-      "faction_id": "xenon",
-      "faction_name": "[XEN] Xenon",
+      "faction_id": "khaak",
+      "faction_name": "[KHK] Kha'ak",
+      "value": -30.0,
+      "base": -30.0,
+      "booster": 0.0,
+      "tier": "At War"
+    },
+    {
+      "faction_id": "holyorderfanatic",
+      "faction_name": "[HOF] Holy Order Faithful",
       "value": -30.0,
       "base": -30.0,
       "booster": 0.0,

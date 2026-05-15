@@ -71,11 +71,11 @@ def display_results(data: dict):
 
                 # Production line — indented to align under the station name
                 # Extra indent matches the connector width
-                indent = "      " if i == len(stations) - 1 else "  │   "
+                indent = "       " if i == len(stations) - 1 else "│      "
                 if s["production"]:
-                    print(f"  {indent}  Produces : {s['production']}")
+                    print(f"  {indent} Produces : {s['production']}")
                 else:
-                    print(f"  {indent}  Produces : —")
+                    print(f"  {indent} Produces : —")
 
             print()  # Blank line between sector groups for breathing room
 
