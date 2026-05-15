@@ -1,8 +1,8 @@
 import pathlib
 import xml.etree.ElementTree as ET
-from wares import WARE_NAMES, format_wares
+from wares import format_wares
 from factions import FACTION_NAMES, SKIP_FACTIONS, scale_reputation, reputation_label
-from language import load_sector_names, macro_to_sector_name, resolve_sector_from_location
+from language import macro_to_sector_name, resolve_sector_from_location
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  STATION CLASS NAMES
@@ -114,8 +114,6 @@ def scan_save(file_path: pathlib.Path, sector_names: dict) -> dict:
                         elif 'headquarters' in macro.lower():
                             display_name = "Player HQ"
                         elif overviews:
-                            # Describe the station by what it produces, with readable ware names
-                            wares = format_wares(overviews)
                             display_name = f"Station #{nameindex}"
                         else:
                             display_name = f"Station #{nameindex}" if nameindex else "Unnamed Station"

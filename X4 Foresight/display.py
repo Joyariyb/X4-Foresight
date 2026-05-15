@@ -91,8 +91,8 @@ def display_results(data: dict):
     print(f"  FACTION REPUTATION  ({len(data['reputation'])} factions)"
           f"   [  -30 ◄ hostile · neutral · friendly ► +30  ]")
     print()
-    print(f"    {'Faction':<32} {'Total':>6}  {'':22}  {'Tier':<10}  {'Base':>6}  {'Boost':>6}")
-    print(f"    {'─'*32} {'─'*6}  {'─'*22}  {'─'*10}  {'─'*6}  {'─'*6}")
+    print(f"    {'Faction':<38} {'Total':>6}  {'':22}  {'Tier':<10}  {'Base':>6}  {'Boost':>6}")
+    print(f"    {'─' * 38} {'─' * 6}  {'─' * 22}  {'─' * 10}  {'─' * 6}  {'─' * 6}")
 
     if data["reputation"]:
         for r in data["reputation"]:
@@ -103,7 +103,7 @@ def display_results(data: dict):
 
             booster_str = f"{r['booster']:>+6.2f}" if r['booster'] != 0 else "     —"
             print(
-                f"    {r['faction_name']:<32} {r['value']:>+6.2f}  [{bar}]  "
+                f"    {r['faction_name']:<38} {r['value']:>+6.2f}  [{bar}]  "
                 f"{r['tier']:<10}  {r['base']:>+6.2f}  {booster_str}"
             )
     else:
