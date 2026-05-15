@@ -102,14 +102,6 @@
       "tier": "Neutral"
     },
     {
-      "faction_id": "loanshark",
-      "faction_name": "Riptide Rakers",
-      "value": -0.32,
-      "base": -0.32,
-      "booster": 0.0,
-      "tier": "Hostile"
-    },
-    {
       "faction_id": "freesplit",
       "faction_name": "Free Split",
       "value": -0.32,
@@ -120,6 +112,14 @@
     {
       "faction_id": "fallensplit",
       "faction_name": "Fallen Families (Split)",
+      "value": -0.32,
+      "base": -0.32,
+      "booster": 0.0,
+      "tier": "Hostile"
+    },
+    {
+      "faction_id": "loanshark",
+      "faction_name": "Riptide Rakers",
       "value": -0.32,
       "base": -0.32,
       "booster": 0.0,
@@ -142,16 +142,16 @@
       "tier": "Hostile"
     },
     {
-      "faction_id": "buccaneers",
-      "faction_name": "Hewa's Twin Duchies",
+      "faction_id": "terran",
+      "faction_name": "Terran Protectorate",
       "value": -3.2,
       "base": -3.2,
       "booster": 0.0,
       "tier": "Hostile"
     },
     {
-      "faction_id": "terran",
-      "faction_name": "Terran Protectorate",
+      "faction_id": "buccaneers",
+      "faction_name": "Hewa's Twin Duchies",
       "value": -3.2,
       "base": -3.2,
       "booster": 0.0,
@@ -174,16 +174,16 @@
       "tier": "At War"
     },
     {
-      "faction_id": "yaki",
-      "faction_name": "Yaki",
+      "faction_id": "xenon",
+      "faction_name": "Xenon",
       "value": -30.0,
       "base": -30.0,
       "booster": 0.0,
       "tier": "At War"
     },
     {
-      "faction_id": "xenon",
-      "faction_name": "Xenon",
+      "faction_id": "yaki",
+      "faction_name": "Yaki",
       "value": -30.0,
       "base": -30.0,
       "booster": 0.0,
