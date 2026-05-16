@@ -104,8 +104,8 @@ def export_json(data: dict):
     of the working directory the user runs the script from.
     """
     # Build ship summaries from the collected ship data.
-    # We do this here rather than in ships.py so that jsonexport owns the
-    # shape of the export and ships.py stays focused on scanning.
+    # We do this here rather than in ship_scanner.py so that jsonexport owns the
+    # shape of the export and ship_scanner.py stays focused on scanning.
     ships_data   = data.get("ships", {})
     player_ships = ships_data.get("player_ships", [])
     npc_ships    = ships_data.get("npc_ships",    [])

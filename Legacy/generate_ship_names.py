@@ -2,7 +2,7 @@
 GENERATE SHIP NAMES - One-time utility script
 ==============================================
 Reads all extracted ship macro XML files and the X4 language file to produce
-a static SHIP_NAMES lookup dict, written to data/ships.py.
+a static SHIP_NAMES lookup dict, written to data/ship_scanner.py.
 
 Run this once (or again after extracting DLC cat files) from the project root:
     python generate_ship_names.py
@@ -16,7 +16,7 @@ REQUIRED INPUTS:
     0001-l044.xml       - X4 English language file, already in the project root.
 
 OUTPUT:
-    data/ships.py       - Static dict mapping macro name to display name.
+    data/ship_scanner.py       - Static dict mapping macro name to display name.
                           e.g. "ship_tel_s_trans_container_01_b_macro": "Magpie Sentinel"
 
 HOW IT WORKS:
@@ -36,7 +36,7 @@ HOW IT WORKS:
 WHY STATIC OUTPUT:
     Parsing hundreds of macro XMLs at runtime on every scan would be slow
     and requires the extracted folder to be present. A static dict in
-    data/ships.py is fast, portable, and matches the pattern already used
+    data/ship_scanner.py is fast, portable, and matches the pattern already used
     by data/wares.py and data/factions.py.
 """
 
@@ -47,7 +47,7 @@ import xml.etree.ElementTree as ET
 SCRIPT_DIR    = pathlib.Path(__file__).parent
 EXTRACTED_DIR = SCRIPT_DIR / "extracted"
 LANG_FILE     = SCRIPT_DIR / "0001-l044.xml"
-OUTPUT_FILE   = SCRIPT_DIR / "data" / "ships.py"
+OUTPUT_FILE   = SCRIPT_DIR / "data" / "ship_scanner.py"
 
 
 def clean_text(text: str) -> str:
@@ -230,8 +230,8 @@ HEADER = """\
 #  new ships from expansions.
 #
 #  HOW THIS IS USED:
-#  scanner/ships.py looks up each ship's macro here to get the display name.
-#  If a macro is not listed, ships.py falls back to the hull origin + role.
+#  scanner/ship_scanner.py looks up each ship's macro here to get the display name.
+#  If a macro is not listed, ship_scanner.py falls back to the hull origin + role.
 # ─────────────────────────────────────────────────────────────────────────────
 
 SHIP_NAMES = {
@@ -241,7 +241,7 @@ FOOTER = "}\n"
 
 
 def write_ships_py(mapping: dict, output_path: pathlib.Path):
-    """Writes the macro to display name mapping to data/ships.py."""
+    """Writes the macro to display name mapping to data/ship_scanner.py."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(output_path, 'w', encoding='utf-8') as f:

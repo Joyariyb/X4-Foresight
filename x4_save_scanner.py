@@ -38,7 +38,7 @@ RUN MODES:
   "ships" — Skips Pass 1 (player/stations) and Pass 2 (reputation) entirely.
              Loads sector names, scans ships only, and displays the fleet
              section with stub values for all other fields. Use this when
-             iterating on ships.py so you're not waiting for the full scan.
+             iterating on ship_scanner.py so you're not waiting for the full scan.
 """
 
 import pathlib
@@ -55,7 +55,7 @@ if str(ROOT) not in sys.path:
 
 from scanner.language import load_sector_names
 from scanner.scanner  import scan_save, scan_reputation
-from scanner.ships    import scan_ships
+from scanner.ship_scanner    import scan_ships
 from export.jsonexport import export_json
 from display          import display_results
 
@@ -74,7 +74,7 @@ LANG_FILE  = SCRIPT_DIR / "0001-l044.xml"
 #  "full"  — complete pipeline (player, stations, reputation, ships, export)
 #  "ships" — ships scan only; skips Pass 1 and Pass 2 entirely
 #
-#  Switch to "ships" when iterating on ships.py to avoid the overhead of
+#  Switch to "ships" when iterating on ship_scanner.py to avoid the overhead of
 #  scanning stations and reputation on every test run.
 # ─────────────────────────────────────────────────────────────────────────────
 

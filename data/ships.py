@@ -8,8 +8,8 @@
 #  new ships from expansions.
 #
 #  HOW THIS IS USED:
-#  scanner/ships.py looks up each ship's macro here to get the display name.
-#  If a macro is not listed, ships.py falls back to the hull origin + role.
+#  scanner/ship_scanner.py looks up each ship's macro here to get the display name.
+#  If a macro is not listed, ship_scanner.py falls back to the hull origin + role.
 # ─────────────────────────────────────────────────────────────────────────────
 
 SHIP_NAMES = {

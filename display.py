@@ -149,9 +149,24 @@ def display_results(data: dict):
                 sectors_seen[sec] = []
             sectors_seen[sec].append(s)
 
+        # ── Calculate column width dynamically ────────────────────────────
+        # Now that ships have full type names (e.g. "Magnetar (Mineral) Vanguard")
+        # instead of just codes, the name column needs to be wide enough for the
+        # longest name in the fleet. We compute this once before the print loop.
+        #
+        # max() finds the longest display name across all ships. The 'or code'
+        # fallback mirrors what we print below — if name is None we show the code.
+        # We enforce a minimum of 20 so short fleets still look balanced, and
+        # cap at 40 so very long custom names don't push everything off screen.
+        name_col = max(
+            (len(s["name"] if s["name"] else s["code"]) for s in player_ships),
+            default=20
+        )
+        name_col = max(20, min(40, name_col + 1))
+
         # Column headers — aligned to the data lines printed below
-        print(f"    {'Ship / Pilot':<34} {'Size':<4}  {'Role':<16}  {'Order':<22}  {'Hull'}")
-        print(f"    {'─' * 34} {'─' * 4}  {'─' * 16}  {'─' * 22}  {'─' * 12}")
+        print(f"    {'Ship / Pilot':<{name_col}} {'Size':<4}  {'Role':<16}  {'Order':<22}  {'Hull'}")
+        print(f"    {'─' * name_col} {'─' * 4}  {'─' * 16}  {'─' * 22}  {'─' * 12}")
 
         for sector, ships in sectors_seen.items():
             ship_word = "ship" if len(ships) == 1 else "ships"
@@ -176,7 +191,7 @@ def display_results(data: dict):
                     hull = f"★ {hull}"   # ★ makes captured ships immediately visible
 
                 print(
-                    f"  {connector} {display_name:<34} {s['size']:<4}  "
+                    f"  {connector} {display_name:<{name_col}} {s['size']:<4}  "
                     f"{s['role']:<16}  {s['order']:<22}  {hull}"
                 )
 
