@@ -31,10 +31,19 @@ SHIP SCAN TIERS:
   1 — Player ships only (default, fastest)
   2 — Player ships + NPC ships in sectors where you have stations
   3 — Player ships + NPC ships in all sectors where you have ships
+
+RUN MODES:
+  "full"  — Runs the complete pipeline: player data, stations, reputation,
+             ships, display, and JSON export. Normal production usage.
+  "ships" — Skips Pass 1 (player/stations) and Pass 2 (reputation) entirely.
+             Loads sector names, scans ships only, and displays the fleet
+             section with stub values for all other fields. Use this when
+             iterating on ships.py so you're not waiting for the full scan.
 """
 
 import pathlib
 import sys
+import time
 import traceback
 
 # ── Allow running from the project root without installing as a package ───────
@@ -59,10 +68,27 @@ SAVE_FILE  = SCRIPT_DIR / "save_001.xml"
 LANG_FILE  = SCRIPT_DIR / "0001-l044.xml"
 
 # ─────────────────────────────────────────────────────────────────────────────
+#  RUN MODE
+#  Controls which passes are executed on each run.
+#
+#  "full"  — complete pipeline (player, stations, reputation, ships, export)
+#  "ships" — ships scan only; skips Pass 1 and Pass 2 entirely
+#
+#  Switch to "ships" when iterating on ships.py to avoid the overhead of
+#  scanning stations and reputation on every test run.
+# ─────────────────────────────────────────────────────────────────────────────
+
+RUN_MODE = "ships"  # "full" | "ships"
+
+# ─────────────────────────────────────────────────────────────────────────────
 #  SHIP SCAN TIER
 #  1 = player ships only (default — fastest, no extra RAM)
 #  2 = + NPC ships in sectors where you have stations
 #  3 = + NPC ships in all sectors where you have ships
+#
+#  Note: Tiers 2 and 3 require station/ship sector data from Pass 1, so they
+#  are only meaningful in RUN_MODE = "full". In "ships" mode, tier 1 is always
+#  used regardless of this setting.
 # ─────────────────────────────────────────────────────────────────────────────
 
 SHIP_SCAN_TIER = 1
@@ -80,34 +106,85 @@ if __name__ == "__main__":
             input("\nPress Enter to exit...")
             exit(1)
 
+        # ── Sector names are always needed — both full and ships mode use them
+        # to resolve human-readable sector names from macro strings.
+        t0 = time.perf_counter()
         sector_names = load_sector_names(LANG_FILE)
+        print(f"[Done] Sector names loaded in {time.perf_counter() - t0:.2f}s")
 
-        game_data = scan_save(SAVE_FILE, sector_names)
-        game_data["reputation"] = scan_reputation(SAVE_FILE)
+        # ─────────────────────────────────────────────────────────────────────
+        #  SHIPS MODE
+        #  Bypasses Pass 1 and Pass 2 completely. Builds a minimal game_data
+        #  stub so display_results() can render the fleet section without any
+        #  changes to display.py. All non-ship fields are set to neutral dummy
+        #  values that make it obvious ships mode is active in the output.
+        # ─────────────────────────────────────────────────────────────────────
 
-        station_sectors: set[str] | None = None
-        ship_sectors:    set[str] | None = None
+        if RUN_MODE == "ships":
+            print("[Mode] Ships-only scan — skipping player, stations, and reputation passes.")
 
-        if SHIP_SCAN_TIER >= 2:
-            station_sectors = {s["sector"] for s in game_data["stations"]}
+            t0    = time.perf_counter()
+            ships = scan_ships(SAVE_FILE, sector_names)
+            print(f"[Done] Ships scan completed in {time.perf_counter() - t0:.2f}s")
 
-        if SHIP_SCAN_TIER == 3:
-            print("[Ships] Pre-scan to locate player ship sectors for tier 3...")
-            tier1_data  = scan_ships(SAVE_FILE, sector_names)
-            ship_sectors = (
-                {s["sector"] for s in tier1_data["player_ships"]}
-                | (station_sectors or set())
+            # Stub out everything display_results() expects beyond ships.
+            # These values won't appear in any meaningful output context —
+            # they just satisfy the dict shape so we don't touch display.py.
+            game_data = {
+                "player_name":    "— ships mode —",
+                "player_sector":  "—",
+                "player_credits": "0",
+                "stations":       [],
+                "reputation":     [],
+                "ships":          ships,
+            }
+
+            display_results(game_data)
+
+        # ─────────────────────────────────────────────────────────────────────
+        #  FULL MODE
+        #  Runs the complete pipeline exactly as before — no changes here.
+        # ─────────────────────────────────────────────────────────────────────
+
+        elif RUN_MODE == "full":
+            t0        = time.perf_counter()
+            game_data = scan_save(SAVE_FILE, sector_names)
+            print(f"[Done] Pass 1 completed in {time.perf_counter() - t0:.2f}s")
+
+            t0 = time.perf_counter()
+            game_data["reputation"] = scan_reputation(SAVE_FILE)
+            print(f"[Done] Pass 2 completed in {time.perf_counter() - t0:.2f}s")
+
+            station_sectors: set[str] | None = None
+            ship_sectors:    set[str] | None = None
+
+            if SHIP_SCAN_TIER >= 2:
+                station_sectors = {s["sector"] for s in game_data["stations"]}
+
+            if SHIP_SCAN_TIER == 3:
+                print("[Ships] Pre-scan to locate player ship sectors for tier 3...")
+                t0         = time.perf_counter()
+                tier1_data = scan_ships(SAVE_FILE, sector_names)
+                print(f"[Done] Tier 3 pre-scan completed in {time.perf_counter() - t0:.2f}s")
+                ship_sectors = (
+                    {s["sector"] for s in tier1_data["player_ships"]}
+                    | (station_sectors or set())
+                )
+
+            t0 = time.perf_counter()
+            game_data["ships"] = scan_ships(
+                SAVE_FILE,
+                sector_names,
+                station_sectors=station_sectors,
+                ship_sectors=ship_sectors,
             )
+            print(f"[Done] Ships scan completed in {time.perf_counter() - t0:.2f}s")
 
-        game_data["ships"] = scan_ships(
-            SAVE_FILE,
-            sector_names,
-            station_sectors=station_sectors,
-            ship_sectors=ship_sectors,
-        )
+            display_results(game_data)
+            export_json(game_data, output_dir=SCRIPT_DIR)
 
-        display_results(game_data)
-        export_json(game_data, output_dir=SCRIPT_DIR)
+        else:
+            print(f"[Error] Unknown RUN_MODE '{RUN_MODE}'. Valid options: 'full', 'ships'.")
 
     except Exception as e:
         print(f"\n[FATAL ERROR] {e}")
