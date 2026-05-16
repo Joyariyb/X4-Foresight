@@ -110,6 +110,14 @@
       "tier": "Hostile"
     },
     {
+      "faction_id": "loanshark",
+      "faction_name": "[RIP] Riptide Rakers",
+      "value": -5.05,
+      "base": -5.05,
+      "booster": 0.0,
+      "tier": "Hostile"
+    },
+    {
       "faction_id": "fallensplit",
       "faction_name": "[FAF] Fallen Families",
       "value": -5.05,
@@ -126,24 +134,16 @@
       "tier": "Hostile"
     },
     {
-      "faction_id": "loanshark",
-      "faction_name": "[RIP] Riptide Rakers",
-      "value": -5.05,
-      "base": -5.05,
-      "booster": 0.0,
-      "tier": "Hostile"
-    },
-    {
-      "faction_id": "split",
-      "faction_name": "[ZYA] Zyarth Patriarchy",
+      "faction_id": "terran",
+      "faction_name": "[TER] Terran Protectorate",
       "value": -15.05,
       "base": -15.05,
       "booster": 0.0,
       "tier": "At War"
     },
     {
-      "faction_id": "terran",
-      "faction_name": "[TER] Terran Protectorate",
+      "faction_id": "split",
+      "faction_name": "[ZYA] Zyarth Patriarchy",
       "value": -15.05,
       "base": -15.05,
       "booster": 0.0,
@@ -174,16 +174,16 @@
       "tier": "At War"
     },
     {
-      "faction_id": "khaak",
-      "faction_name": "[KHK] Kha'ak",
+      "faction_id": "xenon",
+      "faction_name": "[XEN] Xenon",
       "value": -30.0,
       "base": -30.0,
       "booster": 0.0,
       "tier": "At War"
     },
     {
-      "faction_id": "xenon",
-      "faction_name": "[XEN] Xenon",
+      "faction_id": "khaak",
+      "faction_name": "[KHK] Kha'ak",
       "value": -30.0,
       "base": -30.0,
       "booster": 0.0,
@@ -197,5 +197,1564 @@
       "booster": 0.0,
       "tier": "At War"
     }
-  ]
+  ],
+  "ships": {
+    "player_ships": [
+      {
+        "code": "TDD-486",
+        "name": null,
+        "class": "ship_l",
+        "size": "L",
+        "macro": "ship_arg_l_trans_container_01_b_macro",
+        "role": "Freighter",
+        "hull_origin": "Argon",
+        "owner": "player",
+        "sector": "[0x11a98]",
+        "order": "TradeRoutine",
+        "pilot": {
+          "name": "Zevin Silsarna",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [],
+        "commander": "[0x1ca1f]"
+      },
+      {
+        "code": "YMC-441",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_par_m_corvette_01_a_macro",
+        "role": "Corvette",
+        "hull_origin": "Paranid",
+        "owner": "player",
+        "sector": "[0x1b77b]",
+        "order": "Waiting",
+        "pilot": {
+          "name": "Etmanckatslot",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": null
+      },
+      {
+        "code": "BHT-123",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_xen_m_miner_solid_01_a_macro",
+        "role": "Miner (Solid)",
+        "hull_origin": "Xenon",
+        "owner": "player",
+        "sector": "[0x1b77b]",
+        "order": "TradeRoutine",
+        "pilot": {
+          "name": "Andru Weamond",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_targetmk1",
+          "software_trademk1"
+        ],
+        "commander": "[0x1ca21]"
+      },
+      {
+        "code": "KTF-449",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_xen_m_corvette_02_a_macro",
+        "role": "Corvette",
+        "hull_origin": "Xenon",
+        "owner": "player",
+        "sector": "[0x1b77b]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Selaia Erris",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x1bdc0]"
+      },
+      {
+        "code": "SGY-077",
+        "name": null,
+        "class": "ship_l",
+        "size": "L",
+        "macro": "ship_par_l_destroyer_01_a_macro",
+        "role": "Destroyer",
+        "hull_origin": "Paranid",
+        "owner": "player",
+        "sector": "[0x1c788]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Timanckuttall",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x1c84c]"
+      },
+      {
+        "code": "IJF-974",
+        "name": null,
+        "class": "ship_l",
+        "size": "L",
+        "macro": "ship_arg_l_destroyer_02_a_macro",
+        "role": "Destroyer",
+        "hull_origin": "Argon",
+        "owner": "player",
+        "sector": "[0x1c788]",
+        "order": "Waiting",
+        "pilot": {
+          "name": "Yara Asuni",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": null
+      },
+      {
+        "code": "PBC-712",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_xen_m_corvette_01_a_macro",
+        "role": "Corvette",
+        "hull_origin": "Xenon",
+        "owner": "player",
+        "sector": "[0x1c788]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Ves Giorno",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x1c845]"
+      },
+      {
+        "code": "SWE-703",
+        "name": null,
+        "class": "ship_s",
+        "size": "S",
+        "macro": "ship_arg_s_fighter_01_b_macro",
+        "role": "Fighter",
+        "hull_origin": "Argon",
+        "owner": "player",
+        "sector": "[0x1c788]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Joshu Slamer",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x1c83e]"
+      },
+      {
+        "code": "LCV-808",
+        "name": null,
+        "class": "ship_s",
+        "size": "S",
+        "macro": "ship_xen_s_heavyfighter_01_a_macro",
+        "role": "Heavy Fighter",
+        "hull_origin": "Xenon",
+        "owner": "player",
+        "sector": "[0x1c788]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Thea Slamer",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x1c84b]"
+      },
+      {
+        "code": "IKN-307",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_xen_m_corvette_02_a_macro",
+        "role": "Corvette",
+        "hull_origin": "Xenon",
+        "owner": "player",
+        "sector": "[0x1c788]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Rena Sillarne",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x1c848]"
+      },
+      {
+        "code": "VMU-788",
+        "name": null,
+        "class": "ship_s",
+        "size": "S",
+        "macro": "ship_arg_s_fighter_01_b_macro",
+        "role": "Fighter",
+        "hull_origin": "Argon",
+        "owner": "player",
+        "sector": "[0x1c788]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Quint Cente",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x1c83c]"
+      },
+      {
+        "code": "KXE-808",
+        "name": "{30226,236}",
+        "class": "ship_s",
+        "size": "S",
+        "macro": "ship_yak_s_fighter_01_a_macro",
+        "role": "Fighter",
+        "hull_origin": "Yaki",
+        "owner": "player",
+        "sector": "[0x1c788]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Hurilis Yusmaeos Gantelios II",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x1c846]"
+      },
+      {
+        "code": "VZD-006",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_xen_m_corvette_02_a_macro",
+        "role": "Corvette",
+        "hull_origin": "Xenon",
+        "owner": "player",
+        "sector": "[0x1c788]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Emeel Harben",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [],
+        "commander": "[0x1c849]"
+      },
+      {
+        "code": "DQM-763",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_xen_m_corvette_02_a_macro",
+        "role": "Corvette",
+        "hull_origin": "Xenon",
+        "owner": "player",
+        "sector": "[0x1c788]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Grem Asuni",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x1c847]"
+      },
+      {
+        "code": "MZL-993",
+        "name": null,
+        "class": "ship_s",
+        "size": "S",
+        "macro": "ship_arg_s_fighter_01_b_macro",
+        "role": "Fighter",
+        "hull_origin": "Argon",
+        "owner": "player",
+        "sector": "[0x1c788]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Lori Otani",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x1c842]"
+      },
+      {
+        "code": "JJK-350",
+        "name": null,
+        "class": "ship_s",
+        "size": "S",
+        "macro": "ship_arg_s_fighter_01_b_macro",
+        "role": "Fighter",
+        "hull_origin": "Argon",
+        "owner": "player",
+        "sector": "[0x1c788]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Gabreel Claassen",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x1c83f]"
+      },
+      {
+        "code": "OJE-470",
+        "name": null,
+        "class": "ship_s",
+        "size": "S",
+        "macro": "ship_arg_s_fighter_01_b_macro",
+        "role": "Fighter",
+        "hull_origin": "Argon",
+        "owner": "player",
+        "sector": "[0x1c788]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Nessa Jovi",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x1c844]"
+      },
+      {
+        "code": "SNI-197",
+        "name": null,
+        "class": "ship_s",
+        "size": "S",
+        "macro": "ship_par_s_fighter_01_a_macro",
+        "role": "Fighter",
+        "hull_origin": "Paranid",
+        "owner": "player",
+        "sector": "[0x1c788]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Deridos Monisessas Zuzuamis VII",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x1c84a]"
+      },
+      {
+        "code": "UEX-001",
+        "name": null,
+        "class": "ship_s",
+        "size": "S",
+        "macro": "ship_arg_s_fighter_01_b_macro",
+        "role": "Fighter",
+        "hull_origin": "Argon",
+        "owner": "player",
+        "sector": "[0x1c788]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Kerol Bro",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x1c83d]"
+      },
+      {
+        "code": "NXL-354",
+        "name": null,
+        "class": "ship_s",
+        "size": "S",
+        "macro": "ship_arg_s_fighter_01_b_macro",
+        "role": "Fighter",
+        "hull_origin": "Argon",
+        "owner": "player",
+        "sector": "[0x1c788]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Kaylen Mellerd",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x1c843]"
+      },
+      {
+        "code": "LLP-065",
+        "name": null,
+        "class": "ship_s",
+        "size": "S",
+        "macro": "ship_arg_s_fighter_01_b_macro",
+        "role": "Fighter",
+        "hull_origin": "Argon",
+        "owner": "player",
+        "sector": "[0x1c788]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Jey Asuni",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x1c841]"
+      },
+      {
+        "code": "SSJ-595",
+        "name": null,
+        "class": "ship_s",
+        "size": "S",
+        "macro": "ship_arg_s_fighter_01_b_macro",
+        "role": "Fighter",
+        "hull_origin": "Argon",
+        "owner": "player",
+        "sector": "[0x1c788]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Elin Rana",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x1c840]"
+      },
+      {
+        "code": "RYV-907",
+        "name": null,
+        "class": "ship_l",
+        "size": "L",
+        "macro": "ship_arg_l_miner_solid_01_a_macro",
+        "role": "Miner (Solid)",
+        "hull_origin": "Argon",
+        "owner": "player",
+        "sector": "Unknown Sector",
+        "order": "Mining",
+        "pilot": {
+          "name": "Ronel Loma",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_targetmk1",
+          "software_trademk1"
+        ],
+        "commander": "[0x1ca20]"
+      },
+      {
+        "code": "PQB-460",
+        "name": null,
+        "class": "ship_s",
+        "size": "S",
+        "macro": "ship_arg_s_fighter_01_b_macro",
+        "role": "Fighter",
+        "hull_origin": "Argon",
+        "owner": "player",
+        "sector": "[0x1de99]",
+        "order": "MoveWait",
+        "pilot": {
+          "name": "Ashunty Ygon",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [],
+        "commander": null
+      },
+      {
+        "code": "FCT-889",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_arg_m_miner_liquid_01_b_macro",
+        "role": "Miner (Liquid)",
+        "hull_origin": "Argon",
+        "owner": "player",
+        "sector": "[0x1e051]",
+        "order": "Mining",
+        "pilot": {
+          "name": "Joshu Naser",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_targetmk1",
+          "software_trademk1"
+        ],
+        "commander": "[0x510fd]"
+      },
+      {
+        "code": "GBS-045",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_tel_m_frigate_01_a_macro",
+        "role": "Frigate",
+        "hull_origin": "Teladi",
+        "owner": "player",
+        "sector": "[0x1f30a]",
+        "order": "TradeRoutine",
+        "pilot": {
+          "name": "Gobanis Ugalirias Deridos II",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2"
+        ],
+        "commander": "[0x20548]"
+      },
+      {
+        "code": "ONJ-081",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_arg_m_miner_liquid_01_a_macro",
+        "role": "Miner (Liquid)",
+        "hull_origin": "Argon",
+        "owner": "player",
+        "sector": "[0x1f30a]",
+        "order": "Mining",
+        "pilot": {
+          "name": "Rena Riano",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_targetmk1",
+          "software_trademk1"
+        ],
+        "commander": "[0x510fb]"
+      },
+      {
+        "code": "NJI-617",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_tel_m_miner_liquid_01_b_macro",
+        "role": "Miner (Liquid)",
+        "hull_origin": "Teladi",
+        "owner": "player",
+        "sector": "[0x1f58e]",
+        "order": "Mining",
+        "pilot": {
+          "name": "Gogoeolos Zuzuamis Gogoeolos I",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_targetmk1",
+          "software_trademk1"
+        ],
+        "commander": "[0x20549]"
+      },
+      {
+        "code": "XOH-444",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_arg_m_miner_solid_01_a_macro",
+        "role": "Miner (Solid)",
+        "hull_origin": "Argon",
+        "owner": "player",
+        "sector": "[0x1fb1f]",
+        "order": "Mining",
+        "pilot": {
+          "name": "Uguras Rusiris Yagosias IX",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_targetmk1",
+          "software_trademk1"
+        ],
+        "commander": "[0x20551]"
+      },
+      {
+        "code": "MRY-213",
+        "name": null,
+        "class": "ship_l",
+        "size": "L",
+        "macro": "ship_par_l_miner_solid_01_a_macro",
+        "role": "Miner (Solid)",
+        "hull_origin": "Paranid",
+        "owner": "player",
+        "sector": "[0x2027d]",
+        "order": "Mining",
+        "pilot": {
+          "name": "Imanckuttall",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_targetmk1",
+          "software_trademk1"
+        ],
+        "commander": "[0x20550]"
+      },
+      {
+        "code": "XZS-824",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_xen_m_corvette_02_a_macro",
+        "role": "Corvette",
+        "hull_origin": "Xenon",
+        "owner": "player",
+        "sector": "[0x20882]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Sera Winger",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x208b6]"
+      },
+      {
+        "code": "KHF-380",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_xen_m_corvette_02_a_macro",
+        "role": "Corvette",
+        "hull_origin": "Xenon",
+        "owner": "player",
+        "sector": "[0x20882]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Zuzuamis Yahanis Yoganis III",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x208b7]"
+      },
+      {
+        "code": "BFM-940",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_tel_m_trans_container_02_b_macro",
+        "role": "Freighter",
+        "hull_origin": "Teladi",
+        "owner": "player",
+        "sector": "[0x20882]",
+        "order": "TradeRoutine",
+        "pilot": {
+          "name": "Xeveer Jerigan",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_targetmk1"
+        ],
+        "commander": "[0x2054c]"
+      },
+      {
+        "code": "WEM-669",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_tel_m_miner_solid_01_b_macro",
+        "role": "Miner (Solid)",
+        "hull_origin": "Teladi",
+        "owner": "player",
+        "sector": "[0x20882]",
+        "order": "Mining",
+        "pilot": {
+          "name": "Lalundas Hebalisos Hurilis III",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_targetmk1",
+          "software_trademk1"
+        ],
+        "commander": "[0x20552]"
+      },
+      {
+        "code": "YYE-979",
+        "name": null,
+        "class": "ship_s",
+        "size": "S",
+        "macro": "ship_arg_s_fighter_02_a_macro",
+        "role": "Fighter",
+        "hull_origin": "Argon",
+        "owner": "player",
+        "sector": "[0x209f8]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Pok Kult",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x52bdf]"
+      },
+      {
+        "code": "VWB-834",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_arg_m_trans_container_01_b_macro",
+        "role": "Freighter",
+        "hull_origin": "Argon",
+        "owner": "player",
+        "sector": "[0x1812a8]",
+        "order": "TradeRoutine",
+        "pilot": {
+          "name": "Grem Disma",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_targetmk1"
+        ],
+        "commander": "[0x2054d]"
+      },
+      {
+        "code": "UNM-369",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_arg_m_miner_liquid_01_a_macro",
+        "role": "Miner (Liquid)",
+        "hull_origin": "Argon",
+        "owner": "player",
+        "sector": "[0x30973]",
+        "order": "TradeRoutine",
+        "pilot": {
+          "name": "Ugo Rieper",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_targetmk1",
+          "software_trademk1"
+        ],
+        "commander": "[0x2054a]"
+      },
+      {
+        "code": "XXY-725",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_xen_m_corvette_02_a_macro",
+        "role": "Corvette",
+        "hull_origin": "Xenon",
+        "owner": "player",
+        "sector": "[0x341ff]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Katlin Fisty",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x342e8]"
+      },
+      {
+        "code": "AOL-503",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_tel_m_trans_container_01_a_macro",
+        "role": "Freighter",
+        "hull_origin": "Teladi",
+        "owner": "player",
+        "sector": "[0x341ff]",
+        "order": "TradeRoutine",
+        "pilot": {
+          "name": "Ace Samdi",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_targetmk1"
+        ],
+        "commander": "[0x2054f]"
+      },
+      {
+        "code": "HOL-309",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_par_m_corvette_01_a_macro",
+        "role": "Corvette",
+        "hull_origin": "Paranid",
+        "owner": "player",
+        "sector": "[0x37298]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Abmancketvahs",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x37355]"
+      },
+      {
+        "code": "WNP-362",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_arg_m_trans_container_02_a_macro",
+        "role": "Freighter",
+        "hull_origin": "Argon",
+        "owner": "player",
+        "sector": "[0x37298]",
+        "order": "TradeRoutine",
+        "pilot": {
+          "name": "Enny Springer",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_targetmk1"
+        ],
+        "commander": "[0x20554]"
+      },
+      {
+        "code": "LSS-543",
+        "name": null,
+        "class": "ship_s",
+        "size": "S",
+        "macro": "ship_tel_s_trans_container_01_b_macro",
+        "role": "Freighter",
+        "hull_origin": "Teladi",
+        "owner": "player",
+        "sector": "[0x37c2d]",
+        "order": "TradeRoutine",
+        "pilot": {
+          "name": "Yosulis Ganatos Tertasobas X",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_targetmk1"
+        ],
+        "commander": "[0x2054e]"
+      },
+      {
+        "code": "PSD-162",
+        "name": null,
+        "class": "ship_l",
+        "size": "L",
+        "macro": "ship_arg_l_miner_liquid_01_b_macro",
+        "role": "Miner (Liquid)",
+        "hull_origin": "Argon",
+        "owner": "player",
+        "sector": "[0x3e74c]",
+        "order": "Waiting",
+        "pilot": {
+          "name": "Jesmeen Marval",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [],
+        "commander": null
+      },
+      {
+        "code": "BUF-098",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_tel_m_miner_solid_01_a_macro",
+        "role": "Miner (Solid)",
+        "hull_origin": "Teladi",
+        "owner": "player",
+        "sector": "[0x4cbe4]",
+        "order": "Mining",
+        "pilot": {
+          "name": "Yoganis Yayasisos Yalos VIII",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2"
+        ],
+        "commander": "[0x20553]"
+      },
+      {
+        "code": "OTP-546",
+        "name": null,
+        "class": "ship_l",
+        "size": "L",
+        "macro": "ship_tel_l_miner_liquid_01_b_macro",
+        "role": "Miner (Liquid)",
+        "hull_origin": "Teladi",
+        "owner": "player",
+        "sector": "[0x509b5]",
+        "order": "Mining",
+        "pilot": {
+          "name": "Yooses Tertasobas Yalamandis VI",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_targetmk1",
+          "software_trademk1"
+        ],
+        "commander": "[0x1ca1e]"
+      },
+      {
+        "code": "UVJ-769",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_xen_m_miner_solid_01_a_macro",
+        "role": "Miner (Solid)",
+        "hull_origin": "Xenon",
+        "owner": "player",
+        "sector": "[0x50ce4]",
+        "order": "TradeRoutine",
+        "pilot": {
+          "name": "Tallee Jovi",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_targetmk1",
+          "software_trademk1"
+        ],
+        "commander": "[0x51100]"
+      },
+      {
+        "code": "WYX-052",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_arg_m_trans_container_01_b_macro",
+        "role": "Freighter",
+        "hull_origin": "Argon",
+        "owner": "player",
+        "sector": "[0x517ed]",
+        "order": "TradeRoutine",
+        "pilot": {
+          "name": "Veera Lanner",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_targetmk1"
+        ],
+        "commander": "[0x510ff]"
+      },
+      {
+        "code": "EIY-744",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_arg_m_trans_container_01_a_macro",
+        "role": "Freighter",
+        "hull_origin": "Argon",
+        "owner": "player",
+        "sector": "[0x517ed]",
+        "order": "TradeRoutine",
+        "pilot": {
+          "name": "Cate Ohneaim",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_targetmk1"
+        ],
+        "commander": "[0x510fa]"
+      },
+      {
+        "code": "FAX-641",
+        "name": null,
+        "class": "ship_s",
+        "size": "S",
+        "macro": "ship_xen_s_heavyfighter_01_a_macro",
+        "role": "Heavy Fighter",
+        "hull_origin": "Xenon",
+        "owner": "player",
+        "sector": "[0x517ed]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Yannet Braks",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x518c2]"
+      },
+      {
+        "code": "VRK-144",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_xen_m_corvette_02_a_macro",
+        "role": "Corvette",
+        "hull_origin": "Xenon",
+        "owner": "player",
+        "sector": "[0x517ed]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Toki Raner",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x518d4]"
+      },
+      {
+        "code": "OJZ-627",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_arg_m_miner_solid_01_b_macro",
+        "role": "Miner (Solid)",
+        "hull_origin": "Argon",
+        "owner": "player",
+        "sector": "[0x51b83]",
+        "order": "Mining",
+        "pilot": {
+          "name": "Halen Tolman",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_targetmk1",
+          "software_trademk1"
+        ],
+        "commander": "[0x510fc]"
+      },
+      {
+        "code": "AEO-104",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_tel_m_miner_solid_01_a_macro",
+        "role": "Miner (Solid)",
+        "hull_origin": "Teladi",
+        "owner": "player",
+        "sector": "[0x51b99]",
+        "order": "Mining",
+        "pilot": {
+          "name": "Yooses Yosulis Rudilis I",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_targetmk1",
+          "software_trademk1"
+        ],
+        "commander": "[0x510f9]"
+      },
+      {
+        "code": "WKH-309",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_xen_m_corvette_02_a_macro",
+        "role": "Corvette",
+        "hull_origin": "Xenon",
+        "owner": "player",
+        "sector": "[0x51bdd]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Otmanckussut",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2"
+        ],
+        "commander": "[0x51573]"
+      },
+      {
+        "code": "ZHZ-761",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_tel_m_trans_container_02_b_macro",
+        "role": "Freighter",
+        "hull_origin": "Teladi",
+        "owner": "player",
+        "sector": "[0x51cfd]",
+        "order": "TradeRoutine",
+        "pilot": {
+          "name": "Gobanis Gogoeolos Monisessas II",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_targetmk1"
+        ],
+        "commander": "[0x510fe]"
+      },
+      {
+        "code": "TKZ-886",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_par_m_trans_container_01_a_macro",
+        "role": "Freighter",
+        "hull_origin": "Paranid",
+        "owner": "player",
+        "sector": "[0x52bd5]",
+        "order": "TradeRoutine",
+        "pilot": {
+          "name": "Taimanckotsat",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_targetmk1"
+        ],
+        "commander": "[0x2054b]"
+      },
+      {
+        "code": "UNK-571",
+        "name": null,
+        "class": "ship_m",
+        "size": "M",
+        "macro": "ship_xen_m_corvette_02_a_macro",
+        "role": "Corvette",
+        "hull_origin": "Xenon",
+        "owner": "player",
+        "sector": "[0x52bd5]",
+        "order": "Escorting",
+        "pilot": {
+          "name": "Yooses Tissmaneos Towisaris II",
+          "skills": {
+            "piloting": 0,
+            "management": 0,
+            "morale": 0,
+            "engineering": 0
+          }
+        },
+        "software": [
+          "software_dockmk2",
+          "software_scannerlongrangemk2",
+          "software_scannerobjectmk2",
+          "software_trademk1"
+        ],
+        "commander": "[0x52be0]"
+      }
+    ],
+    "npc_ships": []
+  }
 }

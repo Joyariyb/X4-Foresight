@@ -1,11 +1,12 @@
 """
-X4 FOUNDATIONS — SAVE FILE SCANNER  v4.0
+X4 FOUNDATIONS — SAVE FILE SCANNER  v4.1
 ==========================================
 Reads an unzipped X4 save file (save_001.xml) and extracts:
   - Pilot name and current sector
   - Credits / liquid cash
   - All player-owned stations with sector locations and production
-  - Faction reputation standings displayed as in-game whole numbers
+  - Faction reputation standings displayed as in-game values
+  - Player fleet and optionally NPC ships in sectors of interest
 
 Then exports everything to x4_empire_state.json, ready to paste
 into an AI prompt for strategic advice.
@@ -23,9 +24,13 @@ HOW SECTOR NAMES WORK:
 
 HOW REPUTATION SCALING WORKS:
   X4 stores reputation internally as small floats (e.g. 0.0032).
-  The in-game UI multiplies these by 100 and displays them as whole numbers
-  with one decimal place (e.g. 0.256 -> 25.6). This script replicates
-  that scaling so figures match what you see in-game.
+  The in-game UI applies a log10 curve to produce in-game display values.
+  This script replicates that scaling so figures match what you see in-game.
+
+SHIP SCAN TIERS:
+  1 — Player ships only (default, fastest)
+  2 — Player ships + NPC ships in sectors where you have stations
+  3 — Player ships + NPC ships in all sectors where you have ships
 """
 
 import pathlib
@@ -33,6 +38,7 @@ import traceback
 from language import load_sector_names
 from display import display_results
 from scanner import scan_save, scan_reputation
+from ships import scan_ships
 from jsonexport import export_json
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -45,8 +51,20 @@ SCRIPT_DIR = pathlib.Path(__file__).parent
 SAVE_FILE  = SCRIPT_DIR / "save_001.xml"
 LANG_FILE  = SCRIPT_DIR / "0001-l044.xml"
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  SHIP SCAN TIER
+#  Controls how much NPC ship data is collected alongside your own fleet.
+#  1 = player ships only (default — fastest, no extra RAM)
+#  2 = + NPC ships in sectors where you have stations
+#  3 = + NPC ships in all sectors where you have ships
+#
+#  Change this value and re-run to get more or less context.
+# ─────────────────────────────────────────────────────────────────────────────
+
+SHIP_SCAN_TIER = 1
+
 # ═════════════════════════════════════════════════════════════════════════════
-#  SECTION 6 — ENTRY POINT
+#  ENTRY POINT
 # ═════════════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
@@ -69,7 +87,38 @@ if __name__ == "__main__":
         # Step 3: Second pass — faction reputation with scaling and booster handling
         game_data["reputation"] = scan_reputation(SAVE_FILE)
 
-        # Step 4: Display and export
+        # Step 4: Third pass — ship data at the configured tier
+        #
+        # Tier 2 needs the set of sectors where stations exist so the scanner
+        # knows which NPC ships are worth keeping.
+        # Tier 3 additionally passes player ship sectors, but those aren't
+        # known until after the ship scan itself. We solve this with a
+        # lightweight first pass at tier 1 to collect player ship sectors,
+        # then a full tier 3 pass — only done when explicitly requested.
+
+        station_sectors: set[str] | None = None
+        ship_sectors:    set[str] | None = None
+
+        if SHIP_SCAN_TIER >= 2:
+            station_sectors = {s["sector"] for s in game_data["stations"]}
+
+        if SHIP_SCAN_TIER == 3:
+            # Quick tier-1 pass to learn which sectors player ships are in
+            print("[Ships] Pre-scan to locate player ship sectors for tier 3...")
+            tier1_data  = scan_ships(SAVE_FILE, sector_names)
+            ship_sectors = (
+                {s["sector"] for s in tier1_data["player_ships"]}
+                | (station_sectors or set())
+            )
+
+        game_data["ships"] = scan_ships(
+            SAVE_FILE,
+            sector_names,
+            station_sectors=station_sectors,
+            ship_sectors=ship_sectors,
+        )
+
+        # Step 5: Display and export
         display_results(game_data)
         export_json(game_data)
 
