@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: nick (192.168.3.62) on 2023-12-04 12:47:57-->
+<macros>
+  <macro name="ship_spl_xl_ark_01_hab_l_01_macro" class="destructible">
+    <component ref="ship_spl_xl_ark_01_hab_l_01" />
+    <properties>
+      <identification name="{20104,31201}" shortname="{20104,31203}" makerrace="split" />
+      <hull integrated="1" />
+    </properties>
+  </macro>
+</macros>

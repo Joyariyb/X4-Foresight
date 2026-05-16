@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.53) on 2024-11-18 15:09:35-->
+<macros>
+  <macro name="ship_spl_l_trans_container_01_a_macro" class="ship_l">
+    <component ref="ship_spl_l_trans_container_01" />
+    <properties>
+      <identification name="{20101,42401}" basename="{20101,42401}" makerrace="split" description="{20101,42411}" icon="ship_l_freighter_01" />
+      <software>
+        <software ware="software_dockmk2" compatible="1" />
+        <software ware="software_flightassistmk1" default="1" />
+        <software ware="software_scannerlongrangemk1" default="1" />
+        <software ware="software_scannerlongrangemk2" compatible="1" />
+        <software ware="software_scannerobjectmk1" default="1" />
+        <software ware="software_scannerobjectmk2" compatible="1" />
+        <software ware="software_targetmk1" compatible="1" />
+        <software ware="software_trademk1" default="1" />
+      </software>
+      <jerk>
+        <forward accel="0.2" decel="0.8" ratio="4" />
+        <forward_boost accel="0.4" ratio="2" />
+        <forward_travel accel="0.7" decel="0.9" ratio="3" />
+        <strafe value="0.3" />
+        <angular value="0.5" />
+      </jerk>
+      <explosiondamage value="800" shield="4000" />
+      <storage missile="30" unit="10" />
+      <hull max="37000" />
+      <secrecy level="1" />
+      <steeringcurve>
+        <point position="0" value="1" />
+        <point position="1" value="1" />
+        <point position="1.45" value="1" />
+        <point position="1.85" value="0.75" />
+        <point position="2" value="0.5" />
+        <point position="2.6" value="0.3" />
+        <point position="2.9" value="0.2" />
+      </steeringcurve>
+      <purpose primary="trade" />
+      <people capacity="59" />
+      <sounds>
+        <shipdetail ref="shipdetail_ship_l_01" />
+      </sounds>
+      <physics mass="270">
+        <inertia pitch="160" yaw="160" roll="130" />
+        <drag forward="79.072" reverse="280" horizontal="46" vertical="46" pitch="85" yaw="90" roll="90" />
+        <accfactors horizontal="0.9" vertical="0.9" />
+      </physics>
+      <thruster tags="large" />
+      <ship type="freighter" />
+    </properties>
+    <connections>
+      <connection ref="con_cockpit">
+        <macro ref="bridge_spl_xl_01_macro" connection="con_cockpit" />
+      </connection>
+      <connection ref="con_dockarea_arg_s_ship_01">
+        <macro ref="dockarea_arg_s_ship_01_macro" connection="Connection01" />
+      </connection>
+      <connection ref="con_dock_xs">
+        <macro ref="dock_gen_xs_ship_01_macro" connection="Connection_component" />
+      </connection>
+      <connection ref="con_shipstorage_s_01">
+        <macro ref="shipstorage_gen_s_three_macro" connection="object" />
+      </connection>
+      <connection ref="con_shipstorage_xs_01">
+        <macro ref="shipstorage_gen_xs_01_macro" connection="object" />
+      </connection>
+      <connection ref="con_storage01">
+        <macro ref="storage_spl_l_trans_container_01_a_macro" connection="ShipConnection" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

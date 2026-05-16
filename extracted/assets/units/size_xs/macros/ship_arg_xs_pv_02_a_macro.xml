@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Lino (192.168.3.54) on 2024-05-05 12:23:31-->
+<macros>
+  <macro name="ship_arg_xs_pv_02_a_macro" class="ship_xs">
+    <component ref="ship_arg_xs_pv_02_a" />
+    <properties>
+      <identification name="{20101,110402}" makerrace="argon" description="{20101,110411}" icon="ship_xs_personalvehicle_01" />
+      <hull max="209" />
+      <effects>
+        <explosion ref="expl_gen_02" />
+      </effects>
+      <secrecy level="1" />
+      <purpose primary="trade" />
+      <physics mass="3.549">
+        <inertia pitch="0.656" yaw="0.656" roll="0.524" />
+        <drag forward="1.71" reverse="6.839" horizontal="6.604" vertical="6.604" pitch="1.31" yaw="1.31" roll="1.31" />
+      </physics>
+      <loadouts>
+        <loadout id="default">
+          <macros>
+            <engine macro="engine_arg_xs_pv_01_macro" path="../con_engine_01" />
+          </macros>
+        </loadout>
+      </loadouts>
+      <ship type="personalvehicle" />
+    </properties>
+    <connections>
+      <connection ref="connection_cockpit01">
+        <macro ref="cockpit_gen_invisible_01_macro" connection="ship" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

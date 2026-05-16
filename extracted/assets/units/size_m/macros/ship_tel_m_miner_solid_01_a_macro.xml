@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: aj (192.168.3.60) on 2025-01-27 11:39:27-->
+<macros>
+  <macro name="ship_tel_m_miner_solid_01_a_macro" class="ship_m">
+    <component ref="ship_tel_m_miner_solid_01" />
+    <properties>
+      <identification name="{20101,20602}" basename="{20101,20601}" makerrace="teladi" description="{20101,20612}" variation="{20111,3101} {20111,1101}" shortvariation="{20111,3101} {20111,1103}" icon="ship_m_miner_01" />
+      <software>
+        <software ware="software_dockmk2" compatible="1" />
+        <software ware="software_flightassistmk1" default="1" />
+        <software ware="software_scannerlongrangemk1" default="1" />
+        <software ware="software_scannerlongrangemk2" compatible="1" />
+        <software ware="software_scannerobjectmk1" default="1" />
+        <software ware="software_scannerobjectmk2" compatible="1" />
+        <software ware="software_targetmk1" compatible="1" />
+        <software ware="software_trademk1" compatible="1" />
+      </software>
+      <jerk>
+        <forward accel="0.3" decel="0.8" ratio="3" />
+        <forward_boost accel="0.5" ratio="3" />
+        <forward_travel accel="0.3" decel="0.9" ratio="4" />
+        <strafe value="0.6" />
+        <angular value="0.5" />
+      </jerk>
+      <explosiondamage value="100" shield="500" />
+      <storage missile="20" />
+      <hull max="3700" />
+      <secrecy level="1" />
+      <steeringcurve>
+        <point position="1.01" value="1" />
+        <point position="1.1" value="0.9" />
+        <point position="1.3" value="0.6" />
+        <point position="1.5" value="0.4" />
+        <point position="2" value="0.28" />
+        <point position="2.3" value="0.15" />
+        <point position="2.7" value="0.15" />
+      </steeringcurve>
+      <purpose primary="mine" />
+      <people capacity="10" />
+      <physics mass="28.725">
+        <inertia pitch="8.66" yaw="8.66" roll="6.928" />
+        <drag forward="4.1" reverse="23.429" horizontal="24" vertical="24" pitch="15.426" yaw="15.426" roll="15.426" />
+      </physics>
+      <thruster tags="medium" />
+      <ship type="miner" />
+      <sound_occlusion inside="0.4" />
+    </properties>
+    <connections>
+      <connection ref="con_cockpit">
+        <macro ref="cockpit_gen_virtual_01_macro" connection="ship" />
+      </connection>
+      <connection ref="con_dock_xs">
+        <macro ref="dock_gen_xs_ship_01_macro" connection="Connection_component" />
+      </connection>
+      <connection ref="con_shipstorage_xs_01">
+        <macro ref="shipstorage_gen_xs_01_macro" connection="object" />
+      </connection>
+      <connection ref="con_storage01">
+        <macro ref="storage_tel_m_miner_solid_01_a_macro" connection="ShipConnection" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

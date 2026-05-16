@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: nick (192.168.3.62) on 2023-12-04 12:48:41-->
+<macros>
+  <macro name="ship_spl_xl_ark_01_part_02_macro" class="destructible">
+    <component ref="ship_spl_xl_ark_01_part_02" />
+    <properties>
+      <hull integrated="1" paint="1" />
+      <autoaim allow="0" />
+    </properties>
+    <connections>
+      <connection ref="con_dockarea_arg_xl_builder_01">
+        <macro ref="dockarea_arg_xl_builder_01_macro" connection="Connection01" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

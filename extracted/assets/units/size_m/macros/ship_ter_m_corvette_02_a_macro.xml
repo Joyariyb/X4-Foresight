@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Ketraar (192.168.3.66) on 2025-06-11 10:50:07-->
+<macros>
+  <macro name="ship_ter_m_corvette_02_a_macro" class="ship_m">
+    <component ref="ship_ter_m_corvette_02" />
+    <properties>
+      <identification name="{20101,64801}" basename="{20101,64801}" makerrace="terran" description="{20101,64811}" icon="ship_m_corvette_01" />
+      <software>
+        <software ware="software_dockmk2" compatible="1" />
+        <software ware="software_flightassistmk1" default="1" />
+        <software ware="software_scannerlongrangemk1" default="1" />
+        <software ware="software_scannerlongrangemk2" compatible="1" />
+        <software ware="software_scannerobjectmk1" default="1" />
+        <software ware="software_scannerobjectmk2" compatible="1" />
+        <software ware="software_targetmk1" default="1" />
+        <software ware="software_trademk1" compatible="1" />
+      </software>
+      <jerk>
+        <forward accel="0.6" decel="0.8" ratio="3" />
+        <forward_boost accel="0.8" ratio="3" />
+        <forward_travel accel="0.6" decel="0.9" ratio="3" />
+        <strafe value="0.8" />
+        <angular value="0.8" />
+      </jerk>
+      <explosiondamage value="500" shield="2500" />
+      <storage missile="40" />
+      <hull max="16100" />
+      <glow engine="1" />
+      <secrecy level="2" />
+      <steeringcurve>
+        <point position="1" value="1" />
+        <point position="1.1" value="0.9" />
+        <point position="1.3" value="0.6" />
+        <point position="1.5" value="0.4" />
+        <point position="2" value="0.28" />
+        <point position="2.4" value="0.2" />
+        <point position="2.7" value="0.18" />
+      </steeringcurve>
+      <purpose primary="fight" />
+      <people capacity="4" />
+      <sounds>
+        <shipdetail ref="shipdetail_timelines_terran_m_01" />
+      </sounds>
+      <physics mass="20.594">
+        <inertia pitch="1.257" yaw="1.257" roll="1.006" />
+        <drag forward="2.524" reverse="10.096" horizontal="11.2" vertical="11.2" pitch="5.2" yaw="6.7" roll="6.2" />
+        <accfactors forward="1.3" horizontal="1.15" vertical="1.15" />
+      </physics>
+      <thruster tags="medium" />
+      <ship type="corvette" prestige="20" />
+    </properties>
+    <connections>
+      <connection ref="con_cockpit_01">
+        <macro ref="cockpit_gen_virtual_01_macro" connection="ship" />
+      </connection>
+      <connection ref="con_dock_xs">
+        <macro ref="dock_gen_xs_ship_01_macro" connection="Connection_component" />
+      </connection>
+      <connection ref="con_shipstorage_xs_01">
+        <macro ref="shipstorage_gen_xs_01_macro" connection="object" />
+      </connection>
+      <connection ref="con_storage_01">
+        <macro ref="storage_ter_m_corvette_02_a_macro" connection="ShipConnection" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

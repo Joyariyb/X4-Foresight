@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.53) on 2024-11-18 15:24:24-->
+<macros>
+  <macro name="ship_gen_xs_cargodrone_container_01_a_macro" class="ship_xs" alias="ship_gen_xs_cargodrone_empty_01_a_macro">
+    <component ref="ship_gen_xs_cargodrone_container_01" />
+    <properties>
+      <identification name="{20101,100101}" description="{20101,100111}" unit="1" icon="ship_xs_drone_trade_01" />
+      <software>
+        <software ware="software_flightassistmk1" default="1" />
+      </software>
+      <hull max="523" />
+      <effects>
+        <explosion ref="expl_gen_02" />
+      </effects>
+      <secrecy level="1" />
+      <purpose primary="trade" />
+      <physics mass="14">
+        <inertia pitch="4.5" yaw="4.5" roll="3.6" />
+        <drag forward="3.8" reverse="15.2" horizontal="14.617" vertical="14.617" pitch="3.4" yaw="3.4" roll="3.4" />
+      </physics>
+      <loadouts>
+        <loadout id="default">
+          <macros>
+            <engine macro="engine_gen_xs_transporter_01_macro" path="../con_engine_01" />
+          </macros>
+        </loadout>
+      </loadouts>
+      <ship type="xsdrone" />
+      <relation>
+        <attack>
+          <multiplier value="0.01" />
+        </attack>
+        <kill>
+          <multiplier value="0.01" />
+        </kill>
+      </relation>
+    </properties>
+    <connections>
+      <connection ref="con_cockpit">
+        <macro ref="cockpit_gen_invisible_01_macro" connection="ship" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

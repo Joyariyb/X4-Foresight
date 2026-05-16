@@ -1,0 +1,75 @@
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_boron\ext_01
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_boron\ext_02
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_boron\ext_03
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_pirate\ext_01
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_pirate\ext_02
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_pirate\ext_03
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_split\ext_01
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_split\ext_02
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_split\ext_03
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_terran\ext_01
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_terran\ext_02
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_terran\ext_03
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_timelines\ext_01
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_timelines\ext_02
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_timelines\ext_03
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted

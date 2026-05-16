@@ -1,0 +1,9 @@
+[Language] Loading language tables from 0001-l044.xml...
+[Language] Loaded 1060 ship name entries, 61 variation tokens.
+[Macros] Found 227 ship macro files to process...
+[Macros] 2 files skipped (no identification - drones, spacesuits, NPC vessels etc.)
+[Macros] Resolved 225 ship names successfully.
+[Output] Written 225 entries to C:\Users\lenovo\Documents\GitHub\X4 Foresight\data\ships.py
+
+[Done] Run this script again after extracting DLC cat files
+       to add Terran, Split, Boron, and pirate ship names.

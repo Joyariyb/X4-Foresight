@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: nick (192.168.3.52) on 2022-08-04 18:33:34-->
+<macros>
+  <macro name="ship_bor_xs_cv_03_a_macro" class="ship_xs">
+    <component ref="ship_bor_xs_cv_03_a" />
+    <properties>
+      <identification name="{20101,110507}" makerrace="boron" description="{20101,110511}" icon="ship_xs_neutral_01" />
+      <hull max="184" />
+      <effects>
+        <explosion ref="expl_gen_02" />
+      </effects>
+      <secrecy level="1" />
+      <purpose primary="trade" />
+      <physics mass="3.121">
+        <inertia pitch="0.539" yaw="0.539" roll="0.431" />
+        <drag forward="1.624" reverse="6.397" horizontal="6.011" vertical="6.011" pitch="1.224" yaw="1.224" roll="1.224" />
+      </physics>
+      <loadouts>
+        <loadout id="default">
+          <macros>
+            <engine macro="engine_bor_xs_pv_01_macro" path="../con_engine_01" />
+          </macros>
+        </loadout>
+      </loadouts>
+      <ship type="personalvehicle" />
+    </properties>
+    <connections>
+      <connection ref="con_cockpit_01">
+        <macro ref="cockpit_gen_invisible_01_macro" connection="ship" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

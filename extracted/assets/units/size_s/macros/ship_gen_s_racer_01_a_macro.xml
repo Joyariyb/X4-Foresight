@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Ketraar (192.168.3.66) on 2025-06-11 10:45:12-->
+<macros>
+  <macro name="ship_gen_s_racer_01_a_macro" class="ship_s">
+    <component ref="ship_gen_s_racer_01" />
+    <properties>
+      <identification name="{20101,123001}" description="{20101,123011}" icon="ship_s_racer_01" />
+      <software>
+        <software ware="software_dockmk2" compatible="1" />
+        <software ware="software_flightassistmk1" default="1" />
+        <software ware="software_scannerlongrangemk1" default="1" />
+        <software ware="software_scannerlongrangemk2" compatible="1" />
+        <software ware="software_scannerobjectmk1" default="1" />
+        <software ware="software_scannerobjectmk2" compatible="1" />
+        <software ware="software_targetmk1" default="1" />
+        <software ware="software_trademk1" compatible="1" />
+      </software>
+      <jerk>
+        <forward accel="0.7" decel="0.9" ratio="3" />
+        <forward_boost accel="0.7" />
+        <forward_travel accel="0.5" decel="0.9" ratio="3" />
+        <strafe value="0.8" />
+        <angular value="1" />
+      </jerk>
+      <storage missile="0" />
+      <hull max="2100" />
+      <glow engine="1" />
+      <secrecy level="2" />
+      <steeringcurve>
+        <point position="0.9" value="1" />
+        <point position="1.01" value="0.85" />
+        <point position="1.2" value="0.65" />
+        <point position="1.5" value="0.45" />
+        <point position="2" value="0.25" />
+        <point position="2.4" value="0.2" />
+        <point position="2.7" value="0.17" />
+      </steeringcurve>
+      <purpose primary="racing" />
+      <people capacity="0" />
+      <sounds>
+        <shieldcharging ref="ui_shield_start_recharge" />
+        <shieldcharged ref="ui_shield_full" />
+        <shipdetail ref="shipdetail_racer_01" />
+      </sounds>
+      <physics mass="3.2">
+        <inertia pitch="1.3" yaw="1.3" roll="1.3" />
+        <drag forward="0.71" reverse="8.282" horizontal="1.8" vertical="1.8" pitch="2.5" yaw="2.5" roll="2.5" />
+        <accfactors forward="1.7" reverse="1.1" horizontal="1.25" vertical="1.25" />
+      </physics>
+      <thruster tags="small" />
+      <loadouts>
+        <loadout id="default">
+          <macros>
+            <engine macro="engine_gen_s_racer_01_mk2_macro" path="../con_engine_01" />
+            <shield macro="shield_gen_s_racer_01_mk1_macro" path="../con_shield_01" optional="1" />
+          </macros>
+          <software>
+            <software ware="software_flightassistmk1" />
+            <software ware="software_scannerlongrangemk1" />
+            <software ware="software_scannerobjectmk1" />
+            <software ware="software_targetmk1" />
+          </software>
+          <virtualmacros>
+            <thruster macro="thruster_gen_s_allround_01_mk2_macro" />
+          </virtualmacros>
+        </loadout>
+      </loadouts>
+      <ship type="fighter" prestige="40" />
+    </properties>
+    <connections>
+      <connection ref="con_cockpit_01">
+        <macro ref="cockpit_gen_virtual_01_macro" connection="ship" />
+      </connection>
+      <connection ref="con_dock_xs">
+        <macro ref="dock_gen_xs_ship_02_macro" connection="con_component_01" />
+      </connection>
+      <connection ref="con_shipstorage_xs_01">
+        <macro ref="shipstorage_gen_xs_01_macro" connection="object" />
+      </connection>
+      <connection ref="con_storage_01">
+        <macro ref="storage_gen_s_racer_01_a_macro" connection="ShipConnection" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.53) on 2024-11-18 15:09:23-->
+<macros>
+  <macro name="ship_bor_l_miner_liquid_01_a_macro" class="ship_l">
+    <component ref="ship_bor_l_miner_liquid_01" />
+    <properties>
+      <identification name="{20101,53103}" basename="{20101,53101}" makerrace="boron" description="{20101,53113}" variation="{20111,3201}" shortvariation="{20111,3201}" icon="ship_l_miner_01" />
+      <software>
+        <software ware="software_dockmk2" compatible="1" />
+        <software ware="software_flightassistmk1" default="1" />
+        <software ware="software_scannerlongrangemk1" default="1" />
+        <software ware="software_scannerlongrangemk2" compatible="1" />
+        <software ware="software_scannerobjectmk1" default="1" />
+        <software ware="software_scannerobjectmk2" compatible="1" />
+        <software ware="software_targetmk1" compatible="1" />
+        <software ware="software_trademk1" compatible="1" />
+      </software>
+      <jerk>
+        <forward accel="0.2" decel="0.8" ratio="3" />
+        <forward_boost accel="0.2" ratio="3" />
+        <forward_travel accel="0.6" decel="0.9" ratio="3" />
+        <strafe value="0.4" />
+        <angular value="0.2" />
+      </jerk>
+      <explosiondamage value="800" shield="4000" />
+      <storage missile="30" unit="10" />
+      <hull max="31000" />
+      <secrecy level="1" />
+      <steeringcurve>
+        <point position="1.01" value="1" />
+        <point position="1.1" value="0.85" />
+        <point position="1.4" value="0.7" />
+        <point position="1.6" value="0.42" />
+        <point position="2.4" value="0.35" />
+      </steeringcurve>
+      <purpose primary="mine" />
+      <people capacity="52" />
+      <sounds>
+        <shipdetail ref="shipdetail_ship_boron_l_xl_01" />
+      </sounds>
+      <physics mass="294.322">
+        <inertia pitch="200" yaw="200" roll="150" />
+        <drag forward="65.91" reverse="358.692" horizontal="77" vertical="77" pitch="103.531" yaw="103.531" roll="103.531" />
+        <accfactors horizontal="1.35" vertical="1.35" />
+      </physics>
+      <thruster tags="large" />
+      <ship type="largeminer" />
+    </properties>
+    <connections>
+      <connection ref="con_cockpit_01">
+        <macro ref="bridge_bor_l_01_macro" connection="con_cockpit_01" />
+      </connection>
+      <connection ref="con_dockarea_arg_s_ship_10">
+        <macro ref="dockarea_arg_s_ship_10_macro" connection="con_dockarea_01" />
+      </connection>
+      <connection ref="con_dock_xs_01">
+        <macro ref="dock_gen_xs_ship_01_macro" connection="Connection_component" />
+      </connection>
+      <connection ref="con_launchtube_arg_s_01">
+        <macro ref="launchtube_arg_s_01_macro" connection="Connection02" />
+      </connection>
+      <connection ref="con_shipstorage_s_01">
+        <macro ref="shipstorage_gen_s_two_macro" connection="object" />
+      </connection>
+      <connection ref="con_shipstorage_xs_01">
+        <macro ref="shipstorage_gen_xs_01_macro" connection="object" />
+      </connection>
+      <connection ref="con_storage_01">
+        <macro ref="storage_bor_l_miner_liquid_01_a_macro" connection="ShipConnection" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

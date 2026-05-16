@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: aj (192.168.3.55) on 2025-01-15 09:34:14-->
+<macros>
+  <macro name="ship_par_m_trans_container_02_a_macro" class="ship_m">
+    <component ref="ship_par_m_trans_container_02" />
+    <properties>
+      <identification name="{20101,31302}" basename="{20101,31301}" makerrace="paranid" description="{20101,31312}" variation="{20111,1101}" shortvariation="{20111,1103}" icon="ship_m_transporter_01" />
+      <software>
+        <software ware="software_dockmk2" compatible="1" />
+        <software ware="software_flightassistmk1" default="1" />
+        <software ware="software_scannerlongrangemk1" default="1" />
+        <software ware="software_scannerlongrangemk2" compatible="1" />
+        <software ware="software_scannerobjectmk1" default="1" />
+        <software ware="software_scannerobjectmk2" compatible="1" />
+        <software ware="software_targetmk1" compatible="1" />
+        <software ware="software_trademk1" default="1" />
+      </software>
+      <jerk>
+        <forward accel="0.5" decel="0.9" ratio="3" />
+        <forward_boost accel="0.5" ratio="3" />
+        <forward_travel accel="0.5" decel="0.9" ratio="4" />
+        <strafe value="0.6" />
+        <angular value="0.5" />
+      </jerk>
+      <explosiondamage value="100" shield="500" />
+      <storage missile="20" />
+      <hull max="5000" />
+      <secrecy level="2" />
+      <steeringcurve>
+        <point position="1.01" value="1" />
+        <point position="1.1" value="0.8" />
+        <point position="1.3" value="0.4" />
+        <point position="1.5" value="0.25" />
+        <point position="2" value="0.2" />
+        <point position="2.2" value="0.13" />
+        <point position="2.5" value="0.11" />
+      </steeringcurve>
+      <purpose primary="trade" />
+      <people capacity="20" />
+      <physics mass="40">
+        <inertia pitch="6.121" yaw="6.121" roll="4.897" />
+        <drag forward="5.19" reverse="20.76" horizontal="23.88" vertical="23.88" pitch="12.582" yaw="12.582" roll="12.582" />
+        <accfactors reverse="1.2" horizontal="1.2" vertical="1.2" />
+      </physics>
+      <thruster tags="medium" />
+      <ship type="transporter" />
+      <sound_occlusion inside="0.4" />
+    </properties>
+    <connections>
+      <connection ref="con_cockpit">
+        <macro ref="cockpit_gen_virtual_01_macro" connection="ship" />
+      </connection>
+      <connection ref="con_dock_xs">
+        <macro ref="dock_gen_xs_ship_01_macro" connection="Connection_component" />
+      </connection>
+      <connection ref="con_shipstorage_xs_01">
+        <macro ref="shipstorage_gen_xs_01_macro" connection="object" />
+      </connection>
+      <connection ref="con_storage01">
+        <macro ref="storage_par_m_trans_container_02_a_macro" connection="ShipConnection" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: aj (192.168.3.55) on 2025-01-15 09:44:02-->
+<macros>
+  <macro name="ship_ter_s_fighter_04_b_macro" class="ship_s">
+    <component ref="ship_ter_s_fighter_04" />
+    <properties>
+      <identification name="{20101,60401}" makerrace="terran" description="{20101,60411}" icon="ship_s_fighter_01" />
+      <software>
+        <software ware="software_dockmk2" compatible="1" />
+        <software ware="software_flightassistmk1" default="1" />
+        <software ware="software_scannerlongrangemk1" default="1" />
+        <software ware="software_scannerlongrangemk2" compatible="1" />
+        <software ware="software_scannerobjectmk1" default="1" />
+        <software ware="software_scannerobjectmk2" compatible="1" />
+        <software ware="software_targetmk1" default="1" />
+        <software ware="software_trademk1" compatible="1" />
+      </software>
+      <jerk>
+        <forward accel="0.5" decel="0.8" ratio="3" />
+        <forward_boost accel="0.5" ratio="3" />
+        <forward_travel accel="0.5" decel="0.9" ratio="4" />
+        <strafe value="0.8" />
+        <angular value="0.8" />
+      </jerk>
+      <storage missile="10" />
+      <hull max="2500" />
+      <glow engine="1" />
+      <secrecy level="2" />
+      <steeringcurve>
+        <point position="1.01" value="1" />
+        <point position="1.1" value="0.8" />
+        <point position="1.5" value="0.5" />
+        <point position="2" value="0.3" />
+        <point position="2.3" value="0.2" />
+        <point position="2.6" value="0.16" />
+      </steeringcurve>
+      <purpose primary="fight" />
+      <people capacity="1" />
+      <sounds>
+        <shipdetail ref="shipdetail_timelines_terran_s_01" />
+      </sounds>
+      <physics mass="4.815">
+        <inertia pitch="0.617" yaw="0.617" roll="0.493" />
+        <drag forward="1.673" reverse="6.69" horizontal="4" vertical="4" pitch="2.5" yaw="3.5" roll="2.3" />
+        <accfactors forward="1.1" horizontal="0.85" vertical="0.85" />
+      </physics>
+      <thruster tags="small" />
+      <ship type="fighter" />
+    </properties>
+    <connections>
+      <connection ref="con_cockpit_01">
+        <macro ref="cockpit_gen_virtual_01_macro" connection="ship" />
+      </connection>
+      <connection ref="con_dock_xs">
+        <macro ref="dock_gen_xs_ship_01_macro" connection="Connection_component" />
+      </connection>
+      <connection ref="con_shipstorage_xs_01">
+        <macro ref="shipstorage_gen_xs_01_macro" connection="object" />
+      </connection>
+      <connection ref="con_storage_01">
+        <macro ref="storage_ter_s_fighter_04_a_macro" connection="ShipConnection" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

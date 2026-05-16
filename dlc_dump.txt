@@ -1,0 +1,257 @@
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from folder C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_boron
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from folder C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_pirate
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from folder C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_split
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from folder C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_terran
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from folder C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_timelines
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_boron\ext_01
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+    3249 1731938963 assets/units/size_l/macros/ship_bor_l_carrier_01_a_macro.xml assets/units/size_l/macros/ship_bor_l_carrier_01_a_macro.xml
+    3123 1731938962 assets/units/size_l/macros/ship_bor_l_destroyer_01_a_macro.xml assets/units/size_l/macros/ship_bor_l_destroyer_01_a_macro.xml
+    3330 1731938963 assets/units/size_l/macros/ship_bor_l_miner_liquid_01_a_macro.xml assets/units/size_l/macros/ship_bor_l_miner_liquid_01_a_macro.xml
+    3328 1731938963 assets/units/size_l/macros/ship_bor_l_miner_solid_01_a_macro.xml assets/units/size_l/macros/ship_bor_l_miner_solid_01_a_macro.xml
+    3067 1731938962 assets/units/size_l/macros/ship_bor_l_trans_container_01_a_macro.xml assets/units/size_l/macros/ship_bor_l_trans_container_01_a_macro.xml
+    2853 1749631738 assets/units/size_m/macros/ship_bor_m_corvette_01_a_macro.xml assets/units/size_m/macros/ship_bor_m_corvette_01_a_macro.xml
+    2949 1752656545 assets/units/size_m/macros/ship_bor_m_corvette_02_a_macro.xml assets/units/size_m/macros/ship_bor_m_corvette_02_a_macro.xml
+    2915 1749631871 assets/units/size_m/macros/ship_bor_m_gunboat_01_a_macro.xml assets/units/size_m/macros/ship_bor_m_gunboat_01_a_macro.xml
+    2907 1731939607 assets/units/size_m/macros/ship_bor_m_miner_liquid_01_a_macro.xml assets/units/size_m/macros/ship_bor_m_miner_liquid_01_a_macro.xml
+    2874 1731939608 assets/units/size_m/macros/ship_bor_m_miner_solid_01_a_macro.xml assets/units/size_m/macros/ship_bor_m_miner_solid_01_a_macro.xml
+    2904 1731939610 assets/units/size_m/macros/ship_bor_m_trans_container_01_a_macro.xml assets/units/size_m/macros/ship_bor_m_trans_container_01_a_macro.xml
+    2930 1736865360 assets/units/size_s/macros/ship_bor_s_fighter_01_a_macro.xml assets/units/size_s/macros/ship_bor_s_fighter_01_a_macro.xml
+    2864 1736865362 assets/units/size_s/macros/ship_bor_s_heavyfighter_01_a_macro.xml assets/units/size_s/macros/ship_bor_s_heavyfighter_01_a_macro.xml
+    2803 1736865362 assets/units/size_s/macros/ship_bor_s_miner_solid_01_a_macro.xml assets/units/size_s/macros/ship_bor_s_miner_solid_01_a_macro.xml
+    1224 1736865360 assets/units/size_s/macros/ship_bor_s_miner_solid_01_story_macro.xml assets/units/size_s/macros/ship_bor_s_miner_solid_01_story_macro.xml
+    2753 1736865362 assets/units/size_s/macros/ship_bor_s_scout_01_a_macro.xml assets/units/size_s/macros/ship_bor_s_scout_01_a_macro.xml
+    2717 1736865362 assets/units/size_s/macros/ship_bor_s_scout_02_a_macro.xml assets/units/size_s/macros/ship_bor_s_scout_02_a_macro.xml
+    2770 1736865361 assets/units/size_s/macros/ship_bor_s_trans_container_01_a_macro.xml assets/units/size_s/macros/ship_bor_s_trans_container_01_a_macro.xml
+    3138 1731939801 assets/units/size_xl/macros/ship_bor_xl_builder_01_a_macro.xml assets/units/size_xl/macros/ship_bor_xl_builder_01_a_macro.xml
+    4410 1731939801 assets/units/size_xl/macros/ship_bor_xl_carrier_01_a_macro.xml assets/units/size_xl/macros/ship_bor_xl_carrier_01_a_macro.xml
+    3729 1731939801 assets/units/size_xl/macros/ship_bor_xl_resupplier_01_a_macro.xml assets/units/size_xl/macros/ship_bor_xl_resupplier_01_a_macro.xml
+    1223 1659631272 assets/units/size_xs/macros/ship_bor_xs_cv_01_a_macro.xml assets/units/size_xs/macros/ship_bor_xs_cv_01_a_macro.xml
+    1223 1659630748 assets/units/size_xs/macros/ship_bor_xs_cv_02_a_macro.xml assets/units/size_xs/macros/ship_bor_xs_cv_02_a_macro.xml
+    1223 1659630814 assets/units/size_xs/macros/ship_bor_xs_cv_03_a_macro.xml assets/units/size_xs/macros/ship_bor_xs_cv_03_a_macro.xml
+    1223 1659630848 assets/units/size_xs/macros/ship_bor_xs_pv_01_a_macro.xml assets/units/size_xs/macros/ship_bor_xs_pv_01_a_macro.xml
+    1223 1659630878 assets/units/size_xs/macros/ship_bor_xs_pv_02_a_macro.xml assets/units/size_xs/macros/ship_bor_xs_pv_02_a_macro.xml
+    1223 1659630936 assets/units/size_xs/macros/ship_bor_xs_pv_03_a_macro.xml assets/units/size_xs/macros/ship_bor_xs_pv_03_a_macro.xml
+    1223 1659631006 assets/units/size_xs/macros/ship_bor_xs_pv_04_a_macro.xml assets/units/size_xs/macros/ship_bor_xs_pv_04_a_macro.xml
+    1223 1659631089 assets/units/size_xs/macros/ship_bor_xs_pv_05_a_macro.xml assets/units/size_xs/macros/ship_bor_xs_pv_05_a_macro.xml
+    2181 1732274463 assets/units/size_xs/macros/ship_bor_xs_spacesuit_01_a_macro.xml assets/units/size_xs/macros/ship_bor_xs_spacesuit_01_a_macro.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_boron\ext_02
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_boron\ext_03
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_pirate\ext_01
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+    3021 1731938969 assets/units/size_l/macros/ship_pir_l_miner_solid_01_a_macro.xml assets/units/size_l/macros/ship_pir_l_miner_solid_01_a_macro.xml
+    3040 1731938969 assets/units/size_l/macros/ship_pir_l_scavenger_01_a_macro.xml assets/units/size_l/macros/ship_pir_l_scavenger_01_a_macro.xml
+    3098 1731938970 assets/units/size_l/macros/ship_pir_l_scavenger_01_a_storyhighcapacity_macro.xml assets/units/size_l/macros/ship_pir_l_scavenger_01_a_storyhighcapacity_macro.xml
+    3149 1731938970 assets/units/size_l/macros/ship_pir_l_scrapper_01_macro.xml assets/units/size_l/macros/ship_pir_l_scrapper_01_macro.xml
+    3996 1749631436 assets/units/size_m/macros/ship_gen_m_yacht_01_a_macro.xml assets/units/size_m/macros/ship_gen_m_yacht_01_a_macro.xml
+    2723 1736930222 assets/units/size_s/macros/ship_pir_s_fighter_01_a_macro.xml assets/units/size_s/macros/ship_pir_s_fighter_01_a_macro.xml
+    2760 1736930222 assets/units/size_s/macros/ship_pir_s_fighter_02_a_macro.xml assets/units/size_s/macros/ship_pir_s_fighter_02_a_macro.xml
+    2758 1738934090 assets/units/size_s/macros/ship_pir_s_heavyfighter_01_a_macro.xml assets/units/size_s/macros/ship_pir_s_heavyfighter_01_a_macro.xml
+    2634 1736930249 assets/units/size_s/macros/ship_pir_s_trans_condensate_01_a_macro.xml assets/units/size_s/macros/ship_pir_s_trans_condensate_01_a_macro.xml
+    2632 1736930249 assets/units/size_s/macros/ship_pir_s_trans_container_01_a_macro.xml assets/units/size_s/macros/ship_pir_s_trans_container_01_a_macro.xml
+    3199 1734089374 assets/units/size_xl/macros/ship_pir_xl_battleship_01_a_macro.xml assets/units/size_xl/macros/ship_pir_xl_battleship_01_a_macro.xml
+    3148 1731939807 assets/units/size_xl/macros/ship_pir_xl_builder_01_macro.xml assets/units/size_xl/macros/ship_pir_xl_builder_01_macro.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_pirate\ext_02
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_pirate\ext_03
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_split\ext_01
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+    3166 1731938975 assets/units/size_l/macros/ship_spl_l_destroyer_01_a_macro.xml assets/units/size_l/macros/ship_spl_l_destroyer_01_a_macro.xml
+    3135 1731938976 assets/units/size_l/macros/ship_spl_l_miner_liquid_01_a_macro.xml assets/units/size_l/macros/ship_spl_l_miner_liquid_01_a_macro.xml
+    3141 1731938976 assets/units/size_l/macros/ship_spl_l_miner_solid_01_a_macro.xml assets/units/size_l/macros/ship_spl_l_miner_solid_01_a_macro.xml
+    3175 1731938975 assets/units/size_l/macros/ship_spl_l_trans_container_01_a_macro.xml assets/units/size_l/macros/ship_spl_l_trans_container_01_a_macro.xml
+    2231 1731939621 assets/units/size_m/macros/ship_spl_m_bomber_01_a_macro.xml assets/units/size_m/macros/ship_spl_m_bomber_01_a_macro.xml
+    2962 1749631684 assets/units/size_m/macros/ship_spl_m_corvette_01_a_macro.xml assets/units/size_m/macros/ship_spl_m_corvette_01_a_macro.xml
+    2972 1749631708 assets/units/size_m/macros/ship_spl_m_corvette_01_b_macro.xml assets/units/size_m/macros/ship_spl_m_corvette_01_b_macro.xml
+    3281 1749631657 assets/units/size_m/macros/ship_spl_m_frigate_01_a_macro.xml assets/units/size_m/macros/ship_spl_m_frigate_01_a_macro.xml
+    2963 1733131517 assets/units/size_m/macros/ship_spl_m_miner_liquid_01_a_macro.xml assets/units/size_m/macros/ship_spl_m_miner_liquid_01_a_macro.xml
+    2979 1733131502 assets/units/size_m/macros/ship_spl_m_miner_solid_01_a_macro.xml assets/units/size_m/macros/ship_spl_m_miner_solid_01_a_macro.xml
+    2895 1731939621 assets/units/size_m/macros/ship_spl_m_trans_container_01_a_macro.xml assets/units/size_m/macros/ship_spl_m_trans_container_01_a_macro.xml
+    2783 1736930296 assets/units/size_s/macros/ship_spl_s_fighter_01_a_macro.xml assets/units/size_s/macros/ship_spl_s_fighter_01_a_macro.xml
+    2747 1736930296 assets/units/size_s/macros/ship_spl_s_fighter_02_a_macro.xml assets/units/size_s/macros/ship_spl_s_fighter_02_a_macro.xml
+    2818 1736930297 assets/units/size_s/macros/ship_spl_s_fighter_02_b_macro.xml assets/units/size_s/macros/ship_spl_s_fighter_02_b_macro.xml
+    2872 1736930331 assets/units/size_s/macros/ship_spl_s_heavyfighter_01_a_macro.xml assets/units/size_s/macros/ship_spl_s_heavyfighter_01_a_macro.xml
+    2790 1738933916 assets/units/size_s/macros/ship_spl_s_heavyfighter_02_a_macro.xml assets/units/size_s/macros/ship_spl_s_heavyfighter_02_a_macro.xml
+    2802 1736930331 assets/units/size_s/macros/ship_spl_s_miner_solid_01_a_macro.xml assets/units/size_s/macros/ship_spl_s_miner_solid_01_a_macro.xml
+    2748 1736930348 assets/units/size_s/macros/ship_spl_s_scout_01_a_macro.xml assets/units/size_s/macros/ship_spl_s_scout_01_a_macro.xml
+    2769 1736930365 assets/units/size_s/macros/ship_spl_s_trans_container_01_a_macro.xml assets/units/size_s/macros/ship_spl_s_trans_container_01_a_macro.xml
+    2377 1736930365 assets/units/size_s/macros/ship_spl_s_trans_container_01_plot_01_macro.xml assets/units/size_s/macros/ship_spl_s_trans_container_01_plot_01_macro.xml
+    2972 1714910881 assets/units/size_xl/macros/ship_spl_xl_battleship_01_a_macro.xml assets/units/size_xl/macros/ship_spl_xl_battleship_01_a_macro.xml
+    3158 1731939815 assets/units/size_xl/macros/ship_spl_xl_builder_01_a_macro.xml assets/units/size_xl/macros/ship_spl_xl_builder_01_a_macro.xml
+    3379 1731939814 assets/units/size_xl/macros/ship_spl_xl_carrier_01_a_macro.xml assets/units/size_xl/macros/ship_spl_xl_carrier_01_a_macro.xml
+    4523 1731939814 assets/units/size_xl/macros/ship_spl_xl_resupplier_01_a_macro.xml assets/units/size_xl/macros/ship_spl_xl_resupplier_01_a_macro.xml
+    1135 1714910979 assets/units/size_xs/macros/ship_spl_xs_cv_01_a_macro.xml assets/units/size_xs/macros/ship_spl_xs_cv_01_a_macro.xml
+    1135 1714910984 assets/units/size_xs/macros/ship_spl_xs_cv_01_b_macro.xml assets/units/size_xs/macros/ship_spl_xs_cv_01_b_macro.xml
+    1135 1714910984 assets/units/size_xs/macros/ship_spl_xs_cv_02_a_macro.xml assets/units/size_xs/macros/ship_spl_xs_cv_02_a_macro.xml
+    1135 1714910984 assets/units/size_xs/macros/ship_spl_xs_cv_02_b_macro.xml assets/units/size_xs/macros/ship_spl_xs_cv_02_b_macro.xml
+    1135 1714910983 assets/units/size_xs/macros/ship_spl_xs_cv_03_a_macro.xml assets/units/size_xs/macros/ship_spl_xs_cv_03_a_macro.xml
+    1135 1714910984 assets/units/size_xs/macros/ship_spl_xs_cv_03_b_macro.xml assets/units/size_xs/macros/ship_spl_xs_cv_03_b_macro.xml
+    1255 1714910984 assets/units/size_xs/macros/ship_spl_xs_police_01_a_macro.xml assets/units/size_xs/macros/ship_spl_xs_police_01_a_macro.xml
+    1137 1714910978 assets/units/size_xs/macros/ship_spl_xs_pv_01_a_macro.xml assets/units/size_xs/macros/ship_spl_xs_pv_01_a_macro.xml
+    1135 1714910981 assets/units/size_xs/macros/ship_spl_xs_pv_01_b_macro.xml assets/units/size_xs/macros/ship_spl_xs_pv_01_b_macro.xml
+    1135 1714910981 assets/units/size_xs/macros/ship_spl_xs_pv_01_c_macro.xml assets/units/size_xs/macros/ship_spl_xs_pv_01_c_macro.xml
+    1135 1714910978 assets/units/size_xs/macros/ship_spl_xs_pv_02_a_macro.xml assets/units/size_xs/macros/ship_spl_xs_pv_02_a_macro.xml
+    1135 1714910982 assets/units/size_xs/macros/ship_spl_xs_pv_02_b_macro.xml assets/units/size_xs/macros/ship_spl_xs_pv_02_b_macro.xml
+    1135 1714910982 assets/units/size_xs/macros/ship_spl_xs_pv_02_c_macro.xml assets/units/size_xs/macros/ship_spl_xs_pv_02_c_macro.xml
+    1135 1714910978 assets/units/size_xs/macros/ship_spl_xs_pv_03_a_macro.xml assets/units/size_xs/macros/ship_spl_xs_pv_03_a_macro.xml
+    1135 1714910980 assets/units/size_xs/macros/ship_spl_xs_pv_03_b_macro.xml assets/units/size_xs/macros/ship_spl_xs_pv_03_b_macro.xml
+    1135 1714910980 assets/units/size_xs/macros/ship_spl_xs_pv_03_c_macro.xml assets/units/size_xs/macros/ship_spl_xs_pv_03_c_macro.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_split\ext_02
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_split\ext_03
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_terran\ext_01
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+    3048 1732627741 assets/units/size_l/macros/ship_atf_l_destroyer_01_a_macro.xml assets/units/size_l/macros/ship_atf_l_destroyer_01_a_macro.xml
+    3030 1731938984 assets/units/size_l/macros/ship_ter_l_destroyer_01_a_macro.xml assets/units/size_l/macros/ship_ter_l_destroyer_01_a_macro.xml
+    3043 1731938985 assets/units/size_l/macros/ship_ter_l_miner_liquid_01_a_macro.xml assets/units/size_l/macros/ship_ter_l_miner_liquid_01_a_macro.xml
+    3040 1731938984 assets/units/size_l/macros/ship_ter_l_miner_solid_01_a_macro.xml assets/units/size_l/macros/ship_ter_l_miner_solid_01_a_macro.xml
+    3064 1731938985 assets/units/size_l/macros/ship_ter_l_research_01_a_macro.xml assets/units/size_l/macros/ship_ter_l_research_01_a_macro.xml
+    3079 1737718416 assets/units/size_l/macros/ship_ter_l_trans_container_01_a_macro.xml assets/units/size_l/macros/ship_ter_l_trans_container_01_a_macro.xml
+    1465 1747227145 assets/units/size_m/macros/ship_gen_m_transdrone_container_02_a_macro.xml assets/units/size_m/macros/ship_gen_m_transdrone_container_02_a_macro.xml
+    2799 1749631784 assets/units/size_m/macros/ship_ter_m_corvette_01_a_macro.xml assets/units/size_m/macros/ship_ter_m_corvette_01_a_macro.xml
+    3222 1749631983 assets/units/size_m/macros/ship_ter_m_frigate_01_a_macro.xml assets/units/size_m/macros/ship_ter_m_frigate_01_a_macro.xml
+    2907 1749631762 assets/units/size_m/macros/ship_ter_m_gunboat_01_a_macro.xml assets/units/size_m/macros/ship_ter_m_gunboat_01_a_macro.xml
+    2888 1731939631 assets/units/size_m/macros/ship_ter_m_miner_liquid_01_a_macro.xml assets/units/size_m/macros/ship_ter_m_miner_liquid_01_a_macro.xml
+    2855 1731939633 assets/units/size_m/macros/ship_ter_m_miner_solid_01_a_macro.xml assets/units/size_m/macros/ship_ter_m_miner_solid_01_a_macro.xml
+    2818 1736930616 assets/units/size_m/macros/ship_ter_m_trans_container_01_a_macro.xml assets/units/size_m/macros/ship_ter_m_trans_container_01_a_macro.xml
+    2742 1749631602 assets/units/size_m/macros/ship_yak_m_corvette_01_a_macro.xml assets/units/size_m/macros/ship_yak_m_corvette_01_a_macro.xml
+    1870 1747227292 assets/units/size_s/macros/ship_gen_s_transdrone_container_02_a_macro.xml assets/units/size_s/macros/ship_gen_s_transdrone_container_02_a_macro.xml
+    2793 1738934827 assets/units/size_s/macros/ship_ter_s_fighter_01_a_macro.xml assets/units/size_s/macros/ship_ter_s_fighter_01_a_macro.xml
+    2807 1732542183 assets/units/size_s/macros/ship_ter_s_fighter_02_a_macro.xml assets/units/size_s/macros/ship_ter_s_fighter_02_a_macro.xml
+    2792 1731939719 assets/units/size_s/macros/ship_ter_s_fighter_03_a_macro.xml assets/units/size_s/macros/ship_ter_s_fighter_03_a_macro.xml
+    2759 1732542022 assets/units/size_s/macros/ship_ter_s_heavyfighter_01_a_macro.xml assets/units/size_s/macros/ship_ter_s_heavyfighter_01_a_macro.xml
+    2862 1731939719 assets/units/size_s/macros/ship_ter_s_miner_solid_01_a_macro.xml assets/units/size_s/macros/ship_ter_s_miner_solid_01_a_macro.xml
+    2661 1737557911 assets/units/size_s/macros/ship_ter_s_scout_01_a_macro.xml assets/units/size_s/macros/ship_ter_s_scout_01_a_macro.xml
+    2669 1737557923 assets/units/size_s/macros/ship_ter_s_scout_02_a_macro.xml assets/units/size_s/macros/ship_ter_s_scout_02_a_macro.xml
+    2817 1731939716 assets/units/size_s/macros/ship_ter_s_trans_container_01_a_macro.xml assets/units/size_s/macros/ship_ter_s_trans_container_01_a_macro.xml
+    2746 1749632060 assets/units/size_s/macros/ship_yak_s_fighter_01_a_macro.xml assets/units/size_s/macros/ship_yak_s_fighter_01_a_macro.xml
+    3138 1731939821 assets/units/size_xl/macros/ship_atf_xl_battleship_01_a_macro.xml assets/units/size_xl/macros/ship_atf_xl_battleship_01_a_macro.xml
+    3154 1731939822 assets/units/size_xl/macros/ship_ter_xl_builder_01_a_macro.xml assets/units/size_xl/macros/ship_ter_xl_builder_01_a_macro.xml
+    3392 1731939820 assets/units/size_xl/macros/ship_ter_xl_carrier_01_a_macro.xml assets/units/size_xl/macros/ship_ter_xl_carrier_01_a_macro.xml
+    4549 1731939820 assets/units/size_xl/macros/ship_ter_xl_resupplier_01_a_macro.xml assets/units/size_xl/macros/ship_ter_xl_resupplier_01_a_macro.xml
+    1163 1714755997 assets/units/size_xs/macros/ship_ter_xs_cv_01_a_macro.xml assets/units/size_xs/macros/ship_ter_xs_cv_01_a_macro.xml
+    1163 1714756006 assets/units/size_xs/macros/ship_ter_xs_cv_02_a_macro.xml assets/units/size_xs/macros/ship_ter_xs_cv_02_a_macro.xml
+    1132 1714756022 assets/units/size_xs/macros/ship_ter_xs_police_01_a_macro.xml assets/units/size_xs/macros/ship_ter_xs_police_01_a_macro.xml
+    1163 1714755939 assets/units/size_xs/macros/ship_ter_xs_pv_01_a_macro.xml assets/units/size_xs/macros/ship_ter_xs_pv_01_a_macro.xml
+    1197 1714755913 assets/units/size_xs/macros/ship_ter_xs_pv_02_a_macro.xml assets/units/size_xs/macros/ship_ter_xs_pv_02_a_macro.xml
+    1164 1714755900 assets/units/size_xs/macros/ship_ter_xs_pv_03_a_macro.xml assets/units/size_xs/macros/ship_ter_xs_pv_03_a_macro.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_terran\ext_02
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_terran\ext_03
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_timelines\ext_01
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+    3138 1731938995 assets/units/size_l/macros/ship_ter_l_flagship_01_a_macro.xml assets/units/size_l/macros/ship_ter_l_flagship_01_a_macro.xml
+    3107 1731938996 assets/units/size_l/macros/ship_ter_l_flagship_01_b_macro.xml assets/units/size_l/macros/ship_ter_l_flagship_01_b_macro.xml
+    3960 1731938995 assets/units/size_l/macros/ship_xen_l_terraformer_01_b_macro.xml assets/units/size_l/macros/ship_xen_l_terraformer_01_b_macro.xml
+    2941 1749631807 assets/units/size_m/macros/ship_ter_m_corvette_02_a_macro.xml assets/units/size_m/macros/ship_ter_m_corvette_02_a_macro.xml
+    2922 1737015698 assets/units/size_m/macros/ship_ter_m_corvette_02_b_macro.xml assets/units/size_m/macros/ship_ter_m_corvette_02_b_macro.xml
+    1598 1731939642 assets/units/size_m/macros/ship_xen_m_corvette_01_b_macro.xml assets/units/size_m/macros/ship_xen_m_corvette_01_b_macro.xml
+    3559 1749632221 assets/units/size_s/macros/ship_arg_s_racer_01_a_macro.xml assets/units/size_s/macros/ship_arg_s_racer_01_a_macro.xml
+    3637 1749631513 assets/units/size_s/macros/ship_gen_s_racer_01_a_macro.xml assets/units/size_s/macros/ship_gen_s_racer_01_a_macro.xml
+    3612 1749632324 assets/units/size_s/macros/ship_par_s_racer_01_a_macro.xml assets/units/size_s/macros/ship_par_s_racer_01_a_macro.xml
+    2800 1736930339 assets/units/size_s/macros/ship_spl_s_scenariofighter_01_a_macro.xml assets/units/size_s/macros/ship_spl_s_scenariofighter_01_a_macro.xml
+    3515 1749632243 assets/units/size_s/macros/ship_tel_s_racer_01_a_macro.xml assets/units/size_s/macros/ship_tel_s_racer_01_a_macro.xml
+    2800 1749632197 assets/units/size_s/macros/ship_ter_s_fighter_04_a_macro.xml assets/units/size_s/macros/ship_ter_s_fighter_04_a_macro.xml
+    2784 1736930642 assets/units/size_s/macros/ship_ter_s_fighter_04_b_macro.xml assets/units/size_s/macros/ship_ter_s_fighter_04_b_macro.xml
+     415 1731939731 assets/units/size_s/macros/ship_ter_s_fighter_04_c_macro.xml assets/units/size_s/macros/ship_ter_s_fighter_04_c_macro.xml
+    2745 1749631375 assets/units/size_s/macros/ship_ter_s_xperimental_01_a_macro.xml assets/units/size_s/macros/ship_ter_s_xperimental_01_a_macro.xml
+    2340 1736864899 assets/units/size_s/macros/ship_ter_s_xperimental_01_a_story_macro.xml assets/units/size_s/macros/ship_ter_s_xperimental_01_a_story_macro.xml
+    2190 1736930764 assets/units/size_s/macros/ship_xen_s_heavyfighter_01_b_macro.xml assets/units/size_s/macros/ship_xen_s_heavyfighter_01_b_macro.xml
+   12251 1731939827 assets/units/size_xl/macros/ship_spl_xl_ark_01_a_macro.xml assets/units/size_xl/macros/ship_spl_xl_ark_01_a_macro.xml
+     420 1701690477 assets/units/size_xl/macros/ship_spl_xl_ark_01_hab_l_01_macro.xml assets/units/size_xl/macros/ship_spl_xl_ark_01_hab_l_01_macro.xml
+     420 1701690497 assets/units/size_xl/macros/ship_spl_xl_ark_01_hab_s_01_macro.xml assets/units/size_xl/macros/ship_spl_xl_ark_01_hab_s_01_macro.xml
+     559 1701690509 assets/units/size_xl/macros/ship_spl_xl_ark_01_part_01_macro.xml assets/units/size_xl/macros/ship_spl_xl_ark_01_part_01_macro.xml
+     567 1701690521 assets/units/size_xl/macros/ship_spl_xl_ark_01_part_02_macro.xml assets/units/size_xl/macros/ship_spl_xl_ark_01_part_02_macro.xml
+     438 1701690533 assets/units/size_xl/macros/ship_spl_xl_ark_01_prod_cheltmeat_01_macro.xml assets/units/size_xl/macros/ship_spl_xl_ark_01_prod_cheltmeat_01_macro.xml
+     446 1701690544 assets/units/size_xl/macros/ship_spl_xl_ark_01_prod_scruffinfruit_01_macro.xml assets/units/size_xl/macros/ship_spl_xl_ark_01_prod_scruffinfruit_01_macro.xml
+     448 1701690554 assets/units/size_xl/macros/ship_spl_xl_ark_01_storage_l_container_01_macro.xml assets/units/size_xl/macros/ship_spl_xl_ark_01_storage_l_container_01_macro.xml
+     442 1701690569 assets/units/size_xl/macros/ship_spl_xl_ark_01_storage_l_liquid_01_macro.xml assets/units/size_xl/macros/ship_spl_xl_ark_01_storage_l_liquid_01_macro.xml
+     442 1701690579 assets/units/size_xl/macros/ship_spl_xl_ark_01_storage_m_liquid_01_macro.xml assets/units/size_xl/macros/ship_spl_xl_ark_01_storage_m_liquid_01_macro.xml
+     440 1701690588 assets/units/size_xl/macros/ship_spl_xl_ark_01_storage_m_solid_01_macro.xml assets/units/size_xl/macros/ship_spl_xl_ark_01_storage_m_solid_01_macro.xml
+     432 1701690597 assets/units/size_xl/macros/ship_spl_xl_ark_01_struct_base_02_macro.xml assets/units/size_xl/macros/ship_spl_xl_ark_01_struct_base_02_macro.xml
+     432 1701690606 assets/units/size_xl/macros/ship_spl_xl_ark_01_struct_base_03_macro.xml assets/units/size_xl/macros/ship_spl_xl_ark_01_struct_base_03_macro.xml
+     434 1701690616 assets/units/size_xl/macros/ship_spl_xl_ark_01_struct_cross_01_macro.xml assets/units/size_xl/macros/ship_spl_xl_ark_01_struct_cross_01_macro.xml
+    7783 1731939827 assets/units/size_xl/macros/ship_tfm_xl_carrier_02_b_macro.xml assets/units/size_xl/macros/ship_tfm_xl_carrier_02_b_macro.xml
+    9405 1731939827 assets/units/size_xl/macros/ship_xen_xl_mothership_01_a_macro.xml assets/units/size_xl/macros/ship_xen_xl_mothership_01_a_macro.xml
+     286 1697031645 assets/units/size_xl/macros/ship_xen_xl_mothership_01_damagebody_01_macro.xml assets/units/size_xl/macros/ship_xen_xl_mothership_01_damagebody_01_macro.xml
+     427 1701690781 assets/units/size_xl/macros/ship_xen_xl_mothership_01_part_01_macro.xml assets/units/size_xl/macros/ship_xen_xl_mothership_01_part_01_macro.xml
+     427 1701690796 assets/units/size_xl/macros/ship_xen_xl_mothership_01_part_02_macro.xml assets/units/size_xl/macros/ship_xen_xl_mothership_01_part_02_macro.xml
+     427 1701690812 assets/units/size_xl/macros/ship_xen_xl_mothership_01_part_03_macro.xml assets/units/size_xl/macros/ship_xen_xl_mothership_01_part_03_macro.xml
+     427 1701690824 assets/units/size_xl/macros/ship_xen_xl_mothership_01_part_04_macro.xml assets/units/size_xl/macros/ship_xen_xl_mothership_01_part_04_macro.xml
+     427 1701690837 assets/units/size_xl/macros/ship_xen_xl_mothership_01_part_05_macro.xml assets/units/size_xl/macros/ship_xen_xl_mothership_01_part_05_macro.xml
+     647 1715594112 assets/units/size_xl/macros/ship_xen_xl_mothership_01_part_06_macro.xml assets/units/size_xl/macros/ship_xen_xl_mothership_01_part_06_macro.xml
+    2125 1732275504 assets/units/size_xs/macros/ship_tel_xs_spacesuit_01_b_macro.xml assets/units/size_xs/macros/ship_tel_xs_spacesuit_01_b_macro.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_timelines\ext_02
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted
+X Catalog Tool Version 1.11
+Copyright (c) 2019 EGOSOFT
+Reading from catalog C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\ego_dlc_timelines\ext_03
+Filtering with -include assets/units/.*/macros/ship_.*_macro\.xml
+Writing to folder C:\Users\lenovo\Documents\GitHub\X4 Foresight\extracted

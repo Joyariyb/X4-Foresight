@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: AdrianH (192.168.3.113) on 2024-05-13 11:55:11-->
+<macros>
+  <macro name="ship_xen_xl_mothership_01_part_06_macro" class="defencemodule">
+    <component ref="ship_xen_xl_mothership_01_part_06" />
+    <properties>
+      <identification name="{20109,14401}" />
+      <hull max="27500" wreckintegrated="0" paint="1" />
+      <autoaim allow="0" />
+    </properties>
+    <connections>
+      <connection ref="con_turret_extralarge_01">
+        <macro ref="turret_xen_xl_battleship_01_mk1_macro" connection="con_turret" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

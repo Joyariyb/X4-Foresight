@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Lino (192.168.3.107) on 2024-05-03 19:07:02-->
+<macros>
+  <macro name="ship_ter_xs_police_01_a_macro" class="ship_xs">
+    <component ref="ship_ter_xs_police_01_a" />
+    <properties>
+      <identification name="{20101,111001}" makerrace="terran" description="{20101,111011}" unit="1" icon="ship_xs_policeship_01" />
+      <hull max="300" />
+      <secrecy level="2" />
+      <purpose primary="fight" />
+      <physics mass="1">
+        <drag forward="1" reverse="1" />
+      </physics>
+      <loadouts>
+        <loadout id="default">
+          <macros>
+            <engine macro="engine_ter_xs_police_01_macro" path="../con_engine_01" />
+            <weapon macro="weapon_gen_xs_laser_01_macro" path="../connection_weapon_prim01" optional="1" />
+          </macros>
+        </loadout>
+      </loadouts>
+      <ship type="police" />
+    </properties>
+    <connections>
+      <connection ref="connection_cockpit01">
+        <macro ref="cockpit_gen_invisible_01_macro" connection="ship" />
+      </connection>
+    </connections>
+  </macro>
+</macros>
