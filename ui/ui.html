@@ -140,13 +140,11 @@
     .ware-tags { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 10px; }
     .ware-tag { font-size: 10px; font-family: var(--font-mono); padding: 2px 7px; border-radius: 2px; background: var(--bg-panel); border: 1px solid var(--border); color: var(--text-dim); }
 
-    /* ── SORT CONTROLS ── */
-    /* The row of sort buttons shown above the fleet table */
-    .sort-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    .sort-btn { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 10px; border-radius: 2px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-dim); cursor: pointer; transition: background 0.1s, color 0.1s, border-color 0.1s; user-select: none; }
-    .sort-btn:hover { color: var(--text); border-color: var(--text-dim); }
-    .sort-btn.active { background: var(--teal-dim); color: var(--teal); border-color: var(--teal); }
-    .sort-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
+    /* ── SORT DROPDOWN ── */
+    /* Sits inline in the section header, right of the divider line */
+    .sort-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); flex-shrink: 0; }
+    .sort-select { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 6px; border-radius: 2px; border: 1px solid var(--border); background: var(--bg-card); color: var(--teal); cursor: pointer; outline: none; flex-shrink: 0; }
+    .sort-select:hover { border-color: var(--teal); }
 
     /* ── SHIP NAME SUBLINE ── */
     /* Displayed below the code in the fleet table Code cell */
@@ -267,16 +265,19 @@
 
       <!-- FLEET TAB -->
       <div class="tab-panel" id="tab-fleet">
-        <div class="sec-header"><div class="sec-title">Player Fleet</div><div class="sec-line"></div></div>
-        <div class="sort-bar">
-          <span class="sort-label">Sort by</span>
-          <button class="sort-btn active" onclick="setSort('role',this)">Role</button>
-          <button class="sort-btn" onclick="setSort('name',this)">Name</button>
-          <button class="sort-btn" onclick="setSort('size',this)">Size</button>
-          <button class="sort-btn" onclick="setSort('order',this)">Order</button>
-          <button class="sort-btn" onclick="setSort('sector',this)">Sector</button>
-          <button class="sort-btn" onclick="setSort('hull_origin',this)">Hull</button>
-          <button class="sort-btn" onclick="setSort('pilot',this)">Pilot</button>
+        <div class="sec-header">
+          <div class="sec-title">Player Fleet</div>
+          <div class="sec-line"></div>
+          <span class="sort-label">Sort</span>
+          <select class="sort-select" onchange="setSort(this.value)">
+            <option value="role">Role</option>
+            <option value="name">Name</option>
+            <option value="size">Size</option>
+            <option value="order">Order</option>
+            <option value="sector">Sector</option>
+            <option value="hull_origin">Hull</option>
+            <option value="pilot">Pilot</option>
+          </select>
         </div>
         <div class="panel" style="overflow:auto; max-height: calc(100vh - 160px);">
           <table class="data-table" id="fleet-table">
@@ -429,12 +430,11 @@
     }).join("");
   }
 
-  // Called by each sort button. Updates the active button highlight and
-  // re-renders the fleet table with the new sort key.
-  function setSort(key, clickedBtn) {
+  // Called when the sort dropdown changes. Re-renders the fleet table with
+  // the newly selected sort key. The <select> element manages its own
+  // visual state so no button highlighting is needed here.
+  function setSort(key) {
     currentSortKey = key;
-    document.querySelectorAll(".sort-btn").forEach(b => b.classList.remove("active"));
-    clickedBtn.classList.add("active");
     renderFleet(allPlayerShips, currentSortKey);
   }
 
