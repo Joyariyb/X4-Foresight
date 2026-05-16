@@ -1,0 +1,26 @@
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# IDE project files
+.idea/
+*.iml
+.vscode/
+
+# X4 save file (large, user-specific)
+save_001.xml
+0001-l044.xml
+
+# Generated output (can be reproduced by running the scanner)
+x4_empire_state.json
+
+# OS junk
+.DS_Store
+Thumbs.db

@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>X4 · Empire Intelligence</title>
+  <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/tabler-icons_min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #0d1117;
+      --bg-panel:     #161b22;
+      --bg-card:      #1c2128;
+      --border:       #21262d;
+      --teal:         #2dd4bf;
+      --teal-dim:     rgba(45,212,191,0.12);
+      --amber:        #d29922;
+      --amber-dim:    rgba(210,153,34,0.12);
+      --red:          #f85149;
+      --red-dim:      rgba(248,81,73,0.10);
+      --green:        #3fb950;
+      --green-dim:    rgba(63,185,80,0.10);
+      --purple:       #a371f7;
+      --text:         #c9d1d9;
+      --text-dim:     #8b949e;
+      --text-faint:   #3d444d;
+      --font-ui:      'Barlow', sans-serif;
+      --font-mono:    'Share Tech Mono', monospace;
+      --font-cond:    'Barlow Condensed', sans-serif;
+    }
+
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: 14px; overflow: hidden; }
+
+    #shell { display: flex; flex-direction: column; height: 100vh; }
+
+    /* ── TOP BAR ── */
+    #topbar { display: flex; align-items: stretch; background: var(--bg-panel); border-bottom: 1px solid var(--border); height: 48px; flex-shrink: 0; }
+    .tb-logo { display: flex; align-items: center; gap: 8px; padding: 0 20px; border-right: 1px solid var(--border); font-family: var(--font-cond); font-weight: 700; font-size: 15px; letter-spacing: 0.12em; color: var(--teal); white-space: nowrap; }
+    .tb-logo i { font-size: 18px; }
+    .tb-field { display: flex; flex-direction: column; justify-content: center; padding: 0 18px; border-right: 1px solid var(--border); }
+    .tb-field .lbl { font-size: 10px; font-family: var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); }
+    .tb-field .val { font-family: var(--font-mono); font-size: 13px; color: var(--text); margin-top: 1px; }
+    .tb-field .val.teal  { color: var(--teal); }
+    .tb-field .val.amber { color: var(--amber); }
+
+    /* ── NAV ── */
+    #nav { display: flex; background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 0 12px; flex-shrink: 0; }
+    .nav-tab { padding: 0 16px; height: 38px; display: flex; align-items: center; gap: 6px; font-family: var(--font-cond); font-weight: 500; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); cursor: pointer; border-bottom: 2px solid transparent; position: relative; top: 1px; transition: color 0.15s; user-select: none; }
+    .nav-tab:hover { color: var(--text); }
+    .nav-tab.active { color: var(--teal); border-bottom-color: var(--teal); }
+    .nav-tab i { font-size: 16px; }
+    .nav-badge { font-size: 10px; font-family: var(--font-mono); background: var(--teal-dim); color: var(--teal); padding: 1px 5px; border-radius: 3px; }
+    .nav-badge.warn { background: var(--red-dim); color: var(--red); }
+
+    /* ── MAIN AREA ── */
+    #main { display: flex; flex: 1; overflow: hidden; }
+
+    /* ── SIDEBAR ── */
+    #sidebar { width: 190px; background: var(--bg-panel); border-right: 1px solid var(--border); padding: 10px 0; overflow-y: auto; flex-shrink: 0; }
+    .sb-heading { font-size: 10px; font-family: var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-faint); padding: 8px 14px 3px; }
+    .sb-item { display: flex; align-items: center; gap: 7px; justify-content: space-between; padding: 6px 14px; font-size: 12px; font-family: var(--font-cond); letter-spacing: 0.03em; color: var(--text-dim); cursor: pointer; border-left: 2px solid transparent; transition: background 0.1s, color 0.1s; }
+    .sb-item:hover { background: var(--bg-card); color: var(--text); }
+    .sb-item.active { background: var(--teal-dim); color: var(--teal); border-left-color: var(--teal); }
+    .sb-item.warn { color: var(--red); }
+    .sb-item-label { display: flex; align-items: center; gap: 7px; }
+    .sb-item i { font-size: 15px; flex-shrink: 0; }
+    .sb-item .sb-count { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); margin-left: auto; }
+    .sb-item.warn .sb-count { color: rgba(248,81,73,0.5); }
+    .sb-divider { border: none; border-top: 1px solid var(--border); margin: 6px 0; }
+
+    /* ── CONTENT ── */
+    #content { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+
+    /* ── TABS ── */
+    .tab-panel { display: none; flex-direction: column; gap: 12px; }
+    .tab-panel.active { display: flex; }
+
+    /* ── SECTION HEADER ── */
+    .sec-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .sec-title { font-family: var(--font-cond); font-weight: 600; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); white-space: nowrap; }
+    .sec-line { flex: 1; height: 1px; background: var(--border); }
+
+    /* ── SUMMARY CARDS ── */
+    .cards-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+    .card .card-top { display: flex; align-items: center; gap: 6px; }
+    .card .card-top i { font-size: 14px; color: var(--text-faint); }
+    .card .lbl { font-size: 10px; font-family: var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
+    .card .val { font-family: var(--font-mono); font-size: 20px; color: var(--text); margin-top: 4px; }
+    .card .val.amber { color: var(--amber); }
+    .card .val.red   { color: var(--red); }
+    .card .val.teal  { color: var(--teal); }
+    .card .val.green { color: var(--green); }
+
+    /* ── ALERTS ── */
+    .alert { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 3px; font-size: 12px; font-family: var(--font-mono); margin-bottom: 6px; }
+    .alert i { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .alert.red    { background: var(--red-dim);   border: 1px solid rgba(248,81,73,0.3);  color: var(--red); }
+    .alert.amber  { background: var(--amber-dim); border: 1px solid rgba(210,153,34,0.3); color: var(--amber); }
+    .alert.green  { background: var(--green-dim); border: 1px solid rgba(63,185,80,0.3);  color: var(--green); }
+
+    /* ── PANELS ── */
+    .panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; }
+    .panel-head { background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 7px 12px; font-family: var(--font-cond); font-weight: 600; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); display: flex; align-items: center; justify-content: space-between; }
+
+    /* ── TABLES ── */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .data-table th { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--border); font-weight: 400; white-space: nowrap; }
+    .data-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); color: var(--text-dim); white-space: nowrap; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: var(--bg-panel); }
+    .data-table .mono { font-family: var(--font-mono); }
+
+    /* ── BADGES ── */
+    .badge { display: inline-block; font-size: 10px; font-family: var(--font-mono); padding: 1px 6px; border-radius: 2px; letter-spacing: 0.03em; white-space: nowrap; }
+    .badge.allied   { background: var(--green-dim); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
+    .badge.friendly { background: var(--teal-dim);  color: var(--teal);  border: 1px solid rgba(45,212,191,0.3); }
+    .badge.neutral  { background: var(--bg-card);   color: var(--text-dim); border: 1px solid var(--border); }
+    .badge.hostile  { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(210,153,34,0.3); }
+    .badge.atwar    { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(248,81,73,0.3); }
+    .badge.xenon    { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(248,81,73,0.3); }
+    .badge.yaki     { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(210,153,34,0.3); }
+    .badge.argon    { background: var(--bg-card);   color: var(--text-dim); border: 1px solid var(--border); }
+    .badge.teladi   { background: var(--green-dim); color: #70d890; border: 1px solid rgba(80,200,120,0.25); }
+    .badge.paranid  { background: rgba(163,113,247,0.1); color: var(--purple); border: 1px solid rgba(163,113,247,0.25); }
+
+    /* ── REP BAR ── */
+    .rep-bar-wrap { width: 80px; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; display: inline-block; vertical-align: middle; }
+    .rep-bar { height: 100%; border-radius: 2px; }
+
+    /* ── LAYOUT ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* ── WARE TAGS ── */
+    .ware-tags { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 10px; }
+    .ware-tag { font-size: 10px; font-family: var(--font-mono); padding: 2px 7px; border-radius: 2px; background: var(--bg-panel); border: 1px solid var(--border); color: var(--text-dim); }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    #loading { display: flex; align-items: center; justify-content: center; height: 100%; font-family: var(--font-mono); color: var(--text-faint); font-size: 12px; gap: 10px; }
+    #loading i { font-size: 20px; color: var(--teal); }
+  </style>
+</head>
+<body>
+
+<div id="loading"><i class="ti ti-loader"></i> Connecting to scanner...</div>
+
+<div id="shell" style="display:none">
+
+  <div id="topbar">
+    <div class="tb-logo"><i class="ti ti-radar-2"></i> X4 · EMPIRE INTELLIGENCE</div>
+    <div class="tb-field">
+      <div class="lbl">Pilot</div>
+      <div class="val" id="tb-pilot">—</div>
+    </div>
+    <div class="tb-field">
+      <div class="lbl">Sector</div>
+      <div class="val teal" id="tb-sector">—</div>
+    </div>
+    <div class="tb-field">
+      <div class="lbl">Credits</div>
+      <div class="val amber" id="tb-credits">—</div>
+    </div>
+    <div class="tb-field">
+      <div class="lbl">Ships</div>
+      <div class="val" id="tb-ships">—</div>
+    </div>
+    <div class="tb-field">
+      <div class="lbl">Stations</div>
+      <div class="val" id="tb-stations">—</div>
+    </div>
+  </div>
+
+  <div id="nav">
+    <div class="nav-tab active" onclick="switchTab('overview',this)"><i class="ti ti-layout-dashboard"></i> Overview</div>
+    <div class="nav-tab" onclick="switchTab('fleet',this)"><i class="ti ti-rocket"></i> Fleet <span class="nav-badge" id="nav-ships">—</span></div>
+    <div class="nav-tab" onclick="switchTab('stations',this)"><i class="ti ti-building-factory-2"></i> Stations</div>
+    <div class="nav-tab" onclick="switchTab('diplomacy',this)"><i class="ti ti-world"></i> Diplomacy</div>
+    <div class="nav-tab" onclick="switchTab('alerts',this)"><i class="ti ti-alert-triangle"></i> Alerts <span class="nav-badge warn" id="nav-alerts">0</span></div>
+  </div>
+
+  <div id="main">
+    <div id="sidebar">
+      <div class="sb-heading">Views</div>
+      <div class="sb-item active" onclick="switchTab('overview',null)">
+        <span class="sb-item-label"><i class="ti ti-layout-dashboard"></i> Overview</span>
+      </div>
+      <div class="sb-item" onclick="switchTab('fleet',null)">
+        <span class="sb-item-label"><i class="ti ti-rocket"></i> All Ships</span>
+        <span class="sb-count" id="sb-ships">—</span>
+      </div>
+      <div class="sb-divider"></div>
+      <div class="sb-heading">Fleet</div>
+      <div class="sb-item" id="sb-military">
+        <span class="sb-item-label"><i class="ti ti-sword"></i> Military</span>
+        <span class="sb-count">—</span>
+      </div>
+      <div class="sb-item" id="sb-traders">
+        <span class="sb-item-label"><i class="ti ti-package"></i> Traders</span>
+        <span class="sb-count">—</span>
+      </div>
+      <div class="sb-item" id="sb-miners">
+        <span class="sb-item-label"><i class="ti ti-pickaxe"></i> Miners</span>
+        <span class="sb-count">—</span>
+      </div>
+      <div class="sb-item warn" id="sb-hostile">
+        <span class="sb-item-label"><i class="ti ti-alert-triangle"></i> Hostile Hulls</span>
+        <span class="sb-count">—</span>
+      </div>
+      <div class="sb-divider"></div>
+      <div class="sb-heading">Stations</div>
+      <div id="sb-stations-list"></div>
+    </div>
+
+    <div id="content">
+
+      <!-- OVERVIEW TAB -->
+      <div class="tab-panel active" id="tab-overview">
+
+        <div>
+          <div class="sec-header"><div class="sec-title">Empire Snapshot</div><div class="sec-line"></div></div>
+          <div class="cards-row" id="summary-cards"></div>
+        </div>
+
+        <div class="two-col">
+          <div>
+            <div class="sec-header"><div class="sec-title">Fleet by Role</div><div class="sec-line"></div></div>
+            <div class="panel">
+              <table class="data-table" id="role-table">
+                <thead><tr><th>Role</th><th>Count</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <div class="sec-header"><div class="sec-title">Fleet by Order</div><div class="sec-line"></div></div>
+            <div class="panel">
+              <table class="data-table" id="order-table">
+                <thead><tr><th>Order</th><th>Count</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- FLEET TAB -->
+      <div class="tab-panel" id="tab-fleet">
+        <div class="sec-header"><div class="sec-title">Player Fleet</div><div class="sec-line"></div></div>
+        <div class="panel" style="overflow:auto; max-height: calc(100vh - 160px);">
+          <table class="data-table" id="fleet-table">
+            <thead>
+              <tr>
+                <th>Code</th><th>Size</th><th>Role</th><th>Hull</th>
+                <th>Order</th><th>Sector</th><th>Pilot</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- STATIONS TAB -->
+      <div class="tab-panel" id="tab-stations">
+        <div class="sec-header"><div class="sec-title">Stations</div><div class="sec-line"></div></div>
+        <div id="stations-grid" style="display:flex;flex-direction:column;gap:10px;"></div>
+      </div>
+
+      <!-- DIPLOMACY TAB -->
+      <div class="tab-panel" id="tab-diplomacy">
+        <div class="sec-header"><div class="sec-title">Faction Standings</div><div class="sec-line"></div></div>
+        <div class="panel" style="overflow:auto;">
+          <table class="data-table" id="rep-table">
+            <thead>
+              <tr><th>Faction</th><th>Tier</th><th>Score</th><th>Bar</th><th>Base</th><th>Booster</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ALERTS TAB -->
+      <div class="tab-panel" id="tab-alerts">
+        <div class="sec-header"><div class="sec-title">Alerts</div><div class="sec-line"></div></div>
+        <div id="alerts-list"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const HOSTILE_ORIGINS = new Set(["Xenon", "Yaki", "Kha'ak"]);
+  const MILITARY_ROLES  = new Set(["Fighter","Heavy Fighter","Corvette","Destroyer","Frigate","Gunboat"]);
+  const MINER_ROLES     = new Set(["Miner (Solid)","Miner (Liquid)"]);
+
+  const ORDER_COLOURS = { Trading:"var(--green)", Mining:"var(--amber)", Escorting:"var(--teal)", Waiting:"var(--text-faint)" };
+  const SIZE_COLOURS  = { L:"var(--amber)", M:"var(--teal)", S:"var(--text-dim)" };
+
+  const ROLE_ICONS = {
+    "Fighter":        "ti-rocket",
+    "Heavy Fighter":  "ti-rocket",
+    "Corvette":       "ti-rocket",
+    "Destroyer":      "ti-rocket",
+    "Frigate":        "ti-rocket",
+    "Freighter":      "ti-package",
+    "Miner (Solid)":  "ti-pickaxe",
+    "Miner (Liquid)": "ti-droplet",
+  };
+
+  const ORDER_ICONS = {
+    "Trading":   "ti-arrows-exchange",
+    "Mining":    "ti-pickaxe",
+    "Escorting": "ti-shield",
+    "Waiting":   "ti-clock",
+  };
+
+  const CARD_ICONS = {
+    "Credits":       "ti-coin",
+    "Total Ships":   "ti-rocket",
+    "Stations":      "ti-building-factory-2",
+    "Hostile Hulls": "ti-alert-triangle",
+    "Waiting":       "ti-clock",
+  };
+
+  function fmtCredits(n) {
+    n = parseFloat(n);
+    if (isNaN(n)) return "—";
+    if (n >= 1e6) return (n/1e6).toFixed(1) + "M Cr";
+    if (n >= 1e3) return (n/1e3).toFixed(1) + "k Cr";
+    return n.toLocaleString() + " Cr";
+  }
+
+  function hullBadge(origin) {
+    const hostile = HOSTILE_ORIGINS.has(origin);
+    const cls = origin.toLowerCase();
+    const label = hostile ? `* ${origin}` : origin;
+    return `<span class="badge ${cls}">${label}</span>`;
+  }
+
+  function tierBadge(tier) {
+    const cls = tier.toLowerCase().replace(" ","");
+    return `<span class="badge ${cls}">${tier}</span>`;
+  }
+
+  function repBar(value) {
+    const pct = Math.min(Math.abs(value) / 30 * 100, 100).toFixed(1);
+    const col = value >= 0 ? "var(--green)" : "var(--red)";
+    const dir = value >= 0 ? "left" : "right";
+    return `<div class="rep-bar-wrap"><div class="rep-bar" style="width:${pct}%;background:${col};float:${dir}"></div></div>`;
+  }
+
+  function sign(n) { return n >= 0 ? `+${n.toFixed(2)}` : n.toFixed(2); }
+
+  function switchTab(name, clickedEl) {
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
+    document.getElementById("tab-" + name).classList.add("active");
+    if (clickedEl) clickedEl.classList.add("active");
+  }
+
+  function populate(data) {
+    const ships    = data.ships || {};
+    const fleet    = ships.fleet_summary || {};
+    const players  = ships.player_ships  || [];
+    const stations = data.stations       || [];
+    const rep      = data.reputation     || [];
+
+    // Top bar
+    document.getElementById("tb-pilot").textContent    = data.player_name    || "—";
+    document.getElementById("tb-sector").textContent   = data.player_sector   || "—";
+    document.getElementById("tb-credits").textContent  = fmtCredits(data.player_credits);
+    document.getElementById("tb-ships").textContent    = fleet.total          || "—";
+    document.getElementById("tb-stations").textContent = stations.length;
+    document.getElementById("nav-ships").textContent   = fleet.total          || "—";
+    document.getElementById("sb-ships").textContent    = fleet.total          || "—";
+
+    // Derived counts
+    const hostile  = players.filter(s => HOSTILE_ORIGINS.has(s.hull_origin));
+    const military = players.filter(s => MILITARY_ROLES.has(s.role));
+    const traders  = players.filter(s => s.role === "Freighter" || s.role === "Frigate");
+    const miners   = players.filter(s => MINER_ROLES.has(s.role));
+    const waiting  = players.filter(s => s.order === "Waiting");
+
+    // Sidebar counts
+    document.getElementById("sb-military").innerHTML = `<span class="sb-item-label"><i class="ti ti-sword"></i> Military</span><span class="sb-count">${military.length}</span>`;
+    document.getElementById("sb-traders").innerHTML  = `<span class="sb-item-label"><i class="ti ti-package"></i> Traders</span><span class="sb-count">${traders.length}</span>`;
+    document.getElementById("sb-miners").innerHTML   = `<span class="sb-item-label"><i class="ti ti-pickaxe"></i> Miners</span><span class="sb-count">${miners.length}</span>`;
+    document.getElementById("sb-hostile").innerHTML  = `<span class="sb-item-label"><i class="ti ti-alert-triangle"></i> Hostile Hulls</span><span class="sb-count">${hostile.length}</span>`;
+
+    // Sidebar stations
+    const bySector = {};
+    stations.forEach(s => { bySector[s.sector] = (bySector[s.sector]||0)+1; });
+    document.getElementById("sb-stations-list").innerHTML = Object.entries(bySector).map(([sec,c]) =>
+      `<div class="sb-item"><span class="sb-item-label"><i class="ti ti-building-factory-2"></i> ${sec}</span><span class="sb-count">${c}</span></div>`
+    ).join("");
+
+    // Alerts badge
+    const alertCount = (hostile.length > 0 ? 1 : 0) + (waiting.length > 0 ? 1 : 0);
+    document.getElementById("nav-alerts").textContent = alertCount;
+
+    // Summary cards
+    const cards = [
+      { label:"Credits",       value: fmtCredits(data.player_credits), cls:"amber" },
+      { label:"Total Ships",   value: fleet.total || "—",              cls:"" },
+      { label:"Stations",      value: stations.length,                 cls:"" },
+      { label:"Hostile Hulls", value: hostile.length,                  cls: hostile.length > 0 ? "red" : "green" },
+      { label:"Waiting",       value: waiting.length,                  cls: waiting.length > 0 ? "amber" : "" },
+    ];
+    document.getElementById("summary-cards").innerHTML = cards.map(c => {
+      const icon = CARD_ICONS[c.label] || "ti-info-circle";
+      return `<div class="card">
+        <div class="card-top"><i class="ti ${icon}"></i><div class="lbl">${c.label}</div></div>
+        <div class="val ${c.cls}">${c.value}</div>
+      </div>`;
+    }).join("");
+
+    // Fleet by role
+    const byRole = fleet.by_role || {};
+    document.querySelector("#role-table tbody").innerHTML =
+      Object.entries(byRole).sort((a,b)=>b[1]-a[1]).map(([role,count]) => {
+        const icon = ROLE_ICONS[role] || "ti-rocket";
+        return `<tr>
+          <td><i class="ti ${icon}" style="font-size:13px;vertical-align:-2px;margin-right:6px;color:var(--text-faint)"></i>${role}</td>
+          <td class="mono" style="color:var(--teal)">${count}</td>
+        </tr>`;
+      }).join("");
+
+    // Fleet by order
+    const byOrder = fleet.by_order || {};
+    document.querySelector("#order-table tbody").innerHTML =
+      Object.entries(byOrder).sort((a,b)=>b[1]-a[1]).map(([order,count]) => {
+        const col  = ORDER_COLOURS[order] || "var(--text-dim)";
+        const icon = ORDER_ICONS[order]   || "ti-circle";
+        return `<tr>
+          <td><i class="ti ${icon}" style="font-size:13px;vertical-align:-2px;margin-right:6px;color:${col}"></i>${order}</td>
+          <td class="mono" style="color:${col}">${count}</td>
+        </tr>`;
+      }).join("");
+
+    // Full fleet table
+    document.querySelector("#fleet-table tbody").innerHTML = players.map(s => {
+      const pilot  = (s.pilot && s.pilot.name) ? s.pilot.name : "—";
+      const oCol   = ORDER_COLOURS[s.order] || "var(--text-dim)";
+      const sCol   = SIZE_COLOURS[s.size]   || "var(--text-dim)";
+      const oIcon  = ORDER_ICONS[s.order]   || "ti-circle";
+      return `<tr>
+        <td class="mono" style="color:var(--teal)">${s.code}</td>
+        <td class="mono" style="color:${sCol}">${s.size}</td>
+        <td><i class="ti ${ROLE_ICONS[s.role]||'ti-rocket'}" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:var(--text-faint)"></i>${s.role}</td>
+        <td>${hullBadge(s.hull_origin)}</td>
+        <td><i class="ti ${oIcon}" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:${oCol}"></i><span style="color:${oCol}">${s.order}</span></td>
+        <td style="color:var(--text-dim)"><i class="ti ti-map-pin" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:var(--text-faint)"></i>${s.sector}</td>
+        <td style="color:var(--text-faint)"><i class="ti ti-user" style="font-size:12px;vertical-align:-2px;margin-right:4px"></i>${pilot}</td>
+      </tr>`;
+    }).join("");
+
+    // Stations
+    document.getElementById("stations-grid").innerHTML = stations.map(s => {
+      const prod = s.production
+        ? s.production.split(",").map(w => `<span class="ware-tag">${w.trim()}</span>`).join("")
+        : `<span style="color:var(--text-faint);font-size:11px;padding:0 2px">No production modules</span>`;
+      return `<div class="panel">
+        <div class="panel-head">
+          <span><i class="ti ti-building-factory-2" style="font-size:14px;vertical-align:-2px;margin-right:6px"></i>${s.name.trim()} <span class="mono" style="color:var(--teal);font-size:11px">${s.code}</span></span>
+          <span style="color:var(--text-dim);font-size:11px"><i class="ti ti-map-pin" style="font-size:12px;vertical-align:-2px;margin-right:3px"></i>${s.sector}</span>
+        </div>
+        <div class="ware-tags">${prod}</div>
+      </div>`;
+    }).join("");
+
+    // Faction standings
+    document.querySelector("#rep-table tbody").innerHTML = rep.map(f => {
+      const col   = { Allied:"var(--green)", Friendly:"var(--teal)", Neutral:"var(--text-dim)", Hostile:"var(--amber)", "At War":"var(--red)" }[f.tier] || "var(--text-dim)";
+      const boost = f.booster ? sign(f.booster) : "—";
+      return `<tr>
+        <td>${f.faction_name}</td>
+        <td>${tierBadge(f.tier)}</td>
+        <td class="mono" style="color:${col}">${sign(f.value)}</td>
+        <td>${repBar(f.value)}</td>
+        <td class="mono" style="color:var(--text-faint)">${sign(f.base)}</td>
+        <td class="mono" style="color:var(--text-faint)">${boost}</td>
+      </tr>`;
+    }).join("");
+
+    // Alerts
+    const alertsList = document.getElementById("alerts-list");
+    const alerts = [];
+
+    if (hostile.length > 0) {
+      const byOrigin = {};
+      hostile.forEach(s => { byOrigin[s.hull_origin] = (byOrigin[s.hull_origin]||0)+1; });
+      const summary = Object.entries(byOrigin).map(([o,c])=>`${o} x${c}`).join(", ");
+      alerts.push({ msg:`${hostile.length} ships with hostile-faction hulls: ${summary}`, cls:"red", icon:"ti-alert-triangle" });
+    }
+
+    if (waiting.length > 0) {
+      const codes = waiting.slice(0,6).map(s=>s.code).join(", ");
+      const more  = waiting.length > 6 ? ` (+${waiting.length-6} more)` : "";
+      alerts.push({ msg:`${waiting.length} ships idling (Waiting order): ${codes}${more}`, cls:"amber", icon:"ti-clock" });
+    }
+
+    const idleMiners = waiting.filter(s => MINER_ROLES.has(s.role));
+    if (idleMiners.length > 0) {
+      alerts.push({ msg:`${idleMiners.length} idle miner(s): ${idleMiners.map(s=>s.code).join(", ")}`, cls:"amber", icon:"ti-pickaxe" });
+    }
+
+    alertsList.innerHTML = alerts.length === 0
+      ? `<div class="alert green"><i class="ti ti-circle-check"></i> No alerts detected.</div>`
+      : alerts.map(a => `<div class="alert ${a.cls}"><i class="ti ${a.icon}"></i> ${a.msg}</div>`).join("");
+
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("shell").style.display   = "flex";
+  }
+
+  new QWebChannel(qt.webChannelTransport, function(channel) {
+    channel.objects.bridge.get_empire_data(function(jsonStr) {
+      try {
+        populate(JSON.parse(jsonStr));
+      } catch(e) {
+        document.getElementById("loading").textContent = "Error parsing data: " + e;
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
