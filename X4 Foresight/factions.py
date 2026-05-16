@@ -1,3 +1,5 @@
+import math
+
 # ─────────────────────────────────────────────────────────────────────────────
 #  FACTION NAME LOOKUP
 #  Maps short internal faction IDs to full display names.
@@ -37,11 +39,16 @@ def scale_reputation(raw: float) -> float:
     """
     Converts X4's internal reputation float to the in-game display scale.
 
-    X4 stores reputation as small decimals internally (e.g. 0.256184) but
-    the in-game UI displays these multiplied by 100 (e.g. 25.6).
-    Clamped to the range -30.0 to +30.0 to match the in-game maximum.
+    X4 stores reputation on a log10 scale. The in-game display is:
+        display = log10(raw) * 10 + 30
+    clamped to -30..+30. Negative raw values mirror the positive curve.
+    A raw value of 0 is treated as minimum (-30).
     """
-    scaled = raw * 100.0
+    if raw == 0.0:
+        return -30.0
+    if raw < 0:
+        return -scale_reputation(-raw)   # mirror for negatives
+    scaled = math.log10(raw) * 10.0 + 30.0
     return max(-30.0, min(30.0, scaled))
 
 

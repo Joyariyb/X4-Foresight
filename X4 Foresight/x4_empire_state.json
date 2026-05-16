@@ -40,136 +40,136 @@
     {
       "faction_id": "argon",
       "faction_name": "[ARG] Argon Federation",
-      "value": 25.94,
-      "base": 0.32,
-      "booster": 25.62,
+      "value": 24.14,
+      "base": 5.05,
+      "booster": 24.09,
       "tier": "Allied"
     },
     {
       "faction_id": "antigone",
       "faction_name": "[ANT] Antigone Republic",
-      "value": 18.45,
-      "base": 0.32,
-      "booster": 18.13,
-      "tier": "Friendly"
+      "value": 22.66,
+      "base": 5.05,
+      "booster": 22.58,
+      "tier": "Allied"
     },
     {
       "faction_id": "teladi",
       "faction_name": "[TEL] Teladi Company",
-      "value": 13.43,
+      "value": 21.28,
       "base": 0.0,
-      "booster": 13.43,
-      "tier": "Friendly"
+      "booster": 21.28,
+      "tier": "Allied"
     },
     {
       "faction_id": "paranid",
       "faction_name": "[PAR] Godrealm of the Paranid",
-      "value": 9.48,
+      "value": 19.77,
       "base": 0.0,
-      "booster": 9.48,
-      "tier": "Neutral"
+      "booster": 19.77,
+      "tier": "Friendly"
     },
     {
       "faction_id": "pioneers",
       "faction_name": "[PIO] Segaris Pioneers",
-      "value": 0.99,
+      "value": 9.97,
       "base": 0.0,
-      "booster": 0.99,
+      "booster": 9.97,
       "tier": "Neutral"
     },
     {
       "faction_id": "ministry",
       "faction_name": "[MIN] Ministry of Finance",
-      "value": 0.39,
+      "value": 5.89,
       "base": 0.0,
-      "booster": 0.39,
+      "booster": 5.89,
       "tier": "Neutral"
     },
     {
       "faction_id": "boron",
       "faction_name": "[BOR] Queendom of Boron",
-      "value": 0.32,
-      "base": 0.32,
+      "value": 5.05,
+      "base": 5.05,
       "booster": 0.0,
       "tier": "Neutral"
     },
     {
       "faction_id": "hatikvah",
       "faction_name": "[HAT] Hatikvah Free League",
-      "value": 0.21,
+      "value": 3.27,
       "base": 0.0,
-      "booster": 0.21,
+      "booster": 3.27,
       "tier": "Neutral"
-    },
-    {
-      "faction_id": "scaleplate",
-      "faction_name": "[SCA] Scale Plate Pact",
-      "value": -0.32,
-      "base": -0.32,
-      "booster": 0.0,
-      "tier": "Hostile"
     },
     {
       "faction_id": "freesplit",
       "faction_name": "[FRF] Free Families",
-      "value": -0.32,
-      "base": -0.32,
-      "booster": 0.0,
-      "tier": "Hostile"
-    },
-    {
-      "faction_id": "loanshark",
-      "faction_name": "[RIP] Riptide Rakers",
-      "value": -0.32,
-      "base": -0.32,
+      "value": -5.05,
+      "base": -5.05,
       "booster": 0.0,
       "tier": "Hostile"
     },
     {
       "faction_id": "fallensplit",
       "faction_name": "[FAF] Fallen Families",
-      "value": -0.32,
-      "base": -0.32,
+      "value": -5.05,
+      "base": -5.05,
       "booster": 0.0,
       "tier": "Hostile"
     },
     {
-      "faction_id": "buccaneers",
-      "faction_name": "[BUC] Duke's Buccaneers",
-      "value": -3.2,
-      "base": -3.2,
+      "faction_id": "scaleplate",
+      "faction_name": "[SCA] Scale Plate Pact",
+      "value": -5.05,
+      "base": -5.05,
+      "booster": 0.0,
+      "tier": "Hostile"
+    },
+    {
+      "faction_id": "loanshark",
+      "faction_name": "[RIP] Riptide Rakers",
+      "value": -5.05,
+      "base": -5.05,
       "booster": 0.0,
       "tier": "Hostile"
     },
     {
       "faction_id": "split",
       "faction_name": "[ZYA] Zyarth Patriarchy",
-      "value": -3.2,
-      "base": -3.2,
+      "value": -15.05,
+      "base": -15.05,
       "booster": 0.0,
-      "tier": "Hostile"
+      "tier": "At War"
     },
     {
       "faction_id": "terran",
       "faction_name": "[TER] Terran Protectorate",
-      "value": -3.2,
-      "base": -3.2,
+      "value": -15.05,
+      "base": -15.05,
       "booster": 0.0,
-      "tier": "Hostile"
+      "tier": "At War"
+    },
+    {
+      "faction_id": "buccaneers",
+      "faction_name": "[BUC] Duke's Buccaneers",
+      "value": -15.05,
+      "base": -15.05,
+      "booster": 0.0,
+      "tier": "At War"
     },
     {
       "faction_id": "holyorder",
       "faction_name": "[HOP] Holy Order of the Pontifex",
-      "value": -12.35,
-      "base": -3.2,
-      "booster": -9.15,
+      "value": -20.92,
+      "base": -15.05,
+      "booster": -19.61,
       "tier": "At War"
     },
     {
-      "faction_id": "holyorderfanatic",
-      "faction_name": "[HOF] Holy Order Faithful",
-      "value": -30.0,
-      "base": -30.0,
+      "faction_id": "yaki",
+      "faction_name": "[YAK] Yaki",
+      "value": -25.05,
+      "base": -25.05,
       "booster": 0.0,
       "tier": "At War"
     },
@@ -190,8 +190,8 @@
       "tier": "At War"
     },
     {
-      "faction_id": "yaki",
-      "faction_name": "[YAK] Yaki",
+      "faction_id": "holyorderfanatic",
+      "faction_name": "[HOF] Holy Order Faithful",
       "value": -30.0,
       "base": -30.0,
       "booster": 0.0,

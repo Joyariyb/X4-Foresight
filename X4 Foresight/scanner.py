@@ -380,9 +380,10 @@ def scan_reputation(file_path: pathlib.Path) -> list:
         raw_booster = boosters.get(fid, 0.0)
 
         # Scale to in-game display values (multiply by 100, clamp to -30..+30)
-        scaled_base    = scale_reputation(raw_base)
-        scaled_booster = scale_reputation(raw_booster)
-        scaled_total   = max(-30.0, min(30.0, (raw_base + raw_booster) * 100.0))
+        raw_total = raw_base + raw_booster
+        scaled_total = scale_reputation(raw_total)
+        scaled_base = scale_reputation(raw_base) if raw_base != 0 else 0.0
+        scaled_booster = scale_reputation(raw_booster) if raw_booster != 0 else 0.0
 
         faction_name = FACTION_NAMES.get(fid, fid.title())
 
