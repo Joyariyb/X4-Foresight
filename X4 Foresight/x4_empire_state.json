@@ -12,28 +12,28 @@
       "production": ""
     },
     {
-      "name": "Station #2",
+      "name": "Station TV",
       "code": "SIZ-939",
       "class": "station",
       "macro": "station_gen_factory_base_01_macro",
       "sector": "The Void",
-      "production": "Advanced Electronics, Energy Cells, Microchips, Quantum Tubes"
+      "production": "Energy Cells, Advanced Electronics, Microchips, Silicon Wafers, Quantum Tubes, Superfluid Coolant, Graphene"
     },
     {
-      "name": "Player HQ",
+      "name": "GX HQ",
       "code": "QVR-654",
       "class": "station",
       "macro": "station_pla_headquarters_base_01_macro",
       "sector": "Grand Exchange I",
-      "production": "Advanced Composites, Advanced Electronics, Antimatter Cells, Energy Cells"
+      "production": "Energy Cells, Antimatter Cells, Refined Metals"
     },
     {
-      "name": "Station #3",
+      "name": "Station BHS ",
       "code": "CAB-143",
       "class": "station",
       "macro": "station_gen_factory_base_01_macro",
       "sector": "Black Hole Sun V",
-      "production": "Energy Cells, Ore, Refined Metals"
+      "production": "Energy Cells, Refined Metals, Hull Parts, Graphene"
     }
   ],
   "reputation": [
@@ -102,16 +102,16 @@
       "tier": "Neutral"
     },
     {
-      "faction_id": "freesplit",
-      "faction_name": "[FRF] Free Families",
+      "faction_id": "scaleplate",
+      "faction_name": "[SCA] Scale Plate Pact",
       "value": -0.32,
       "base": -0.32,
       "booster": 0.0,
       "tier": "Hostile"
     },
     {
-      "faction_id": "fallensplit",
-      "faction_name": "[FAF] Fallen Families",
+      "faction_id": "freesplit",
+      "faction_name": "[FRF] Free Families",
       "value": -0.32,
       "base": -0.32,
       "booster": 0.0,
@@ -126,8 +126,8 @@
       "tier": "Hostile"
     },
     {
-      "faction_id": "scaleplate",
-      "faction_name": "[SCA] Scale Plate Pact",
+      "faction_id": "fallensplit",
+      "faction_name": "[FAF] Fallen Families",
       "value": -0.32,
       "base": -0.32,
       "booster": 0.0,
@@ -166,16 +166,8 @@
       "tier": "At War"
     },
     {
-      "faction_id": "xenon",
-      "faction_name": "[XEN] Xenon",
-      "value": -30.0,
-      "base": -30.0,
-      "booster": 0.0,
-      "tier": "At War"
-    },
-    {
-      "faction_id": "yaki",
-      "faction_name": "[YAK] Yaki",
+      "faction_id": "holyorderfanatic",
+      "faction_name": "[HOF] Holy Order Faithful",
       "value": -30.0,
       "base": -30.0,
       "booster": 0.0,
@@ -190,8 +182,16 @@
       "tier": "At War"
     },
     {
-      "faction_id": "holyorderfanatic",
-      "faction_name": "[HOF] Holy Order Faithful",
+      "faction_id": "xenon",
+      "faction_name": "[XEN] Xenon",
+      "value": -30.0,
+      "base": -30.0,
+      "booster": 0.0,
+      "tier": "At War"
+    },
+    {
+      "faction_id": "yaki",
+      "faction_name": "[YAK] Yaki",
       "value": -30.0,
       "base": -30.0,
       "booster": 0.0,
