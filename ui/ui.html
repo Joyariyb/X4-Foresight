@@ -124,7 +124,7 @@
     .badge.atwar    { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(248,81,73,0.3); }
     .badge.xenon    { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(248,81,73,0.3); }
     .badge.yaki     { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(210,153,34,0.3); }
-    .badge.argon    { background: var(--bg-card);   color: var(--text-dim); border: 1px solid var(--border); }
+    .badge.argon    { background: rgba(56,139,253,0.1); color: #388bfd; border: 1px solid rgba(56,139,253,0.25); }
     .badge.teladi   { background: var(--green-dim); color: #70d890; border: 1px solid rgba(80,200,120,0.25); }
     .badge.paranid  { background: rgba(163,113,247,0.1); color: var(--purple); border: 1px solid rgba(163,113,247,0.25); }
 
@@ -138,6 +138,10 @@
     /* ── WARE TAGS ── */
     .ware-tags { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 10px; }
     .ware-tag { font-size: 10px; font-family: var(--font-mono); padding: 2px 7px; border-radius: 2px; background: var(--bg-panel); border: 1px solid var(--border); color: var(--text-dim); }
+
+    /* ── SHIP NAME SUBLINE ── */
+    /* Displayed below the code in the fleet table Code cell */
+    .ship-name { font-size: 13px; color: var(--teal); font-family: var(--font-mono); font-weight: 700; white-space: nowrap; }
 
     /* ── SCROLLBAR ── */
     ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -259,7 +263,7 @@
           <table class="data-table" id="fleet-table">
             <thead>
               <tr>
-                <th>Code</th><th>Size</th><th>Role</th><th>Hull</th>
+                <th>Code / Name</th><th>Size</th><th>Role</th><th>Hull</th>
                 <th>Order</th><th>Sector</th><th>Pilot</th>
               </tr>
             </thead>
@@ -452,8 +456,16 @@
       const oCol   = ORDER_COLOURS[s.order] || "var(--text-dim)";
       const sCol   = SIZE_COLOURS[s.size]   || "var(--text-dim)";
       const oIcon  = ORDER_ICONS[s.order]   || "ti-circle";
+      // Show the ship name below the code if one exists. For ships without a
+      // custom player-given name, this will be the type name from resolve_ship_type()
+      // (e.g. "Argon L Freighter (B)"). The || "—" fallback handles any edge case
+      // where name is still null or an empty string in the data.
+      const nameStr = s.name || "—";
       return `<tr>
-        <td class="mono" style="color:var(--teal)">${s.code}</td>
+        <td style="white-space:nowrap">
+          <span class="ship-name">${nameStr}</span>
+          <span class="mono" style="color:var(--text-faint);font-size:11px;margin-left:8px">${s.code}</span>
+        </td>
         <td class="mono" style="color:${sCol}">${s.size}</td>
         <td><i class="ti ${ROLE_ICONS[s.role]||'ti-rocket'}" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:var(--text-faint)"></i>${s.role}</td>
         <td>${hullBadge(s.hull_origin)}</td>
