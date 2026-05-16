@@ -9,7 +9,7 @@ X4 Foresight/
 ├── scanner/               # XML parsing
 │   ├── language.py        # Sector name resolution from language file
 │   ├── scanner.py         # Pass 1 (player/stations) and Pass 2 (reputation)
-│   └── ships.py           # Pass 3 (player fleet + optional NPC ships)
+│   └── ship_scanner.py    # Pass 3 (player fleet + optional NPC ships)
 ├── data/                  # Static lookup tables
 │   ├── factions.py        # Faction names and reputation scaling
 │   ├── wares.py           # Production ware display names
