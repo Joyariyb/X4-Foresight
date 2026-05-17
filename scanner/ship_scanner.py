@@ -203,33 +203,37 @@ def resolve_ship_type(macro: str) -> str:
 #  children still in memory) and extract one specific piece of data from it.
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _parse_sector_from_zone_macro(ship_elem: ET.Element, sector_names: dict) -> str:
+def _parse_sector(ship_elem: ET.Element, sector_names: dict) -> str:
     """
-    Resolves the sector name for a ship from its zone macro.
+    Resolves the sector name for a ship.
 
-    Ships in the save file are nested inside zone elements, not sector elements
-    directly. The main scanner loop stamps the current zone macro onto the ship
-    element as '_zone_macro' before buffering begins, so this function can read
-    it back once the full ship element is in memory.
+    Two sources are tried in priority order:
 
-    Zone macros follow the pattern: zone{N}_{sector_macro}
-    e.g. "zone001_cluster_43_sector001_macro"
+    1. '_sector_macro' — the macro of the enclosing sector element, stamped
+       directly onto the ship before buffering. This handles ships inside
+       dynamic 'tempzone' elements, which are unnamed zones X4 creates at
+       runtime and don't encode the sector in their macro string.
 
-    The sector portion is extracted with a regex and passed to
-    macro_to_sector_name() for the human-readable lookup.
+    2. '_zone_macro' — the enclosing zone's macro, which follows the pattern
+       zone{N}_{sector_macro} and lets us extract the sector by stripping the
+       prefix. Used as a fallback for ships whose parent zone is a named zone.
     """
+    # Priority 1: resolve from the parent sector macro directly.
+    sector_macro = ship_elem.get('_sector_macro', '')
+    if sector_macro:
+        result = macro_to_sector_name(sector_macro, sector_names)
+        if result:
+            return result
+
+    # Priority 2: fall back to extracting sector from the zone macro.
     zone_macro = ship_elem.get('_zone_macro', '')
-    if not zone_macro:
-        return "Unknown Sector"
-
-    # Strip the leading zone identifier to get the raw sector macro.
     m = re.match(r'zone\d+_(cluster_.+)', zone_macro, re.IGNORECASE)
-    if not m:
-        return "Unknown Sector"
+    if m:
+        result = macro_to_sector_name(m.group(1), sector_names)
+        if result:
+            return result
 
-    sector_macro = m.group(1)
-    result = macro_to_sector_name(sector_macro, sector_names)
-    return result if result else "Unknown Sector"
+    return "Unknown Sector"
 
 
 def _parse_pilot(ship_elem: ET.Element) -> dict:
@@ -388,6 +392,77 @@ def _parse_software(ship_elem: ET.Element) -> list[str]:
     return [w for w in wares_str.split() if w]
 
 
+def _extract_docked_ships(
+    carrier_elem: ET.Element,
+    carrier_sector: str,
+    owner: str,
+) -> list[dict]:
+    """
+    Extracts all ships nested inside a fully-buffered carrier element.
+
+    Ships docked inside a carrier appear as descendants in the XML but are
+    invisible to the main iterparse loop (inside_ship blocks their detection).
+    This function scans the carrier's complete in-memory subtree once it is
+    fully buffered and extracts each nested ship as a normal entry, inheriting
+    the carrier's resolved sector.
+    """
+    SHIP_CLASSES = {"ship_s", "ship_m", "ship_l", "ship_xl"}
+    docked = []
+
+    for child in carrier_elem.iter():
+        if child is carrier_elem:
+            continue
+        cls = child.get('class', '')
+        if cls not in SHIP_CLASSES:
+            continue
+
+        macro       = child.get('macro', '')
+        code        = child.get('code',  '')
+        role        = extract_role(macro)
+        size        = SIZE_LABELS.get(cls, cls)
+        hull_origin = extract_faction_from_macro(macro)
+        order       = _parse_current_order(child)
+        pilot       = _parse_pilot(child)
+        sw          = _parse_software(child)
+        cmdr        = _parse_commander(child)
+        hull_hp     = _parse_hull(child)
+        max_hull    = SHIP_STATS.get(macro, {}).get("max_hull")
+
+        if hull_hp is None:
+            hull_pct = 100.0
+        elif max_hull:
+            hull_pct = (hull_hp / max_hull) * 100.0
+        else:
+            hull_pct = None
+
+        raw_name = child.get('name')
+        if raw_name and not LANG_STRING_RE.match(raw_name):
+            name = raw_name
+        else:
+            name = resolve_ship_type(macro)
+
+        docked.append({
+            "code":        code,
+            "name":        name,
+            "class":       cls,
+            "size":        size,
+            "macro":       macro,
+            "role":        role,
+            "hull_origin": hull_origin,
+            "owner":       owner,
+            "sector":      carrier_sector,
+            "order":       order,
+            "pilot":       pilot,
+            "software":    sw,
+            "commander":   cmdr,
+            "hull_hp":     hull_hp,
+            "hull_pct":    hull_pct,
+            "max_hull":    max_hull,
+        })
+
+    return docked
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 #  MAIN SCANNER
 # ─────────────────────────────────────────────────────────────────────────────
@@ -446,9 +521,12 @@ def scan_ships(
     player_ships: list[dict] = []
     npc_ships:    list[dict] = []
 
-    # Tracks the macro of the zone the parser is currently inside.
-    # Reset to "" when the zone's closing tag is encountered.
-    current_zone_macro = ""
+    # Tracks the macro of the sector and zone the parser is currently inside.
+    # current_sector_macro is the stable cluster_N_sectorN_macro used as the
+    # primary location source. current_zone_macro is the fallback for named zones.
+    # Both reset to "" on the respective closing tag.
+    current_sector_macro = ""
+    current_zone_macro   = ""
 
     # State variables for the ship buffering mechanism.
     inside_ship        = False   # True while we're collecting a ship's children
@@ -465,14 +543,20 @@ def scan_ships(
             tag = elem.tag
             cls = elem.get('class', '')
 
-            # ── Zone tracking ──────────────────────────────────────────────
-            # Only update zone tracking when we're not inside a buffered ship,
-            # to avoid misreading nested zone references within the ship XML.
+            # ── Sector and zone tracking ───────────────────────────────────
+            # Only update when we're not inside a buffered ship, to avoid
+            # misreading nested references within the ship XML.
             if not inside_ship:
-                if event == 'start' and cls == 'zone':
-                    current_zone_macro = elem.get('macro', '')
-                elif event == 'end' and cls == 'zone':
-                    current_zone_macro = ""
+                if event == 'start':
+                    if cls == 'sector':
+                        current_sector_macro = elem.get('macro', '')
+                    elif cls == 'zone':
+                        current_zone_macro = elem.get('macro', '')
+                elif event == 'end':
+                    if cls == 'sector':
+                        current_sector_macro = ""
+                    elif cls == 'zone':
+                        current_zone_macro = ""
 
             # ── Ship detection ─────────────────────────────────────────────
             # When a ship's opening tag is seen, decide whether to buffer it.
@@ -484,10 +568,11 @@ def scan_ships(
                 is_context_npc = (owner != 'player' and bool(context_sectors))
 
                 if is_player or is_context_npc:
-                    # Stamp the current zone onto the element now, before any
-                    # zone tracking updates. This is read later by
-                    # _parse_sector_from_zone_macro() when the element is complete.
-                    elem.set('_zone_macro', current_zone_macro)
+                    # Stamp both location markers onto the element now so
+                    # _parse_sector() can resolve the sector name once the
+                    # full ship subtree is in memory.
+                    elem.set('_sector_macro', current_sector_macro)
+                    elem.set('_zone_macro',   current_zone_macro)
 
                     inside_ship        = True
                     ship_elem_pending  = elem
@@ -513,7 +598,7 @@ def scan_ships(
                         code  = se.get('code',  '')
                         cls   = se.get('class', '')
 
-                        sector  = _parse_sector_from_zone_macro(se, sector_names)
+                        sector  = _parse_sector(se, sector_names)
                         role    = extract_role(macro)
                         size    = SIZE_LABELS.get(cls, cls)
                         hull    = extract_faction_from_macro(macro)
@@ -587,6 +672,9 @@ def scan_ships(
 
                         if owner == 'player':
                             player_ships.append(entry)
+                            player_ships.extend(
+                                _extract_docked_ships(se, sector, owner)
+                            )
                         elif sector in context_sectors:
                             # NPC ships get a slimmer dict — we don't extract
                             # crew or software for ships we don't own.

@@ -46,6 +46,11 @@ import sys
 import time
 import traceback
 
+# Force UTF-8 output so Unicode box-drawing characters in display.py render
+# correctly regardless of the Windows console's default code page (cp1252).
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+
 # ── Allow running from the project root without installing as a package ───────
 # Add the project root to sys.path so that 'scanner', 'data', 'export' are
 # importable as packages regardless of the working directory.
