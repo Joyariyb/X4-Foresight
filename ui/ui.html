@@ -158,6 +158,18 @@
     .sort-select { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 6px; border-radius: 2px; border: 1px solid var(--border); background: var(--bg-card); color: var(--teal); cursor: pointer; outline: none; flex-shrink: 0; }
     .sort-select:hover { border-color: var(--teal); }
 
+    /* ── FLEET SUB-TABS ── */
+    /* Mirrors .nav-tab but smaller — underline style to stay consistent */
+    .fleet-subtabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 4px; flex-shrink: 0; overflow-x: auto; }
+    .fleet-subtab { padding: 0 14px; height: 34px; display: flex; align-items: center; gap: 6px; font-family: var(--font-cond); font-weight: 500; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); cursor: pointer; border-bottom: 2px solid transparent; position: relative; bottom: -1px; transition: color 0.15s; user-select: none; white-space: nowrap; flex-shrink: 0; }
+    .fleet-subtab:hover { color: var(--text); }
+    .fleet-subtab.active { color: var(--teal); border-bottom-color: var(--teal); }
+    .fleet-subtab.hostile { color: var(--red); }
+    .fleet-subtab.hostile.active { border-bottom-color: var(--red); }
+    .ft-count { font-family: var(--font-mono); font-size: 10px; opacity: 0.6; }
+    .fleet-panel { display: none; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
+    .fleet-panel.active { display: flex; }
+
     /* ── SHIP NAME SUBLINE ── */
     /* Displayed below the code in the fleet table Code cell */
     .ship-name { font-size: 13px; color: var(--teal); font-family: var(--font-mono); font-weight: 700; white-space: nowrap; }
@@ -204,7 +216,7 @@
 
   <div id="nav">
     <div class="nav-tab active" onclick="switchTab('overview',this)"><i class="ti ti-layout-dashboard"></i> Overview</div>
-    <div class="nav-tab" onclick="switchTab('fleet',this)"><i class="ti ti-rocket"></i> Fleet <span class="nav-badge" id="nav-ships">—</span></div>
+    <div class="nav-tab" onclick="switchTab('fleet',this)"><i class="ti ti-rocket"></i> Fleets <span class="nav-badge" id="nav-ships">—</span></div>
     <div class="nav-tab" onclick="switchTab('stations',this)"><i class="ti ti-building-factory-2"></i> Stations</div>
     <div class="nav-tab" onclick="switchTab('diplomacy',this)"><i class="ti ti-world"></i> Diplomacy</div>
     <div class="nav-tab" onclick="switchTab('alerts',this)"><i class="ti ti-alert-triangle"></i> Alerts <span class="nav-badge warn" id="nav-alerts">0</span></div>
@@ -278,37 +290,52 @@
 
       <!-- FLEET TAB -->
       <div class="tab-panel" id="tab-fleet">
-        <div class="sec-header">
-          <div class="sec-title">Player Fleet</div>
-          <div class="sec-line"></div>
-          <span class="sort-label">Sort</span>
-          <!-- sort-indicator shows the active sort key and direction arrow.
-               The select resets to "" after every pick so re-selecting the
-               same option always fires onchange and toggles direction. -->
-          <span id="sort-indicator" style="font-family:var(--font-mono);font-size:10px;color:var(--teal);flex-shrink:0">Role ↑</span>
-          <select class="sort-select" id="sort-select" onchange="setSort(this.value)">
-            <option value="" disabled selected hidden>Change…</option>
-            <option value="role">Role</option>
-            <option value="name">Name</option>
-            <option value="size">Size</option>
-            <option value="order">Order</option>
-            <option value="sector">Sector</option>
-            <option value="hull_origin">Hull Origin</option>
-            <option value="pilot">Pilot</option>
-            <option value="health">Health</option>
-          </select>
+
+        <!-- Sub-tab bar: Player tab is static; faction tabs are built by populate() -->
+        <div class="fleet-subtabs" id="fleet-subtabs">
+          <div class="fleet-subtab active" data-faction="player" onclick="switchFleetTab('player',this)">
+            Player <span class="ft-count" id="ft-count-player">—</span>
+          </div>
         </div>
-        <div class="panel" style="overflow:auto; max-height: calc(100vh - 160px);">
-          <table class="data-table" id="fleet-table">
-            <thead>
-              <tr>
-                <th>Code / Name</th><th>Size</th><th>Hull Type</th><th>HP</th>
-                <th>Order</th><th>Sector</th><th>Pilot</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
+
+        <!-- Player fleet panel -->
+        <div class="fleet-panel active" id="fleet-panel-player">
+          <div class="sec-header">
+            <div class="sec-title">Player Fleet</div>
+            <div class="sec-line"></div>
+            <span class="sort-label">Sort</span>
+            <!-- sort-indicator shows the active sort key and direction arrow.
+                 The select resets to "" after every pick so re-selecting the
+                 same option always fires onchange and toggles direction. -->
+            <span id="sort-indicator" style="font-family:var(--font-mono);font-size:10px;color:var(--teal);flex-shrink:0">Role ↑</span>
+            <select class="sort-select" id="sort-select" onchange="setSort(this.value)">
+              <option value="" disabled selected hidden>Change…</option>
+              <option value="role">Role</option>
+              <option value="name">Name</option>
+              <option value="size">Size</option>
+              <option value="order">Order</option>
+              <option value="sector">Sector</option>
+              <option value="hull_origin">Hull Origin</option>
+              <option value="pilot">Pilot</option>
+              <option value="health">Health</option>
+            </select>
+          </div>
+          <div class="panel" style="overflow:auto; max-height: calc(100vh - 200px);">
+            <table class="data-table" id="fleet-table">
+              <thead>
+                <tr>
+                  <th>Code / Name</th><th>Size</th><th>Hull Type</th><th>HP</th>
+                  <th>Order</th><th>Sector</th><th>Pilot</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
         </div>
+
+        <!-- NPC faction panels — built dynamically by populate() -->
+        <div id="fleet-npc-panels"></div>
+
       </div>
 
       <!-- STATIONS TAB -->
@@ -416,7 +443,9 @@
     if (pct > 100) {
       color = "#388bfd";
     } else {
-      const hue = (Math.min(pct, 100) / 100) * 120;
+      // Squaring the ratio makes colour shift from green toward red faster —
+      // 80% health already reads as yellow-green rather than staying near-green.
+      const hue = Math.pow(Math.min(pct, 100) / 100, 2) * 120;
       color = `hsl(${hue.toFixed(0)},65%,50%)`;
     }
 
@@ -522,6 +551,43 @@
   }
 
 
+  // Maps faction owner IDs to their in-game tag codes (mirrors data/factions.py).
+  const FACTION_LABELS = {
+    argon: 'ARG',      antigone: 'ANT',    hatikvah: 'HAT',
+    paranid: 'PAR',    trinity: 'TRI',     split: 'ZYA',
+    fallensplit: 'FAF', freesplit: 'FRF',  teladi: 'TEL',
+    ministry: 'MIN',   xenon: 'XEN',       khaak: 'KHK',
+    buccaneers: 'BUC', scaleplate: 'SCA',  loanshark: 'RIP',
+    holyorder: 'HOP',  holyorderfanatic: 'HOF', yaki: 'YAK',
+    pioneers: 'PIO',   terran: 'TER',      boron: 'BOR',
+  };
+
+  const HOSTILE_FACTIONS = new Set(['xenon', 'khaak']);
+
+  function switchFleetTab(faction, el) {
+    document.querySelectorAll('.fleet-subtab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.fleet-panel').forEach(p => p.classList.remove('active'));
+    (el || document.querySelector(`.fleet-subtab[data-faction="${faction}"]`)).classList.add('active');
+    document.getElementById('fleet-panel-' + faction).classList.add('active');
+  }
+
+  function renderNpcFleet(ships, factionId) {
+    const tbody = document.querySelector(`#npc-table-${factionId} tbody`);
+    if (!tbody) return;
+    tbody.innerHTML = ships.map(s => {
+      const sCol  = SIZE_COLOURS[s.size]  || 'var(--text-dim)';
+      const oCol  = ORDER_COLOURS[s.order] || 'var(--text-dim)';
+      const oIcon = ORDER_ICONS[s.order]   || 'ti-circle';
+      return `<tr>
+        <td class="mono" style="color:var(--yellow);font-size:11px">${s.code}</td>
+        <td class="mono" style="color:${sCol}">${s.size}</td>
+        <td style="white-space:nowrap">${hullBadge(s.hull_origin)}<i class="ti ${ROLE_ICONS[s.role]||'ti-rocket'}" style="font-size:12px;vertical-align:-2px;margin-left:5px;margin-right:3px;color:var(--text-faint)"></i>${s.role}</td>
+        <td><i class="ti ${oIcon}" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:${oCol}"></i><span style="color:${oCol}">${s.order}</span></td>
+        <td style="color:var(--text-dim)"><i class="ti ti-map-pin" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:var(--text-faint)"></i>${s.sector}</td>
+      </tr>`;
+    }).join('');
+  }
+
   function switchTab(name, clickedEl) {
     document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
     document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
@@ -612,6 +678,61 @@
     // using the default sort key and direction.
     allPlayerShips = players;
     renderFleet(allPlayerShips, currentSortKey, currentSortDir);
+    document.getElementById('ft-count-player').textContent = players.length;
+
+    // Build NPC faction sub-tabs and panels, sorted by ship count descending.
+    const npcShips = ships.npc_ships || [];
+    const byFaction = {};
+    npcShips.forEach(s => { (byFaction[s.owner] = byFaction[s.owner] || []).push(s); });
+    const sortedFactions = Object.entries(byFaction).sort((a, b) => b[1].length - a[1].length);
+
+    // Supplement the hardcoded tag map with any tags found in the live rep data,
+    // so factions added by future DLC are picked up automatically.
+    const tagMap = Object.assign({}, FACTION_LABELS);
+    rep.forEach(f => {
+      const m = f.faction_name.match(/\[(\w+)\]/);
+      if (m) tagMap[f.faction_id] = m[1];
+    });
+
+    const subtabs   = document.getElementById('fleet-subtabs');
+    const npcPanels = document.getElementById('fleet-npc-panels');
+
+    // Remove any faction tabs from a previous data load, then rebuild.
+    subtabs.querySelectorAll('.fleet-subtab:not([data-faction="player"])').forEach(t => t.remove());
+    npcPanels.innerHTML = '';
+
+    sortedFactions.forEach(([factionId, fShips]) => {
+      const label    = tagMap[factionId] || factionId.toUpperCase().slice(0, 3);
+      const isHostile = HOSTILE_FACTIONS.has(factionId);
+
+      // Sub-tab
+      const tab = document.createElement('div');
+      tab.className = 'fleet-subtab' + (isHostile ? ' hostile' : '');
+      tab.dataset.faction = factionId;
+      tab.innerHTML = `${label} <span class="ft-count">${fShips.length}</span>`;
+      tab.onclick = () => switchFleetTab(factionId, tab);
+      subtabs.appendChild(tab);
+
+      // Panel
+      const panel = document.createElement('div');
+      panel.className = 'fleet-panel';
+      panel.id = 'fleet-panel-' + factionId;
+      panel.innerHTML = `
+        <div class="sec-header">
+          <div class="sec-title">${label} Ships</div>
+          <div class="sec-line"></div>
+          <span class="sort-label">${fShips.length} ships</span>
+        </div>
+        <div class="panel" style="overflow:auto; max-height: calc(100vh - 200px);">
+          <table class="data-table" id="npc-table-${factionId}">
+            <thead><tr><th>Code</th><th>Size</th><th>Hull Type</th><th>Order</th><th>Sector</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>`;
+      npcPanels.appendChild(panel);
+
+      renderNpcFleet(fShips, factionId);
+    });
 
     // Stations
     document.getElementById("stations-grid").innerHTML = stations.map(s => {
