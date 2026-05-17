@@ -6,17 +6,23 @@ import gzip
 import pathlib
 import re
 
+from lxml import etree as ET
+
 
 @contextlib.contextmanager
 def open_save(path: pathlib.Path):
-    """Opens an X4 save file for reading, handling both .xml and .xml.gz."""
+    """Opens an X4 save file for reading, handling both .xml and .xml.gz.
+
+    Binary mode is required here — lxml's C parser reads raw bytes directly,
+    which is significantly faster than decoding to text first (what stdlib ET
+    does). lxml detects the file's encoding from the XML declaration itself.
+    """
     if path.suffix == '.gz':
-        with gzip.open(path, 'rt', encoding='utf-8', errors='ignore') as f:
+        with gzip.open(path, 'rb') as f:
             yield f
     else:
-        with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+        with open(path, 'rb') as f:
             yield f
-import xml.etree.ElementTree as ET
 
 def load_sector_names(lang_path: pathlib.Path) -> dict:
     """
@@ -37,7 +43,7 @@ def load_sector_names(lang_path: pathlib.Path) -> dict:
 
     try:
         print(f"[Language] Loading sector names from {lang_path.name}...")
-        tree = ET.parse(str(lang_path))
+        tree = ET.parse(lang_path)
         root = tree.getroot()
 
         for page in root.findall('page'):

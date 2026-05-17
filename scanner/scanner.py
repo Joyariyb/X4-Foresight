@@ -1,6 +1,6 @@
 import pathlib
 import re
-import xml.etree.ElementTree as ET
+from lxml import etree as ET
 from data.wares import WARE_NAMES
 from data.factions import FACTION_NAMES, SKIP_FACTIONS, scale_reputation, reputation_label
 from scanner.language import macro_to_sector_name, resolve_sector_from_location, open_save
@@ -228,7 +228,7 @@ def scan_save(file_path: pathlib.Path, sector_names: dict) -> dict:
                 if event == 'end' and not inside_station:
                     elem.clear()
 
-    except ET.ParseError as e:
+    except ET.XMLSyntaxError as e:
         print(f"\n[XML Error] Save file has a formatting issue: {e}")
         raise
     except Exception as e:

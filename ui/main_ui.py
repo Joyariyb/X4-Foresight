@@ -2,6 +2,7 @@
 X4 Foundations Empire Intelligence — PyQt6 + QtWebEngine UI
 
 On launch:
+  - If 0001-l044.xml is missing, offers Steam auto-detection or a manual browse.
   - If x4_empire_state.json exists, asks whether to run a new scan.
   - If no JSON exists, goes straight to the save selector.
   - Scanning runs in a background thread so the UI stays responsive.
@@ -11,26 +12,44 @@ Requirements:
     pip install PyQt6 PyQt6-WebEngine
 """
 
+import sys
+
+# ── Chromium subprocess guard ──────────────────────────────────────────────────
+# PyInstaller + QtWebEngine can use the main exe as the Chromium renderer host.
+# Chromium passes --type=renderer (or similar) in that case. Exit immediately
+# so we don't re-enter the full application and cause an infinite spawn loop.
+# This must run before any Qt imports.
+if any(arg.startswith('--type=') for arg in sys.argv[1:]):
+    sys.exit(0)
+
 import json
 import os
 import pathlib
-import sys
+import shutil
 import traceback
+import winreg
 from datetime import datetime
 
 from PyQt6.QtCore import QObject, QThread, QUrl, Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtWebChannel import QWebChannel
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWidgets import (
-    QApplication, QDialog, QHBoxLayout, QLabel, QListWidget,
+    QApplication, QDialog, QFileDialog, QHBoxLayout, QLabel, QListWidget,
     QMainWindow, QMessageBox, QProgressBar, QPushButton, QVBoxLayout,
 )
 
-# ── Project root on sys.path so scanner modules are importable ────────────────
+# ── Path setup — works both as source and as a PyInstaller bundle ─────────────
+# When frozen, scanner modules are already bundled; data files (HTML, icons)
+# live in sys._MEIPASS, while user files (JSON, lang) sit next to the exe.
 
-ROOT = pathlib.Path(__file__).parent.parent
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+if getattr(sys, 'frozen', False):
+    ROOT      = pathlib.Path(sys.executable).parent
+    HTML_PATH = pathlib.Path(sys._MEIPASS) / "ui" / "ui.html"
+else:
+    ROOT = pathlib.Path(__file__).parent.parent
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    HTML_PATH = pathlib.Path(__file__).parent / "ui.html"
 
 from scanner.language import load_sector_names, open_save  # noqa: E402
 from scanner.scanner import scan_save, scan_reputation      # noqa: E402
@@ -39,7 +58,120 @@ from export.jsonexport import export_json                   # noqa: E402
 
 JSON_PATH = ROOT / "x4_empire_state.json"
 LANG_PATH = ROOT / "0001-l044.xml"
-HTML_PATH = pathlib.Path(__file__).parent / "ui.html"
+
+
+# ── Language file setup ───────────────────────────────────────────────────────
+
+def _find_steam_root() -> pathlib.Path | None:
+    """Return the Steam installation directory via the Windows registry."""
+    for hive, subkey in [
+        (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\WOW6432Node\Valve\Steam"),
+        (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Valve\Steam"),
+        (winreg.HKEY_CURRENT_USER,  r"SOFTWARE\Valve\Steam"),
+    ]:
+        try:
+            with winreg.OpenKey(hive, subkey) as key:
+                path, _ = winreg.QueryValueEx(key, "InstallPath")
+                p = pathlib.Path(path)
+                if p.exists():
+                    return p
+        except OSError:
+            continue
+    return None
+
+
+def find_x4_lang_file() -> pathlib.Path | None:
+    """
+    Searches all Steam library folders for the X4 language file.
+    Returns the path if found, or None.
+    """
+    steam = _find_steam_root()
+    if not steam:
+        return None
+
+    # Collect all Steam library paths from libraryfolders.vdf
+    lib_dirs = [steam / "steamapps"]
+    vdf = steam / "steamapps" / "libraryfolders.vdf"
+    if vdf.exists():
+        for line in vdf.read_text(encoding="utf-8", errors="replace").splitlines():
+            if '"path"' in line.lower():
+                parts = line.split('"')
+                if len(parts) >= 4:
+                    lib_dirs.append(pathlib.Path(parts[3]) / "steamapps")
+
+    for lib in lib_dirs:
+        candidate = lib / "common" / "X4 Foundations" / "t" / "0001-l044.xml"
+        if candidate.exists():
+            return candidate
+
+    return None
+
+
+class LangSetupDialog(QDialog):
+    """
+    Shown on first launch when 0001-l044.xml is not present next to the exe.
+    Offers Steam auto-detection or a manual file picker. Skippable — the app
+    works without the file, but sector and ship names show as raw IDs.
+    """
+
+    def __init__(self, dest_path: pathlib.Path, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("X4 · Language File Setup")
+        self.setMinimumWidth(500)
+        self._dest = dest_path
+
+        layout = QVBoxLayout(self)
+
+        msg = QLabel(
+            "The X4 language file (0001-l044.xml) provides human-readable names "
+            "for sectors and ships. It wasn't found next to this application.\n\n"
+            "You can locate it automatically via Steam, browse for it manually, "
+            "or skip this step (sector and ship names will show as raw IDs)."
+        )
+        msg.setWordWrap(True)
+        layout.addWidget(msg)
+
+        btns = QHBoxLayout()
+
+        auto_btn = QPushButton("Auto-detect via Steam")
+        auto_btn.setDefault(True)
+        auto_btn.clicked.connect(self._auto_detect)
+        btns.addWidget(auto_btn)
+
+        browse_btn = QPushButton("Browse…")
+        browse_btn.clicked.connect(self._browse)
+        btns.addWidget(browse_btn)
+
+        skip_btn = QPushButton("Skip for now")
+        skip_btn.clicked.connect(self.reject)
+        btns.addWidget(skip_btn)
+
+        layout.addLayout(btns)
+
+    def _auto_detect(self):
+        src = find_x4_lang_file()
+        if src:
+            shutil.copy2(src, self._dest)
+            QMessageBox.information(
+                self, "Done",
+                f"Language file copied from:\n{src}\n\nFull names are now available."
+            )
+            self.accept()
+        else:
+            QMessageBox.warning(
+                self, "Not Found",
+                "Could not find X4 Foundations in your Steam libraries.\n\n"
+                "Use Browse to locate 0001-l044.xml manually.\n"
+                "It is in the X4 Foundations installation folder under t\\."
+            )
+
+    def _browse(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Select 0001-l044.xml", "", "XML Files (*.xml)"
+        )
+        if path:
+            shutil.copy2(path, self._dest)
+            self.accept()
 
 
 # ── Save discovery ────────────────────────────────────────────────────────────
@@ -260,6 +392,11 @@ def run_scan(parent=None) -> dict | None:
 def main():
     app = QApplication(sys.argv)
     app.setApplicationName("X4 Empire Intelligence")
+
+    # Offer language file setup on first run (or if the file was deleted).
+    # Non-blocking — user can skip and the app works without it.
+    if not LANG_PATH.exists():
+        LangSetupDialog(LANG_PATH).exec()
 
     json_exists = JSON_PATH.exists()
     data = None

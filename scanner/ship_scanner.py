@@ -11,7 +11,7 @@
 
 import re
 import pathlib
-import xml.etree.ElementTree as ET
+from lxml import etree as ET
 from scanner.language import macro_to_sector_name, open_save
 from data.ships import SHIP_NAMES
 from data.ship_stats import SHIP_STATS  # static specs per macro (max hull, etc.)

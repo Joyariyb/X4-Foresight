@@ -23,3 +23,8 @@ x4_empire_state.json
 # OS junk
 .DS_Store
 Thumbs.db
+
+# PyInstaller build output (spec and build.bat are committed; built app is not)
+X4 Executable/X4 Empire Intelligence/
+X4 Executable/_build_tmp/
+/X4 Executable
