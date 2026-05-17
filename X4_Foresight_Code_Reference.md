@@ -18,7 +18,9 @@ A complete reference for all modules, classes, and functions in the X4 Foresight
 8. [data/factions.py](#8-datafactionspy)
 9. [data/wares.py](#9-datawarespy)
 10. [data/ships.py](#10-datashipspy)
-11. [Legacy/generate_ship_names.py](#11-legacygenerate_ship_namespy)
+11. [data/ship_stats.py](#11-dataship_statspy)
+12. [generate_ship_stats.py](#12-generate_ship_statspy)
+13. [Legacy/generate_ship_names.py](#13-legacygenerate_ship_namespy)
 
 ---
 
@@ -215,6 +217,12 @@ Performs Pass 3: scans the player fleet and optionally NPC ships in sectors of i
 
 **Module-level constants**
 
+**Imports**
+
+`SHIP_STATS` is imported from `data/ship_stats.py` and used during hull health calculation in `scan_ships()`.
+
+**Module-level constants**
+
 | Constant | Type | Description |
 |---|---|---|
 | `ROLE_PATTERNS` | `list[tuple[re.Pattern, str]]` | Ordered list of `(compiled_regex, label)` pairs matched against ship macro strings to derive a role display name. Order matters — more specific patterns (e.g. `miner_solid`) appear before broader ones (e.g. `miner`). |
@@ -277,6 +285,26 @@ Looks up a ship's type display name (e.g. `"Magpie Sentinel"`) from the `SHIP_NA
 | `macro` | `str` | Ship macro string. |
 
 **Returns** `str` with the display name if found, or `None` if the macro is absent from the lookup (e.g. new DLC ships not yet regenerated).
+
+---
+
+### `_parse_hull(ship_elem)`
+
+```python
+def _parse_hull(ship_elem: ET.Element) -> float | None
+```
+
+Returns the ship's current hull HP as a float, or `None` if the ship is at full health.
+
+X4 only writes a `<hull value="..."/>` child element when the ship's hull is below maximum. If the element is absent, the ship is undamaged and this function returns `None`. The caller then uses the absence of a value to set `hull_pct = 100.0` rather than computing it.
+
+**Parameters**
+
+| Name | Type | Description |
+|---|---|---|
+| `ship_elem` | `ET.Element` | The buffered ship element with children in memory. |
+
+**Returns** `float` with the raw HP value (e.g. `7152.237`), or `None` if the `<hull>` element is absent (full health).
 
 ---
 
@@ -403,8 +431,16 @@ Player ship entries include the full set of parsed fields. NPC ship entries cont
 
 **Returns** `dict` with keys:
 
-- `player_ships` — list of dicts with keys: `code`, `name`, `class`, `size`, `macro`, `role`, `hull_origin`, `owner`, `sector`, `order`, `pilot`, `software`, `commander`.
+- `player_ships` — list of dicts with keys: `code`, `name`, `class`, `size`, `macro`, `role`, `hull_origin`, `owner`, `sector`, `order`, `pilot`, `software`, `commander`, `hull_hp`, `hull_pct`, `max_hull`.
 - `npc_ships` — list of dicts with keys: `code`, `class`, `size`, `macro`, `role`, `hull_origin`, `owner`, `sector`, `order`.
+
+**Hull health fields** (player ships only)
+
+| Key | Type | Description |
+|---|---|---|
+| `hull_hp` | `float \| None` | Raw current hull HP. `None` when undamaged (no `<hull>` element in save). |
+| `hull_pct` | `float \| None` | Percentage of max hull remaining. `100.0` when undamaged; `None` when max hull is unknown (ship not in `SHIP_STATS`). Can exceed 100 if a hull capacity mod is installed — see `TO BE NOTED.txt`. |
+| `max_hull` | `int \| None` | Base (unmodded) max hull HP from `SHIP_STATS`, or `None` if the macro is not in the lookup. |
 
 ---
 
@@ -484,7 +520,7 @@ The report contains five sections:
 
 **Faction Reputation** — tabular display of all tracked factions. Columns show the scaled total value, a 20-character visual bar (`█`/`░`), tier label, permanent base value, and temporary booster. Values match the in-game UI display range of −30 to +30.
 
-**Player Fleet** — grouped by sector, matching the station layout style. Each ship shows display name (or code fallback), size, role, current order, and hull origin. Captured ships (hull origin not in the standard player-purchasable faction list) are flagged with a `★` prefix. A pilot sub-line is printed only when a named pilot is assigned. Column width for ship names is computed dynamically and capped at 40 characters.
+**Player Fleet** — grouped by sector, matching the station layout style. Each ship shows display name (or code fallback), size, role, current order, hull origin, and hull health. Captured ships (hull origin not in the standard player-purchasable faction list) are flagged with a `★` prefix. Hull health is shown as `Full (N HP)` for undamaged ships, `PCT% (current / max HP)` for damaged ships, or raw HP if the max is not in `SHIP_STATS`. A pilot sub-line is printed only when a named pilot is assigned. Column width for ship names is computed dynamically and capped at 40 characters.
 
 **NPC Presence** (tiers 2 and 3 only) — printed only when `npc_ships` is non-empty. Groups NPC ships by sector and faction, summarising composition as role counts (e.g. `3× Fighter, 1× Corvette`). Gives a threat picture without listing individual NPC ships.
 
@@ -658,6 +694,29 @@ Entry point for the UI. Parses the `--json` command-line argument (defaulting to
 
 ---
 
+### `ui/ui.html` — JavaScript helpers
+
+The HTML dashboard contains a set of JavaScript helper functions that transform raw JSON values into rendered HTML. The most relevant for ship data are listed below.
+
+---
+
+#### `hullBadge(hullOrigin)`
+
+Returns an HTML `<span>` chip coloured by hull origin faction, used to label the manufacturer of each ship in the fleet table. Captured ships (origin not in the standard faction set) receive a distinct warning colour.
+
+---
+
+#### `hullBar(pct, hullHp, maxHull)`
+
+Returns an HTML fragment containing a gradient health bar and a numeric label beneath it.
+
+- Bar colour transitions from red (hue 0°) at 0% health to green (hue 120°) at 100% health using an HSL colour string computed as `hsl(pct * 1.2, 100%, 42%)`.
+- Values above 100% (hull capacity mod installed) are rendered in blue (`#388bfd`) to distinguish them from normal health.
+- If `pct` is `null` (ship not in `SHIP_STATS`), only the raw HP is shown without a bar.
+- The label beneath the bar shows `Full (N HP)` when undamaged, `N% (current / max HP)` when damaged, or just raw HP when the max is unknown.
+
+---
+
 ## 8. `data/factions.py`
 
 Static lookup tables and scaling functions for faction data. Imported by `scanner/scanner.py`.
@@ -753,7 +812,74 @@ This file is committed to the repository. It only needs to be regenerated when n
 
 ---
 
-## 11. `Legacy/generate_ship_names.py`
+## 11. `data/ship_stats.py`
+
+Auto-generated static lookup table mapping ship macro names to per-ship stats (currently hull HP). Not edited by hand — regenerated by `generate_ship_stats.py` whenever ship XMLs are updated.
+
+**Module-level constants**
+
+| Constant | Type | Description |
+|---|---|---|
+| `SHIP_STATS` | `dict[str, dict]` | Maps ship macro name strings to a nested dict of stats. Currently each entry contains only `max_hull`. Example: `"ship_arg_l_destroyer_01_a_macro": {"max_hull": 93000}`. |
+
+The dict is structured as `SHIP_STATS[macro]["stat_name"]` so that additional stats (e.g. cargo capacity, max speed) can be added in future without changing the key structure.
+
+This file is committed to the repository. It only needs to be regenerated when ship XMLs change (new DLC, game patch). See `generate_ship_stats.py` for the generation process.
+
+---
+
+## 12. `generate_ship_stats.py`
+
+One-time utility script that generates `data/ship_stats.py` by walking all ship macro XMLs in the `ship xml/` folder. Run from the project root after adding or updating ship XML files.
+
+**Required inputs**
+
+- `ship xml/` — folder of ship macro XMLs in the project root. XML files can be extracted from the game's `.cat` files using XRCatTool.
+
+**Module-level constants**
+
+| Constant | Type | Description |
+|---|---|---|
+| `SCRIPT_DIR` | `Path` | Project root, derived from `__file__`. |
+| `XML_DIR` | `Path` | Expected location of ship macro XMLs (`ship xml/`). |
+| `OUTPUT_FILE` | `Path` | Write target for the generated file (`data/ship_stats.py`). |
+| `SHIP_CLASSES` | `set[str]` | XML `class` attribute values that identify whole-ship macros: `"ship_s"`, `"ship_m"`, `"ship_l"`, `"ship_xl"`. Entries with other classes (drones, spacesuit frames, turret hardpoints) are skipped. |
+
+---
+
+### `extract_hull_max(xml_path)`
+
+```python
+def extract_hull_max(xml_path: pathlib.Path) -> tuple[str, int] | None
+```
+
+Parses a single ship macro XML file and returns the macro name and base max hull HP.
+
+The function reads the top-level `<macro>` element for its `name` and `class` attributes. Files whose class is not in `SHIP_CLASSES` are rejected immediately. The hull value is read from `<properties><hull max="..."/>`.
+
+**Parameters**
+
+| Name | Type | Description |
+|---|---|---|
+| `xml_path` | `pathlib.Path` | Path to a single ship macro XML file. |
+
+**Returns** `tuple[str, int]` — `(macro_name, max_hull_int)` if extraction succeeds, or `None` if the file should be skipped (wrong class, malformed XML, missing hull element).
+
+---
+
+### `main()` *(generate_ship_stats)*
+
+```python
+def main()
+```
+
+Walks every `.xml` file in `XML_DIR`, calls `extract_hull_max()` on each, accumulates results, and writes the `data/ship_stats.py` file. Prints a summary line showing how many ships were extracted and how many were skipped.
+
+The output file is sorted alphabetically by macro name and prefixed with a header comment warning that it is auto-generated and should not be edited by hand.
+
+---
+
+## 13. `Legacy/generate_ship_names.py`
 
 One-time utility script that generates `data/ships.py` from the game's extracted macro XML files and language file. Run from the project root after extracting ship macros from the game's `.cat` files using XRCatTool.
 
