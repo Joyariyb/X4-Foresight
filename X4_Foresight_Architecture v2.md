@@ -381,10 +381,13 @@ Three alert conditions are checked in `populate`:
 
 ### Icon and colour lookup tables
 
-Rather than inline logic, the UI uses flat lookup objects defined at the top of the script block. To add support for a new role or order, add an entry to the relevant table:
+Rather than inline logic, the UI uses flat lookup objects and sets defined at the top of the script block. To add support for a new role or order, add an entry to the relevant table:
 
 | Table | Purpose |
 |---|---|
+| `HOSTILE_ORIGINS` | Set of hull-origin faction names treated as hostile (`Xenon`, `Yaki`, `Kha'ak`) — drives the hostile hulls alert and badge styling |
+| `MILITARY_ROLES` | Set of role strings classified as military (`Fighter`, `Heavy Fighter`, `Corvette`, `Destroyer`, `Frigate`, `Gunboat`) — used to populate the Military sidebar count and fleet category |
+| `MINER_ROLES` | Set of mining role strings (`Miner (Solid)`, `Miner (Liquid)`) — used to detect idle miner alerts |
 | `ROLE_ICONS` | Maps role strings to Tabler icon class names |
 | `ORDER_ICONS` | Maps order strings to Tabler icon class names |
 | `ORDER_COLOURS` | Maps order strings to CSS colour variables |

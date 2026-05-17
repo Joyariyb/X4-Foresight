@@ -213,8 +213,6 @@ Base `<relation>` entries represent permanent standing. `<booster>` entries are 
 
 Performs Pass 3: scans the player fleet and optionally NPC ships in sectors of interest. Imports `SHIP_NAMES` from `data/ships.py` for display name lookup.
 
-> **Note:** This file is named `ship_scanner.py` in the codebase. The README project tree incorrectly listed it as `ships.py`.
-
 **Module-level constants**
 
 **Imports**
