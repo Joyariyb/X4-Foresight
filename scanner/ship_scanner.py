@@ -680,6 +680,7 @@ def scan_ships(
                             # crew or software for ships we don't own.
                             npc_ships.append({
                                 "code":        code,
+                                "name":        name,
                                 "class":       cls,
                                 "size":        size,
                                 "macro":       macro,

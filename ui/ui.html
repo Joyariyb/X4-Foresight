@@ -571,15 +571,54 @@
     document.getElementById('fleet-panel-' + faction).classList.add('active');
   }
 
+  // Per-faction sort state and cached ship lists so setNpcSort() can re-render
+  // without re-running populate().
+  const npcSortState  = {};  // { factionId: { key, dir } }
+  const npcShipsCache = {};  // { factionId: [...ships] }
+
+  const NPC_SORT_LABELS = {
+    name: 'Name', role: 'Role', size: 'Size',
+    order: 'Order', sector: 'Sector', hull_origin: 'Hull Origin',
+  };
+
+  function setNpcSort(factionId, key) {
+    const state = npcSortState[factionId];
+    if (key === state.key) {
+      state.dir *= -1;
+    } else {
+      state.key = key;
+      state.dir = 1;
+    }
+    document.getElementById(`npc-sort-select-${factionId}`).value = '';
+    const arrow = state.dir === 1 ? '↑' : '↓';
+    document.getElementById(`npc-sort-indicator-${factionId}`).textContent =
+      `${NPC_SORT_LABELS[key] || key} ${arrow}`;
+    renderNpcFleet(npcShipsCache[factionId], factionId);
+  }
+
   function renderNpcFleet(ships, factionId) {
     const tbody = document.querySelector(`#npc-table-${factionId} tbody`);
     if (!tbody) return;
-    tbody.innerHTML = ships.map(s => {
-      const sCol  = SIZE_COLOURS[s.size]  || 'var(--text-dim)';
+    const state  = npcSortState[factionId] || { key: 'role', dir: 1 };
+    const sorted = [...ships].sort((a, b) => {
+      const av = sortValue(a, state.key);
+      const bv = sortValue(b, state.key);
+      if (av === null && bv === null) return 0;
+      if (av === null) return 1;
+      if (bv === null) return -1;
+      if (av < bv) return -1 * state.dir;
+      if (av > bv) return  1 * state.dir;
+      return 0;
+    });
+    tbody.innerHTML = sorted.map(s => {
+      const sCol  = SIZE_COLOURS[s.size]   || 'var(--text-dim)';
       const oCol  = ORDER_COLOURS[s.order] || 'var(--text-dim)';
       const oIcon = ORDER_ICONS[s.order]   || 'ti-circle';
       return `<tr>
-        <td class="mono" style="color:var(--yellow);font-size:11px">${s.code}</td>
+        <td style="white-space:nowrap;height:34px">
+          <span class="ship-name">${s.name || '—'}</span>
+          <span class="mono" style="color:var(--yellow);font-size:11px;margin-left:8px">${s.code}</span>
+        </td>
         <td class="mono" style="color:${sCol}">${s.size}</td>
         <td style="white-space:nowrap">${hullBadge(s.hull_origin)}<i class="ti ${ROLE_ICONS[s.role]||'ti-rocket'}" style="font-size:12px;vertical-align:-2px;margin-left:5px;margin-right:3px;color:var(--text-faint)"></i>${s.role}</td>
         <td><i class="ti ${oIcon}" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:${oCol}"></i><span style="color:${oCol}">${s.order}</span></td>
@@ -717,15 +756,27 @@
       const panel = document.createElement('div');
       panel.className = 'fleet-panel';
       panel.id = 'fleet-panel-' + factionId;
+      npcSortState[factionId]  = { key: 'role', dir: 1 };
+      npcShipsCache[factionId] = fShips;
       panel.innerHTML = `
         <div class="sec-header">
           <div class="sec-title">${label} Ships</div>
           <div class="sec-line"></div>
-          <span class="sort-label">${fShips.length} ships</span>
+          <span class="sort-label">Sort</span>
+          <span id="npc-sort-indicator-${factionId}" style="font-family:var(--font-mono);font-size:10px;color:var(--teal);flex-shrink:0">Role ↑</span>
+          <select class="sort-select" id="npc-sort-select-${factionId}" onchange="setNpcSort('${factionId}', this.value)">
+            <option value="" disabled selected hidden>Change…</option>
+            <option value="role">Role</option>
+            <option value="name">Name</option>
+            <option value="size">Size</option>
+            <option value="order">Order</option>
+            <option value="sector">Sector</option>
+            <option value="hull_origin">Hull Origin</option>
+          </select>
         </div>
         <div class="panel" style="overflow:auto; max-height: calc(100vh - 200px);">
           <table class="data-table" id="npc-table-${factionId}">
-            <thead><tr><th>Code</th><th>Size</th><th>Hull Type</th><th>Order</th><th>Sector</th></tr></thead>
+            <thead><tr><th>Name / Code</th><th>Size</th><th>Hull Type</th><th>Order</th><th>Sector</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>`;
