@@ -241,21 +241,41 @@ def _parse_pilot(ship_elem: ET.Element) -> dict:
     Finds the pilot assigned to the 'aipilot' control post and returns their
     name and skill ratings.
 
-    The save file stores crew assignments in <control><post> elements. Each
-    post has an 'id' attribute (e.g. 'aipilot', 'engineer') and a 'component'
-    attribute that references the NPC's element ID. The pilot is specifically
-    the NPC assigned to the 'aipilot' post.
+    HOW CREW IS STORED IN THE SAVE FILE:
+    Every ship has a <control> block listing which NPC fills each crew role.
+    Each role is a <post> element with an 'id' (the role name) and a
+    'component' attribute (the ID of the NPC filling that role). Example:
 
-    Skills are stored on <person> elements matched by their npcseed value,
-    which acts as a stable identifier for a specific NPC across different parts
-    of the XML.
+        <control>
+            <post id="aipilot"  component="[0x348]"/>
+            <post id="engineer" component="[0x34a]"/>
+        </control>
+
+    The actual NPC data — name, skills — lives elsewhere in the ship's XML
+    as a <component class="npc"> element whose 'id' matches the reference
+    above. Skills are nested inside that component under <traits><skills>:
+
+        <component class="npc" id="[0x348]" name="Mikela Dalina">
+            <traits>
+                <skills piloting="5" morale="7" boarding="3"/>
+            </traits>
+        </component>
+
+    NOTE: There is also a <people> block on some ships that stores marines
+    and cargo-hold crew using a different structure. Don't confuse the two —
+    pilots are always found via the <control><post> route above.
 
     Returns a dict with keys:
         'name'   (str | None)  — the pilot's display name, or None if not found
-        'skills' (dict)        — piloting/management/morale/engineering int
-                                 values, or {} if no skill data is present
+        'skills' (dict)        — skill name → int value for any skills present,
+                                 e.g. {"piloting": 5, "morale": 7, "boarding": 3}
+                                 Only skills X4 actually wrote are included —
+                                 a missing key means 0, not unknown.
     """
-    # Step 1: find which NPC component ID is assigned as the pilot.
+    # ── Step 1: find the pilot's component ID ─────────────────────────────────
+    # We read the <control> block and look for the post whose id is 'aipilot'.
+    # The 'component' attribute on that post tells us which NPC element to look
+    # up next — it's like a reference/pointer to another part of the XML.
     control = ship_elem.find('control')
     pilot_id = None
     if control is not None:
@@ -264,46 +284,44 @@ def _parse_pilot(ship_elem: ET.Element) -> dict:
                 pilot_id = post.get('component')
                 break
 
+    # If no aipilot post exists (unmanned ship, station drone, etc.) stop here.
     if not pilot_id:
         return {"name": None, "skills": {}}
 
-    # Step 2: find the NPC element matching that ID and read its name and seed.
-    # The seed is used in step 3 to locate the matching <person> for skills.
-    pilot_name = None
-    pilot_seed = None
+    # ── Step 2: find the NPC component and read name + skills ─────────────────
+    # We search every <component> element inside the ship for one whose 'id'
+    # matches the reference we just found. iter() searches all descendants,
+    # no matter how deeply nested they are.
     for npc in ship_elem.iter('component'):
-        if npc.get('id') == pilot_id and npc.get('class') == 'npc':
-            raw_name = npc.get('name')
-            # Some name attributes contain language reference strings like
-            # "{20101,22603}" instead of actual text — skip those.
-            if raw_name and not LANG_STRING_RE.match(raw_name):
-                pilot_name = raw_name
-            seed_elem = npc.find('npcseed')
-            if seed_elem is not None:
-                pilot_seed = seed_elem.get('seed')
-            break
+        if npc.get('id') != pilot_id or npc.get('class') != 'npc':
+            continue  # wrong element — keep searching
 
-    if not pilot_name:
-        return {"name": None, "skills": {}}
+        # The pilot's name is an attribute on the component element itself.
+        # Some names in the save are language reference tokens like "{20101,22603}"
+        # instead of real text — LANG_STRING_RE detects those so we can skip them.
+        raw_name = npc.get('name')
+        if not raw_name or LANG_STRING_RE.match(raw_name):
+            return {"name": None, "skills": {}}
 
-    # Step 3: match the pilot's seed to a <person> element to read skill values.
-    # Skills are stored separately from the NPC identity data, linked by seed.
-    skills = {}
-    if pilot_seed:
-        for person in ship_elem.iter('person'):
-            seed_elem = person.find('npcseed')
-            if seed_elem is not None and seed_elem.get('seed') == pilot_seed:
-                skills_elem = person.find('skills')
-                if skills_elem is not None:
-                    skills = {
-                        "piloting":    int(skills_elem.get('piloting',    0)),
-                        "management":  int(skills_elem.get('management',  0)),
-                        "morale":      int(skills_elem.get('morale',      0)),
-                        "engineering": int(skills_elem.get('engineering', 0)),
-                    }
-                break
+        # Skills live under <traits><skills> inside the NPC component.
+        # We only include skills that X4 actually wrote to the file — a missing
+        # attribute means 0 stars, so we let the caller treat absent keys as 0
+        # rather than storing redundant zeros for every possible skill.
+        skills = {}
+        traits = npc.find('traits')
+        if traits is not None:
+            skills_elem = traits.find('skills')
+            if skills_elem is not None:
+                for attr in ('piloting', 'management', 'morale', 'engineering', 'boarding'):
+                    val = skills_elem.get(attr)
+                    if val is not None:
+                        skills[attr] = int(val)
 
-    return {"name": pilot_name, "skills": skills}
+        return {"name": raw_name, "skills": skills}
+
+    # If we exhausted the whole ship subtree without finding the component,
+    # the save file reference is dangling — return empty rather than crashing.
+    return {"name": None, "skills": {}}
 
 
 def _parse_current_order(ship_elem: ET.Element) -> str:
@@ -598,37 +616,15 @@ def scan_ships(
                         code  = se.get('code',  '')
                         cls   = se.get('class', '')
 
-                        sector  = _parse_sector(se, sector_names)
-                        role    = extract_role(macro)
-                        size    = SIZE_LABELS.get(cls, cls)
-                        hull    = extract_faction_from_macro(macro)
-                        order   = _parse_current_order(se)
-                        pilot   = _parse_pilot(se)
-                        sw      = _parse_software(se)
-                        cmdr    = _parse_commander(se)
-
-                        # hull_hp is the ship's current HP as a raw float.
-                        # It's None when the ship is at full health — X4 only
-                        # writes the <hull value="..."/> element when the ship
-                        # has taken damage, so absence means undamaged.
-                        hull_hp = _parse_hull(se)
-
-                        # Look up the base max hull for this ship type from
-                        # SHIP_STATS. If the macro isn't in the table (e.g. a
-                        # modded ship or a macro we haven't extracted yet),
-                        # max_hull stays None and we fall back to showing raw HP.
-                        max_hull = SHIP_STATS.get(macro, {}).get("max_hull")
-
-                        # Compute hull as a percentage of max.
-                        # Only possible when both values are available — hull_hp
-                        # being None means full health (100%), and max_hull being
-                        # None means we don't have the data to calculate it.
-                        if hull_hp is None:
-                            hull_pct = 100.0          # no <hull> element = undamaged
-                        elif max_hull:
-                            hull_pct = (hull_hp / max_hull) * 100.0
-                        else:
-                            hull_pct = None           # can't calculate without max
+                        # ── Fields extracted for every ship ────────────────
+                        # These are cheap lookups needed by both player and
+                        # NPC ship entries, so we always compute them up front
+                        # rather than duplicating the calls in each branch below.
+                        sector = _parse_sector(se, sector_names)
+                        role   = extract_role(macro)
+                        size   = SIZE_LABELS.get(cls, cls)
+                        hull   = extract_faction_from_macro(macro)
+                        order  = _parse_current_order(se)
 
                         # ── Ship name resolution ───────────────────────────
                         # Priority order:
@@ -651,33 +647,75 @@ def scan_ships(
                             # This always returns a string, never None.
                             name = resolve_ship_type(macro)
 
-                        entry = {
-                            "code":        code,
-                            "name":        name,
-                            "class":       cls,
-                            "size":        size,
-                            "macro":       macro,
-                            "role":        role,
-                            "hull_origin": hull,   # faction that built the ship (e.g. "Argon")
-                            "owner":       owner,
-                            "sector":      sector,
-                            "order":       order,
-                            "pilot":       pilot,
-                            "software":    sw,
-                            "commander":   cmdr,
-                            "hull_hp":     hull_hp,   # current HP float, or None if undamaged
-                            "hull_pct":    hull_pct,  # 0-100 float, or None if max unknown
-                            "max_hull":    max_hull,  # base max HP from ship macro, or None
-                        }
-
                         if owner == 'player':
-                            player_ships.append(entry)
+                            # ── Player-only extractions ────────────────────
+                            # Crew, software, and hull health are only relevant
+                            # for ships we own. We deliberately skip them for
+                            # NPC ships — calling _parse_pilot() on 1,000+ NPC
+                            # ships would waste time traversing subtrees whose
+                            # results we'd immediately throw away.
+                            pilot    = _parse_pilot(se)
+                            sw       = _parse_software(se)
+                            cmdr     = _parse_commander(se)
+
+                            # hull_hp is the ship's current HP as a raw float.
+                            # X4 only writes <hull value="..."/> when the ship
+                            # has taken damage — if the element is absent the
+                            # ship is undamaged, so we treat None as full health.
+                            hull_hp  = _parse_hull(se)
+
+                            # Look up the ship type's maximum HP from SHIP_STATS.
+                            # If the macro isn't in the table (e.g. a modded ship
+                            # or a newly added hull we haven't extracted yet),
+                            # max_hull stays None and we fall back to showing the
+                            # raw HP value instead of a percentage.
+                            max_hull = SHIP_STATS.get(macro, {}).get("max_hull")
+
+                            # Compute hull as a percentage of maximum.
+                            # Three possible outcomes:
+                            #   hull_hp is None  → ship is undamaged → 100%
+                            #   max_hull is None → we don't know the max → None
+                            #   both present     → calculate the percentage
+                            if hull_hp is None:
+                                hull_pct = 100.0
+                            elif max_hull:
+                                hull_pct = (hull_hp / max_hull) * 100.0
+                            else:
+                                hull_pct = None
+
+                            player_ships.append({
+                                "code":        code,
+                                "name":        name,
+                                "class":       cls,
+                                "size":        size,
+                                "macro":       macro,
+                                "role":        role,
+                                "hull_origin": hull,      # faction that manufactured the hull, e.g. "Argon"
+                                "owner":       owner,
+                                "sector":      sector,
+                                "order":       order,
+                                "pilot":       pilot,
+                                "software":    sw,
+                                "commander":   cmdr,
+                                "hull_hp":     hull_hp,   # current HP as a raw float, or None if undamaged
+                                "hull_pct":    hull_pct,  # 0–100 float, or None if max hull is unknown
+                                "max_hull":    max_hull,  # base max HP from the ship's macro, or None
+                            })
+                            # Also extract any ships docked inside this one.
+                            # Carriers hold fighter wings internally — those ships
+                            # are invisible to the main iterparse loop because the
+                            # inside_ship flag blocks their detection, so we pull
+                            # them from the buffered subtree separately.
                             player_ships.extend(
                                 _extract_docked_ships(se, sector, owner)
                             )
+
                         elif sector in context_sectors:
-                            # NPC ships get a slimmer dict — we don't extract
-                            # crew or software for ships we don't own.
+                            # ── NPC ship entry (slim) ──────────────────────
+                            # We only need enough data to show faction activity
+                            # in the UI — who is where and doing what. Crew and
+                            # hull health are omitted because we don't own these
+                            # ships and the extra parsing wouldn't be used.
                             npc_ships.append({
                                 "code":        code,
                                 "name":        name,
@@ -685,7 +723,7 @@ def scan_ships(
                                 "size":        size,
                                 "macro":       macro,
                                 "role":        role,
-                                "hull_origin": hull,
+                                "hull_origin": hull,      # faction that manufactured the hull
                                 "owner":       owner,
                                 "sector":      sector,
                                 "order":       order,
