@@ -3,7 +3,7 @@ import re
 import xml.etree.ElementTree as ET
 from data.wares import WARE_NAMES
 from data.factions import FACTION_NAMES, SKIP_FACTIONS, scale_reputation, reputation_label
-from scanner.language import macro_to_sector_name, resolve_sector_from_location
+from scanner.language import macro_to_sector_name, resolve_sector_from_location, open_save
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  STATION CLASS NAMES
@@ -147,7 +147,7 @@ def scan_save(file_path: pathlib.Path, sector_names: dict) -> dict:
     print(f"[Scanning] Pass 1 — player identity, credits, stations...")
 
     try:
-        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+        with open_save(file_path) as f:
             context = ET.iterparse(f, events=('start', 'end'))
 
             for event, elem in context:
@@ -266,7 +266,7 @@ def scan_reputation(file_path: pathlib.Path) -> list:
 
     print(f"[Scanning] Pass 2 — faction reputation...")
 
-    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+    with open_save(file_path) as f:
         context = ET.iterparse(f, events=('start', 'end'))
 
         for event, elem in context:

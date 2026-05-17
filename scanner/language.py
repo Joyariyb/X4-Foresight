@@ -1,8 +1,21 @@
 # ═════════════════════════════════════════════════════════════════════════════
 #  SECTION 1 — LANGUAGE FILE: SECTOR NAME RESOLUTION
 # ═════════════════════════════════════════════════════════════════════════════
+import contextlib
+import gzip
 import pathlib
 import re
+
+
+@contextlib.contextmanager
+def open_save(path: pathlib.Path):
+    """Opens an X4 save file for reading, handling both .xml and .xml.gz."""
+    if path.suffix == '.gz':
+        with gzip.open(path, 'rt', encoding='utf-8', errors='ignore') as f:
+            yield f
+    else:
+        with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+            yield f
 import xml.etree.ElementTree as ET
 
 def load_sector_names(lang_path: pathlib.Path) -> dict:

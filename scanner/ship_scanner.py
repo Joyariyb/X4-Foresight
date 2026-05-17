@@ -12,7 +12,7 @@
 import re
 import pathlib
 import xml.etree.ElementTree as ET
-from scanner.language import macro_to_sector_name
+from scanner.language import macro_to_sector_name, open_save
 from data.ships import SHIP_NAMES
 from data.ship_stats import SHIP_STATS  # static specs per macro (max hull, etc.)
 
@@ -536,7 +536,7 @@ def scan_ships(
 
     print("[Scanning] Ships — player fleet and context NPC ships...")
 
-    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+    with open_save(file_path) as f:
         context = ET.iterparse(f, events=('start', 'end'))
 
         for event, elem in context:

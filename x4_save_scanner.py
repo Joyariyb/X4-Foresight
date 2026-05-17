@@ -45,6 +45,7 @@ import pathlib
 import sys
 import time
 import traceback
+from datetime import datetime
 
 # Force UTF-8 output so Unicode box-drawing characters in display.py render
 # correctly regardless of the Windows console's default code page (cp1252).
@@ -69,8 +70,69 @@ from display          import display_results
 # ─────────────────────────────────────────────────────────────────────────────
 
 SCRIPT_DIR = pathlib.Path(__file__).parent
-SAVE_FILE  = SCRIPT_DIR / "save_001.xml"
 LANG_FILE  = SCRIPT_DIR / "0001-l044.xml"
+
+
+def select_save_file() -> pathlib.Path:
+    """
+    Interactive save file selector. Lists available X4 saves from the default
+    game directory and prompts the user to choose one, with a fallback to any
+    save_001.xml placed directly in the program folder.
+    """
+    x4_base   = pathlib.Path.home() / "Documents" / "Egosoft" / "X4"
+    saves_dir = None
+
+    if x4_base.exists():
+        for d in sorted(x4_base.iterdir()):
+            candidate = d / "save"
+            if candidate.is_dir():
+                saves_dir = candidate
+                break
+
+    manual_saves = []
+    auto_saves   = []
+    root_save    = SCRIPT_DIR / "save_001.xml"
+
+    if saves_dir:
+        manual_saves = sorted(saves_dir.glob("save_*.xml.gz"),     key=lambda p: p.name)
+        auto_saves   = sorted(saves_dir.glob("autosave_*.xml.gz"), key=lambda p: p.name)
+
+    all_saves = manual_saves + auto_saves
+
+    if not all_saves and not root_save.exists():
+        print("\n  [Error] No X4 save files found and no save_001.xml in program folder.")
+        sys.exit(1)
+
+    latest = max(all_saves, key=lambda p: p.stat().st_mtime) if all_saves else None
+
+    print()
+    print("  ── SELECT SAVE ────────────────────────────────────────────────────")
+    if saves_dir:
+        print(f"  Directory: {saves_dir}")
+        print()
+        for i, save in enumerate(all_saves, 1):
+            mtime = datetime.fromtimestamp(save.stat().st_mtime)
+            label = save.name.replace('.xml.gz', '')
+            tag   = "  ← latest" if save is latest else ""
+            print(f"  [{i:>2}]  {label:<20}  {mtime.strftime('%a %d %b  %H:%M')}{tag}")
+
+    if root_save.exists():
+        print(f"\n   [R]  Program folder  ({root_save.name})")
+
+    print()
+    prompt = f"  Select [1-{len(all_saves)} / L for latest / R for root folder]: "
+
+    while True:
+        choice = input(prompt).strip().upper()
+        if choice == 'L' and latest:
+            return latest
+        if choice == 'R' and root_save.exists():
+            return root_save
+        if choice.isdigit():
+            idx = int(choice)
+            if 1 <= idx <= len(all_saves):
+                return all_saves[idx - 1]
+        print("  Invalid selection, try again.")
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  RUN MODE
@@ -104,12 +166,8 @@ SHIP_SCAN_TIER = 1
 
 if __name__ == "__main__":
     try:
-        if not SAVE_FILE.exists():
-            print(f"Error: '{SAVE_FILE.name}' not found in the project folder.")
-            print(f"Expected location: {SAVE_FILE}")
-            print("Rename your unzipped X4 save to 'save_001.xml' and place it here.")
-            input("\nPress Enter to exit...")
-            exit(1)
+        SAVE_FILE = select_save_file()
+        print(f"\n  Loading: {SAVE_FILE.name}\n")
 
         # ── Sector names are always needed — both full and ships mode use them
         # to resolve human-readable sector names from macro strings.
