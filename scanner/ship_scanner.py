@@ -356,6 +356,22 @@ def _parse_commander(ship_elem: ET.Element) -> str | None:
     return None
 
 
+def _parse_hull(ship_elem: ET.Element) -> float | None:
+    """
+    Returns the ship's current hull HP, or None if the ship is at full health.
+
+    X4 only writes <hull value="..."/> when hull is below maximum — absence
+    of the element means the ship is undamaged.
+    """
+    hull_elem = ship_elem.find('hull')
+    if hull_elem is None:
+        return None
+    try:
+        return float(hull_elem.get('value', 0))
+    except (ValueError, TypeError):
+        return None
+
+
 def _parse_software(ship_elem: ET.Element) -> list[str]:
     """
     Returns a list of software ware IDs installed on the ship.
@@ -505,6 +521,12 @@ def scan_ships(
                         sw      = _parse_software(se)
                         cmdr    = _parse_commander(se)
 
+                        # hull_hp is the ship's current HP as a raw float.
+                        # It's None when the ship is at full health — X4 only
+                        # writes the <hull value="..."/> element when the ship
+                        # has taken damage, so absence means undamaged.
+                        hull_hp = _parse_hull(se)
+
                         # ── Ship name resolution ───────────────────────────
                         # Priority order:
                         #   1. Player-given custom name — the 'name' attribute
@@ -533,13 +555,14 @@ def scan_ships(
                             "size":        size,
                             "macro":       macro,
                             "role":        role,
-                            "hull_origin": hull,
+                            "hull_origin": hull,   # faction that built the ship (e.g. "Argon")
                             "owner":       owner,
                             "sector":      sector,
                             "order":       order,
                             "pilot":       pilot,
                             "software":    sw,
                             "commander":   cmdr,
+                            "hull_hp":     hull_hp, # current HP float, or None if undamaged
                         }
 
                         if owner == 'player':

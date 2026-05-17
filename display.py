@@ -164,9 +164,11 @@ def display_results(data: dict):
         )
         name_col = max(20, min(40, name_col + 1))
 
-        # Column headers — aligned to the data lines printed below
-        print(f"    {'Ship / Pilot':<{name_col}} {'Size':<4}  {'Role':<16}  {'Order':<22}  {'Hull'}")
-        print(f"    {'─' * name_col} {'─' * 4}  {'─' * 16}  {'─' * 22}  {'─' * 12}")
+        # Column headers — aligned to the data lines printed below.
+        # "Hull Origin" = the faction that manufactured the ship.
+        # "HP" = current hull hit points (blank means undamaged / full health).
+        print(f"    {'Ship / Pilot':<{name_col}} {'Size':<4}  {'Role':<16}  {'Order':<22}  {'Hull Origin':<14}  {'HP'}")
+        print(f"    {'─' * name_col} {'─' * 4}  {'─' * 16}  {'─' * 22}  {'─' * 14}  {'─' * 10}")
 
         for sector, ships in sectors_seen.items():
             ship_word = "ship" if len(ships) == 1 else "ships"
@@ -185,14 +187,24 @@ def display_results(data: dict):
                 # Flag non-standard hull origins (e.g. captured Xenon ships).
                 # We check against factions players can normally buy ships from
                 # — anything else is captured, gifted, or otherwise unusual.
-                hull = s["hull_origin"]
-                if hull.lower() not in ("argon", "teladi", "paranid", "split",
-                                        "terran", "boron", "antigone"):
-                    hull = f"★ {hull}"   # ★ makes captured ships immediately visible
+                hull_origin = s["hull_origin"]
+                if hull_origin.lower() not in ("argon", "teladi", "paranid", "split",
+                                               "terran", "boron", "antigone"):
+                    hull_origin = f"★ {hull_origin}"   # ★ makes captured ships immediately visible
+
+                # Build the HP display string.
+                # hull_hp is None when the ship is undamaged — X4 only writes
+                # the <hull> element when HP has dropped below maximum, so
+                # None means the ship is at full health, not that data is missing.
+                hull_hp = s.get("hull_hp")
+                if hull_hp is None:
+                    hp_str = "Full"              # explicitly confirm undamaged
+                else:
+                    hp_str = f"{hull_hp:,.0f} HP"   # e.g. "7,152 HP"
 
                 print(
                     f"  {connector} {display_name:<{name_col}} {s['size']:<4}  "
-                    f"{s['role']:<16}  {s['order']:<22}  {hull}"
+                    f"{s['role']:<16}  {s['order']:<22}  {hull_origin:<14}  {hp_str}"
                 )
 
                 # Pilot sub-line — only printed when a named pilot is assigned.

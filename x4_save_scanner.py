@@ -78,7 +78,7 @@ LANG_FILE  = SCRIPT_DIR / "0001-l044.xml"
 #  scanning stations and reputation on every test run.
 # ─────────────────────────────────────────────────────────────────────────────
 
-RUN_MODE = "full"  # "full" | "ships"
+RUN_MODE = "ships"  # "full" | "ships"
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  SHIP SCAN TIER
