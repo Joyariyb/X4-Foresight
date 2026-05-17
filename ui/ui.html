@@ -133,6 +133,12 @@
     .rep-bar-wrap { width: 80px; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; display: inline-block; vertical-align: middle; }
     .rep-bar { height: 100%; border-radius: 2px; }
 
+    /* ── HULL HEALTH BAR ── */
+    /* Used in the fleet table to show each ship's HP as a coloured progress bar.
+       Width is set inline by hullBar() based on the ship's hull_pct value. */
+    .hull-bar-wrap { width: 80px; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 3px; }
+    .hull-bar { height: 100%; border-radius: 2px; }
+
     /* ── LAYOUT ── */
     .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
@@ -269,21 +275,27 @@
           <div class="sec-title">Player Fleet</div>
           <div class="sec-line"></div>
           <span class="sort-label">Sort</span>
-          <select class="sort-select" onchange="setSort(this.value)">
+          <!-- sort-indicator shows the active sort key and direction arrow.
+               The select resets to "" after every pick so re-selecting the
+               same option always fires onchange and toggles direction. -->
+          <span id="sort-indicator" style="font-family:var(--font-mono);font-size:10px;color:var(--teal);flex-shrink:0">Role ↑</span>
+          <select class="sort-select" id="sort-select" onchange="setSort(this.value)">
+            <option value="" disabled selected hidden>Change…</option>
             <option value="role">Role</option>
             <option value="name">Name</option>
             <option value="size">Size</option>
             <option value="order">Order</option>
             <option value="sector">Sector</option>
-            <option value="hull_origin">Hull</option>
+            <option value="hull_origin">Hull Origin</option>
             <option value="pilot">Pilot</option>
+            <option value="health">Health</option>
           </select>
         </div>
         <div class="panel" style="overflow:auto; max-height: calc(100vh - 160px);">
           <table class="data-table" id="fleet-table">
             <thead>
               <tr>
-                <th>Code / Name</th><th>Size</th><th>Role</th><th>Hull</th>
+                <th>Code / Name</th><th>Size</th><th>Role</th><th>Hull / HP</th>
                 <th>Order</th><th>Sector</th><th>Pilot</th>
               </tr>
             </thead>
@@ -384,26 +396,90 @@
 
   function sign(n) { return n >= 0 ? `+${n.toFixed(2)}` : n.toFixed(2); }
 
+  function hullBar(pct, hullHp, maxHull) {
+    // pct is 100.0 for full health, 0–99.9 for damaged, >100 for hull-modded
+    // ships above their base max, or null if we couldn't calculate it.
+
+    if (pct === null || pct === undefined) {
+      // No percentage available — fall back to showing raw HP if we have it
+      const raw = (hullHp !== null && hullHp !== undefined)
+        ? Math.round(hullHp).toLocaleString() + " HP"
+        : "—";
+      return `<span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint)">${raw}</span>`;
+    }
+
+    // Clamp to 100 for the bar width — over-max ships still fill the bar
+    const barWidth = Math.min(pct, 100).toFixed(1);
+
+    // Color gradient: hue 0 = red (0%), hue 120 = green (100%) in HSL.
+    // Over 100% (hull mod pushes HP above base max) gets blue instead.
+    let color;
+    if (pct > 100) {
+      color = "#388bfd";                                // blue — above base max
+    } else {
+      const hue = (Math.min(pct, 100) / 100) * 120;   // 0 → red, 120 → green
+      color = `hsl(${hue.toFixed(0)},65%,50%)`;
+    }
+
+    // Label text: "Full" at 100%, integer percentage otherwise
+    const label = pct >= 100 ? "Full" : `${Math.round(pct)}%`;
+
+    // HP numbers below the label: "current / max HP" when we have the max,
+    // or just "current HP" when the macro wasn't in SHIP_STATS
+    let hpText = "";
+    if (maxHull !== null && maxHull !== undefined) {
+      // For full-health ships hull_hp is null in the data, so current = max
+      const current = (hullHp !== null && hullHp !== undefined)
+        ? Math.round(hullHp).toLocaleString()
+        : maxHull.toLocaleString();
+      hpText = `${current} / ${maxHull.toLocaleString()} HP`;
+    } else if (hullHp !== null && hullHp !== undefined) {
+      hpText = `${Math.round(hullHp).toLocaleString()} HP`;
+    }
+
+    return `
+      <div style="display:flex;align-items:baseline;gap:5px;margin-top:3px">
+        <span style="font-family:var(--font-mono);font-size:11px;font-weight:bold;color:${color}">${label}</span>
+        <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-faint)">${hpText}</span>
+      </div>
+      <div class="hull-bar-wrap">
+        <div class="hull-bar" style="width:${barWidth}%;background:${color}"></div>
+      </div>`;
+  }
+
   // ── FLEET SORT ────────────────────────────────────────────────────────────
-  // Tracks the current sort key and the full player ship list so that
-  // setSort() can re-render the table without re-running populate().
+  // currentSortKey  — which field we're sorting by
+  // currentSortDir  — 1 = ascending (A→Z, low→high), -1 = descending (Z→A, high→low)
+  // allPlayerShips  — full ship list kept so setSort() can re-render without
+  //                   re-running populate()
   let currentSortKey = 'role';
+  let currentSortDir = 1;
   let allPlayerShips = [];
 
-  // Returns a string value for a given ship and sort key, used for comparison.
-  // Pilot is a nested object so needs special handling.
+  // Returns a comparable value for a given ship and sort key.
+  // Numeric keys (size, health) return numbers so they sort correctly.
+  // String keys return lowercase strings. Null/missing values are pushed
+  // to the end of the list regardless of sort direction (handled in renderFleet).
   function sortValue(ship, key) {
-    if (key === 'pilot') return (ship.pilot && ship.pilot.name) ? ship.pilot.name : 'zzz';
-    if (key === 'size')  return { S: 0, M: 1, L: 2, XL: 3 }[ship.size] ?? 9;
+    if (key === 'pilot')  return (ship.pilot && ship.pilot.name) ? ship.pilot.name : null;
+    if (key === 'size')   return { S: 0, M: 1, L: 2, XL: 3 }[ship.size] ?? null;
+    if (key === 'health') return (ship.hull_pct !== null && ship.hull_pct !== undefined) ? ship.hull_pct : null;
     return (ship[key] || '').toString().toLowerCase();
   }
 
-  function renderFleet(ships, sortKey) {
+  function renderFleet(ships, sortKey, sortDir) {
     const sorted = [...ships].sort((a, b) => {
       const av = sortValue(a, sortKey);
       const bv = sortValue(b, sortKey);
-      if (av < bv) return -1;
-      if (av > bv) return  1;
+
+      // Always push null values to the bottom regardless of sort direction,
+      // so ships with missing data don't jump to the top when reversing.
+      if (av === null && bv === null) return 0;
+      if (av === null) return 1;
+      if (bv === null) return -1;
+
+      if (av < bv) return -1 * sortDir;
+      if (av > bv) return  1 * sortDir;
       return 0;
     });
 
@@ -422,7 +498,10 @@
         </td>
         <td class="mono" style="color:${sCol}">${s.size}</td>
         <td><i class="ti ${ROLE_ICONS[s.role]||'ti-rocket'}" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:var(--text-faint)"></i>${s.role}</td>
-        <td>${hullBadge(s.hull_origin)}</td>
+        <td>
+          ${hullBadge(s.hull_origin)}
+          ${hullBar(s.hull_pct, s.hull_hp, s.max_hull)}
+        </td>
         <td><i class="ti ${oIcon}" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:${oCol}"></i><span style="color:${oCol}">${s.order}</span></td>
         <td style="color:var(--text-dim)"><i class="ti ti-map-pin" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:var(--text-faint)"></i>${s.sector}</td>
         <td style="color:var(--text-faint)"><i class="ti ti-user" style="font-size:12px;vertical-align:-2px;margin-right:4px"></i>${pilot}</td>
@@ -430,12 +509,29 @@
     }).join("");
   }
 
-  // Called when the sort dropdown changes. Re-renders the fleet table with
-  // the newly selected sort key. The <select> element manages its own
-  // visual state so no button highlighting is needed here.
+  // Called when the sort dropdown changes.
+  // If the same key is picked again, the direction is reversed (toggle).
+  // If a new key is picked, direction resets: health defaults to descending
+  // (highest first), all other fields default to ascending.
   function setSort(key) {
-    currentSortKey = key;
-    renderFleet(allPlayerShips, currentSortKey);
+    if (key === currentSortKey) {
+      currentSortDir *= -1;               // same key — flip direction
+    } else {
+      currentSortKey = key;
+      currentSortDir = key === 'health' ? -1 : 1;  // health: high→low first
+    }
+
+    // Reset the select back to its placeholder so the user can pick the
+    // same option again next time and onchange will fire.
+    document.getElementById('sort-select').value = '';
+
+    // Update the indicator label next to the dropdown
+    const LABELS = { role:'Role', name:'Name', size:'Size', order:'Order',
+                     sector:'Sector', hull_origin:'Hull Origin', pilot:'Pilot', health:'Health' };
+    const arrow = currentSortDir === 1 ? '↑' : '↓';
+    document.getElementById('sort-indicator').textContent = `${LABELS[key] || key} ${arrow}`;
+
+    renderFleet(allPlayerShips, currentSortKey, currentSortDir);
   }
 
 
@@ -526,9 +622,9 @@
       }).join("");
 
     // Store ships for re-use by setSort(), then do the initial render
-    // using the default sort key (role).
+    // using the default sort key and direction.
     allPlayerShips = players;
-    renderFleet(allPlayerShips, currentSortKey);
+    renderFleet(allPlayerShips, currentSortKey, currentSortDir);
 
     // Stations
     document.getElementById("stations-grid").innerHTML = stations.map(s => {
