@@ -21,16 +21,19 @@ A guide to how the system fits together: data flow, module relationships, the ce
 
 ## 1. System Overview
 
-X4 Foresight has two independent outputs from a single scan pipeline:
+X4 Foresight has two entry points that share the same scanner pipeline:
 
-- **Console report** — printed immediately after scanning via `display.py`
+- **CLI scanner** (`x4_save_scanner.py`) — interactive console save selector, runs the full pipeline, prints a report, writes `x4_empire_state.json`.
+- **Desktop UI** (`ui/main_ui.py`) — Qt save selector dialog, runs the same pipeline in a background thread, then loads the JSON into the dashboard.
+
+Both entry points auto-discover saves from `~/Documents/Egosoft/X4/<id>/save/` and open compressed `.xml.gz` files directly — no manual unzipping is required. The scanner outputs two artifacts:
+
+- **Console report** — printed immediately after scanning via `display.py` (CLI only)
 - **JSON export** — written to `x4_empire_state.json` via `export/jsonexport.py`, consumed by both the desktop UI and AI prompts
 
-The scanner itself never touches the UI. The UI is a completely separate process that reads the JSON file on launch. This means you can run the scanner headlessly, inspect the JSON, paste it into an AI prompt, and only optionally open the UI — all from the same output file.
-
 ```
-save_001.xml ──► Scanner Pipeline ──► game_data dict ──┬──► Console Report
-                                                        └──► x4_empire_state.json ──► UI / AI Prompt
+*.xml.gz ──► Save selector ──► Scanner Pipeline ──► game_data dict ──┬──► Console Report (CLI)
+                                                                      └──► x4_empire_state.json ──► UI / AI Prompt
 ```
 
 ---
@@ -47,20 +50,20 @@ x4_save_scanner.py
 │         returns { lang_id: sector_name }
 │
 ├── scan_save()                  scanner/scanner.py       [Pass 1]
-│     ├── streams save_001.xml
+│     ├── streams save file (via open_save)
 │     ├── calls macro_to_sector_name()
 │     ├── calls resolve_sector_from_location()
 │     └── calls parse_production_from_construction()
 │         returns game_data (player, stations)
 │
 ├── scan_reputation()            scanner/scanner.py       [Pass 2]
-│     ├── streams save_001.xml again
+│     ├── streams save file (via open_save) again
 │     ├── calls scale_reputation()      data/factions.py
 │     └── calls reputation_label()      data/factions.py
 │         returns reputation list
 │
 ├── scan_ships()                 scanner/ship_scanner.py  [Pass 3]
-│     ├── streams save_001.xml again
+│     ├── streams save file (via open_save) again
 │     ├── calls macro_to_sector_name()
 │     ├── calls extract_role()
 │     ├── calls extract_faction_from_macro()

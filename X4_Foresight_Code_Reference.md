@@ -35,14 +35,19 @@ The main entry point for the scanner pipeline. Run this directly from the projec
 | Constant | Type | Description |
 |---|---|---|
 | `SCRIPT_DIR` | `Path` | Absolute path to the project root, derived from `__file__`. |
-| `SAVE_FILE` | `Path` | Expected location of the unzipped save file (`save_001.xml`). |
 | `LANG_FILE` | `Path` | Expected location of the X4 English language file (`0001-l044.xml`). |
 | `RUN_MODE` | `str` | Controls which passes execute. `"full"` runs the complete pipeline; `"ships"` skips Pass 1 and Pass 2 and scans ships only. |
 | `SHIP_SCAN_TIER` | `int` | Controls NPC ship inclusion in full mode. `1` = player ships only, `2` = + NPC ships in station sectors, `3` = + NPC ships in all player ship sectors. Only meaningful when `RUN_MODE = "full"`. |
 
+**`select_save_file() -> pathlib.Path`**
+
+Interactive console save selector. Discovers saves from `~/Documents/Egosoft/X4/<id>/save/` and lists them with timestamps. The user enters a number (`1–N`), `L` for the latest save, or `R` to use `save_001.xml` in the project root (fallback). Exits with code 1 if no saves and no root fallback are found.
+
 **Execution flow**
 
-In `"full"` mode the script runs four sequential passes and then exports:
+On launch, `select_save_file()` runs first. The chosen path is passed to all subsequent scanner calls.
+
+In `"full"` mode the script then runs four sequential passes and exports:
 
 1. `load_sector_names()` — loads the language file for human-readable sector names.
 2. `scan_save()` — Pass 1, extracts player identity, credits, and stations.
@@ -608,7 +613,84 @@ ships
 
 ## 7. `ui/main_ui.py`
 
-PyQt6 desktop UI. Loads `x4_empire_state.json` and renders the HTML dashboard (`ui/ui.html`) in a native window using `QWebEngineView`. Empire data is passed from Python to JavaScript via a `QWebChannel` bridge.
+PyQt6 desktop UI. Presents a save selector dialog, runs the scanner pipeline in a background thread, then renders the HTML dashboard (`ui/ui.html`) in a native Qt window. Empire data is passed from Python to JavaScript via a `QWebChannel` bridge.
+
+---
+
+### `find_saves()`
+
+```python
+def find_saves() -> list[pathlib.Path]
+```
+
+Discovers X4 save files from the default game directory (`~/Documents/Egosoft/X4/<id>/save/`). Returns manual saves (`save_*.xml.gz`) followed by autosaves (`autosave_*.xml.gz`), each group sorted by slot number. Returns an empty list if the directory is not found.
+
+---
+
+### Class: `SaveSelectDialog`
+
+```python
+class SaveSelectDialog(QDialog)
+```
+
+Modal dialog that lists all saves returned by `find_saves()` and lets the user pick one to scan. The most recently modified save is pre-selected. Double-clicking a row or pressing **Scan** accepts; **Cancel** rejects.
+
+**Constructor**
+
+```python
+def __init__(self, parent=None)
+```
+
+**Methods**
+
+`selected_path() -> pathlib.Path | None`
+Returns the `pathlib.Path` of the selected save, or `None` if no row is selected.
+
+---
+
+### Class: `ScanWorker`
+
+```python
+class ScanWorker(QThread)
+```
+
+Background thread that runs the full scanner pipeline (`load_sector_names` → `scan_save` → `scan_reputation` → `scan_ships` → `export_json`) without blocking the Qt event loop. Emits three signals:
+
+| Signal | Payload | When |
+|---|---|---|
+| `progress` | `str` — status message | After each pipeline step |
+| `finished` | — | Scan and JSON export complete |
+| `error` | `str` — traceback | On any unhandled exception |
+
+**Constructor**
+
+```python
+def __init__(self, save_path: pathlib.Path)
+```
+
+| Parameter | Type | Description |
+|---|---|---|
+| `save_path` | `pathlib.Path` | Path to the `.xml.gz` save file to scan. |
+
+---
+
+### Class: `ScanProgressDialog`
+
+```python
+class ScanProgressDialog(QDialog)
+```
+
+Modal dialog shown while `ScanWorker` runs. Displays an indeterminate progress bar and a status label updated via the worker's `progress` signal. The close button is disabled during scanning. Accepts when `finished` fires; rejects on `error`, storing the traceback in `error_msg`.
+
+**Constructor**
+
+```python
+def __init__(self, save_path: pathlib.Path, parent=None)
+```
+
+**Attributes**
+
+`error_msg: str | None` — set to the error traceback if the scan failed; `None` on success.
 
 ---
 
@@ -650,31 +732,42 @@ Default size is 1200×800 with a minimum of 900×600.
 **Constructor**
 
 ```python
-def __init__(self, data: dict, html_path: str)
+def __init__(self, data: dict)
 ```
 
 | Parameter | Type | Description |
 |---|---|---|
 | `data` | `dict` | The loaded empire state dictionary, passed to `EmpireBridge`. |
-| `html_path` | `str` | Absolute path to `ui/ui.html`. |
 
 ---
 
 ### `load_json(path)`
 
 ```python
-def load_json(path: str) -> dict
+def load_json(path: pathlib.Path) -> dict
 ```
 
-Loads and parses a JSON file. Exits with code 1 if the file is not found.
+Loads and parses a JSON file.
 
 **Parameters**
 
 | Name | Type | Description |
 |---|---|---|
-| `path` | `str` | Path to the JSON file. |
+| `path` | `pathlib.Path` | Path to the JSON file. |
 
 **Returns** `dict` — parsed JSON content.
+
+---
+
+### `run_scan(parent=None)`
+
+```python
+def run_scan(parent=None) -> dict | None
+```
+
+Convenience function that sequences the save selector and progress dialog. Shows `SaveSelectDialog`; if accepted, runs `ScanProgressDialog`; if the scan succeeds, reads `x4_empire_state.json` from disk and returns it. Returns `None` if the user cancels at any point or the scan fails (errors are shown in a `QMessageBox`).
+
+The JSON is read back from disk rather than passed in memory because `export_json()` restructures `game_data` into the format `ui.html` expects.
 
 ---
 
@@ -684,11 +777,10 @@ Loads and parses a JSON file. Exits with code 1 if the file is not found.
 def main()
 ```
 
-Entry point for the UI. Parses the `--json` command-line argument (defaulting to `<project_root>/x4_empire_state.json`), loads the empire data, resolves the path to `ui.html`, and launches the Qt application.
+Entry point for the UI. Launch behaviour depends on whether `x4_empire_state.json` already exists:
 
-**CLI argument**
-
-`--json <path>` — optional path to an empire state JSON file.
+- **JSON exists** — asks the user whether to run a new scan. Choosing **No** loads the existing JSON immediately. Choosing **Yes** opens the save selector; if the user cancels, falls back to the existing JSON.
+- **No JSON** — goes straight to the save selector. If the user cancels with no data to show, exits with code 0.
 
 ---
 
