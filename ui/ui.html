@@ -26,6 +26,7 @@
       --green-dim:    rgba(63,185,80,0.10);
       --purple:       #a371f7;
       --yellow:       #e3b341;
+      --lime:         #39ff14;
       --text:         #c9d1d9;
       --text-dim:     #8b949e;
       --text-faint:   #3d444d;
@@ -141,8 +142,8 @@
     #hull-tip {
       position: fixed; display: none; padding: 3px 8px;
       background: var(--bg-panel); border: 1px solid var(--border);
-      font-family: var(--font-mono); font-size: 10px; white-space: nowrap;
-      border-radius: 2px; pointer-events: none; z-index: 1000;
+      font-family: var(--font-mono); font-size: 13px; color: var(--lime);
+      white-space: nowrap; border-radius: 2px; pointer-events: none; z-index: 1000;
     }
 
     /* ── LAYOUT ── */
@@ -493,6 +494,29 @@
     return html;
   }
 
+  // Builds the inner HTML for the pilot skills hover tooltip.
+  // Renders each skill as a labelled row of stars with the raw point value dim beside it.
+  // Only skills present in the data are shown — boarding is rare, morale is always there.
+  function pilotTipHtml(skills) {
+    const SKILL_ORDER = [
+      ['piloting',    'Piloting'],
+      ['management',  'Management'],
+      ['engineering', 'Engineering'],
+      ['morale',      'Morale'],
+      ['boarding',    'Boarding'],
+    ];
+    const rows = SKILL_ORDER.filter(([key]) => skills[key] != null);
+    if (!rows.length) return '—';
+    return rows.map(([key, label]) => {
+      const pts = skills[key];
+      return `<div style="display:flex;align-items:center;gap:8px">` +
+             `<span style="min-width:82px;letter-spacing:0.06em;text-transform:uppercase">${label}</span>` +
+             `<span style="letter-spacing:-1px">${skillStars(pts)}</span>` +
+             `<span style="min-width:16px;text-align:right">${pts}</span>` +
+             `</div>`;
+    }).join('');
+  }
+
   // ── FLEET SORT ────────────────────────────────────────────────────────────
   // currentSortKey  — which field we're sorting by
   // currentSortDir  — 1 = ascending (A→Z, low→high), -1 = descending (Z→A, high→low)
@@ -540,10 +564,10 @@
       // piloting pts from the scanner (null if pilot has no skills data)
       const plt = (s.pilot && s.pilot.skills && s.pilot.skills.piloting != null)
         ? s.pilot.skills.piloting : null;
-      // Wrap stars in a span with data-hull-tip so the existing tooltip listener
-      // picks it up — same pattern as the hull health bar hover.
-      const starsHtml = plt !== null
-        ? ` <span data-hull-tip="${plt} pts" style="cursor:default;letter-spacing:-1px;vertical-align:middle;font-size:13px">${skillStars(plt)}</span>`
+      // Stars glyphs without the tooltip attribute — the tooltip is placed on
+      // the outer wrapper span below so it covers both the name and the stars.
+      const starsGlyphs = plt !== null
+        ? ` <span style="letter-spacing:-1px;vertical-align:middle;font-size:13px">${skillStars(plt)}</span>`
         : '';
       return `<tr>
         <td style="white-space:nowrap">
@@ -555,7 +579,11 @@
         <td>${hullBar(s.hull_pct, s.hull_hp, s.max_hull)}</td>
         <td><i class="ti ${oIcon}" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:${oCol}"></i><span style="color:${oCol}">${s.order}</span></td>
         <td style="color:var(--text-dim)"><i class="ti ti-map-pin" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:var(--text-faint)"></i>${s.sector}</td>
-        <td style="color:var(--text-faint);white-space:nowrap"><i class="ti ti-user" style="font-size:12px;vertical-align:-2px;margin-right:4px"></i>${pilot}${starsHtml}</td>
+        <td style="color:var(--text-faint);white-space:nowrap"><i class="ti ti-user" style="font-size:12px;vertical-align:-2px;margin-right:4px"></i>${
+          (s.pilot && s.pilot.skills && Object.keys(s.pilot.skills).length)
+            ? `<span data-pilot-skills='${JSON.stringify(s.pilot.skills)}' style="cursor:default">${pilot}${starsGlyphs}</span>`
+            : pilot
+        }</td>
       </tr>`;
     }).join("");
   }
@@ -946,10 +974,17 @@
   (function() {
     const tip = document.getElementById('hull-tip');
     document.addEventListener('mousemove', function(e) {
-      const el = e.target.closest('[data-hull-tip]');
+      const el = e.target.closest('[data-hull-tip],[data-pilot-skills]');
       if (!el) { tip.style.display = 'none'; return; }
-      tip.textContent = el.dataset.hullTip;
-      tip.style.color = el.dataset.hullColor || 'var(--text)';
+      // Pilot skills tooltip: render multi-line HTML with stars per skill.
+      // Hull tip: plain text coloured to match the bar.
+      if (el.dataset.pilotSkills) {
+        tip.innerHTML = pilotTipHtml(JSON.parse(el.dataset.pilotSkills));
+        tip.style.color = '';   // let CSS --lime default show through
+      } else {
+        tip.textContent = el.dataset.hullTip;
+        tip.style.color = el.dataset.hullColor || ''; // hull bars override with health colour
+      }
       tip.style.display = 'block';
       const x = Math.min(e.clientX + 14, window.innerWidth  - tip.offsetWidth  - 8);
       const y = Math.max(e.clientY - 32, 8);
