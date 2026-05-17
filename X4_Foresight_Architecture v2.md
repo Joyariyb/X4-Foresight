@@ -21,19 +21,16 @@ A guide to how the system fits together: data flow, module relationships, the ce
 
 ## 1. System Overview
 
-X4 Foresight has two entry points that share the same scanner pipeline:
+X4 Foresight has two independent outputs from a single scan pipeline:
 
-- **CLI scanner** (`x4_save_scanner.py`) — interactive console save selector, runs the full pipeline, prints a report, writes `x4_empire_state.json`.
-- **Desktop UI** (`ui/main_ui.py`) — Qt save selector dialog, runs the same pipeline in a background thread, then loads the JSON into the dashboard.
-
-Both entry points auto-discover saves from `~/Documents/Egosoft/X4/<id>/save/` and open compressed `.xml.gz` files directly — no manual unzipping is required. The scanner outputs two artifacts:
-
-- **Console report** — printed immediately after scanning via `display.py` (CLI only)
+- **Console report** — printed immediately after scanning via `display.py`
 - **JSON export** — written to `x4_empire_state.json` via `export/jsonexport.py`, consumed by both the desktop UI and AI prompts
 
+The scanner itself never touches the UI. The UI is a completely separate process that reads the JSON file on launch. This means you can run the scanner headlessly, inspect the JSON, paste it into an AI prompt, and only optionally open the UI — all from the same output file.
+
 ```
-*.xml.gz ──► Save selector ──► Scanner Pipeline ──► game_data dict ──┬──► Console Report (CLI)
-                                                                      └──► x4_empire_state.json ──► UI / AI Prompt
+save_001.xml ──► Scanner Pipeline ──► game_data dict ──┬──► Console Report
+                                                        └──► x4_empire_state.json ──► UI / AI Prompt
 ```
 
 ---
@@ -50,20 +47,20 @@ x4_save_scanner.py
 │         returns { lang_id: sector_name }
 │
 ├── scan_save()                  scanner/scanner.py       [Pass 1]
-│     ├── streams save file (via open_save)
+│     ├── streams save_001.xml
 │     ├── calls macro_to_sector_name()
 │     ├── calls resolve_sector_from_location()
 │     └── calls parse_production_from_construction()
 │         returns game_data (player, stations)
 │
 ├── scan_reputation()            scanner/scanner.py       [Pass 2]
-│     ├── streams save file (via open_save) again
+│     ├── streams save_001.xml again
 │     ├── calls scale_reputation()      data/factions.py
 │     └── calls reputation_label()      data/factions.py
 │         returns reputation list
 │
 ├── scan_ships()                 scanner/ship_scanner.py  [Pass 3]
-│     ├── streams save file (via open_save) again
+│     ├── streams save_001.xml again
 │     ├── calls macro_to_sector_name()
 │     ├── calls extract_role()
 │     ├── calls extract_faction_from_macro()
@@ -71,9 +68,7 @@ x4_save_scanner.py
 │     ├── calls _parse_pilot()
 │     ├── calls _parse_current_order()
 │     ├── calls _parse_commander()
-│     ├── calls _parse_software()
-│     ├── calls _parse_hull()
-│     └── looks up SHIP_STATS           data/ship_stats.py
+│     └── calls _parse_software()
 │         returns { player_ships, npc_ships }
 │
 ├── display_results()            display.py
@@ -107,7 +102,7 @@ A short, focused pass that stops as soon as the player faction block is fully re
 
 **Pass 3 — Ships** (`scan_ships`)
 
-The most complex pass. Tracks zone macros to resolve ship sectors (ships are nested under zones, not sectors directly), uses the same buffering technique as Pass 1 to preserve ship child elements, and applies name resolution in priority order. For each ship, hull health is extracted from the `<hull value="..."/>` child element (absent when undamaged) and the base max hull is looked up from `SHIP_STATS` in `data/ship_stats.py` to compute a percentage. Collects NPC ships only for sectors in `context_sectors`.
+The most complex pass. Tracks zone macros to resolve ship sectors (ships are nested under zones, not sectors directly), uses the same buffering technique as Pass 1 to preserve ship child elements, and applies name resolution in priority order. Collects NPC ships only for sectors in `context_sectors`.
 
 ---
 
@@ -156,16 +151,18 @@ game_data = {
 
         "player_ships": [
             {
-                "code":        str,          # Ship identifier code, e.g. "LSS-543"
-                "name":        str | None,   # Custom name, type name, or None
-                "class":       str,          # "ship_s" | "ship_m" | "ship_l" | "ship_xl"
-                "size":        str,          # "S" | "M" | "L" | "XL"
-                "macro":       str,          # Raw macro string
-                "role":        str,          # e.g. "Freighter", "Miner (Solid)", "Fighter"
-                "hull_origin": str,          # Faction that built the hull, e.g. "Argon", "Xenon"
-                "owner":       str,          # Always "player" for player ships
-                "sector":      str,          # Human-readable sector name
-                "order":       str,          # e.g. "Mining", "Trading", "Idle"
+                "code":        str,   # Ship identifier code, e.g. "LSS-543"
+                "name":        str,   # Display name — always a non-empty string.
+                                      # Priority: player custom name → SHIP_NAMES lookup
+                                      # → macro-derived fallback (never None or empty).
+                "class":       str,   # "ship_s" | "ship_m" | "ship_l" | "ship_xl"
+                "size":        str,   # "S" | "M" | "L" | "XL"
+                "macro":       str,   # Raw macro string
+                "role":        str,   # e.g. "Freighter", "Miner (Solid)", "Fighter"
+                "hull_origin": str,   # Faction of original hull, e.g. "Argon", "Xenon"
+                "owner":       str,   # Always "player" for player ships
+                "sector":      str,   # Human-readable sector name
+                "order":       str,   # e.g. "Mining", "Trading", "Idle"
                 "pilot": {
                     "name":   str | None,
                     "skills": {
@@ -178,9 +175,6 @@ game_data = {
                 },
                 "software":   list[str],    # Installed software ware IDs
                 "commander":  str | None,   # Commander connection reference, or None
-                "hull_hp":    float | None, # Current hull HP; None means undamaged (full health)
-                "hull_pct":   float | None, # HP as % of base max (0–100+); None if max unknown
-                "max_hull":   int | None,   # Base max HP from SHIP_STATS; None if macro not found
             },
             # ...
         ],
@@ -203,13 +197,15 @@ game_data = {
 }
 ```
 
-### Hull health fields explained
+### Ship name resolution
 
-X4 only writes `<hull value="..."/>` inside a ship's save data when the ship has taken damage. Absence of the element means the ship is at full health. This is why `hull_hp` is `None` (not `0`) for undamaged ships.
+The `name` field on player ships is always a non-empty string. The scanner resolves it in this priority order:
 
-`hull_pct` is derived by dividing `hull_hp` by `max_hull` from `data/ship_stats.py`. If a ship's macro is not in `SHIP_STATS` (e.g. a modded ship or a new DLC ship not yet extracted), `hull_pct` will be `None` even if the ship is damaged.
+1. **Player custom name** — the `name` attribute on the `<component>` element, set via the in-game UI. Unresolved language reference strings (matching `^\{\d+,\d+\}$`) are detected and skipped.
+2. **`SHIP_NAMES` lookup** — `resolve_ship_type()` checks `data/ships.py` for an exact match on the macro string, returning the in-game display name (e.g. "Magpie Sentinel").
+3. **Macro-derived fallback** — if the macro is absent from `SHIP_NAMES` (e.g. a newly added DLC ship), `resolve_ship_type()` constructs a name from the macro's own structure: faction + size + role + variant letter (e.g. "Argon L Freighter (B)").
 
-`hull_pct` can exceed 100% when a hull capacity mod is installed — the mod raises the ship's effective max above the base value stored in `SHIP_STATS`, so the scanner's percentage calculation overshoots. See section 10 for details.
+`name` is therefore never `None` or empty. The display fallback to the ship `code` that previously existed in `display.py` is retained as a safety net but is not expected to trigger.
 
 ---
 
@@ -229,8 +225,7 @@ The JSON export is a restructured version of `game_data` with two pre-computed s
 
   "ships": {
 
-    "player_ships": [ ...same shape as game_data.ships.player_ships...
-                       including hull_hp, hull_pct, max_hull ],
+    "player_ships": [ ...same shape as game_data.ships.player_ships... ],
 
     "fleet_summary": {
       "total":     int,
@@ -254,8 +249,6 @@ The JSON export is a restructured version of `game_data` with two pre-computed s
 ```
 
 The `fleet_summary` and `npc_summary` blocks are pre-digested so that an AI assistant can get an immediate high-level picture without counting individual ships, and so the UI can populate summary cards without iterating the full ship list on every render.
-
-The `player_ships` list is passed through from the scanner without filtering, so all fields including `hull_hp`, `hull_pct`, and `max_hull` are present in the JSON automatically.
 
 ---
 
@@ -360,17 +353,22 @@ All rendering happens in a single call to `populate(data)` after the JSON is rec
 6. Renders the five summary cards (Credits, Total Ships, Stations, Hostile Hulls, Waiting)
 7. Renders the Fleet by Role table
 8. Renders the Fleet by Order table
-9. Renders the full fleet table (one row per player ship) via `renderFleet()`
+9. Stores the full player ship list in `allPlayerShips` and calls `renderFleet()` with the default sort key (`role`)
 10. Renders the stations grid (one panel card per station)
 11. Renders the faction standings table
 12. Generates and renders alert messages
 13. Hides the loading spinner and shows the main shell
 
-### Fleet sort
+### Fleet table sorting
 
-The fleet table supports sorting by any column. Sort state is tracked in two module-level variables: `currentSortKey` and `currentSortDir` (1 = ascending, −1 = descending). The sort dropdown resets to a neutral placeholder after every pick so that re-selecting the same option always fires `onchange` and toggles the direction. A `sort-indicator` label next to the dropdown shows the active sort key and arrow (↑/↓) at all times.
+The Fleet tab includes a sort dropdown that lets the user re-order the table without re-running `populate()`. Sorting is handled by two module-level variables and one function:
 
-Null values (ships with missing data for the selected field) always sort to the bottom regardless of direction. The **Health** sort defaults to descending on first pick (highest HP first) and toggles from there.
+- `allPlayerShips` — stores the full player ship array after `populate()` runs
+- `currentSortKey` — tracks the active sort field (`role` by default)
+- `renderFleet(ships, sortKey)` — sorts a copy of the ship array by the given key and re-renders the `<tbody>` of `#fleet-table`
+- `setSort(key)` — called by the `<select>` `onchange` handler; updates `currentSortKey` and calls `renderFleet()`
+
+Supported sort keys: `role`, `name`, `size`, `order`, `sector`, `hull_origin`, `pilot`. Size is sorted by the logical order S < M < L < XL rather than alphabetically. Pilot sort places ships without a named pilot at the end.
 
 ### Alert logic
 
@@ -384,13 +382,10 @@ Three alert conditions are checked in `populate`:
 
 ### Icon and colour lookup tables
 
-Rather than inline logic, the UI uses flat lookup objects and sets defined at the top of the script block. To add support for a new role or order, add an entry to the relevant table:
+Rather than inline logic, the UI uses flat lookup objects defined at the top of the script block. To add support for a new role or order, add an entry to the relevant table:
 
 | Table | Purpose |
 |---|---|
-| `HOSTILE_ORIGINS` | Set of hull-origin faction names treated as hostile (`Xenon`, `Yaki`, `Kha'ak`) — drives the hostile hulls alert and badge styling |
-| `MILITARY_ROLES` | Set of role strings classified as military (`Fighter`, `Heavy Fighter`, `Corvette`, `Destroyer`, `Frigate`, `Gunboat`) — used to populate the Military sidebar count and fleet category |
-| `MINER_ROLES` | Set of mining role strings (`Miner (Solid)`, `Miner (Liquid)`) — used to detect idle miner alerts |
 | `ROLE_ICONS` | Maps role strings to Tabler icon class names |
 | `ORDER_ICONS` | Maps order strings to Tabler icon class names |
 | `ORDER_COLOURS` | Maps order strings to CSS colour variables |
@@ -403,7 +398,6 @@ Rather than inline logic, the UI uses flat lookup objects and sets defined at th
 |---|---|
 | `fmtCredits(n)` | Formats a credit value as `1.2M Cr`, `430.5k Cr`, or `n Cr` |
 | `hullBadge(origin)` | Returns a coloured `<span class="badge">` for a hull origin faction; prefixes hostile origins with `*` |
-| `hullBar(pct, hullHp, maxHull)` | Returns an HTML block containing a labelled percentage bar for hull health. Bar colour graduates from red (0%) through amber to green (100%); ships above 100% (hull mod installed) render in blue. Shows `current / max HP` text below the label. Degrades gracefully when `pct` or `maxHull` is null. |
 | `tierBadge(tier)` | Returns a coloured `<span class="badge">` for a reputation tier |
 | `repBar(value)` | Returns an inline HTML reputation bar scaled to the −30..+30 range, coloured green for positive and red for negative |
 | `sign(n)` | Formats a float with an explicit `+` or `−` prefix |
@@ -421,23 +415,18 @@ x4_save_scanner.py
 │   └── data/wares.py
 ├── scanner/ship_scanner.py
 │   ├── scanner/language.py
-│   ├── data/ships.py
-│   └── data/ship_stats.py
+│   └── data/ships.py
 ├── export/jsonexport.py
 └── display.py
 
 ui/main_ui.py          (separate process)
 └── reads x4_empire_state.json
 
-generate_ship_names.py    (one-time utility, formerly in Legacy/)
+Legacy/generate_ship_names.py    (one-time utility)
 └── writes data/ships.py
-
-generate_ship_stats.py    (one-time utility)
-├── reads ship xml/**/*.xml
-└── writes data/ship_stats.py
 ```
 
-`data/factions.py`, `data/wares.py`, `data/ships.py`, and `data/ship_stats.py` are all leaf nodes — they import nothing from the project and have no side effects. They are pure lookup tables.
+`data/factions.py`, `data/wares.py`, and `data/ships.py` are all leaf nodes — they import nothing from the project and have no side effects. They are pure lookup tables with two small utility functions in `factions.py`.
 
 `scanner/language.py` is imported by both `scanner/scanner.py` and `scanner/ship_scanner.py`, making it the most widely shared module in the project.
 
@@ -476,18 +465,14 @@ Tier 3 requires two ship scans: a fast tier-1 pre-scan to discover which sectors
 
 **`RUN_MODE` and `SHIP_SCAN_TIER` require manual editing.** These are module-level constants, not CLI arguments. Open `x4_save_scanner.py` and change them directly.
 
-**Language file is optional but strongly recommended.** Without `0001-l044.xml`, all sector names display as raw macro IDs (e.g. `cluster_43_sector001_macro`) and ship type names fall back to hull-origin + role strings. The file must be extracted from the game's `.cat` files using X Tools (available free on Steam).
+**Language file is optional but strongly recommended.** Without `0001-l044.xml`, all sector names display as raw macro IDs (e.g. `cluster_43_sector001_macro`) and ship type names fall back to the macro-derived format (faction + size + role). The file must be extracted from the game's `.cat` files using X Tools (available free on Steam).
 
-**`data/ships.py` needs regeneration after DLC or game updates.** New ships added by expansions will not appear in `SHIP_NAMES` until you extract their macro XMLs and re-run `generate_ship_names.py`. Unrecognised macros fall back to hull-origin + role as the display name.
-
-**`data/ship_stats.py` also needs regeneration after DLC or game updates.** Similarly, new ship macros will not have a `max_hull` entry until their XMLs are added to `ship xml/` and `generate_ship_stats.py` is re-run. Ships with no entry will show `hull_pct = None` and the UI will display raw HP only with no percentage bar.
-
-**Hull mods cause `hull_pct` to exceed 100%.** When a ship has a hull capacity mod installed (visible as `<modification><ship maxhull="1.08375"/>` in the save XML), the ship's effective max HP is higher than the base value stored in `SHIP_STATS`. The scanner calculates percentage against the base max, so a modded ship at full health will appear at e.g. 108% rather than 100%. The UI renders these in blue to distinguish them. See `TO BE NOTED.txt` in the project root for a documented example (Behemoth E destroyer).
+**`data/ships.py` needs regeneration after DLC or game updates.** New ships added by expansions will not appear in `SHIP_NAMES` until you extract their macro XMLs and re-run `Legacy/generate_ship_names.py`. Unrecognised macros automatically fall back to a constructed name (e.g. "Split M Corvette (A)") rather than showing as unknown.
 
 **The UI reads the JSON at launch only.** There is no live reload or file watcher. If you re-run the scanner, you must close and reopen the UI to see updated data.
 
 **NPC ship data at tiers 2 and 3 can be slow and memory-intensive.** Large sectors with many NPC ships significantly increase scan time and peak RAM usage. Tier 1 is the default for a reason.
 
-**Windows console requires UTF-8 mode.** The console report uses box-drawing characters (`═`, `─`, `┌`, etc.) that Windows' default `cp1252` encoding cannot handle. Run with `PYTHONUTF8=1` or from Windows Terminal which defaults to UTF-8. The `.pyw` launcher and the UI are unaffected.
+**`data/ships.py` has a misleading comment.** The file header references `scanner/ship_scanner.py` but an old internal comment in the file refers to it by a legacy name. The actual import in `x4_save_scanner.py` (`from scanner.ship_scanner import scan_ships`) is authoritative.
 
 **Reputation boosters decay in-game but are static in the scan.** The booster values extracted reflect the save file at the moment of the scan. X4 decays boosters in real time — the displayed booster value will drift from the in-game value the longer you play without rescanning.
