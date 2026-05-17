@@ -196,6 +196,9 @@
     .file-empty { display: flex; align-items: center; justify-content: center; height: 160px; font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; }
     /* Selected row highlight in the crew roster table */
     .crew-row-active td { background: var(--teal-dim) !important; }
+    /* Clickable pilot names in the fleet table — hover turns amber + underlines */
+    .crew-link { cursor: pointer; }
+    .crew-link:hover { color: var(--amber) !important; text-decoration: underline; }
 
     /* ── SCROLLBAR ── */
     ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -638,6 +641,13 @@
       const starsGlyphs = plt !== null
         ? ` <span style="letter-spacing:-1px;vertical-align:middle;font-size:13px">${skillStars(plt)}</span>`
         : '';
+      // Link the pilot name to their crew file if they exist in the crew data.
+      const pilotCrewIdx = (pilot !== '—')
+        ? allCrewData.findIndex(c => c.name === pilot && c.role === 'pilot')
+        : -1;
+      const pilotNameSpan = pilotCrewIdx >= 0
+        ? `<span class="crew-link" data-crew-idx="${pilotCrewIdx}">${pilot}</span>`
+        : pilot;
       return `<tr>
         <td style="white-space:nowrap">
           <span class="ship-name">${nameStr}</span>
@@ -650,8 +660,8 @@
         <td style="color:var(--text-dim)"><i class="ti ti-map-pin" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:var(--text-faint)"></i>${s.sector}</td>
         <td style="color:var(--text-faint);white-space:nowrap"><i class="ti ti-user" style="font-size:12px;vertical-align:-2px;margin-right:4px"></i>${
           (s.pilot && s.pilot.skills && Object.keys(s.pilot.skills).length)
-            ? `<span data-pilot-skills='${JSON.stringify(s.pilot.skills)}' style="cursor:default">${pilot}${starsGlyphs}</span>`
-            : pilot
+            ? `<span data-pilot-skills='${JSON.stringify(s.pilot.skills)}' style="cursor:default">${pilotNameSpan}${starsGlyphs}</span>`
+            : pilotNameSpan
         }</td>
       </tr>`;
     }).join("");
@@ -957,6 +967,19 @@
     `;
   }
 
+  // Navigate from a fleet-table pilot name to that pilot's crew file.
+  // Switches to the Crew tab, filters to Pilots, selects the row, and scrolls it into view.
+  function jumpToCrew(allCrewIdx) {
+    const crewNavTab = document.querySelector('.nav-tab[onclick*="\'crew\'"]');
+    switchTab('crew', crewNavTab);
+    switchCrewRole('pilot', document.querySelector('#crew-subtabs [data-role="pilot"]'));
+    const filteredIdx = filteredCrewData.indexOf(allCrewData[allCrewIdx]);
+    if (filteredIdx === -1) return;
+    showCrewFile(filteredIdx);
+    const row = document.querySelector(`#crew-table .crew-row[data-idx="${filteredIdx}"]`);
+    if (row) row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
   function populate(data) {
     const ships    = data.ships || {};
     const fleet    = ships.fleet_summary || {};
@@ -1038,12 +1061,13 @@
 
     // Store ships for re-use by setSort(), then do the initial render
     // using the default sort key and direction.
+    // Crew data must be loaded before renderFleet so pilot name links can resolve.
+    allCrewData = data.crew || [];
+
     allPlayerShips = players;
     renderFleet(allPlayerShips, currentSortKey, currentSortDir);
     document.getElementById('ft-count-player').textContent = players.length;
 
-    // Crew tab — load data and render roster
-    allCrewData = data.crew || [];
     const crewCounts = { manager: 0, pilot: 0, service: 0, marine: 0 };
     allCrewData.forEach(c => { if (crewCounts[c.role] !== undefined) crewCounts[c.role]++; });
     document.getElementById('crew-count-all').textContent     = allCrewData.length;
@@ -1185,6 +1209,15 @@
     document.getElementById("loading").style.display = "none";
     document.getElementById("shell").style.display   = "flex";
   }
+
+  // Click on a pilot name in the fleet table → jump to their crew file
+  document.getElementById('fleet-table').addEventListener('click', function(e) {
+    const link = e.target.closest('.crew-link');
+    if (!link) return;
+    e.stopPropagation();
+    const allIdx = parseInt(link.dataset.crewIdx, 10);
+    if (!isNaN(allIdx) && allIdx >= 0) jumpToCrew(allIdx);
+  });
 
   // Hull HP tooltip — follows cursor, only visible over bars with data-hull-tip
   (function() {
