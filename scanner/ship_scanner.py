@@ -490,6 +490,7 @@ def scan_ships(
     sector_names: dict,
     station_sectors: set[str] | None = None,
     ship_sectors:    set[str] | None = None,
+    npc_only:        bool = False,
 ) -> dict:
     """
     Streams through the X4 save and extracts ship data.
@@ -498,9 +499,15 @@ def scan_ships(
     RAM usage low even on 700MB+ save files. The file is never fully loaded
     into memory.
 
-    PLAYER SHIPS are always collected. NPC ships are only collected for
-    sectors in 'context_sectors', which is built from station_sectors and/or
-    ship_sectors depending on the scan tier chosen by the caller.
+    PLAYER SHIPS are collected unless npc_only=True. NPC ships are only
+    collected for sectors in 'context_sectors', which is built from
+    station_sectors and/or ship_sectors depending on the scan tier.
+
+    npc_only=True is used in the tier 3 flow where a pre-scan has already
+    collected player ships. Passing npc_only=True lets the main scan skip
+    player ship buffering entirely — we already have those results, so there
+    is no point doing the work twice. The caller is responsible for stitching
+    the pre-scan player_ships back into the final result.
 
     BUFFERING: When a ship element's opening tag is detected, elem.clear()
     is suppressed for all of its descendants until the closing tag arrives.
@@ -511,18 +518,21 @@ def scan_ships(
     ZONE TRACKING: Ships are nested under zone elements in the XML, not
     directly under sectors. The current zone macro is tracked as a running
     variable and stamped onto each ship element before buffering starts, so
-    _parse_sector_from_zone_macro() can resolve the sector later.
+    _parse_sector() can resolve the sector later.
 
     Parameters:
-        file_path       — path to the unzipped X4 save file
+        file_path       — path to the save file (.xml or .xml.gz)
         sector_names    — dict from load_sector_names(), maps lang IDs to names
         station_sectors — set of sector names where the player has stations
                           (used for tier 2 NPC collection)
         ship_sectors    — set of sector names where the player has ships
                           (used for tier 3 NPC collection, adds to station_sectors)
+        npc_only        — if True, skip player ship buffering entirely;
+                          player_ships in the returned dict will be empty
 
     Returns a dict with keys:
         'player_ships' — list of ship dicts for all player-owned ships
+                         (empty list when npc_only=True)
         'npc_ships'    — list of ship dicts for NPC ships in context sectors
     """
     # Build the set of sectors in which NPC ships should be collected.
@@ -581,7 +591,9 @@ def scan_ships(
             if event == 'start' and cls in SHIP_CLASSES and not inside_ship:
                 owner = elem.get('owner', '')
 
-                is_player      = (owner == 'player')
+                # When npc_only=True we already have player ships from the
+                # pre-scan, so there is no need to buffer them again.
+                is_player      = (not npc_only) and (owner == 'player')
                 # Collect NPC ships only when we have context sectors to filter by.
                 is_context_npc = (owner != 'player' and bool(context_sectors))
 

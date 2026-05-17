@@ -467,6 +467,32 @@
     </div>`;
   }
 
+  // Converts raw skill points (0–15) to 5 HTML stars (full / half / empty).
+  // Half-star uses an absolutely-positioned clipped overlay so no font/icon
+  // dependency is needed — just plain Unicode ★ and ☆ glyphs.
+  // Wrap the returned HTML in a span with data-hull-tip to get the hover tooltip.
+  function skillStars(value) {
+    // 3 pts = 1 star; round to nearest 0.5 so we get clean half-star steps
+    const stars = Math.round((value / 3) * 2) / 2;
+    let html = '';
+    for (let i = 1; i <= 5; i++) {
+      if (stars >= i) {
+        // full star
+        html += `<span style="color:var(--amber)">★</span>`;
+      } else if (stars >= i - 0.5) {
+        // half star: dim empty star underneath, amber star clipped to 50% on top
+        html += `<span style="position:relative;display:inline-block">` +
+                `<span style="color:var(--text-faint)">★</span>` +
+                `<span style="position:absolute;left:0;top:0;width:50%;overflow:hidden;color:var(--amber)">★</span>` +
+                `</span>`;
+      } else {
+        // empty star
+        html += `<span style="color:var(--text-faint)">☆</span>`;
+      }
+    }
+    return html;
+  }
+
   // ── FLEET SORT ────────────────────────────────────────────────────────────
   // currentSortKey  — which field we're sorting by
   // currentSortDir  — 1 = ascending (A→Z, low→high), -1 = descending (Z→A, high→low)
@@ -504,13 +530,21 @@
     });
 
     document.querySelector("#fleet-table tbody").innerHTML = sorted.map(s => {
-      const pilot  = (s.pilot && s.pilot.name) ? s.pilot.name : "—";
-      const oCol   = ORDER_COLOURS[s.order] || "var(--text-dim)";
-      const sCol   = SIZE_COLOURS[s.size]   || "var(--text-dim)";
-      const oIcon  = ORDER_ICONS[s.order]   || "ti-circle";
+      const pilot   = (s.pilot && s.pilot.name) ? s.pilot.name : "—";
+      const oCol    = ORDER_COLOURS[s.order] || "var(--text-dim)";
+      const sCol    = SIZE_COLOURS[s.size]   || "var(--text-dim)";
+      const oIcon   = ORDER_ICONS[s.order]   || "ti-circle";
       // s.name is always a string after the ship_scanner.py fix. The || "—"
       // is a safety net for any edge case where it's still null or empty.
       const nameStr = s.name || "—";
+      // piloting pts from the scanner (null if pilot has no skills data)
+      const plt = (s.pilot && s.pilot.skills && s.pilot.skills.piloting != null)
+        ? s.pilot.skills.piloting : null;
+      // Wrap stars in a span with data-hull-tip so the existing tooltip listener
+      // picks it up — same pattern as the hull health bar hover.
+      const starsHtml = plt !== null
+        ? ` <span data-hull-tip="${plt} pts" style="cursor:default;letter-spacing:-1px;vertical-align:middle;font-size:13px">${skillStars(plt)}</span>`
+        : '';
       return `<tr>
         <td style="white-space:nowrap">
           <span class="ship-name">${nameStr}</span>
@@ -521,7 +555,7 @@
         <td>${hullBar(s.hull_pct, s.hull_hp, s.max_hull)}</td>
         <td><i class="ti ${oIcon}" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:${oCol}"></i><span style="color:${oCol}">${s.order}</span></td>
         <td style="color:var(--text-dim)"><i class="ti ti-map-pin" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:var(--text-faint)"></i>${s.sector}</td>
-        <td style="color:var(--text-faint)"><i class="ti ti-user" style="font-size:12px;vertical-align:-2px;margin-right:4px"></i>${pilot}</td>
+        <td style="color:var(--text-faint);white-space:nowrap"><i class="ti ti-user" style="font-size:12px;vertical-align:-2px;margin-right:4px"></i>${pilot}${starsHtml}</td>
       </tr>`;
     }).join("");
   }

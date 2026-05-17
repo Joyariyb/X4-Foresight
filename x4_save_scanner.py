@@ -234,14 +234,30 @@ if __name__ == "__main__":
                     | (station_sectors or set())
                 )
 
-            t0 = time.perf_counter()
-            game_data["ships"] = scan_ships(
+            # In tier 3, the pre-scan above already found all player ships, so
+            # the main scan only needs to collect NPC ships (npc_only=True skips
+            # player ship buffering, halving the work). We then stitch the two
+            # results back together. Tiers 1 and 2 do a single combined scan.
+            t0       = time.perf_counter()
+            npc_only = (SHIP_SCAN_TIER == 3)
+            main_scan = scan_ships(
                 SAVE_FILE,
                 sector_names,
                 station_sectors=station_sectors,
                 ship_sectors=ship_sectors,
+                npc_only=npc_only,
             )
             print(f"[Done] Ships scan completed in {time.perf_counter() - t0:.2f}s")
+
+            if SHIP_SCAN_TIER == 3:
+                # Re-use the player ships we already found in the pre-scan
+                # instead of scanning for them a second time.
+                game_data["ships"] = {
+                    "player_ships": tier1_data["player_ships"],
+                    "npc_ships":    main_scan["npc_ships"],
+                }
+            else:
+                game_data["ships"] = main_scan
 
             display_results(game_data)
             export_json(game_data, output_dir=SCRIPT_DIR)
