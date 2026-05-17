@@ -14,6 +14,7 @@ import pathlib
 import xml.etree.ElementTree as ET
 from scanner.language import macro_to_sector_name
 from data.ships import SHIP_NAMES
+from data.ship_stats import SHIP_STATS  # static specs per macro (max hull, etc.)
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  LOOKUP TABLES
@@ -527,6 +528,23 @@ def scan_ships(
                         # has taken damage, so absence means undamaged.
                         hull_hp = _parse_hull(se)
 
+                        # Look up the base max hull for this ship type from
+                        # SHIP_STATS. If the macro isn't in the table (e.g. a
+                        # modded ship or a macro we haven't extracted yet),
+                        # max_hull stays None and we fall back to showing raw HP.
+                        max_hull = SHIP_STATS.get(macro, {}).get("max_hull")
+
+                        # Compute hull as a percentage of max.
+                        # Only possible when both values are available — hull_hp
+                        # being None means full health (100%), and max_hull being
+                        # None means we don't have the data to calculate it.
+                        if hull_hp is None:
+                            hull_pct = 100.0          # no <hull> element = undamaged
+                        elif max_hull:
+                            hull_pct = (hull_hp / max_hull) * 100.0
+                        else:
+                            hull_pct = None           # can't calculate without max
+
                         # ── Ship name resolution ───────────────────────────
                         # Priority order:
                         #   1. Player-given custom name — the 'name' attribute
@@ -562,7 +580,9 @@ def scan_ships(
                             "pilot":       pilot,
                             "software":    sw,
                             "commander":   cmdr,
-                            "hull_hp":     hull_hp, # current HP float, or None if undamaged
+                            "hull_hp":     hull_hp,   # current HP float, or None if undamaged
+                            "hull_pct":    hull_pct,  # 0-100 float, or None if max unknown
+                            "max_hull":    max_hull,  # base max HP from ship macro, or None
                         }
 
                         if owner == 'player':

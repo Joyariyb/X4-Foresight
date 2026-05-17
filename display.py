@@ -193,14 +193,29 @@ def display_results(data: dict):
                     hull_origin = f"★ {hull_origin}"   # ★ makes captured ships immediately visible
 
                 # Build the HP display string.
-                # hull_hp is None when the ship is undamaged — X4 only writes
-                # the <hull> element when HP has dropped below maximum, so
-                # None means the ship is at full health, not that data is missing.
-                hull_hp = s.get("hull_hp")
-                if hull_hp is None:
-                    hp_str = "Full"              # explicitly confirm undamaged
+                # Priority order for what we can show:
+                #   1. hull_pct == 100  → ship is undamaged, show "Full"
+                #   2. hull_pct known   → show percentage + raw HP, e.g. "72%  (7,152 HP)"
+                #   3. hull_pct is None → max hull unknown (modded ship?), show raw HP only
+                hull_hp  = s.get("hull_hp")
+                hull_pct = s.get("hull_pct")
+
+                max_hull = s.get("max_hull")
+
+                if hull_pct == 100.0 and max_hull:
+                    # Undamaged and we know the max — show Full with the total
+                    hp_str = f"Full  ({max_hull:,} HP)"
+                elif hull_pct == 100.0:
+                    # Undamaged but no max hull data available
+                    hp_str = "Full"
+                elif hull_pct is not None:
+                    # Damaged — show percentage, current HP, and max HP
+                    hp_str = f"{hull_pct:.0f}%  ({hull_hp:,.0f} / {max_hull:,} HP)"
+                elif hull_hp is not None:
+                    # Damaged but no max hull in lookup — show raw HP only
+                    hp_str = f"{hull_hp:,.0f} HP"
                 else:
-                    hp_str = f"{hull_hp:,.0f} HP"   # e.g. "7,152 HP"
+                    hp_str = "Full"
 
                 print(
                     f"  {connector} {display_name:<{name_col}} {s['size']:<4}  "
