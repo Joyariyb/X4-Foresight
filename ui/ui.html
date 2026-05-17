@@ -134,10 +134,16 @@
     .rep-bar { height: 100%; border-radius: 2px; }
 
     /* ── HULL HEALTH BAR ── */
-    /* Used in the fleet table to show each ship's HP as a coloured progress bar.
-       Width is set inline by hullBar() based on the ship's hull_pct value. */
-    .hull-bar-wrap { width: 80px; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 3px; }
+    .hull-bar-wrap { width: 80px; height: 22px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 0; }
     .hull-bar { height: 100%; border-radius: 2px; }
+
+    /* ── HULL HOVER TOOLTIP ── */
+    #hull-tip {
+      position: fixed; display: none; padding: 3px 8px;
+      background: var(--bg-panel); border: 1px solid var(--border);
+      font-family: var(--font-mono); font-size: 10px; white-space: nowrap;
+      border-radius: 2px; pointer-events: none; z-index: 1000;
+    }
 
     /* ── LAYOUT ── */
     .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -167,6 +173,7 @@
 </head>
 <body>
 
+<div id="hull-tip"></div>
 <div id="loading"><i class="ti ti-loader"></i> Connecting to scanner...</div>
 
 <div id="shell" style="display:none">
@@ -295,7 +302,7 @@
           <table class="data-table" id="fleet-table">
             <thead>
               <tr>
-                <th>Code / Name</th><th>Size</th><th>Role</th><th>Hull / HP</th>
+                <th>Code / Name</th><th>Size</th><th>Hull Type</th><th>HP</th>
                 <th>Order</th><th>Sector</th><th>Pilot</th>
               </tr>
             </thead>
@@ -397,54 +404,37 @@
   function sign(n) { return n >= 0 ? `+${n.toFixed(2)}` : n.toFixed(2); }
 
   function hullBar(pct, hullHp, maxHull) {
-    // pct is 100.0 for full health, 0–99.9 for damaged, >100 for hull-modded
-    // ships above their base max, or null if we couldn't calculate it.
-
     if (pct === null || pct === undefined) {
-      // No percentage available — fall back to showing raw HP if we have it
       const raw = (hullHp !== null && hullHp !== undefined)
         ? Math.round(hullHp).toLocaleString() + " HP"
         : "—";
       return `<span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint)">${raw}</span>`;
     }
 
-    // Clamp to 100 for the bar width — over-max ships still fill the bar
     const barWidth = Math.min(pct, 100).toFixed(1);
-
-    // Color gradient: hue 0 = red (0%), hue 120 = green (100%) in HSL.
-    // Over 100% (hull mod pushes HP above base max) gets blue instead.
     let color;
     if (pct > 100) {
-      color = "#388bfd";                                // blue — above base max
+      color = "#388bfd";
     } else {
-      const hue = (Math.min(pct, 100) / 100) * 120;   // 0 → red, 120 → green
+      const hue = (Math.min(pct, 100) / 100) * 120;
       color = `hsl(${hue.toFixed(0)},65%,50%)`;
     }
 
-    // Label text: "Full" at 100%, integer percentage otherwise
     const label = pct >= 100 ? "Full" : `${Math.round(pct)}%`;
-
-    // HP numbers below the label: "current / max HP" when we have the max,
-    // or just "current HP" when the macro wasn't in SHIP_STATS
-    let hpText = "";
+    const tipParts = [label];
     if (maxHull !== null && maxHull !== undefined) {
-      // For full-health ships hull_hp is null in the data, so current = max
       const current = (hullHp !== null && hullHp !== undefined)
         ? Math.round(hullHp).toLocaleString()
         : maxHull.toLocaleString();
-      hpText = `${current} / ${maxHull.toLocaleString()} HP`;
+      tipParts.push(`${current} / ${maxHull.toLocaleString()} HP`);
     } else if (hullHp !== null && hullHp !== undefined) {
-      hpText = `${Math.round(hullHp).toLocaleString()} HP`;
+      tipParts.push(`${Math.round(hullHp).toLocaleString()} HP`);
     }
 
-    return `
-      <div style="display:flex;align-items:baseline;gap:5px;margin-top:3px">
-        <span style="font-family:var(--font-mono);font-size:11px;font-weight:bold;color:${color}">${label}</span>
-        <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-faint)">${hpText}</span>
-      </div>
-      <div class="hull-bar-wrap">
-        <div class="hull-bar" style="width:${barWidth}%;background:${color}"></div>
-      </div>`;
+    return `<div class="hull-bar-wrap" style="cursor:default"
+        data-hull-tip="${tipParts.join(' · ')}" data-hull-color="${color}">
+      <div class="hull-bar" style="width:${barWidth}%;background:${color}"></div>
+    </div>`;
   }
 
   // ── FLEET SORT ────────────────────────────────────────────────────────────
@@ -497,11 +487,8 @@
           <span class="mono" style="color:var(--yellow);font-size:11px;margin-left:8px">${s.code}</span>
         </td>
         <td class="mono" style="color:${sCol}">${s.size}</td>
-        <td><i class="ti ${ROLE_ICONS[s.role]||'ti-rocket'}" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:var(--text-faint)"></i>${s.role}</td>
-        <td>
-          ${hullBadge(s.hull_origin)}
-          ${hullBar(s.hull_pct, s.hull_hp, s.max_hull)}
-        </td>
+        <td style="white-space:nowrap">${hullBadge(s.hull_origin)}<i class="ti ${ROLE_ICONS[s.role]||'ti-rocket'}" style="font-size:12px;vertical-align:-2px;margin-left:5px;margin-right:3px;color:var(--text-faint)"></i>${s.role}</td>
+        <td>${hullBar(s.hull_pct, s.hull_hp, s.max_hull)}</td>
         <td><i class="ti ${oIcon}" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:${oCol}"></i><span style="color:${oCol}">${s.order}</span></td>
         <td style="color:var(--text-dim)"><i class="ti ti-map-pin" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:var(--text-faint)"></i>${s.sector}</td>
         <td style="color:var(--text-faint)"><i class="ti ti-user" style="font-size:12px;vertical-align:-2px;margin-right:4px"></i>${pilot}</td>
@@ -683,6 +670,23 @@
     document.getElementById("loading").style.display = "none";
     document.getElementById("shell").style.display   = "flex";
   }
+
+  // Hull HP tooltip — follows cursor, only visible over bars with data-hull-tip
+  (function() {
+    const tip = document.getElementById('hull-tip');
+    document.addEventListener('mousemove', function(e) {
+      const el = e.target.closest('[data-hull-tip]');
+      if (!el) { tip.style.display = 'none'; return; }
+      tip.textContent = el.dataset.hullTip;
+      tip.style.color = el.dataset.hullColor || 'var(--text)';
+      tip.style.display = 'block';
+      const x = Math.min(e.clientX + 14, window.innerWidth  - tip.offsetWidth  - 8);
+      const y = Math.max(e.clientY - 32, 8);
+      tip.style.left = x + 'px';
+      tip.style.top  = y + 'px';
+    });
+    document.addEventListener('mouseleave', function() { tip.style.display = 'none'; });
+  })();
 
   new QWebChannel(qt.webChannelTransport, function(channel) {
     channel.objects.bridge.get_empire_data(function(jsonStr) {
