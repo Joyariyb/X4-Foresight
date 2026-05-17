@@ -250,14 +250,20 @@ if __name__ == "__main__":
             print(f"[Done] Ships scan completed in {time.perf_counter() - t0:.2f}s")
 
             if SHIP_SCAN_TIER == 3:
-                # Re-use the player ships we already found in the pre-scan
-                # instead of scanning for them a second time.
+                # Re-use the player ships and crew we already found in the
+                # pre-scan instead of scanning for them a second time.
                 game_data["ships"] = {
                     "player_ships": tier1_data["player_ships"],
                     "npc_ships":    main_scan["npc_ships"],
                 }
+                ship_crew = tier1_data.get("crew", [])
             else:
                 game_data["ships"] = main_scan
+                ship_crew = main_scan.get("crew", [])
+
+            # Merge station managers (from Pass 1) with ship crew (from Pass 3).
+            # Managers come first so they appear at the top of the roster.
+            game_data["crew"] = game_data.get("managers", []) + ship_crew
 
             display_results(game_data)
             export_json(game_data, output_dir=SCRIPT_DIR)

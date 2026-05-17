@@ -174,6 +174,29 @@
     /* Displayed below the code in the fleet table Code cell */
     .ship-name { font-size: 13px; color: var(--teal); font-family: var(--font-mono); font-weight: 700; white-space: nowrap; }
 
+    /* ── CREW TAB ── */
+    .crew-layout { display: flex; gap: 12px; flex: 1; min-height: 0; }
+    .crew-roster { flex: 0 0 56%; overflow: auto; max-height: calc(100vh - 200px); }
+    .crew-file   { flex: 1; overflow-y: auto; max-height: calc(100vh - 200px); }
+
+    /* File card — the dossier panel on the right */
+    .file-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; }
+    .file-header { padding: 14px; border-bottom: 1px solid var(--border); background: var(--bg-panel); }
+    .file-name { font-family: var(--font-cond); font-weight: 700; font-size: 20px; color: var(--lime); letter-spacing: 0.05em; margin-bottom: 8px; }
+    .file-section { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+    .file-section:last-child { border-bottom: none; }
+    .file-sec-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 6px; }
+    .file-skill-row { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
+    .file-skill-name { min-width: 90px; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); text-transform: capitalize; }
+    .file-assign-name { font-size: 14px; font-family: var(--font-cond); font-weight: 600; color: var(--text); }
+    .file-assign-code { font-family: var(--font-mono); font-size: 11px; color: var(--yellow); margin-left: 6px; }
+    .file-assign-sector { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); margin-top: 4px; }
+    .file-meta-val { font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); }
+    .file-seed { font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); margin-top: 6px; word-break: break-all; }
+    .file-empty { display: flex; align-items: center; justify-content: center; height: 160px; font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; }
+    /* Selected row highlight in the crew roster table */
+    .crew-row-active td { background: var(--teal-dim) !important; }
+
     /* ── SCROLLBAR ── */
     ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -218,6 +241,7 @@
     <div class="nav-tab active" onclick="switchTab('overview',this)"><i class="ti ti-layout-dashboard"></i> Overview</div>
     <div class="nav-tab" onclick="switchTab('fleet',this)"><i class="ti ti-rocket"></i> Fleets <span class="nav-badge" id="nav-ships">—</span></div>
     <div class="nav-tab" onclick="switchTab('stations',this)"><i class="ti ti-building-factory-2"></i> Stations</div>
+    <div class="nav-tab" onclick="switchTab('crew',this)"><i class="ti ti-users"></i> Crew</div>
     <div class="nav-tab" onclick="switchTab('diplomacy',this)"><i class="ti ti-world"></i> Diplomacy</div>
     <div class="nav-tab" onclick="switchTab('alerts',this)"><i class="ti ti-alert-triangle"></i> Alerts <span class="nav-badge warn" id="nav-alerts">0</span></div>
   </div>
@@ -344,6 +368,51 @@
       <div class="tab-panel" id="tab-stations">
         <div class="sec-header"><div class="sec-title">Stations</div><div class="sec-line"></div></div>
         <div id="stations-grid" style="display:flex;flex-direction:column;gap:10px;"></div>
+      </div>
+
+      <!-- CREW TAB -->
+      <div class="tab-panel" id="tab-crew">
+        <div class="fleet-subtabs" id="crew-subtabs">
+          <div class="fleet-subtab active" data-role="all"
+               style="--tab-color:#2dd4bf;--tab-bg:rgba(45,212,191,0.12);--tab-border:rgba(45,212,191,0.3)"
+               onclick="switchCrewRole('all',this)">
+            All <span class="ft-count" id="crew-count-all">—</span>
+          </div>
+          <div class="fleet-subtab" data-role="manager"
+               style="--tab-color:#a371f7;--tab-bg:rgba(163,113,247,0.12);--tab-border:rgba(163,113,247,0.3)"
+               onclick="switchCrewRole('manager',this)">
+            Managers <span class="ft-count" id="crew-count-manager">0</span>
+          </div>
+          <div class="fleet-subtab" data-role="pilot"
+               style="--tab-color:#d29922;--tab-bg:rgba(210,153,34,0.12);--tab-border:rgba(210,153,34,0.3)"
+               onclick="switchCrewRole('pilot',this)">
+            Pilots <span class="ft-count" id="crew-count-pilot">0</span>
+          </div>
+          <div class="fleet-subtab" data-role="service"
+               style="--tab-color:#3fb950;--tab-bg:rgba(63,185,80,0.12);--tab-border:rgba(63,185,80,0.3)"
+               onclick="switchCrewRole('service',this)">
+            Service <span class="ft-count" id="crew-count-service">0</span>
+          </div>
+          <div class="fleet-subtab" data-role="marine"
+               style="--tab-color:#f85149;--tab-bg:rgba(248,81,73,0.10);--tab-border:rgba(248,81,73,0.3)"
+               onclick="switchCrewRole('marine',this)">
+            Marines <span class="ft-count" id="crew-count-marine">0</span>
+          </div>
+        </div>
+        <div class="crew-layout">
+          <div class="crew-roster panel">
+            <table class="data-table" id="crew-table">
+              <thead>
+                <tr><th>Name</th><th>Role</th><th>Primary Skill</th><th>Assigned To</th><th>Sector</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="crew-file">
+            <div class="file-empty" id="crew-file-empty">Select a crew member to view their file</div>
+            <div class="file-card" id="crew-file-card" style="display:none"></div>
+          </div>
+        </div>
       </div>
 
       <!-- DIPLOMACY TAB -->
@@ -753,6 +822,141 @@
     if (clickedEl) clickedEl.classList.add("active");
   }
 
+  // ── CREW TAB ──────────────────────────────────────────────────────────────
+  let allCrewData      = [];
+  let filteredCrewData = [];
+  let crewRoleFilter   = 'all';
+
+  // Hex values so we can do hex-alpha tricks like `${col}22` for badge backgrounds.
+  const ROLE_COLOURS = {
+    manager: '#a371f7',
+    pilot:   '#d29922',
+    service: '#3fb950',
+    marine:  '#f85149',
+  };
+
+  const ROLE_PRIMARY = {
+    manager: 'management',
+    pilot:   'piloting',
+    service: 'engineering',
+    marine:  'boarding',
+  };
+
+  const ROLE_LABELS_CREW = {
+    manager: 'Manager',
+    pilot:   'Pilot',
+    service: 'Service',
+    marine:  'Marine',
+  };
+
+  const SKILL_NAMES = {
+    piloting: 'Piloting', management: 'Management',
+    engineering: 'Engineering', morale: 'Morale', boarding: 'Boarding',
+  };
+
+  // Primary skill shown first, rest follow in role-appropriate order.
+  const SKILL_ORDER_BY_ROLE = {
+    manager: ['management', 'morale', 'engineering', 'piloting', 'boarding'],
+    pilot:   ['piloting',   'management', 'engineering', 'morale', 'boarding'],
+    service: ['engineering','morale', 'management', 'piloting', 'boarding'],
+    marine:  ['boarding',   'morale', 'engineering', 'management', 'piloting'],
+  };
+
+  function switchCrewRole(role, el) {
+    crewRoleFilter = role;
+    document.querySelectorAll('#crew-subtabs .fleet-subtab').forEach(t => t.classList.remove('active'));
+    (el || document.querySelector(`#crew-subtabs [data-role="${role}"]`)).classList.add('active');
+    // Clear file panel when switching roles — the previous selection no longer applies.
+    document.getElementById('crew-file-empty').style.display = '';
+    document.getElementById('crew-file-card').style.display  = 'none';
+    renderCrewRoster();
+  }
+
+  function renderCrewRoster() {
+    filteredCrewData = crewRoleFilter === 'all'
+      ? allCrewData
+      : allCrewData.filter(c => c.role === crewRoleFilter);
+
+    document.querySelector('#crew-table tbody').innerHTML = filteredCrewData.map((c, i) => {
+      const primaryKey = ROLE_PRIMARY[c.role] || 'piloting';
+      const primaryPts = c.skills ? (c.skills[primaryKey] ?? 0) : 0;
+      const col        = ROLE_COLOURS[c.role]     || '#2dd4bf';
+      const lbl        = ROLE_LABELS_CREW[c.role] || c.role;
+      return `<tr class="crew-row" data-idx="${i}" onclick="showCrewFile(${i})" style="cursor:pointer">
+        <td style="white-space:nowrap">${c.name}</td>
+        <td><span class="badge" style="background:${col}22;color:${col};border-color:${col}44">${lbl}</span></td>
+        <td><span style="letter-spacing:-1px">${skillStars(primaryPts)}</span></td>
+        <td style="color:var(--text-dim)">${c.assigned_to || '—'}</td>
+        <td style="color:var(--text-faint)">${c.sector || '—'}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function showCrewFile(idx) {
+    const c = filteredCrewData[idx];
+    if (!c) return;
+
+    // Highlight the selected row, clear any previous highlight.
+    document.querySelectorAll('#crew-table .crew-row').forEach(r => r.classList.remove('crew-row-active'));
+    const row = document.querySelector(`#crew-table .crew-row[data-idx="${idx}"]`);
+    if (row) row.classList.add('crew-row-active');
+
+    document.getElementById('crew-file-empty').style.display = 'none';
+    const card = document.getElementById('crew-file-card');
+    card.style.display = 'block';
+
+    const col = ROLE_COLOURS[c.role]     || '#2dd4bf';
+    const lbl = ROLE_LABELS_CREW[c.role] || c.role;
+
+    // Skill rows — role-appropriate order, primary first.
+    const skillOrder = SKILL_ORDER_BY_ROLE[c.role] || Object.keys(c.skills || {});
+    const skillsHtml = skillOrder
+      .filter(sk => c.skills && c.skills[sk] != null)
+      .map(sk => {
+        const pts = c.skills[sk];
+        return `<div class="file-skill-row">
+          <span class="file-skill-name">${SKILL_NAMES[sk] || sk}</span>
+          <span style="letter-spacing:-1px">${skillStars(pts)}</span>
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);margin-left:4px">${pts} pts</span>
+        </div>`;
+      }).join('');
+
+    // Profile metadata from macro parsing — only shown when available.
+    const metaRows = [
+      ['Faction',   c.faction],
+      ['Gender',    c.gender],
+      ['Ethnicity', c.ethnicity],
+      ['Variant',   c.variant],
+    ].filter(([, v]) => v);
+    const metaHtml = metaRows.map(([lbl, val]) =>
+      `<div style="display:flex;gap:8px;padding:2px 0;align-items:center">
+        <span style="min-width:72px;font-family:var(--font-mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-faint)">${lbl}</span>
+        <span class="file-meta-val">${val}</span>
+      </div>`
+    ).join('');
+
+    card.innerHTML = `
+      <div class="file-header">
+        <div class="file-name">${c.name}</div>
+        <span class="badge" style="background:${col}22;color:${col};border-color:${col}44">${lbl}</span>
+      </div>
+      ${skillsHtml ? `<div class="file-section">
+        <div class="file-sec-label">Skills</div>
+        ${skillsHtml}
+      </div>` : ''}
+      <div class="file-section">
+        <div class="file-sec-label">Assignment</div>
+        <div class="file-assign-name">${c.assigned_to || 'Unassigned'}<span class="file-assign-code">${c.assigned_code ? ' [' + c.assigned_code + ']' : ''}</span></div>
+        <div class="file-assign-sector">${c.sector || '—'}</div>
+      </div>
+      ${metaHtml ? `<div class="file-section">
+        <div class="file-sec-label">Profile</div>
+        ${metaHtml}
+      </div>` : ''}
+      ${c.seed ? `<div class="file-section"><div class="file-seed">SEED · ${c.seed}</div></div>` : ''}
+    `;
+  }
+
   function populate(data) {
     const ships    = data.ships || {};
     const fleet    = ships.fleet_summary || {};
@@ -837,6 +1041,18 @@
     allPlayerShips = players;
     renderFleet(allPlayerShips, currentSortKey, currentSortDir);
     document.getElementById('ft-count-player').textContent = players.length;
+
+    // Crew tab — load data and render roster
+    allCrewData = data.crew || [];
+    const crewCounts = { manager: 0, pilot: 0, service: 0, marine: 0 };
+    allCrewData.forEach(c => { if (crewCounts[c.role] !== undefined) crewCounts[c.role]++; });
+    document.getElementById('crew-count-all').textContent     = allCrewData.length;
+    document.getElementById('crew-count-manager').textContent = crewCounts.manager;
+    document.getElementById('crew-count-pilot').textContent   = crewCounts.pilot;
+    document.getElementById('crew-count-service').textContent = crewCounts.service;
+    document.getElementById('crew-count-marine').textContent  = crewCounts.marine;
+    crewRoleFilter = 'all';
+    renderCrewRoster();
 
     // Build NPC faction sub-tabs and panels, sorted by ship count descending.
     const npcShips = ships.npc_ships || [];

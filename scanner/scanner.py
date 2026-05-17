@@ -10,6 +10,10 @@ from scanner.language import macro_to_sector_name, resolve_sector_from_location,
 #  The XML 'class' attribute values X4 uses for player-built structures.
 # ─────────────────────────────────────────────────────────────────────────────
 
+# Matches language reference strings like "{20101,22603}" — placeholders the
+# game resolves at runtime that we cannot use as display names.
+LANG_STRING_RE = re.compile(r'^\{\d+,\d+\}$')
+
 STATION_CLASSES = {"station", "factory", "headquarters", "complex"}
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -92,6 +96,55 @@ def parse_production_from_construction(station_elem: ET.Element) -> str:
     return ", ".join(production)
 
 
+def _parse_manager(station_elem: ET.Element) -> dict | None:
+    """
+    Finds the manager assigned to a player station and returns their name and skills.
+
+    Station managers are stored the same way as ship pilots — a <control><post>
+    element with id="manager" references the manager's NPC component by ID.
+    That NPC component holds the name and <traits><skills> block.
+
+    Returns None if no manager is assigned or the manager has no readable name
+    (e.g. the station is newly built and the slot is still empty).
+    """
+    control = station_elem.find('control')
+    if control is None:
+        return None
+
+    # Find the manager post and grab the component ID reference.
+    manager_id = None
+    for post in control.findall('post'):
+        if post.get('id') == 'manager':
+            manager_id = post.get('component')
+            break
+
+    if not manager_id:
+        return None
+
+    # Walk the station's subtree to find the NPC component with that ID.
+    for npc in station_elem.iter('component'):
+        if npc.get('id') != manager_id or npc.get('class') != 'npc':
+            continue
+
+        raw_name = npc.get('name')
+        if not raw_name or LANG_STRING_RE.match(raw_name):
+            return None
+
+        skills = {}
+        traits = npc.find('traits')
+        if traits is not None:
+            skills_elem = traits.find('skills')
+            if skills_elem is not None:
+                for attr in ('piloting', 'management', 'morale', 'engineering', 'boarding'):
+                    val = skills_elem.get(attr)
+                    if val is not None:
+                        skills[attr] = int(val)
+
+        return {"name": raw_name, "skills": skills}
+
+    return None
+
+
 # ═════════════════════════════════════════════════════════════════════════════
 #  SECTION 3 — PASS 1: PLAYER DATA AND STATIONS
 # ═════════════════════════════════════════════════════════════════════════════
@@ -134,6 +187,7 @@ def scan_save(file_path: pathlib.Path, sector_names: dict) -> dict:
         "player_sector":  None,
         "stations":       [],
         "reputation":     [],
+        "managers":       [],   # crew entries for station managers
     }
 
     in_player_faction = False   # True while inside <faction id="player">
@@ -218,6 +272,19 @@ def scan_save(file_path: pathlib.Path, sector_names: dict) -> dict:
 
                         if not any(s["code"] == code for s in data["stations"]):
                             data["stations"].append(entry)
+
+                            # Extract station manager as a crew entry.
+                            mgr = _parse_manager(elem)
+                            if mgr:
+                                data["managers"].append({
+                                    "name":          mgr["name"],
+                                    "role":          "manager",
+                                    "skills":        mgr["skills"],
+                                    "assigned_to":   display_name,
+                                    "assigned_code": code,
+                                    "assigned_type": "station",
+                                    "sector":        station_sector_pending,
+                                })
 
                         inside_station         = False
                         station_elem_pending   = None

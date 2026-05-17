@@ -70,6 +70,7 @@ def export_json(data: dict, output_dir: pathlib.Path | None = None):
         "player_credits": data.get("player_credits"),
         "stations":       data.get("stations", []),
         "reputation":     data.get("reputation", []),
+        "crew":           data.get("crew", []),
         "ships": {
             "player_ships":  player_ships,
             "fleet_summary": _build_fleet_summary(player_ships),

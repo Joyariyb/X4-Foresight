@@ -244,6 +244,67 @@ def display_results(data: dict):
         print("    No player ships detected.")
         print()
 
+    # ── CREW ROSTER ───────────────────────────────────────────────────────────
+    # Groups all player-owned crew by role. Within each group the primary skill
+    # for that role is shown first so the most useful number is always visible
+    # at a glance without scanning the whole line.
+    crew = data.get("crew", [])
+    if crew:
+        print(LINE)
+
+        # Tally by role for the header summary
+        from collections import Counter
+        role_counts = Counter(c["role"] for c in crew)
+        summary_parts = []
+        for role_key, label in (("manager","managers"), ("pilot","pilots"),
+                                 ("service","service crew"), ("marine","marines")):
+            if role_counts[role_key]:
+                summary_parts.append(f"{role_counts[role_key]} {label}")
+        summary = " · ".join(summary_parts)
+        print(f"  CREW ROSTER  ({len(crew)} total — {summary})")
+        print()
+
+        # Column widths — name and assignment sized to fit actual data
+        name_col   = max((len(c["name"])        for c in crew), default=20)
+        name_col   = max(20, min(30, name_col + 1))
+        assign_col = max((len(f"{c['assigned_to']} [{c['assigned_code']}]") for c in crew), default=24)
+        assign_col = max(24, min(36, assign_col + 1))
+
+        print(f"    {'Name':<{name_col}} {'Role':<9}  {'Assigned To':<{assign_col}}  Skills")
+        print(f"    {'─' * name_col} {'─' * 9}  {'─' * assign_col}  {'─' * 30}")
+
+        # Role display order and which skills to show for each
+        ROLE_ORDER  = ["manager", "pilot", "service", "marine"]
+        ROLE_LABELS = {"manager": "Manager", "pilot": "Pilot",
+                       "service": "Service", "marine": "Marine"}
+        # Primary skill for each role comes first in the display order
+        ROLE_SKILLS = {
+            "manager": ["management", "morale", "engineering"],
+            "pilot":   ["piloting", "management", "engineering", "morale"],
+            "service": ["engineering", "morale", "piloting"],
+            "marine":  ["boarding", "morale", "engineering"],
+        }
+        SKILL_ABBREV = {
+            "piloting": "Plt", "management": "Mgt", "engineering": "Eng",
+            "morale": "Mor", "boarding": "Brd",
+        }
+
+        for role_key in ROLE_ORDER:
+            group = [c for c in crew if c["role"] == role_key]
+            if not group:
+                continue
+            for c in group:
+                assign = f"{c['assigned_to']} [{c['assigned_code']}]"
+                skills = c.get("skills", {})
+                skill_str = "  ".join(
+                    f"{SKILL_ABBREV[sk]}:{skills[sk]}"
+                    for sk in ROLE_SKILLS[role_key]
+                    if sk in skills
+                )
+                print(f"    {c['name']:<{name_col}} {ROLE_LABELS[role_key]:<9}  {assign:<{assign_col}}  {skill_str}")
+
+        print()
+
     # ── NPC PRESENCE (tiers 2 / 3 only) ──────────────────────────────────────
     # Only printed when NPC ship data was actually collected. At tier 1 the
     # npc_ships list will be empty and this section is skipped entirely,

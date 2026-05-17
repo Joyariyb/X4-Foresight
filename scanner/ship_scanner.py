@@ -395,6 +395,134 @@ def _parse_hull(ship_elem: ET.Element) -> float | None:
         return None
 
 
+def _parse_character_macro(macro: str) -> dict:
+    """
+    Extracts appearance metadata from a character macro string.
+
+    X4 character macros follow this naming convention:
+        character_{faction}_{gender}_{ethnicity}_{role}_{variant}_macro
+        character_{faction}_generic_{variant}_macro   ← no gender/ethnicity
+
+    Examples:
+        character_argon_female_afr_crew_01_macro   → argon, female, afr, 01
+        character_yaki_male_asi_marine_01_macro    → yaki,  male,  asi, 01
+        character_paranid_generic_02_macro         → paranid, None, None, 02
+
+    We store these so the UI can build a character 'file' card per crew member.
+    The seed (stored separately) will eventually let us generate the real name.
+    """
+    # Strip the 'character_' prefix and '_macro' suffix before splitting.
+    inner = macro.removeprefix('character_').removesuffix('_macro')
+    parts = inner.split('_')
+
+    result = {"faction": None, "gender": None, "ethnicity": None, "variant": None}
+    if not parts:
+        return result
+
+    result["faction"] = parts[0]
+
+    if len(parts) < 2:
+        return result
+
+    if parts[1] in ('male', 'female'):
+        result["gender"] = parts[1]
+        # Standard format: faction, gender, ethnicity, role, variant
+        if len(parts) > 2 and parts[2] in ('afr', 'asi', 'cau'):
+            result["ethnicity"] = parts[2]
+            if len(parts) > 4:
+                result["variant"] = parts[4]
+        elif len(parts) > 3:
+            result["variant"] = parts[3]
+    elif parts[1] == 'generic':
+        # Generic format has no gender or ethnicity
+        if len(parts) > 2:
+            result["variant"] = parts[2]
+
+    return result
+
+
+def _extract_people(
+    ship_elem:   ET.Element,
+    ship_name:   str,
+    ship_code:   str,
+    ship_sector: str,
+) -> list[dict]:
+    """
+    Extracts service crew and marines from the <people> block on a player ship.
+
+    WHY THESE CREW HAVE NO NAMES:
+    Service crew and marines are stored differently from pilots. Instead of
+    being full NPC components with a name attribute, they only have an
+    <npcseed> element — a random number the game uses to procedurally generate
+    their name at runtime. We don't have access to that generation algorithm
+    here, so we assign generic names (e.g. "Service Crew #2", "Marine #1")
+    as placeholders until we reverse-engineer the naming system.
+
+    WHY NOT CONFUSE WITH PILOTS:
+    The <people> block is separate from the <control><post> system used for
+    pilots and managers. It stores 'bulk' crew assigned to the ship's hold and
+    weapon stations — think of them as the unnamed background workforce.
+    Pilots are always found via <control><post id="aipilot">, not here.
+    """
+    crew = []
+    people = ship_elem.find('people')
+    if people is None:
+        return crew
+
+    service_count = 0
+    marine_count  = 0
+
+    for person in people.findall('person'):
+        role = person.get('role', '')
+        if role not in ('service', 'marine'):
+            continue
+
+        # Skills sit as attributes on the <skills> child element, e.g.:
+        #   <skills engineering="8" morale="5"/>
+        # Missing attributes mean 0 — we only store what X4 actually wrote.
+        skills_elem = person.find('skills')
+        skills = {}
+        if skills_elem is not None:
+            for attr in ('piloting', 'management', 'morale', 'engineering', 'boarding'):
+                val = skills_elem.get(attr)
+                if val is not None:
+                    skills[attr] = int(val)
+
+        if role == 'service':
+            service_count += 1
+            name = f"Service Crew #{service_count}"
+        else:
+            marine_count += 1
+            name = f"Marine #{marine_count}"
+
+        # Parse appearance metadata from the macro string.
+        # This gives us faction, gender, ethnicity, and variant without
+        # needing to decode the seed — useful for building a character file.
+        char_info = _parse_character_macro(person.get('macro', ''))
+
+        # Store the raw seed too. We can't generate the real name from it yet,
+        # but keeping it now means we won't need to re-scan saves once we do.
+        seed_elem = person.find('npcseed')
+        seed = seed_elem.get('seed') if seed_elem is not None else None
+
+        crew.append({
+            "name":          name,
+            "role":          role,
+            "skills":        skills,
+            "assigned_to":   ship_name,
+            "assigned_code": ship_code,
+            "assigned_type": "ship",
+            "sector":        ship_sector,
+            "faction":       char_info["faction"],
+            "gender":        char_info["gender"],
+            "ethnicity":     char_info["ethnicity"],
+            "variant":       char_info["variant"],
+            "seed":          seed,
+        })
+
+    return crew
+
+
 def _parse_software(ship_elem: ET.Element) -> list[str]:
     """
     Returns a list of software ware IDs installed on the ship.
@@ -548,6 +676,7 @@ def scan_ships(
 
     player_ships: list[dict] = []
     npc_ships:    list[dict] = []
+    crew:         list[dict] = []   # all named crew on player ships (pilots, service, marines)
 
     # Tracks the macro of the sector and zone the parser is currently inside.
     # current_sector_macro is the stable cluster_N_sectorN_macro used as the
@@ -670,6 +799,21 @@ def scan_ships(
                             sw       = _parse_software(se)
                             cmdr     = _parse_commander(se)
 
+                            # Build crew roster entries for this ship.
+                            # Named pilot goes in first (if one is assigned),
+                            # then all service crew and marines from <people>.
+                            if pilot["name"]:
+                                crew.append({
+                                    "name":          pilot["name"],
+                                    "role":          "pilot",
+                                    "skills":        pilot["skills"],
+                                    "assigned_to":   name,
+                                    "assigned_code": code,
+                                    "assigned_type": "ship",
+                                    "sector":        sector,
+                                })
+                            crew.extend(_extract_people(se, name, code, sector))
+
                             # hull_hp is the ship's current HP as a raw float.
                             # X4 only writes <hull value="..."/> when the ship
                             # has taken damage — if the element is absent the
@@ -757,6 +901,7 @@ def scan_ships(
     return {
         "player_ships": player_ships,
         "npc_ships":    npc_ships,
+        "crew":         crew,
     }
 
 
