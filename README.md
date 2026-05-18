@@ -115,7 +115,7 @@ X4 Foresight/
 
 ## 🚀 Quick Start
 
-1. **Place your X4 save file** in the project root (`save_001.xml`).
+1. **Place your X4 save file** in the project root (`save_001.xml`). - not required if save files are in the default location
 2. **Run the scanner:**
    - CLI: `python x4_save_scanner.py`
    - GUI: Double-click `X4_Empire_Intelligence.pyw`
