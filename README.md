@@ -1,104 +1,126 @@
 # X4 Foresight — Empire Intelligence
 
-Scans an X4: Foundations save file and produces a structured JSON snapshot of your empire — pilot info, credits, stations, faction rep, and fleet — ready to paste into an AI prompt for strategic advice. Also includes a PyQt6 desktop UI to browse the data.
+A desktop application for scanning *X4: Foundations* save files and generating structured JSON snapshots for AI strategic advice.
 
-## Project structure
+[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
+[![PyQt6](https://img.shields.io/badge/UI_Pyqt6-blue.svg)](https://www.riverbankcomputing.com/software/pyqt/)
+
+---
+
+## 🗺️ Scan Pipeline Overview
+
+```
+┌─────────────────┐     ┌──────────────┐     ┌──────────────────────┐
+│  X4 Save File   │ →   │ Scanner      │ →   │ x4_empire_state.json │
+│ (save_001.xml)  │     │ Pipeline     │     │ (JSON snapshot)       │
+└─────────────────┘     └──────────────┘     └──────────────────────┘
+                              ↓
+                        ┌──────────────┐
+                        │ UI Dashboard │
+                        │ + Reports    │
+                        └──────────────┘
+```
+
+---
+
+## 📂 Core Functionality
+
+- **Scans Your Save File:** Extracts player identity, stations, ships, reputation, and crew data from *X4: Foundations* save files.
+- **Generates Structured JSON:** Outputs `x4_empire_state.json` for use with AI assistants or external dashboards.
+- **Configurable Modes & Tiers:** Run in `full` or `ships` mode; set ship scan tiers (1–3) to control NPC fleet inclusion.
+
+---
+
+## 🖥️ Entry Points
+
+### Desktop Application
+
+- **Windows Launcher:** `X4_Empire_Intelligence.pyw`  
+  Opens a PyQt6 desktop UI with save selector, progress dialogs, and embedded dashboard.
+
+- **CLI Scanner:** `x4_save_scanner.py`  
+  Standalone console scanner for scripting or batch processing.
+
+---
+
+## 📊 Output Format (`x4_empire_state.json`)
+
+| Section | Contents |
+|---------|----------|
+| **Player** | Name, sector, credits |
+| **Stations** | List grouped by sector with production, manager skills |
+| **Fleet** | Ships sorted by sector, hull status, captured flags, pilot sub-lines |
+| **Reputation** | Faction standings (-30 to +30), base + booster values |
+| **Crew** | Roles (manager, pilot, service, marine) with assigned station, primary skill |
+| **NPC Fleet** | Tiers 2/3 only: sector → faction → role counts when enabled |
+
+---
+
+## 🔧 Configuration Options
+
+| Mode | Description |
+|------|-------------|
+| `full` | Default — scans all data (player, stations, fleet, reputation, crew) |
+| `ships` | Scans player + fleet only; excludes stations and reputation if desired |
+
+**Scan Tiers:**
+- **Tier 1:** Player + faction info
+- **Tier 2:** Add stations, managers
+- **Tier 3:** Include NPC ships (if enabled), crew details
+
+---
+
+## 📦 Auto-Generated Outputs
+
+| File | Description |
+|------|-------------|
+| `data/ships.py` | Ship name mappings for UI display |
+| `data/ship_stats.json` | Pre-computed faction/sector baselines |
+| `x4_empire_state.json` | JSON snapshot of current empire state |
+
+---
+
+## 🛠️ Dependencies
+
+- Python 3.10+
+- PyQt6
+- PyInstaller (for frozen builds)
+- Optional: X4: Foundations save file (`save_001.xml`) and language file (`0001-l044.xml`) for full functionality
+
+---
+
+## 📁 Project Structure
 
 ```
 X4 Foresight/
-├── scanner/               # XML parsing
-│   ├── language.py        # Sector name resolution from language file
-│   ├── scanner.py         # Pass 1 (player/stations) and Pass 2 (reputation)
-│   └── ship_scanner.py    # Pass 3 (player fleet + optional NPC ships)
-├── data/                  # Static lookup tables
-│   ├── factions.py        # Faction names and reputation scaling
-│   ├── wares.py           # Production ware display names
-│   └── ships.py           # Ship type display names (auto-generated — see Legacy)
-├── export/                # Output
-│   └── jsonexport.py      # Builds and writes x4_empire_state.json
-├── ui/                    # Desktop frontend
-│   ├── main_ui.py         # PyQt6 window + JS bridge
-│   ├── ui.html            # Dashboard HTML
-│   └── assets/            # Icons and fonts used by ui.html
-│       ├── tabler-icons_min.css
-│       └── tabler-icons.woff2
-├── Legacy/                # One-time generation tools and extracted game data
-│   └── generate_ship_names.py  # Regenerate data/ships.py from game files
-├── display.py             # Console report formatter
-├── x4_save_scanner.py     # Entry point — run this
-└── X4_Empire_Intelligence.pyw  # Windows double-click launcher (no console)
+├── x4_save_scanner.py       # CLI scanner entry point
+├── X4_Empire_Intelligence.pyw  # Windows launcher (no console)
+├── launcher.py               # PyQt6 desktop app wrapper
+├── display.py                # Console report formatter (ASCII art)
+├── export_json.py            # JSON export engine
+├── language.py               # Sector/ship name resolution
+├── scanner/                  # Scanner modules
+│   ├── pass1_player_identity.py
+│   ├── pass2_station_reputation.py
+│   └── pass3_fleet_crew.py
+├── data/                     # Auto-generated outputs
+│   ├── ships.py
+│   └── ship_stats.json
+└── ui/                       # Desktop application source
+    ├── main_ui.py            # PyQt6 app entry point
+    └── ui.html               # Embedded web dashboard
 ```
 
-## Setup
+---
 
-```bash
-python -m venv .venv
-.venv\Scripts\activate        # Windows
-source .venv/bin/activate      # macOS / Linux
+## 🚀 Quick Start
 
-pip install PyQt6 PyQt6-WebEngine
-```
+1. **Place your X4 save file** in the project root (`save_001.xml`).
+2. **Run the scanner:**
+   - CLI: `python x4_save_scanner.py`
+   - GUI: Double-click `X4_Empire_Intelligence.pyw`
+3. **Check output:** Open `x4_empire_state.json` for structured data or use UI dashboard.
 
-## Usage
+---
 
-Place `0001-l044.xml` (X4 English language file) in the project root for human-readable sector names and ship type names. Both entry points below will find your X4 saves automatically — no manual unzipping or renaming required.
-
-### Desktop UI (recommended)
-
-```bash
-python ui/main_ui.py
-# or on Windows, double-click X4_Empire_Intelligence.pyw
-```
-
-On first launch a save selector dialog lists all saves found in `~/Documents/Egosoft/X4/<id>/save/`. Pick one and click **Scan** — the scanner runs in a background thread and the dashboard loads automatically when done. On subsequent launches you are asked whether to load existing data or run a new scan.
-
-### CLI scanner
-
-```bash
-python x4_save_scanner.py
-```
-
-Lists available saves with timestamps and prompts you to choose one (`1–N`, `L` for latest). Writes `x4_empire_state.json` to the project root and prints a console report. Useful for iterating on scanner logic or generating the JSON without opening the UI.
-
-> **Fallback:** If no game saves are found, both entry points will look for `save_001.xml` in the project root (a manually placed unzipped save). This path is still supported but is no longer required for normal use.
-
-## Run modes
-
-Edit `RUN_MODE` in `x4_save_scanner.py` to control which passes run:
-
-| Mode | What runs | Use case |
-|------|-----------|----------|
-| `"full"` | Complete pipeline — player, stations, reputation, ships, export | Normal usage |
-| `"ships"` | Ships scan only — skips Pass 1 and Pass 2 | Iterating on ship data |
-
-## Ship scan tiers
-
-Edit `SHIP_SCAN_TIER` in `x4_save_scanner.py` (only meaningful in `"full"` mode):
-
-| Tier | What's included | Speed |
-|------|----------------|-------|
-| 1 | Player ships only (default) | Fastest |
-| 2 | + NPC ships in sectors where you have stations | Medium |
-| 3 | + NPC ships in all sectors where you have ships | Slowest |
-
-## Ship type names
-
-Ship display names (e.g. "Magpie Sentinel", "Magnetar (Gas) Vanguard") are stored in `data/ships.py`, which is auto-generated from the game's language and macro files. It covers the base game and all DLC factions.
-
-To regenerate `data/ships.py` after a game update or new DLC:
-
-1. Extract ship macro XMLs from the game's `.cat` files using XRCatTool (from X Tools on Steam):
-```
-XRCatTool.exe -in "X4 Foundations" -out "extracted" -include "assets/units/.*/macros/ship_.*_macro\.xml"
-```
-2. Run the generator from the project root:
-```bash
-python Legacy/generate_ship_names.py
-```
-
-## Notes
-
-- `save_001.xml` is gitignored — it is only used as a fallback when no game saves are found automatically. `0001-l044.xml` is also gitignored (large, user-specific file).
-- `x4_empire_state.json` is also gitignored — it's generated output.
-- `data/ships.py` is committed to the repo — no need to regenerate unless the game adds new ships.
-- `.idea/` (PyCharm) and `.venv/` are gitignored.
+*For detailed code references and architecture diagrams, see `X4_Foresight_Code_Reference.md` and `X4_Foresight_Architecture v2.md`.*
