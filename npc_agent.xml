@@ -1,0 +1,982 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mdscript name="NPC_Agent" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="md.xsd">
+  <cues>
+    <cue name="Setup_CheckDiplomacyStatus" onfail="cancel">
+      <conditions>
+        <check_value value="md.Story_Diplomacy_Intro.Pt11_End.state == cuestate.complete"/>
+        <check_value value="ware.research_diplomacy_network.research.unlocked"/>
+      </conditions>
+      <actions>
+        <!-- Dal has already been unlocked, too! -->
+        <signal_cue_instantly cue="AgentsActivated"/>
+      </actions>
+    </cue>
+
+    <cue name="AgentsActivated_Force">
+      <conditions>
+        <event_cue_signalled/>
+      </conditions>
+      <force>
+        <do_if value="not md.X4Ep1_Mentor_Subscriptions.Start.$EmbassyRoom?">
+          <signal_cue cue="md.X4Ep1_Mentor_Subscriptions.Manage_EmbassyOffice_Room"/>
+        </do_if>
+        <signal_cue cue="AgentsActivated"/>
+      </force>
+    </cue>
+
+    <cue name="AgentsActivated_PatchCheck" onfail="cancel">
+      <conditions>
+        <check_value value="md.Story_Diplomacy_Intro.Pt11_End.state == cuestate.complete and ware.research_diplomacy_network.research.unlocked" />
+      </conditions>
+      <actions>
+        <signal_cue cue="AgentsActivated" check="false"/>
+        <do_if value="md.Diplomacy.Diplomacy_EnableAllGenericActions.state != cuestate.complete and not md.Diplomacy.Start.$AgentIntroduction_MissionCue.hasmission"
+               comment="reset the tutorial only if the player has not yet finished the tutorial before or is currently doing it">
+          <reset_cue cue="md.Diplomacy.AgentIntroduction"/>
+        </do_if>
+      </actions>
+    </cue>
+
+    <cue name="AgentsActivated" namespace="this" version="2">
+      <conditions>
+        <check_any>
+          <check_all>
+            <event_cue_completed cue="md.Story_Diplomacy_Intro.Pt11_End"/>
+            <check_value value="ware.research_diplomacy_network.research.unlocked"/>
+          </check_all>
+          <check_all>
+            <event_player_research_unlocked ware="ware.research_diplomacy_network"/>
+            <check_any>
+              <check_value value="@md.$PersistentCharacters.$DalBusta.hascontext.{player.headquarters}"/>
+              <check_value value="md.Story_Diplomacy_Intro.Pt11_End.state == cuestate.complete"/>
+            </check_any>
+          </check_all>
+          <event_cue_signalled/>
+        </check_any>
+      </conditions>
+      <actions>
+        <set_value name="$DebugChance" exact="0" comment="TODO: Make sure to turn this off before committing" />
+        <debug_text text="'Agent Functionality has been unlocked'" chance="$DebugChance" />
+
+        <!-- AgentFactionTable: Faction =  -->
+        <set_value name="md.$AgentFactionTable" exact="table[]" />
+        <set_value name="md.$PlayerAgentTable" exact="table[]" />
+        <create_group groupname="md.$AgentTrackedContrainerGroup" comment="A group tracking the stations used for placing agents" />
+
+        <!-- Use Grand Exchange to see if a faction's station is connected to the core network -->
+        <find_sector name="$GrandExchangeISector" macro="macro.cluster_01_sector001_macro"/>
+      </actions>
+      <patch sinceversion="2">
+        <find_sector name="$GrandExchangeISector" macro="macro.cluster_01_sector001_macro"/>
+        <!-- If the player had their HQ in a system that is unconnected to the gate network, agents might not have spawned. Reset Init if that was the case to speed along the Agent generation -->
+        <do_if value="md.$AgentTrackedContrainerGroup.count == 0">
+          <reset_cue cue="Init"/>
+        </do_if>
+      </patch>
+      <cues>
+        <!--Add agents to all active major factions when initially activated -->
+        <cue name="Init" onfail="cancel">
+          <conditions>
+            <check_value value="md.$AgentFactionTable.keys.count == 0"/>
+          </conditions>
+          <actions>
+            <signal_cue_instantly cue="EvaluateFactions" param="lookup.faction.list"/>
+          </actions>
+        </cue>
+
+        <!--event.param == $Sectors
+        If an agent already exists for a faction, this faction will be treated as already processed and ignored.
+        Can be signalled by DLCs to initialise their factions -->
+        <cue name="EvaluateFactions" instantiate="true">
+          <conditions>
+            <event_cue_signalled/>
+          </conditions>
+          <actions>
+            <set_value name="$PotentialFactions" exact="event.param"/>
+            <do_for_each name="$SelectedFaction" in="$PotentialFactions">
+              <do_if value="md.Diplomacy.Start.$DiplomacyFactionTable.{$SelectedFaction}?">
+                <debug_text text="'Planning agent spawning for ' + $SelectedFaction.knownname + ' ({' + $SelectedFaction + '})'" chance="$DebugChance" />
+
+                <do_if value="md.Diplomacy.Start.$DiplomacyFactionTable.{$SelectedFaction}.$InateAgentExperience == 'no_agents'">
+                  <!-- Check if this faction is allowed to spawn agents in the first place via the $InateAgentExperience string -->
+                  <debug_text text="'Faction ' + $SelectedFaction.knownname + ' is not supposed to spawn agents. Aborting.' "/>
+                </do_if>
+                <do_elseif value="@md.$AgentFactionTable.{$SelectedFaction}.$AgentActor.exists">
+                  <!-- Check to see whether faction already has an agent placed in the universe -->
+                  <debug_text text="'Actor already exists for faction: ' + $SelectedFaction.knownname"/>
+                </do_elseif>
+                <do_else>
+                  <!-- If no agent placed yet, determine the station to place them on -->
+                  <find_station_by_true_owner name="$PossibleStations_Preselection" faction="$SelectedFaction" space="player.galaxy" multiple="true">
+                    <match_any>
+                      <match shipyard="true"/>
+                      <match tradestation="true"/>
+                      <match wharf="true"/>
+                      <match equipmentdock="true"/>
+                      <match piratebase="true"/>
+                    </match_any>
+                  </find_station_by_true_owner>
+
+                  <do_if value="$PossibleStations_Preselection.count">
+                    <shuffle_list list="$PossibleStations_Preselection"/>
+                    <do_for_each name="this.$station" in="$PossibleStations_Preselection">
+                      <do_if value="this.$station.gatedistance.{$GrandExchangeISector} ge 0">
+                        <set_value name="$PotentialStation" exact="[this.$station]"/>
+                        <signal_cue_instantly cue="AddAgent" param="table[$stations = $PotentialStation]"/>
+                        <break/>
+                      </do_if>
+                    </do_for_each>
+                    <do_if value="not $PotentialStation?">
+                      <signal_cue_instantly cue="EvaluateFaction_DelayedRecheck" param="$SelectedFaction"/>
+                    </do_if>
+                    <do_else>
+                      <remove_value name="$PotentialStation"/>
+                    </do_else>
+                  </do_if>
+                  <do_else>
+                    <!-- This specific faction is checked again in some time, to see if a new potential station has been built -->
+                    <signal_cue_instantly cue="EvaluateFaction_DelayedRecheck" param="$SelectedFaction"/>
+                  </do_else>
+                </do_else>
+              </do_if>
+              <do_else>
+                <do_if value="typeof $SelectedFaction != datatype.faction">
+                  <debug_text text="'Passed in Object ' + $SelectedFaction + ' was not a faction.'" filter="error"/>
+                </do_if>
+                <do_else>
+                  <debug_text text="'Faction ' + $SelectedFaction + ' is not expected to generate Agents'" chance="$DebugChance"/>
+                </do_else>
+              </do_else>
+            </do_for_each>
+
+            <remove_value name="$PotentialFactions"/>
+            <remove_value name="$PotentialStation"/>
+            <remove_value name="$PossibleStations_Preselection"/>
+          </actions>
+        </cue>
+
+        <cue name="EvaluateFaction_DelayedRecheck" instantiate="true">
+          <conditions>
+            <event_cue_signalled/>
+          </conditions>
+          <delay exact="15min"/>
+          <actions>
+            <set_value name="this.$faction" exact="event.param"/>
+            <do_if value="this.$faction.isactive">
+              <signal_cue_instantly cue="EvaluateFactions" param="[this.$faction]"/>
+            </do_if>
+          </actions>
+        </cue>
+
+        <!--event.param = Table with keys:
+        $stations = list of stations
+        $defintion = character definition (optional)-->
+        <cue name="AddAgent" instantiate="true" namespace="this">
+          <conditions>
+            <event_cue_signalled/>
+            <check_value value="typeof event.param == datatype.table and event.param.$stations?"/>
+          </conditions>
+          <actions>
+            <set_value name="$DebugChance" exact="AgentsActivated.$DebugChance"/>
+            <do_for_each name="$SelectedStation" in="event.param.$stations">
+
+              <set_value name="$AgentActorOwner" exact="$SelectedStation.owner"/>
+
+              <!-- Add a new Actor -->
+              <!-- Note: cue actor assignment is only temporary since this is an instance -->
+              <set_value name="this.$seed" min="1L" max="1000000L"/>
+              <do_if value="event.param.$definition?">
+                <create_cue_actor name="$AgentActor" cue="AgentsActivated" ref="event.param.$definition" seed="this.$seed">
+                  <owner exact="$AgentActorOwner" />
+                </create_cue_actor>
+              </do_if>
+              <do_else>
+                <create_cue_actor name="$AgentActor" cue="AgentsActivated" seed="this.$seed">
+                  <select tags="tag.agent" faction="$AgentActorOwner"/>
+                  <owner exact="$AgentActorOwner" />
+                </create_cue_actor>
+                <signal_cue_instantly cue="AgentCreated" param="$AgentActor"/>
+              </do_else>
+              <set_entity_traits entity="$AgentActor" missionactor="false" customhandler="true" subtitlename="true"/>
+              <set_entity_type entity="$AgentActor" type="entitytype.agent" />
+
+              <debug_text text="'Agent ' + $AgentActor.name + ' ({' + $AgentActor + '}) created for Faction: ' + $AgentActorOwner.knownname + ' , added to: ' + $SelectedStation.knownname" chance="$DebugChance" />
+
+
+              <add_actor_to_room actor="$AgentActor" object="$SelectedStation.controlroom" result="$AgentActorPlaced" />
+
+              <do_if value="$AgentActorPlaced">
+                <!-- Determine one interior-type that the agent will spawn in consistently -->
+                <set_value name="$InteriorString" exact="['bar', 'managersoffice', 'security'].random"/>
+
+                <!-- Create some experience diversification based on the faction of origin -->
+                <do_if value="md.Diplomacy.Start.$DiplomacyFactionTable.{$AgentActorOwner}.$InateAgentExperience == 'negotiation'">
+                  <do_any>
+                    <do_all weight="6">
+                      <set_value name="$AgentActor.$diplomacy_exp_negotiation" exact="10"/>
+                      <set_value name="$AgentActor.$diplomacy_exp_espionage" exact="0"/>
+                    </do_all>
+                    <do_all weight="3">
+                      <set_value name="$AgentActor.$diplomacy_exp_negotiation" exact="20"/>
+                      <set_value name="$AgentActor.$diplomacy_exp_espionage" exact="0"/>
+                    </do_all>
+                    <do_all weight="1">
+                      <set_value name="$AgentActor.$diplomacy_exp_negotiation" exact="20"/>
+                      <set_value name="$AgentActor.$diplomacy_exp_espionage" exact="10"/>
+                    </do_all>
+                  </do_any>
+                </do_if>
+                <do_elseif value="md.Diplomacy.Start.$DiplomacyFactionTable.{$AgentActorOwner}.$InateAgentExperience == 'espionage'">
+                  <do_any>
+                    <do_all weight="6">
+                      <set_value name="$AgentActor.$diplomacy_exp_espionage" exact="10"/>
+                      <set_value name="$AgentActor.$diplomacy_exp_negotiation" exact="0"/>
+                    </do_all>
+                    <do_all weight="3">
+                      <set_value name="$AgentActor.$diplomacy_exp_espionage" exact="20"/>
+                      <set_value name="$AgentActor.$diplomacy_exp_negotiation" exact="0"/>
+                    </do_all>
+                    <do_all weight="1">
+                      <set_value name="$AgentActor.$diplomacy_exp_espionage" exact="20"/>
+                      <set_value name="$AgentActor.$diplomacy_exp_negotiation" exact="10"/>
+                    </do_all>
+                  </do_any>
+                </do_elseif>
+                <do_else>
+                  <set_value name="$AgentActor.$diplomacy_exp_negotiation" exact="5"/>
+                  <set_value name="$AgentActor.$diplomacy_exp_espionage" exact="5"/>
+                </do_else>
+
+                <!-- Add agent to the faction table, with a reference station they have been added to -->
+                <set_value name="md.$AgentFactionTable.{$AgentActorOwner}" exact="table[$AgentActor = $AgentActor,
+                                                                                          $Station = $SelectedStation,
+                                                                                          $InteriorString = $InteriorString,
+                                                                                          $Ownership = 'npc_faction',
+                                                                                          $Seed = this.$seed]"/>
+
+                <!-- Also add the station to the tracked station group for later independent use (tracking whether or not it has been destroyed, tracking whether or not it is already used for a shady dealer) -->
+                <add_to_group groupname="md.$AgentTrackedContrainerGroup" object="$SelectedStation" />
+              </do_if>
+              <do_else>
+                <debug_text text="'$AgentActor ' + $AgentActor.name + ' ({' + $AgentActor + '}) could not be placed in control room of ' + $SelectedStation.knownname + ' ({' + $SelectedStation + '})'" filter="error" />
+              </do_else>
+            </do_for_each>
+          </actions>
+        </cue>
+
+        <!-- Track whether or not a station in the $AgentTrackedContrainerGroup has been destroyed to move / replace the agent -->
+        <cue name="TrackedStationDestroyed" instantiate="true">
+          <conditions>
+            <event_object_destroyed group="md.$AgentTrackedContrainerGroup" />
+          </conditions>
+          <actions>
+            <set_value name="this.$DestroyedStation" exact="event.object" />
+            <set_value name="this.$DestroyedStationOwner" exact="event.object.owner" />
+            <debug_text text="this.$DestroyedStation.knownname + ' ({' + this.$DestroyedStation + '}) has been destroyed in ' + this.$DestroyedStationSector.knownname" chance="$DebugChance" />
+
+            <do_for_each valuename="$AgentActorOwner" in="md.$AgentFactionTable">
+              <do_if value="$AgentActorOwner.$Station == this.$DestroyedStation">
+                <append_to_list name="this.$ReevaluateFactionsList" exact="$AgentActorOwner.$AgentActor.owner" create="true"/>
+              </do_if>
+            </do_for_each>
+            <do_if value="not this.$ReevaluateFactionsList?">
+              <!-- No factions have an agent on this station, so do not request a new evaluation -->
+              <cancel_cue cue="this"/>
+            </do_if>
+          </actions>
+          <delay exact="0.1s" comment="wait before signalling the reevaluate, so that the old actor can be cleaned up properly"/>
+          <actions>
+            <signal_cue_instantly cue="EvaluateFactions" param="this.$ReevaluateFactionsList"/>
+          </actions>
+        </cue>
+
+        <!-- Reevaluate the Agents and potentially destroy/generate them if a faction is turned on or off-->
+        <cue name="Faction_ActivationStateChanged" instantiate="true">
+          <conditions>
+            <event_faction_activated/>
+          </conditions>
+          <actions>
+            <set_value name="this.$faction" exact="event.param"/>
+            <do_if value="event.name == 'event_faction_activated'
+                   and md.Diplomacy.Start.$DiplomacyFactionTable.{this.$faction}.$InateAgentExperience != 'no_agents'">
+              <!-- If the newly activated faction spawns agents, signal the EvaluateFactions cue -->
+              <signal_cue_instantly cue="EvaluateFactions" param="[this.$faction]"/>
+            </do_if>
+          </actions>
+        </cue>
+
+        <cue name="AgentCreated" instantiate="true" namespace="this">
+          <conditions>
+            <event_cue_signalled/>
+          </conditions>
+          <actions>
+            <set_value name="$AgentActor" exact="event.param"/>
+            <set_value name="$DebugChance" exact="AgentsActivated.$DebugChance" />
+          </actions>
+          <cues>
+
+            <cue name="DEBUG_Guidance" onfail="cancel">
+              <conditions>
+                <check_value value="$DebugChance == 100"/>
+              </conditions>
+              <actions>
+                <set_value name="$DebugMissionCue" exact="this"/>
+                <debug_text text="'Debug Mission cue running'"/>
+                <do_if value="$AgentActor.gatedistance.{AgentsActivated.$GrandExchangeISector} ge 0">
+                  <create_mission cue="$DebugMissionCue" name="'DEBUG Agent Guidance Mission'" description="'Set Guidance to the Agent NPCs for Debugging.'" type="missiontype.plot" faction="$AgentActor.owner"  difficulty="level.trivial" abortable="true" activate="true">
+                    <briefing>
+                      <objective step="1" action="objective.talkto" object="$AgentActor" showunknownpath="true"/>
+                    </briefing>
+                  </create_mission>
+                  <set_objective_from_briefing cue="$DebugMissionCue" step="1"/>
+                </do_if>
+                <do_else>
+                  <cancel_cue cue="this"/>
+                </do_else>
+              </actions>
+              <cues>
+
+                <!-- Keep the instance alive to have the mission running until we abort the mission -->
+                <cue name="DEBUG_Guidance_Cue">
+                  <conditions>
+                    <event_mission_aborted cue="$DebugMissionCue"/>
+                  </conditions>
+                  <actions>
+                    <debug_text text="'Mission Aborted'"/>
+                  </actions>
+                </cue>
+
+              </cues>
+            </cue>
+
+            <cue name="Agent_ConversationStarted" instantiate="true">
+              <conditions>
+                <event_conversation_started actor="$AgentActor" conversation="default"/>
+              </conditions>
+              <actions>
+                <do_if value="$AgentActor.owner != faction.player">
+                  <add_npc_line speaker="$AgentActor" line="6001" comment="Greeting for unowned agent"/>
+
+                  <set_value name="$fee" exact="3000Cr * ($AgentActor.$diplomacy_exp_negotiation + $AgentActor.$diplomacy_exp_espionage)"/>
+                  <substitute_text text="$HireText" source="{1002,3014}">
+                    <replace string="'$FEE$'" with="$fee.formatted.default" />
+                  </substitute_text>
+
+                  <do_if value="player.money lt $fee">
+                    <set_value name="$player_cannothire" exact="{30221,3271}"/>
+                  </do_if>
+                  <do_elseif value="md.$PlayerAgentTable.keys.count ge md.Diplomacy.Start.$PlayerAgentLimit">
+                    <set_value name="$player_cannothire" exact="{1026,12808}"/>
+                  </do_elseif>
+                  <do_else>
+                    <set_value name="$player_cannothire" exact="false"/>
+                  </do_else>
+
+                  <add_player_choice_sub text="$HireText" section="c_hireworkforme" position="top_left" comment="Hire (fee)" selectable="if $player_cannothire then false else true" choiceparam="$fee" tooltip="if $player_cannothire then $player_cannothire else ''"/>
+                  <add_player_choice_return text="{1002,2}" position="bottom_right" comment="Goodbye" />
+                </do_if>
+                <do_else>
+                  <do_if value="md.$PlayerAgentTable.{$AgentActor}.$State.{1} == 'on_mission'">
+                    <!-- The Agent is currently on a mission -->
+                    <add_npc_line speaker="$AgentActor" line="6006" comment="Greeting for player-owned agent on mission"/>
+                  </do_if>
+                  <do_elseif value="md.$PlayerAgentTable.{$AgentActor}.$State.{1} == 'hq_available'">
+                    <do_if value="$AgentActor.hascontext.{player.headquarters}">
+                      <!-- The Agent is currently on the HQ and ready to be sent on a mission -->
+                      <add_npc_line speaker="$AgentActor" line="if player.entity.isfemale then 6005 else 6004" comment="Greeting for player-owned agent on HQ" />
+                    </do_if>
+                    <do_else>
+                      <!-- The Agent is not on a mission but currently in transit (most likely they have just been hired) -->
+                      <add_npc_line speaker="$AgentActor" line="6009" comment="Greeting for player-owned agent on the way to mission" />
+                    </do_else>
+                    <!-- You can always decide to let the Agent go as long as they aren't on a mission -->
+                    <add_player_choice_sub text="{30296,10001}" section="c_fired" choiceparam="'request'" position="bottom_left" comment="Fire"/>
+                    <add_player_choice_sub text="{30296,10002}" section="c_manageship" choiceparam="'shipmanagement'" position="top_left" comment="Manage ship"/>
+                  </do_elseif>
+                  <!-- You can always opt out of the conversation-->
+                  <add_player_choice_return text="{1002,2}" position="bottom_right" comment="Goodbye" />
+                </do_else>
+              </actions>
+            </cue>
+
+            <library name="HelperLibrary_HireAgent" purpose="run_actions">
+              <params>
+                <param name="AgentActor"/>
+              </params>
+              <actions>
+                <!-- Remove the station from the tracked station group since we don't need to track it anymore -->
+                <remove_from_group group="md.$AgentTrackedContrainerGroup" object="md.$AgentFactionTable.{$AgentActor.owner}.$Station" />
+
+                <set_value name="md.$PlayerAgentTable.{$AgentActor}" exact="table[$State = ['hq_available', player.headquarters],
+                                                                                $OriginalOwner = $AgentActor.owner,
+                                                                                $Seed = md.$AgentFactionTable.{$AgentActor.owner}.$Seed]"/>
+
+                <recruit_diplomacy_agent agent="$AgentActor"/>
+                <!-- unlock the Diplomacy Agent Actions UI -->
+                <set_value name="player.entity.$x4ep1_diplomacy_agent" exact="true"/>
+
+                <!-- overwrite the agent in the Faction Table with a string denoting that the player owns an agent of that faction -->
+                <set_value name="md.$AgentFactionTable.{$AgentActor.owner}.$Ownership" exact="'owned'"/>
+                <set_owner object="$AgentActor" faction="faction.player"/>
+                <!-- let the introduction mission know what agent was hired -->
+                <signal_cue_instantly cue="md.Diplomacy.AgentIntroduction_AgentHired" param="$AgentActor" check="false"/>
+                <signal_cue_instantly cue="Update_AgentPlacement" param="[$AgentActor, ['hq_available']]"/>
+                <set_value name="stat.diplomacy_agents_hired" operation="add"/>
+              </actions>
+            </library>
+
+            <cue name="Agent_ConversationHired" instantiate="true">
+              <conditions>
+                <event_conversation_next_section actor="$AgentActor" section="c_hireworkforme"/>
+              </conditions>
+              <actions>
+                <add_npc_line speaker="$AgentActor" line="6003" />
+                <set_value name="$fee" exact="event.param2"/>
+                <transfer_money from="faction.player" to="faction.ownerless" amount="$fee"/>
+                <open_menu menu="DiplomacyMenu" param="[0, 0, 'agents', [ $AgentActor ]]" />
+
+                <run_actions ref="HelperLibrary_HireAgent">
+                  <param name="AgentActor" value="$AgentActor"/>
+                </run_actions>
+              </actions>
+            </cue>
+
+            <cue name="Agent_ConversationFired" instantiate="true">
+              <conditions>
+                <event_conversation_next_section actor="$AgentActor" section="c_fired"/>
+              </conditions>
+              <actions>
+                <do_if value="event.param2 == 'request'">
+                  <!-- Ask again to double-check if the player didn't misclick -->
+                  <add_npc_line speaker="$AgentActor" line="6007" />
+
+                  <set_value name="this.$OriginalFaction" exact="md.$PlayerAgentTable.{$AgentActor}.$OriginalOwner"/>
+                  <substitute_text text="$tooltip" source="{1028,9005}">
+                    <replace string="'$FACTIONSHORTNAME$'" with="this.$OriginalFaction.shortname"/>
+                  </substitute_text>
+                  
+                  <add_player_choice_sub text="{1002,3018}" tooltip="$tooltip" section="c_fired" choiceparam="'confirm'" position="bottom_left" comment="Fire"/>
+                  <add_player_choice_return text="{1002,2}" position="bottom_right" comment="Goodbye" />
+                </do_if>
+                <do_else>
+                  <unassign_diplomacy_ship agent="$AgentActor"/>
+                  <add_npc_line speaker="$AgentActor" line="6008" />
+                  <signal_cue_instantly cue="AgentCleanUp" param="$AgentActor"/>
+                </do_else>
+              </actions>
+            </cue>
+
+            <cue name="Agent_ConversationEnded" instantiate="true">
+              <conditions>
+                <event_conversation_finished actor="$AgentActor"/>
+              </conditions>
+              <actions>
+                <do_if value="$AgentActor.owner != faction.player">
+                  <speak actor="$AgentActor" line="6002"/>
+                </do_if>
+                <do_else>
+                  <speak actor="$AgentActor" line="2007"/>
+                </do_else>
+              </actions>
+            </cue>
+
+            <cue name="Agent_ConversationManageShip" instantiate="true">
+              <conditions>
+                <event_conversation_next_section actor="$AgentActor" section="c_manageship"/>
+              </conditions>
+              <actions>
+                <open_menu menu="DiplomacyMenu" param="[0, 0, 'agents', [ $AgentActor ]]" />
+              </actions>
+            </cue>
+
+            <cue name="AgentDestroyed">
+              <conditions>
+                <event_object_destroyed object="$AgentActor"/>
+              </conditions>
+              <actions>
+                <!-- If for whatever reason the agent is destroyed, cancel this cue's instantiated parent cue for clean up -->
+                <cancel_cue cue="parent"/>
+              </actions>
+            </cue>
+          </cues>
+        </cue>
+
+        <cue name="AgentManagement" version="2">
+          <patch sinceversion="2">
+            <!-- There was an exploit that allowed Agents to be moved to ships or stations, chaning their entitytype -->
+            <do_for_each name="$agent" in="md.$PlayerAgentTable">
+              <do_if value="$agent.type !=  entitytype.agent">
+                <signal_cue_instantly cue="AgentCleanUp" param="$agent"/>
+              </do_if>
+            </do_for_each>
+          </patch>
+          <cues>
+
+            <!-- Signal this cue with the Agent Actor and a placement parameter:
+            - 'hq_available': Places NPC in Embassy Room
+            - 'on_mission': Removes placement request and despawns NPC in theleporter
+            - Station or Ship object: Moves the NPC to a room in the station or ship, exact location depending on Agent Experience -->
+            <cue name="Update_AgentPlacement" instantiate="true" namespace="this">
+              <conditions>
+                <event_cue_signalled/>
+              </conditions>
+              <actions>
+                <set_value name="$DebugChance" exact="AgentsActivated.$DebugChance"/>
+                <set_value name="$AgentActor" exact="event.param.{1}"/>
+                <set_value name="$PlacementInstructionList" exact="event.param.{2}"/>
+
+                <do_if value="(typeof $PlacementInstructionList.{1}).isstring">
+                  <do_if value="$PlacementInstructionList.{1} == 'hq_available'">
+                    <!-- Place the Agent in the Embassy Room -->
+                    <set_value name="$EmbassyRoom" exact="md.X4Ep1_Mentor_Subscriptions.Start.$EmbassyRoom"/>
+
+                    <!-- Find an empty agent slot in the embassy -->
+                    <find_npc_slot name="this.$slot" object="$EmbassyRoom" tags="tag.agent" excludeblocked="true" excludefilled="true" multiple="false"/>
+                    <set_value name="md.$PlayerAgentTable.{$AgentActor}.$State" exact="['hq_available', player.headquarters]"/>
+
+                    <signal_cue_instantly cue="md.NPC_Instantiation.NPC_Placement_Manager" param="['add_definition', $AgentActor,
+                                                                                                  table[
+                                                                                                  $requestercue = AgentsActivated,
+                                                                                                  $location = this.$slot,
+                                                                                                  $priority = 100,
+                                                                                                  $debugchance = $DebugChance,
+                                                                                                  $debugcaller = if $DebugChance == 100 then this else null]
+                                                                                                  ]"/>
+                  </do_if>
+                  <do_elseif value="$PlacementInstructionList.{1} == 'on_mission'">
+                    <speak actor="$AgentActor" line="6009" delay="1.5s" />
+                    <!-- Original agents are "on mission" only virtually. While the missions are ongoing, we keep them despawned -->
+                    <set_value name="md.$PlayerAgentTable.{$AgentActor}.$State" exact="['on_mission', $PlacementInstructionList.{1}]"/>
+
+                    <!-- Remove the placement request so that we can move the NPC to the teleporter via npc_despawn -->
+                    <signal_cue_instantly cue="md.NPC_Instantiation.NPC_Placement_Manager" param="['remove_all_requests', $AgentActor, AgentsActivated]"/>
+
+                    <find_npc_waypoint name="$DespawnSlot" object="$AgentActor.room" tags="tag.npctransport"/>
+                    <signal_objects object="$AgentActor" param="'npc_despawn'" param2="table[$slot = $DespawnSlot, $disconnect = false, $hide = true]"/>
+                  </do_elseif>
+                </do_if>
+                <do_else>
+                  <do_if value="$PlacementInstructionList.{1}.isclass.station">
+                    <!--Disconnect the agent manager before moving if it is on a station -->
+                    <do_if value="$AgentActor.station">
+                      <signal_cue_instantly cue="md.NPC_Instantiation.NPC_Placement_Manager" param="['remove_all_requests', $AgentActor, AgentsActivated]"/>
+                    </do_if>
+
+                    <!-- Add the Agent to the controlroom and add the station to md.$AgentTrackedContrainerGroup so that npc_instantiation.xml can place it once the player comes close -->
+                    <add_actor_to_room actor="$AgentActor" object="$PlacementInstructionList.{1}.controlroom" result="$AgentActorPlaced" />
+
+                    <do_if value="md.$PlayerAgentTable.{$AgentActor}?" comment="we only want to track this station here if the actor is not a clone">
+                      <add_to_group groupname="md.$AgentTrackedContrainerGroup" object="$PlacementInstructionList.{1}" />
+                    </do_if>
+
+                    <set_value name="this.$InteriorString" exact="$PlacementInstructionList.{2}"/>
+
+                    <signal_cue_instantly cue="PlacePlayerAgent_InstantiateHandling" param="[$AgentActor, this.$InteriorString, $PlacementInstructionList.{1}]"/>
+                  </do_if>
+                  <do_elseif value="$PlacementInstructionList.{1}.isclass.ship">
+                    <!--Disconnect the agent manager before moving if it is on a station -->
+                    <do_if value="$AgentActor.station">
+                      <signal_cue_instantly cue="md.NPC_Instantiation.NPC_Placement_Manager" param="['remove_all_requests', $AgentActor, AgentsActivated]"/>
+                    </do_if>
+
+                    <set_value name="this.$InteriorString" exact="$PlacementInstructionList.{2}"/>
+                    <set_value name="this.$Bridge" exact="$PlacementInstructionList.{1}.controlroom"/>
+
+                    <do_if value="this.$InteriorString == 'bridge'">
+                      <find_npc_slot name="this.$slot" object="this.$Bridge" tags="tag.stand" excludeblocked="true" excludefilled="true" multiple="false"/>
+
+                      <signal_cue_instantly cue="md.NPC_Instantiation.NPC_Placement_Manager" param="['add_definition', $AgentActor,
+                                                                                                    table[
+                                                                                                    $requestercue = AgentsActivated,
+                                                                                                    $location = this.$slot,
+                                                                                                    $priority = 100,
+                                                                                                    $debugchance = $DebugChance,
+                                                                                                    $debugcaller = if $DebugChance == 100 then this else null]
+                                                                                                    ]"/>
+                    </do_if>
+                    <do_else>
+                      <!-- Add the Agent to the controlroom and add the ship bridge to md.$AgentTrackedContrainerGroup so that npc_instantiation.xml can place it once the player comes close -->
+                      <add_actor_to_room actor="$AgentActor" object="this.$Bridge" result="$AgentActorPlaced" />
+
+                      <do_if value="md.$PlayerAgentTable.{$AgentActor}?" comment="we only want to track this station here if the actor is not a clone">
+                        <add_to_group groupname="md.$AgentTrackedContrainerGroup" object="$PlacementInstructionList.{1}" />
+                      </do_if>
+
+                      <signal_cue_instantly cue="PlacePlayerAgent_InstantiateHandling" param="[$AgentActor, this.$InteriorString, $PlacementInstructionList.{1}]"/>
+                    </do_else>
+                  </do_elseif>
+                </do_else>
+              </actions>
+            </cue>
+
+            <!-- Signal this cue with the Agent Actor to handle cleanup and generating a new Agent for the faction
+            Two modes: - Cleaning up the Agent actor, which will dismiss the agent, and remove them from the AgentFactiontable
+                       - Cleaning up the Agent Clone, which just disconnects the Agent -->
+            <cue name="AgentCleanUp" instantiate="true" namespace="this">
+              <conditions>
+                <event_cue_signalled/>
+              </conditions>
+              <actions>
+                <set_value name="$AgentActor" exact="event.param"/>
+                <set_value name="$DebugChance" exact="AgentsActivated.$DebugChance" />
+
+                <do_if value="md.$PlayerAgentTable.{$AgentActor}?">
+                  <!-- This was an agent that was spawned by a faction and hired by the player -->
+                  <set_value name="$OriginalFaction" exact="md.$PlayerAgentTable.{$AgentActor}.$OriginalOwner"/>
+
+                  <dismiss_diplomacy_agent agent="$AgentActor"/>
+                  <set_owner object="$AgentActor" faction="$OriginalFaction"/>
+
+                  <remove_value name="md.$AgentFactionTable.{$OriginalFaction}"/>
+                  <remove_value name="md.$PlayerAgentTable.{$AgentActor}"/>
+
+                  <signal_cue_instantly cue="md.NPC_Instantiation.NPC_Placement_Manager" param="['add_definition', $AgentActor, table[
+                                                                                                                                  $requestercue = AgentsActivated,
+                                                                                                                                  $priority = 100,
+                                                                                                                                  $location = 'despawn_kill',
+                                                                                                                                  $debugchance = 0,
+                                                                                                                                  $debugcaller = if $DebugChance == 100 then this else null]
+                                                                                                                                  ]"/>
+                </do_if>
+                <do_else>
+                  <!-- This was an agent clone, remove the clone and cancel the rest of this cue -->
+                  <signal_cue_instantly cue="md.NPC_Instantiation.NPC_Placement_Manager" param="['add_definition', $AgentActor, table[
+                                                                                                                                  $requestercue = AgentsActivated,
+                                                                                                                                  $priority = 100,
+                                                                                                                                  $location = 'despawn_kill',
+                                                                                                                                  $debugchance = 0,
+                                                                                                                                  $debugcaller = if $DebugChance == 100 then this else null]
+                                                                                                                                  ]"/>
+                  <cancel_cue cue="this"/>
+                </do_else>
+              </actions>
+              <delay min="30min" max="60min"/>
+              <actions>
+                <signal_cue_instantly cue="EvaluateFactions" param="[$OriginalFaction]"/>
+              </actions>
+            </cue>
+
+            <cue name="PlacePlayerAgent_InstantiateHandling" instantiate="true" version="2">
+              <conditions>
+                <event_cue_signalled/>
+              </conditions>
+              <actions>
+                <set_value name="this.$Agent"           exact="event.param.{1}"/>
+                <set_value name="this.$InteriorString"  exact="event.param.{2}"/>
+                <set_value name="this.$Object"          exact="event.param.{3}"/>
+                <create_group groupname="this.$InteriorGroup"/>
+              </actions>
+              <patch sinceversion="2">
+                <do_if value="not this.$Agent.exists or not this.$Object.isoperational">
+                  <cancel_cue cue="this"/>
+                </do_if>
+              </patch>
+              <cues>
+
+                <cue name="PlacePlayerAgent_AgentDestroyed">
+                  <conditions>
+                    <event_object_destroyed object="parent.$Agent"/>
+                  </conditions>
+                  <actions>
+                    <cancel_cue cue="parent"/>
+                  </actions>
+                </cue>
+
+                <!-- If the agent is supposed to be placed in an interior that is not spawned specifically for the agent, we need to wait for it to be generated first -->
+                <cue name="PlacePlayerAgent_Delayed" instantiate="true">
+                  <conditions>
+                    <event_object_signalled object="parent.$Object"/>
+                    <check_value value="event.param == 'interior_created'"/>
+                    <check_any comment="only trigger if specific rooms are created">
+                      <check_value value="parent.$InteriorString == 'managersoffice' and event.param2.type == roomtype.manager "/>
+                      <check_value value="parent.$InteriorString == 'security' and event.param2.type == roomtype.security "/>
+                      <check_value value="parent.$InteriorString == 'crew_quarters' and event.param2.type == roomtype.crewquarters "/>
+                    </check_any>
+                  </conditions>
+                  <delay exact="0.5s" comment="delay to guarantee the manager is placed first"/>
+                  <actions>
+                    <set_value name="parent.$PlacementCue" exact="this"/>
+                    <add_to_group groupname="parent.$InteriorGroup" object="event.param3"/>
+                    <debug_text text="'Interior for agent has been created'" chance="@$debugchance" />
+                    <set_value name="this.$Room" exact="event.param2"/>
+                    <do_if value="parent.$Agent.race == race.paranid">
+                      <set_value name="this.$taglist" exact="[tag.stand, tag.stand_terminal_forward]"/>
+                    </do_if>
+                    <do_else>
+                      <set_value name="this.$taglist" exact="[tag.service]"/>
+                    </do_else>
+
+                    <find_npc_slot name="this.$RoomSlot" object="this.$Room" role="entityrole.service" anytag="this.$taglist"/>
+
+                    <do_if value="not this.$RoomSlot">
+                      <!-- If there are no free slots, look for filled ones and kick out temporary actors -->
+                      <find_npc_slot name="this.$RoomSlotList" object="this.$Room" excludefilled="false" role="entityrole.service" anytag="this.$taglist" multiple="true" />
+                      <shuffle_list list="this.$RoomSlotList"/>
+                      <do_for_each name="this.$slot" in="this.$RoomSlotList">
+                        <do_if value="this.$Room.slotactor.{this.$slot}.exists">
+                          <set_value name="this.$slotactor" exact="this.$Room.slotactor.{this.$slot}"/>
+                          <do_if value="this.$slotactor.istemporary">
+                            <remove_actor_from_room actor="this.$slotactor" destroy="true"/>
+                            <set_value name="this.$RoomSlot" exact="this.$slot"/>
+                            <break/>
+                          </do_if>
+                        </do_if>
+                        <do_else>
+                          <set_value name="this.$RoomSlot" exact="this.$slot"/>
+                          <break/>
+                        </do_else>
+                      </do_for_each>
+                    </do_if>
+                    <do_if value="this.$RoomSlot">
+                      <debug_text text="'We have found a room slot on which to place the agent'" chance="@$debugchance" />
+                      <add_actor_to_room actor="parent.$Agent" slot="this.$RoomSlot" />
+                    </do_if>
+                  </actions>
+                </cue>
+
+                <cue name="ReturnPlayerAgent_InteriorRemoved" instantiate="true">
+                  <conditions>
+                    <event_object_destroyed group="parent.$InteriorGroup" method="killmethod.removed"/>
+                    <check_value value="not event.param3"/>
+                  </conditions>
+                  <actions>
+                    <do_if value="parent.$Agent.hascontext.{event.object}">
+                      <add_actor_to_room actor="parent.$Agent" object="parent.$Object.controlroom" result="this.$AgentMoved" />
+                      <debug_text text="'Agent ' + parent.$Agent + ' was in an interior which was to be removed. Rescue them! Now in ' + parent.$Agent.parent + ' ' + parent.$Agent.knownname"/>
+                    </do_if>
+                  </actions>
+                </cue>
+
+                <cue name="ReturnPlayerAgent" instantiate="true">
+                  <conditions>
+                    <check_any>
+                      <event_object_interiors_despawning object="parent.$Object" />
+                      <event_object_destroyed object="parent.$Object" />
+                    </check_any>
+                  </conditions>
+                  <actions>
+                    <do_if value="event.name == 'event_object_interiors_despawning'">
+                      <do_if value="parent.$Agent.exists">
+                        <!-- Move agent back to control room -->
+                        <add_actor_to_room actor="parent.$Agent" object="parent.$Object.controlroom" result="this.$AgentMoved" />
+                        <do_if value="this.$AgentMoved">
+                          <debug_text text="'Agent ' + parent.$Agent.name + ' ({' + parent.$Agent + '}) moved back to control room'" chance="@$debugchance" />
+                        </do_if>
+                        <do_else>
+                          <debug_text text="'Agent ' + parent.$Agent.name + ' ({' + parent.$Agent + '}) could not be moved back to control room of ' + event.object.knownname + ' ({' + event.object + '})'" filter="error" />
+                        </do_else>
+                      </do_if>
+                    </do_if>
+                    <do_else>
+                      <!-- Station was destroyed -->
+                      <cancel_cue cue="parent"/>
+                    </do_else>
+                    <!-- Make sure interior, if it was spawned, is cleaned up before player leaves attention level -->
+                    <do_if value="parent.$Interior?">
+                      <remove_dynamic_interior object="parent.$Object" interior="parent.$Interior" />
+                      <debug_text text="'Interior for agent should have been removed'" chance="@$debugchance" />
+                    </do_if>
+                  </actions>
+                </cue>
+              </cues>
+            </cue>
+
+            <cue name="PlaceFactionAgent_Instantiation" instantiate="true" version="2">
+              <conditions>
+                <check_any>
+                  <event_object_changed_attention group="md.$AgentTrackedContrainerGroup" />
+                  <event_object_signalled group="md.NPC_Instantiation.Instantiation.$TrackedObjects" param="'npc_instantiation__force'" />
+                  <event_object_signalled group="md.NPC_Instantiation.Instantiation.$TrackedObjects" param="'npc_instantiation__mission'" />
+                </check_any>
+                <check_value value="event.object.isclass.station and event.object.attention ge attention.nearby
+                                and event.object.canhavedynamicinterior and not [faction.ownerless, faction.xenon, faction.khaak].indexof.{event.object.owner}" />
+                <check_value value="@md.$AgentTrackedContrainerGroup.indexof.{event.object}"/>
+                <check_value value="@md.$AgentFactionTable.{event.object.owner} != 'owned'"/>
+              </conditions>
+              <actions>
+                <set_value name="this.$Object" exact="event.object" />
+                <set_value name="this.$Race" exact="this.$Object.owner.primaryrace" />
+                <set_value name="this.$Faction" exact="this.$Object.owner" />
+
+                <!-- This Faction's Agent is not yet player owned and on this station, so just look up the station's owner in the Faction Table -->
+                <set_value name="this.$Agent" exact="md.$AgentFactionTable.{this.$Faction}.$AgentActor"/>
+                <set_value name="this.$InteriorString" exact="md.$AgentFactionTable.{this.$Faction}.$InteriorString" />
+
+                <create_group groupname="this.$InteriorGroup"/>
+
+                <debug_text text="'Setting up agent for ' + this.$Object.knownname + ' ({' + this.$Object + '})'" chance="@$debugchance" />
+
+                <!-- If the Agent is spawned in the bar, create the bar specifically for this, otherwise we have to wait until the other instantiation cues have finished creating rooms -->
+                <do_if value="this.$InteriorString == 'bar'" >
+                  <set_value name="this.$PlaceAgentInBar"/>
+                </do_if>
+              </actions>
+              <patch sinceversion="2">
+                <do_if value="this.$InteriorString == 'bar'" >
+                  <set_value name="this.$PlaceAgentInBar"/>
+                </do_if>
+              </patch>
+              <cues>
+
+                <!-- If the agent is supposed to be placed in an interior that is not spawned specifically for the agent, we need to wait for it to be generated first -->
+                <cue name="PlaceFactionAgent_Delayed">
+                  <conditions>
+                    <event_object_signalled object="parent.$Object"/>
+                    <check_value value="event.param == 'interior_created'"/>
+                    <check_any comment="only trigger if specific rooms are created">
+                      <check_value value="parent.$InteriorString == 'managersoffice' and event.param2.type == roomtype.manager "/>
+                      <check_value value="parent.$InteriorString == 'security' and event.param2.type == roomtype.security "/>
+                    </check_any>
+                  </conditions>
+                  <delay exact="0.5s" comment="delay to guarantee the manager is placed first"/>
+                  <actions>
+                    <add_to_group groupname="parent.$InteriorGroup" object="event.param3"/>
+                    <debug_text text="'Interior for agent has been created'" chance="@$debugchance" />
+                    <set_value name="this.$Room" exact="event.param2"/>
+                    <do_if value="parent.$Agent.race == race.paranid">
+                      <set_value name="this.$taglist" exact="[tag.stand, tag.stand_terminal_forward]"/>
+                    </do_if>
+                    <do_else>
+                      <set_value name="this.$taglist" exact="[tag.service]"/>
+                    </do_else>
+
+                    <find_npc_slot name="this.$RoomSlot" object="this.$Room" role="entityrole.service" anytag="this.$taglist"/>
+                    <do_if value="this.$RoomSlot">
+                      <debug_text text="'We have found a room slot on which to place the agent'" chance="@$debugchance" />
+                      <add_actor_to_room actor="parent.$Agent" slot="this.$RoomSlot" />
+                    </do_if>
+                    <do_else>
+                      <!-- Fallback in case the room slot is not available for some reason -->
+                      <find_dockingbay name="$ExternalDockingbayList" object="parent.$Object" checkoperational="true" walkable="true" multiple="true">
+                        <match_dock size="tag.dock_s" storage="false"/>
+                      </find_dockingbay>
+                      <do_for_each name="this.$dock" in="$ExternalDockingbayList">
+                        <find_npc_slot name="this.$RoomSlotList" object="this.$dock" append="true" multiple="true" excludefilled="false"/>
+                      </do_for_each>
+                      <shuffle_list list="this.$RoomSlotList"/>
+                      <do_for_each name="this.$slot" in="this.$RoomSlotList">
+                        <do_if value="this.$slot.component.slotactor.{this.$slot}.exists">
+                          <set_value name="this.$slotactor" exact="this.$slot.component.slotactor.{this.$slot}"/>
+                          <do_if value="this.$slotactor.istemporary or (this.$slotactor.type == entitytype.agent and this.$slotactor.owner == faction.player)">
+                            <remove_actor_from_room actor="this.$slotactor" destroy="true"/>
+                            <set_value name="this.$RoomSlot" exact="this.$slot"/>
+                            <add_actor_to_room actor="parent.$Agent" slot="this.$RoomSlot" />
+                            <break/>
+                          </do_if>
+                        </do_if>
+                        <do_else>
+                          <set_value name="this.$RoomSlot" exact="this.$slot"/>
+                          <add_actor_to_room actor="parent.$Agent" slot="this.$RoomSlot" />
+                          <break/>
+                        </do_else>
+                      </do_for_each>
+                    </do_else>
+                  </actions>
+                </cue>
+
+                <cue name="PlaceFactionAgent_Bar_Check" onfail="cancel">
+                  <conditions>
+                    <check_value value="parent.$PlaceAgentInBar?"/>
+                  </conditions>
+                  <actions>
+                    <signal_cue cue="PlaceFactionAgent_Bar"/>
+                  </actions>
+                </cue>
+
+                <!-- Moved the Bar out of the parent cue to also use it as a fallback if the Agent cannot be placed anywhere else -->
+                <cue name="PlaceFactionAgent_Bar">
+                  <conditions>
+                    <check_any>
+                      <event_cue_signalled/>
+                      <check_all>
+                        <check_any>
+                          <event_object_changed_object object="player.entity" newobject="parent.$Object"/>
+                          <check_all>
+                            <event_object_docked_at container="parent.$Object"/>
+                            <check_value value="player.entity.hascontext.{event.param}"/>
+                          </check_all>
+                        </check_any>
+                        <check_value value="parent.$Agent.room == parent.$Object.controlroom" comment="only fall back on the bar if the Agent hasn't been placed yet"/>
+                      </check_all>
+                    </check_any>
+                  </conditions>
+                  <actions>
+                    <!-- Define interior -->
+                    <set_value name="parent.$Seed" exact="parent.$Object.seed + lookup.roomtype.list.indexof.{roomtype.bar}"/>
+                    <get_room_definition macro="parent.$CorridorMacro" race="parent.$Race" tags="tag.entertainmentcorridor" seed="parent.$Seed" />
+                    <get_room_definition macro="parent.$CorridorMacro" race="parent.$Race" tags="tag.corridor" seed="parent.$Seed"  chance="if parent.$CorridorMacro then 0 else 100"/>
+                    <get_room_definition macro="parent.$CorridorMacro" tags="tag.entertainmentcorridor" seed="parent.$Seed"       chance="if parent.$CorridorMacro then 0 else 100"/>
+                    <get_room_definition macro="parent.$CorridorMacro" tags="tag.corridor" seed="parent.$Seed"                    chance="if parent.$CorridorMacro then 0 else 100"/>
+
+                    <get_room_definition macro="parent.$RoomMacro" tags="tag.bar" seed="parent.$Seed" />
+
+                    <!-- Create interior -->
+                    <create_dynamic_interior object="parent.$Object" corridor="parent.$CorridorMacro" room="parent.$RoomMacro" name="'{20007,1031}'" interiorname="parent.$Interior" corridorname="parent.$Corridor" roomname="parent.$Room" roomtype="roomtype.bar" seed="parent.$Seed"/>
+                    <add_to_group groupname="parent.$InteriorGroup" object="parent.$Interior"/>
+                    <do_if value="parent.$Interior and parent.$Corridor and parent.$Room">
+                      <signal_objects object="parent.$Object" param="'interior_created'" param2="parent.$Room" param3="parent.$Interior"/>
+                      <debug_text text="'Interior for agent has been created'" chance="@$debugchance" />
+                      <find_npc_slot name="parent.$RoomSlot" object="parent.$Room" />
+                      <do_if value="parent.$RoomSlot">
+                        <debug_text text="'We have found a room slot on which to place the agent'" chance="@$debugchance" />
+                        <add_actor_to_room actor="parent.$Agent" slot="parent.$RoomSlot" />
+                      </do_if>
+                    </do_if>
+                    <do_else>
+                      <cancel_cue cue="parent" />
+                    </do_else>
+                  </actions>
+                </cue>
+
+                <cue name="ReturnFactionAgent_InteriorRemoved">
+                  <conditions>
+                    <event_object_destroyed group="parent.$InteriorGroup" method="killmethod.removed"/>
+                    <check_value value="not event.param3"/>
+                  </conditions>
+                  <actions>
+                    <do_if value="parent.$Agent.hascontext.{parent.$Interior}">
+                      <add_actor_to_room actor="parent.$Agent" object="parent.$Object.controlroom" result="this.$AgentMoved" />
+                      <debug_text text="'Agent ' + parent.$Agent + ' was in an interior which was to be removed. Rescue them! Now in ' + parent.$Agent.parent + ' ' + parent.$Agent.knownname"/>
+                    </do_if>
+                    <cancel_cue cue="parent"/>
+                  </actions>
+                </cue>
+
+                <cue name="ReturnFactionAgent">
+                  <conditions>
+                    <check_any>
+                      <event_object_interiors_despawning object="parent.$Object" />
+                      <event_object_destroyed object="parent.$Object" />
+                    </check_any>
+                  </conditions>
+                  <actions>
+                    <do_if value="event.name == 'event_object_interiors_despawning'">
+                      <do_if value="parent.$Agent.exists">
+                        <!-- Move agent back to control room -->
+                        <add_actor_to_room actor="parent.$Agent" object="parent.$Object.controlroom" result="this.$AgentMoved" />
+                        <do_if value="this.$AgentMoved">
+                          <debug_text text="'Agent ' + parent.$Agent.name + ' ({' + parent.$Agent + '}) moved back to control room'" chance="@$debugchance" />
+                        </do_if>
+                        <do_else>
+                          <debug_text text="'Agent ' + parent.$Agent.name + ' ({' + parent.$Agent + '}) could not be moved back to control room of ' + event.object.knownname + ' ({' + event.object + '})'" filter="error" />
+                        </do_else>
+                      </do_if>
+                    </do_if>
+                    <!-- Make sure interior, if it was spawned, is cleaned up before player leaves attention level -->
+                    <do_if value="parent.$Interior?">
+                      <remove_dynamic_interior object="parent.$Object" interior="parent.$Interior" />
+                      <debug_text text="'Interior for agent should have been removed'" chance="@$debugchance" />
+                    </do_if>
+                    <cancel_cue cue="parent"/>
+                  </actions>
+                </cue>
+              </cues>
+            </cue>
+
+          </cues>
+        </cue>
+
+      </cues>
+    </cue>
+  </cues>
+</mdscript>

@@ -1,0 +1,656 @@
+<?xml version="1.0" encoding="utf-8"?>
+<peopledefinitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xsi:noNamespaceSchemaLocation="people.xsd">
+  <!--Argon-->
+  <people id="argon_freighter_crew">
+    <fillpercent min="20" max="75"/>
+    <person role="service" weight="18">
+      <select faction="argon" tags="[service, rookie]"/>
+    </person>
+    <person role="service" weight="62">
+      <select faction="argon" tags="[service, regular]"/>
+    </person>
+    <person role="service" weight="9">
+      <select faction="argon" tags="[service, veteran]"/>
+    </person>
+    <person role="service" weight="1">
+      <select faction="argon" tags="[service, elite]"/>
+    </person>
+    <person role="marine" weight="2">
+      <select faction="argon" tags="[marine, rookie]"/>
+    </person>
+    <person role="marine" weight="5">
+      <select faction="argon" tags="[marine, regular]"/>
+    </person>
+    <person role="marine" weight="1">
+      <select faction="argon" tags="[marine, veteran]"/>
+    </person>
+    <person role="passenger" weight="2">
+      <select faction="argon" tags="passenger"/>
+    </person>
+  </people>
+  <people id="argon_military_crew">
+    <fillpercent min="20" max="75"/>
+    <person role="service" weight="8">
+      <select faction="argon" tags="[service, rookie]"/>
+    </person>
+    <person role="service" weight="55">
+      <select faction="argon" tags="[service, regular]"/>
+    </person>
+    <person role="service" weight="16">
+      <select faction="argon" tags="[service, veteran]"/>
+    </person>
+    <person role="service" weight="1">
+      <select faction="argon" tags="[service, elite]"/>
+    </person>
+    <person role="marine" weight="2">
+      <select faction="argon" tags="[marine, rookie]"/>
+    </person>
+    <person role="marine" weight="4">
+      <select faction="argon" tags="[marine, regular]"/>
+    </person>
+    <person role="marine" weight="12">
+      <select faction="argon" tags="[marine, veteran]"/>
+    </person>
+    <person role="marine" weight="1">
+      <select faction="argon" tags="[marine, elite]"/>
+    </person>
+    <person role="prisoner" weight="1">
+      <select faction="argon" tags="prisoner"/>
+    </person>
+  </people>
+  <people id="argon_veteran_freighter_crew">
+    <fillpercent min="20" max="75"/>
+    <person role="service" weight="60">
+      <select faction="argon" tags="[service, veteran]"/>
+    </person>
+    <person role="marine" weight="20">
+      <select faction="argon" tags="[marine, veteran]"/>
+    </person>
+    <person role="passenger" weight="2">
+      <select faction="argon" tags="passenger"/>
+    </person>
+  </people>
+  <people id="argon_veteran_military_crew">
+    <fillpercent min="20" max="75"/>
+    <person role="service" weight="60">
+      <select faction="argon" tags="[service, veteran]"/>
+    </person>
+    <person role="marine" weight="45">
+      <select faction="argon" tags="[marine, veteran]"/>
+    </person>
+    <person role="prisoner" weight="1">
+      <select faction="argon" tags="prisoner"/>
+    </person>
+  </people>
+  <people id="argon_elite_freighter_crew">
+    <fillpercent min="20" max="75"/>
+    <person role="service" weight="60">
+      <select faction="argon" tags="[service, elite]"/>
+    </person>
+    <person role="marine" weight="20">
+      <select faction="argon" tags="[marine, elite]"/>
+    </person>
+    <person role="passenger" weight="2">
+      <select faction="argon" tags="passenger"/>
+    </person>
+  </people>
+  <people id="argon_elite_military_crew">
+    <fillpercent min="20" max="75"/>
+    <person role="service" weight="60">
+      <select faction="argon" tags="[service, elite]"/>
+    </person>
+    <person role="marine" weight="45">
+      <select faction="argon" tags="[marine, elite]"/>
+    </person>
+    <person role="prisoner" weight="1">
+      <select faction="argon" tags="prisoner"/>
+    </person>
+  </people>
+  
+  <!--Argon definitions for the player custom gamestart selection-->
+  <people id="player_argon_regular_freighter_crew" name="{20208,100001}" playeronly="true">
+    <fillpercent exact="100"/>
+    <person role="service" weight="40">
+      <select faction="argon" tags="[service, regular]"/>
+    </person>
+    <person role="marine" weight="10">
+      <select faction="argon" tags="[marine, regular]"/>
+    </person>
+  </people>
+  <people id="player_argon_regular_military_crew" name="{20208,100011}" playeronly="true">
+    <fillpercent exact="100"/>
+    <person role="service" weight="10">
+      <select faction="argon" tags="[service, regular]"/>
+    </person>
+    <person role="marine" weight="40">
+      <select faction="argon" tags="[marine, regular]"/>
+    </person>
+  </people>
+  <people id="player_argon_veteran_freighter_crew" name="{20208,100021}" playeronly="true">
+    <fillpercent exact="100"/>
+    <person role="service" weight="40">
+      <select faction="argon" tags="[service, veteran]"/>
+    </person>
+    <person role="marine" weight="10">
+      <select faction="argon" tags="[marine, veteran]"/>
+    </person>
+  </people>
+  <people id="player_argon_veteran_military_crew" name="{20208,100031}" playeronly="true">
+    <fillpercent exact="100"/>
+    <person role="service" weight="10">
+      <select faction="argon" tags="[service, veteran]"/>
+    </person>
+    <person role="marine" weight="40">
+      <select faction="argon" tags="[marine, veteran]"/>
+    </person>
+  </people>
+  <people id="player_argon_elite_freighter_crew" name="{20208,100041}" playeronly="true">
+    <fillpercent exact="100"/>
+    <person role="service" weight="40">
+      <select faction="argon" tags="[service, elite]"/>
+    </person>
+    <person role="marine" weight="10">
+      <select faction="argon" tags="[marine, elite]"/>
+    </person>
+  </people>
+  <people id="player_argon_elite_military_crew" name="{20208,100051}" playeronly="true">
+    <fillpercent exact="100"/>
+    <person role="service" weight="10">
+      <select faction="argon" tags="[service, elite]"/>
+    </person>
+    <person role="marine" weight="40">
+      <select faction="argon" tags="[marine, elite]"/>
+    </person>
+  </people>
+  
+  <!--Paranid-->
+  <people id="paranid_freighter_crew">
+    <fillpercent min="20" max="80"/>
+    <person role="service" weight="16">
+      <select faction="paranid" tags="[service, rookie]"/>
+    </person>
+    <person role="service" weight="55">
+      <select faction="paranid" tags="[service, regular]"/>
+    </person>
+    <person role="service" weight="8">
+      <select faction="paranid" tags="[service, veteran]"/>
+    </person>
+    <person role="service" weight="1">
+      <select faction="paranid" tags="[service, elite]"/>
+    </person>
+    <person role="marine" weight="4">
+      <select faction="paranid" tags="[marine, rookie]"/>
+    </person>
+    <person role="marine" weight="12">
+      <select faction="paranid" tags="[marine, regular]"/>
+    </person>
+    <person role="marine" weight="2">
+      <select faction="paranid" tags="[marine, veteran]"/>
+    </person>
+    <person role="passenger" weight="2">
+      <select faction="paranid" tags="passenger"/>
+    </person>
+  </people>
+  <people id="paranid_military_crew">
+    <fillpercent min="20" max="75"/>
+    <person role="service" weight="6">
+      <select faction="paranid" tags="[service, rookie]"/>
+    </person>
+    <person role="service" weight="41">
+      <select faction="paranid" tags="[service, regular]"/>
+    </person>
+    <person role="service" weight="12">
+      <select faction="paranid" tags="[service, veteran]"/>
+    </person>
+    <person role="service" weight="1">
+      <select faction="paranid" tags="[service, elite]"/>
+    </person>
+    <person role="marine" weight="4">
+      <select faction="paranid" tags="[marine, rookie]"/>
+    </person>
+    <person role="marine" weight="8">
+      <select faction="paranid" tags="[marine, regular]"/>
+    </person>
+    <person role="marine" weight="26">
+      <select faction="paranid" tags="[marine, veteran]"/>
+    </person>
+    <person role="marine" weight="1">
+      <select faction="paranid" tags="[marine, elite]"/>
+    </person>
+    <person role="prisoner" weight="1">
+      <select faction="paranid" tags="prisoner"/>
+    </person>
+  </people>
+  <people id="paranid_veteran_freighter_crew">
+    <fillpercent min="20" max="80"/>
+    <person role="service" weight="60">
+      <select faction="paranid" tags="[service, veteran]"/>
+    </person>
+    <person role="marine" weight="20">
+      <select faction="paranid" tags="[marine, veteran]"/>
+    </person>
+    <person role="passenger" weight="2">
+      <select faction="paranid" tags="passenger"/>
+    </person>
+  </people>
+  <people id="paranid_veteran_military_crew">
+    <fillpercent min="20" max="75"/>
+    <person role="service" weight="60">
+      <select faction="paranid" tags="[service, veteran]"/>
+    </person>
+    <person role="marine" weight="40">
+      <select faction="paranid" tags="[marine, veteran]"/>
+    </person>
+    <person role="prisoner" weight="1">
+      <select faction="paranid" tags="prisoner"/>
+    </person>
+  </people>
+  <people id="paranid_elite_freighter_crew">
+    <fillpercent min="20" max="80"/>
+    <person role="service" weight="60">
+      <select faction="paranid" tags="[service, elite]"/>
+    </person>
+    <person role="marine" weight="20">
+      <select faction="paranid" tags="[marine, elite]"/>
+    </person>
+    <person role="passenger" weight="2">
+      <select faction="paranid" tags="passenger"/>
+    </person>
+  </people>
+  <people id="paranid_elite_military_crew">
+    <fillpercent min="20" max="75"/>
+    <person role="service" weight="60">
+      <select faction="paranid" tags="[service, elite]"/>
+    </person>
+    <person role="marine" weight="40">
+      <select faction="paranid" tags="[marine, elite]"/>
+    </person>
+    <person role="prisoner" weight="1">
+      <select faction="paranid" tags="prisoner"/>
+    </person>
+  </people>
+
+  <!--Paranid definitions for the player custom gamestart selection-->
+  <people id="player_paranid_regular_freighter_crew" name="{20208,101001}" playeronly="true">
+    <fillpercent exact="100"/>
+    <person role="service" weight="40">
+      <select faction="paranid" tags="[service, regular]"/>
+    </person>
+    <person role="marine" weight="10">
+      <select faction="paranid" tags="[marine, regular]"/>
+    </person>
+  </people>
+  <people id="player_paranid_regular_military_crew" name="{20208,101011}" playeronly="true">
+    <fillpercent exact="100"/>
+    <person role="service" weight="10">
+      <select faction="paranid" tags="[service, regular]"/>
+    </person>
+    <person role="marine" weight="40">
+      <select faction="paranid" tags="[marine, regular]"/>
+    </person>
+  </people>
+  <people id="player_paranid_veteran_freighter_crew" name="{20208,101021}" playeronly="true">
+    <fillpercent exact="100"/>
+    <person role="service" weight="40">
+      <select faction="paranid" tags="[service, veteran]"/>
+    </person>
+    <person role="marine" weight="10">
+      <select faction="paranid" tags="[marine, veteran]"/>
+    </person>
+  </people>
+  <people id="player_paranid_veteran_military_crew" name="{20208,101031}" playeronly="true">
+    <fillpercent exact="100"/>
+    <person role="service" weight="10">
+      <select faction="paranid" tags="[service, veteran]"/>
+    </person>
+    <person role="marine" weight="40">
+      <select faction="paranid" tags="[marine, veteran]"/>
+    </person>
+  </people>
+  <people id="player_paranid_elite_freighter_crew" name="{20208,101041}" playeronly="true">
+    <fillpercent exact="100"/>
+    <person role="service" weight="40">
+      <select faction="paranid" tags="[service, elite]"/>
+    </person>
+    <person role="marine" weight="10">
+      <select faction="paranid" tags="[marine, elite]"/>
+    </person>
+  </people>
+  <people id="player_paranid_elite_military_crew" name="{20208,101051}" playeronly="true">
+    <fillpercent exact="100"/>
+    <person role="service" weight="10">
+      <select faction="paranid" tags="[service, elite]"/>
+    </person>
+    <person role="marine" weight="40">
+      <select faction="paranid" tags="[marine, elite]"/>
+    </person>
+  </people>
+  
+  <!--Teladi-->
+  <people id="teladi_freighter_crew">
+    <fillpercent min="20" max="80"/>
+    <person role="service" weight="18">
+      <select faction="teladi" tags="[service, rookie]"/>
+    </person>
+    <person role="service" weight="58">
+      <select faction="teladi" tags="[service, regular]"/>
+    </person>
+    <person role="service" weight="8">
+      <select faction="teladi" tags="[service, veteran]"/>
+    </person>
+    <person role="service" weight="1">
+      <select faction="teladi" tags="[service, elite]"/>
+    </person>
+    <person role="marine" weight="4">
+      <select faction="teladi" tags="[marine, rookie]"/>
+    </person>
+    <person role="marine" weight="8">
+      <select faction="teladi" tags="[marine, regular]"/>
+    </person>
+    <person role="marine" weight="1">
+      <select faction="teladi" tags="[marine, veteran]"/>
+    </person>
+    <person role="passenger" weight="2">
+      <select faction="teladi" tags="passenger"/>
+    </person>
+  </people>
+  <people id="teladi_military_crew">
+    <fillpercent min="20" max="80"/>
+    <person role="service" weight="7">
+      <select faction="teladi" tags="[service, rookie]"/>
+    </person>
+    <person role="service" weight="48">
+      <select faction="teladi" tags="[service, regular]"/>
+    </person>
+    <person role="service" weight="14">
+      <select faction="teladi" tags="[service, veteran]"/>
+    </person>
+    <person role="service" weight="1">
+      <select faction="teladi" tags="[service, elite]"/>
+    </person>
+    <person role="marine" weight="3">
+      <select faction="teladi" tags="[marine, rookie]"/>
+    </person>
+    <person role="marine" weight="6">
+      <select faction="teladi" tags="[marine, regular]"/>
+    </person>
+    <person role="marine" weight="19">
+      <select faction="teladi" tags="[marine, veteran]"/>
+    </person>
+    <person role="marine" weight="1">
+      <select faction="teladi" tags="[marine, elite]"/>
+    </person>
+    <person role="prisoner" weight="1">
+      <select faction="teladi" tags="prisoner"/>
+    </person>
+  </people>
+  <people id="teladi_veteran_freighter_crew">
+    <fillpercent min="20" max="80"/>
+    <person role="service" weight="60">
+      <select faction="teladi" tags="[service, veteran]"/>
+    </person>
+    <person role="marine" weight="20">
+      <select faction="teladi" tags="[marine, veteran]"/>
+    </person>
+    <person role="passenger" weight="2">
+      <select faction="teladi" tags="passenger"/>
+    </person>
+  </people>
+  <people id="teladi_veteran_military_crew">
+    <fillpercent min="20" max="80"/>
+    <person role="service" weight="60">
+      <select faction="teladi" tags="[service, veteran]"/>
+    </person>
+    <person role="marine" weight="40">
+      <select faction="teladi" tags="[marine, veteran]"/>
+    </person>
+    <person role="prisoner" weight="1">
+      <select faction="teladi" tags="prisoner"/>
+    </person>
+  </people>
+  <people id="teladi_elite_freighter_crew">
+    <fillpercent min="20" max="80"/>
+    <person role="service" weight="60">
+      <select faction="teladi" tags="[service, elite]"/>
+    </person>
+    <person role="marine" weight="20">
+      <select faction="teladi" tags="[marine, elite]"/>
+    </person>
+    <person role="passenger" weight="2">
+      <select faction="teladi" tags="passenger"/>
+    </person>
+  </people>
+  <people id="teladi_elite_military_crew">
+    <fillpercent min="20" max="80"/>
+    <person role="service" weight="60">
+      <select faction="teladi" tags="[service, elite]"/>
+    </person>
+    <person role="marine" weight="40">
+      <select faction="teladi" tags="[marine, elite]"/>
+    </person>
+    <person role="prisoner" weight="1">
+      <select faction="teladi" tags="prisoner"/>
+    </person>
+  </people>
+  
+  <!--Teladi definitions for the player custom gamestart selection-->
+  <people id="player_teladi_regular_freighter_crew" name="{20208,102001}" playeronly="true">
+    <fillpercent exact="100"/>
+    <person role="service" weight="40">
+      <select faction="teladi" tags="[service, regular]"/>
+    </person>
+    <person role="marine" weight="10">
+      <select faction="teladi" tags="[marine, regular]"/>
+    </person>
+  </people>
+  <people id="player_teladi_regular_military_crew" name="{20208,102011}" playeronly="true">
+    <fillpercent exact="100"/>
+    <person role="service" weight="10">
+      <select faction="teladi" tags="[service, regular]"/>
+    </person>
+    <person role="marine" weight="40">
+      <select faction="teladi" tags="[marine, regular]"/>
+    </person>
+  </people>
+  <people id="player_teladi_veteran_freighter_crew" name="{20208,102021}" playeronly="true">
+    <fillpercent exact="100"/>
+    <person role="service" weight="40">
+      <select faction="teladi" tags="[service, veteran]"/>
+    </person>
+    <person role="marine" weight="10">
+      <select faction="teladi" tags="[marine, veteran]"/>
+    </person>
+  </people>
+  <people id="player_teladi_veteran_military_crew" name="{20208,102031}" playeronly="true">
+    <fillpercent exact="100"/>
+    <person role="service" weight="10">
+      <select faction="teladi" tags="[service, veteran]"/>
+    </person>
+    <person role="marine" weight="40">
+      <select faction="teladi" tags="[marine, veteran]"/>
+    </person>
+  </people>
+  <people id="player_teladi_elite_freighter_crew" name="{20208,102041}" playeronly="true">
+    <fillpercent exact="100"/>
+    <person role="service" weight="40">
+      <select faction="teladi" tags="[service, elite]"/>
+    </person>
+    <person role="marine" weight="10">
+      <select faction="teladi" tags="[marine, elite]"/>
+    </person>
+  </people>
+  <people id="player_teladi_elite_military_crew" name="{20208,102051}" playeronly="true">
+    <fillpercent exact="100"/>
+    <person role="service" weight="10">
+      <select faction="teladi" tags="[service, elite]"/>
+    </person>
+    <person role="marine" weight="40">
+      <select faction="teladi" tags="[marine, elite]"/>
+    </person>
+  </people>
+  
+  <!--Hatikvah-->
+  <people id="hatikvah_pirate_crew">
+    <fillpercent min="20" max="60"/>
+    <person role="service" weight="8">
+      <select faction="hatikvah" tags="[service, rookie]"/>
+    </person>
+    <person role="service" weight="55">
+      <select faction="hatikvah" tags="[service, regular]"/>
+    </person>
+    <person role="service" weight="16">
+      <select faction="hatikvah" tags="[service, veteran]"/>
+    </person>
+    <person role="service" weight="1">
+      <select faction="hatikvah" tags="[service, elite]"/>
+    </person>
+    <person role="marine" weight="2">
+      <select faction="hatikvah" tags="[marine, rookie]"/>
+    </person>
+    <person role="marine" weight="4">
+      <select faction="hatikvah" tags="[marine, regular]"/>
+    </person>
+    <person role="marine" weight="13">
+      <select faction="hatikvah" tags="[marine, veteran]"/>
+    </person>
+    <person role="marine" weight="1">
+      <select faction="hatikvah" tags="[marine, elite]"/>
+    </person>
+    <person role="prisoner" weight="4">
+      <select faction="hatikvah" tags="prisoner"/>
+    </person>
+  </people>
+  <people id="hatikvah_veteran_pirate_crew">
+    <fillpercent min="20" max="60"/>
+    <person role="service" weight="60">
+      <select faction="hatikvah" tags="[service, veteran]"/>
+    </person>
+    <person role="marine" weight="50">
+      <select faction="hatikvah" tags="[marine, veteran]"/>
+    </person>
+    <person role="prisoner" weight="4">
+      <select faction="hatikvah" tags="prisoner"/>
+    </person>
+  </people>
+  <people id="hatikvah_elite_pirate_crew">
+    <fillpercent min="20" max="60"/>
+    <person role="service" weight="60">
+      <select faction="hatikvah" tags="[service, elite]"/>
+    </person>
+    <person role="marine" weight="50">
+      <select faction="hatikvah" tags="[marine, elite]"/>
+    </person>
+    <person role="prisoner" weight="4">
+      <select faction="hatikvah" tags="prisoner"/>
+    </person>
+  </people>
+  
+  <!--Scale Plate Pact-->
+  <people id="scaleplate_pirate_crew">
+    <fillpercent min="20" max="60"/>
+    <person role="service" weight="3">
+      <select faction="scaleplate" tags="[service, rookie]"/>
+    </person>
+    <person role="service" weight="20">
+      <select faction="scaleplate" tags="[service, regular]"/>
+    </person>
+    <person role="service" weight="6">
+      <select faction="scaleplate" tags="[service, veteran]"/>
+    </person>
+    <person role="service" weight="1">
+      <select faction="scaleplate" tags="[service, elite]"/>
+    </person>
+    <person role="marine" weight="7">
+      <select faction="scaleplate" tags="[marine, rookie]"/>
+    </person>
+    <person role="marine" weight="14">
+      <select faction="scaleplate" tags="[marine, regular]"/>
+    </person>
+    <person role="marine" weight="48">
+      <select faction="scaleplate" tags="[marine, veteran]"/>
+    </person>
+    <person role="marine" weight="1">
+      <select faction="scaleplate" tags="[marine, elite]"/>
+    </person>
+    <person role="prisoner" weight="4">
+      <select faction="scaleplate" tags="prisoner"/>
+    </person>
+  </people>
+  <people id="scaleplate_veteran_pirate_crew">
+    <fillpercent min="20" max="60"/>
+    <person role="service" weight="60">
+      <select faction="scaleplate" tags="[service, veteran]"/>
+    </person>
+    <person role="marine" weight="50">
+      <select faction="scaleplate" tags="[marine, veteran]"/>
+    </person>
+    <person role="prisoner" weight="4">
+      <select faction="scaleplate" tags="prisoner"/>
+    </person>
+  </people>
+  <people id="scaleplate_elite_pirate_crew">
+    <fillpercent min="20" max="60"/>
+    <person role="service" weight="60">
+      <select faction="scaleplate" tags="[service, elite]"/>
+    </person>
+    <person role="marine" weight="50">
+      <select faction="scaleplate" tags="[marine, elite]"/>
+    </person>
+    <person role="prisoner" weight="4">
+      <select faction="scaleplate" tags="prisoner"/>
+    </person>
+  </people>
+
+  <!-- Duke's Buccaneers -->
+  <people id="buccaneers_pirate_crew">
+    <fillpercent min="80" max="90"/>
+    <person role="service" weight="1">
+      <select faction="buccaneers" tags="[service, rookie]"/>
+    </person>
+    <person role="service" weight="12">
+      <select faction="buccaneers" tags="[service, regular]"/>
+    </person>
+    <person role="service" weight="41">
+      <select faction="buccaneers" tags="[service, veteran]"/>
+    </person>
+    <person role="service" weight="6">
+      <select faction="buccaneers" tags="[service, elite]"/>
+    </person>
+    <person role="marine" weight="1">
+      <select faction="buccaneers" tags="[marine, rookie]"/>
+    </person>
+    <person role="marine" weight="8">
+      <select faction="buccaneers" tags="[marine, regular]"/>
+    </person>
+    <person role="marine" weight="27">
+      <select faction="buccaneers" tags="[marine, veteran]"/>
+    </person>
+    <person role="marine" weight="4">
+      <select faction="buccaneers" tags="[marine, elite]"/>
+    </person>
+    <person role="prisoner" weight="4">
+      <select faction="buccaneers" tags="prisoner"/>
+    </person>
+  </people>
+  <people id="buccaneers_veteran_pirate_crew">
+    <fillpercent min="85" max="95"/>
+    <person role="service" weight="70">
+      <select faction="buccaneers" tags="[service, veteran]"/>
+    </person>
+    <person role="marine" weight="30">
+      <select faction="buccaneers" tags="[marine, veteran]"/>
+    </person>
+    <person role="prisoner" weight="4">
+      <select faction="buccaneers" tags="prisoner"/>
+    </person>
+  </people>
+  <people id="buccaneers_elite_pirate_crew">
+    <fillpercent min="95" max="100"/>
+    <person role="service" weight="90">
+      <select faction="buccaneers" tags="[service, elite]"/>
+    </person>
+    <person role="marine" weight="10">
+      <select faction="buccaneers" tags="[marine, elite]"/>
+    </person>
+  </people>
+</peopledefinitions>
