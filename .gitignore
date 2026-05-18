@@ -30,3 +30,15 @@ X4 Executable/_build_tmp/
 /X4 Executable
 /.claude/worktrees
 /Legacy
+
+#Other folders
+/ship xml
+
+#Files
+character_components.xml
+character_macros.xml
+charactergroups.xml
+Complete cat Dump.txt
+npc_agent.xml
+npc_instantiation.xml
+people.xml
