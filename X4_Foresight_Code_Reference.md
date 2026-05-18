@@ -18,7 +18,9 @@ A complete reference for all modules, classes, and functions in the X4 Foresight
 8. [data/factions.py](#8-datafactionspy)
 9. [data/wares.py](#9-datawarespy)
 10. [data/ships.py](#10-datashipspy)
-11. [Legacy/generate_ship_names.py](#11-legacygenerate_ship_namespy)
+11. [data/ship_stats.py](#11-dataship_statspy)
+12. [generate_ship_stats.py](#12-generate_ship_statspy)
+13. [Legacy/generate_ship_names.py](#13-legacygenerate_ship_namespy)
 
 ---
 
@@ -33,14 +35,19 @@ The main entry point for the scanner pipeline. Run this directly from the projec
 | Constant | Type | Description |
 |---|---|---|
 | `SCRIPT_DIR` | `Path` | Absolute path to the project root, derived from `__file__`. |
-| `SAVE_FILE` | `Path` | Expected location of the unzipped save file (`save_001.xml`). |
 | `LANG_FILE` | `Path` | Expected location of the X4 English language file (`0001-l044.xml`). |
 | `RUN_MODE` | `str` | Controls which passes execute. `"full"` runs the complete pipeline; `"ships"` skips Pass 1 and Pass 2 and scans ships only. |
 | `SHIP_SCAN_TIER` | `int` | Controls NPC ship inclusion in full mode. `1` = player ships only, `2` = + NPC ships in station sectors, `3` = + NPC ships in all player ship sectors. Only meaningful when `RUN_MODE = "full"`. |
 
+**`select_save_file() -> pathlib.Path`**
+
+Interactive console save selector. Discovers saves from `~/Documents/Egosoft/X4/<id>/save/` and lists them with timestamps. The user enters a number (`1–N`), `L` for the latest save, or `R` to use `save_001.xml` in the project root (fallback). Exits with code 1 if no saves and no root fallback are found.
+
 **Execution flow**
 
-In `"full"` mode the script runs four sequential passes and then exports:
+On launch, `select_save_file()` runs first. The chosen path is passed to all subsequent scanner calls.
+
+In `"full"` mode the script then runs four sequential passes and exports:
 
 1. `load_sector_names()` — loads the language file for human-readable sector names.
 2. `scan_save()` — Pass 1, extracts player identity, credits, and stations.
@@ -213,6 +220,12 @@ Performs Pass 3: scans the player fleet and optionally NPC ships in sectors of i
 
 **Module-level constants**
 
+**Imports**
+
+`SHIP_STATS` is imported from `data/ship_stats.py` and used during hull health calculation in `scan_ships()`.
+
+**Module-level constants**
+
 | Constant | Type | Description |
 |---|---|---|
 | `ROLE_PATTERNS` | `list[tuple[re.Pattern, str]]` | Ordered list of `(compiled_regex, label)` pairs matched against ship macro strings to derive a role display name. Order matters — more specific patterns (e.g. `miner_solid`) appear before broader ones (e.g. `miner`). |
@@ -263,16 +276,10 @@ For example, `"ship_xen_m_corvette_02_a_macro"` → `"Xenon"`.
 ### `resolve_ship_type(macro)`
 
 ```python
-def resolve_ship_type(macro: str) -> str
+def resolve_ship_type(macro: str) -> str | None
 ```
 
-Returns a display name for a ship's type. Always returns a non-empty string — it never returns `None`.
-
-Resolution uses two strategies in priority order:
-
-1. **`SHIP_NAMES` lookup** (`data/ships.py`) — a pre-generated dict mapping macro strings to exact in-game names, e.g. `"ship_tel_s_trans_container_01_b_macro"` → `"Magpie Sentinel"`. This is the preferred result when available.
-
-2. **Macro-derived fallback** — if the macro is absent from `SHIP_NAMES` (e.g. after a game update adds new ships before `data/ships.py` has been regenerated), the name is constructed from the macro string itself. X4 macro names follow the structure `ship_{faction}_{size}_{role...}_{index}_{variant}_macro`, allowing reliable extraction of faction, size, role, and variant letter. Examples: `ship_arg_l_trans_container_01_b_macro` → `"Argon L Freighter (B)"`, `ship_xen_m_corvette_02_a_macro` → `"Xenon M Corvette (A)"`.
+Looks up a ship's type display name (e.g. `"Magpie Sentinel"`) from the `SHIP_NAMES` dict in `data/ships.py` using the macro string as the key.
 
 **Parameters**
 
@@ -280,7 +287,27 @@ Resolution uses two strategies in priority order:
 |---|---|---|
 | `macro` | `str` | Ship macro string. |
 
-**Returns** `str` — the in-game display name if found in `SHIP_NAMES`, otherwise a macro-derived fallback string. Never `None` or empty.
+**Returns** `str` with the display name if found, or `None` if the macro is absent from the lookup (e.g. new DLC ships not yet regenerated).
+
+---
+
+### `_parse_hull(ship_elem)`
+
+```python
+def _parse_hull(ship_elem: ET.Element) -> float | None
+```
+
+Returns the ship's current hull HP as a float, or `None` if the ship is at full health.
+
+X4 only writes a `<hull value="..."/>` child element when the ship's hull is below maximum. If the element is absent, the ship is undamaged and this function returns `None`. The caller then uses the absence of a value to set `hull_pct = 100.0` rather than computing it.
+
+**Parameters**
+
+| Name | Type | Description |
+|---|---|---|
+| `ship_elem` | `ET.Element` | The buffered ship element with children in memory. |
+
+**Returns** `float` with the raw HP value (e.g. `7152.237`), or `None` if the `<hull>` element is absent (full health).
 
 ---
 
@@ -329,7 +356,7 @@ Pilot names stored as unresolved language reference strings (matching `LANG_STRI
 def _parse_current_order(ship_elem: ET.Element) -> str
 ```
 
-Returns a human-readable label for the ship's current active order by inspecting the `<orders>` block. Prefers the order with `state="started"` and `temp != "1"` (the active non-temporary order). Falls back to the default order if no started order is found, and to `"Idle"` if neither exists. Labels are resolved via `ORDER_LABELS`.
+Returns a human-readable label for the ship's current order by inspecting the `<orders>` block. Prefers the order with `state="started"` and `temp != "1"` (the active non-temporary order). Falls back to the default order if no started order is found, and to `"Idle"` if neither exists. Labels are resolved via `ORDER_LABELS`.
 
 **Parameters**
 
@@ -373,7 +400,7 @@ Returns a list of software ware IDs installed on the ship, read from the `wares`
 |---|---|---|
 | `ship_elem` | `ET.Element` | The buffered ship element. |
 
-**Returns** `list[str]` — ware ID strings, or an empty list if the element is absent or has no wares.
+**Returns** `list[str]` — ware ID strings, or an empty list if no `<software>` element is present.
 
 ---
 
@@ -384,7 +411,7 @@ def scan_ships(
     file_path: pathlib.Path,
     sector_names: dict,
     station_sectors: set[str] | None = None,
-    ship_sectors:    set[str] | None = None,
+    ship_sectors: set[str] | None = None,
 ) -> dict
 ```
 
@@ -392,10 +419,7 @@ Streams the save file and collects player and optionally NPC ship data using `it
 
 Zone macro tracking runs as a separate state variable: whenever a `zone`-class component is opened, `current_zone_macro` is updated; this value is stamped onto each ship element before buffering so `_parse_sector_from_zone_macro()` can resolve it after the zone element has been cleared.
 
-**Ship name resolution** follows a two-step priority (see also `resolve_ship_type()`):
-
-1. Player-given custom name — the `name` attribute on the component element. Unresolved language reference strings (matching `LANG_STRING_RE`) are skipped.
-2. `resolve_ship_type(macro)` — always returns a non-empty string, either from the `SHIP_NAMES` lookup or constructed from the macro itself. The `name` field on every player ship is therefore always a non-empty string.
+Ship name resolution follows a three-step priority: player-given custom name → `SHIP_NAMES` lookup by macro → `None` (display falls back to the ship code in `display.py`). Language reference strings in the `name` attribute are detected via `LANG_STRING_RE` and skipped.
 
 Player ship entries include the full set of parsed fields. NPC ship entries contain a reduced set (no pilot, software, or commander).
 
@@ -410,8 +434,16 @@ Player ship entries include the full set of parsed fields. NPC ship entries cont
 
 **Returns** `dict` with keys:
 
-- `player_ships` — list of dicts with keys: `code`, `name`, `class`, `size`, `macro`, `role`, `hull_origin`, `owner`, `sector`, `order`, `pilot`, `software`, `commander`. `name` is always a non-empty `str`.
+- `player_ships` — list of dicts with keys: `code`, `name`, `class`, `size`, `macro`, `role`, `hull_origin`, `owner`, `sector`, `order`, `pilot`, `software`, `commander`, `hull_hp`, `hull_pct`, `max_hull`.
 - `npc_ships` — list of dicts with keys: `code`, `class`, `size`, `macro`, `role`, `hull_origin`, `owner`, `sector`, `order`.
+
+**Hull health fields** (player ships only)
+
+| Key | Type | Description |
+|---|---|---|
+| `hull_hp` | `float \| None` | Raw current hull HP. `None` when undamaged (no `<hull>` element in save). |
+| `hull_pct` | `float \| None` | Percentage of max hull remaining. `100.0` when undamaged; `None` when max hull is unknown (ship not in `SHIP_STATS`). Can exceed 100 if a hull capacity mod is installed — see `TO BE NOTED.txt`. |
+| `max_hull` | `int \| None` | Base (unmodded) max hull HP from `SHIP_STATS`, or `None` if the macro is not in the lookup. |
 
 ---
 
@@ -421,7 +453,7 @@ Player ship entries include the full set of parsed fields. NPC ship entries cont
 def summarise_player_fleet(player_ships: list[dict]) -> dict
 ```
 
-Returns a high-level summary of the player fleet grouped by role, order, and sector. Used by `display.py` for the console report. The JSON export uses its own summary builder in `export/jsonexport.py` instead.
+Returns a high-level summary of the player fleet grouped by role, order, and sector. Intended for display and AI export use.
 
 **Parameters**
 
@@ -491,7 +523,7 @@ The report contains five sections:
 
 **Faction Reputation** — tabular display of all tracked factions. Columns show the scaled total value, a 20-character visual bar (`█`/`░`), tier label, permanent base value, and temporary booster. Values match the in-game UI display range of −30 to +30.
 
-**Player Fleet** — grouped by sector, matching the station layout style. Each ship shows its display name (always a non-empty string; the ship code is retained as a fallback safety net but is not expected to trigger) followed by size, role, current order, and hull origin. Captured ships (hull origin not in the standard player-purchasable faction list) are flagged with a `★` prefix. A pilot sub-line is printed only when a named pilot is assigned. Column width for ship names is computed dynamically and capped at 40 characters.
+**Player Fleet** — grouped by sector, matching the station layout style. Each ship shows display name (or code fallback), size, role, current order, hull origin, and hull health. Captured ships (hull origin not in the standard player-purchasable faction list) are flagged with a `★` prefix. Hull health is shown as `Full (N HP)` for undamaged ships, `PCT% (current / max HP)` for damaged ships, or raw HP if the max is not in `SHIP_STATS`. A pilot sub-line is printed only when a named pilot is assigned. Column width for ship names is computed dynamically and capped at 40 characters.
 
 **NPC Presence** (tiers 2 and 3 only) — printed only when `npc_ships` is non-empty. Groups NPC ships by sector and faction, summarising composition as role counts (e.g. `3× Fighter, 1× Corvette`). Gives a threat picture without listing individual NPC ships.
 
@@ -533,7 +565,7 @@ Produces a pre-digested summary of the player fleet for inclusion in the JSON ex
 def _build_npc_summary(npc_ships: list[dict]) -> dict
 ```
 
-Produces a sector-level summary of NPC ship presence for the AI export.
+Produces a sector-level summary of NPC ship presence, grouped by sector, then faction, then role counts.
 
 **Parameters**
 
@@ -572,16 +604,93 @@ stations          (list)
 reputation        (list)
 ships
   ├── player_ships   (list)
-  ├── fleet_summary  (dict — total, by_role, by_size, by_order, by_sector)
+  ├── fleet_summary  (dict)
   ├── npc_ships      (list)
-  └── npc_summary    (dict — sector → faction → role → count)
+  └── npc_summary    (dict)
 ```
 
 ---
 
 ## 7. `ui/main_ui.py`
 
-PyQt6 desktop UI. Loads `x4_empire_state.json` and renders the HTML dashboard (`ui/ui.html`) in a native window using `QWebEngineView`. Empire data is passed from Python to JavaScript via a `QWebChannel` bridge.
+PyQt6 desktop UI. Presents a save selector dialog, runs the scanner pipeline in a background thread, then renders the HTML dashboard (`ui/ui.html`) in a native Qt window. Empire data is passed from Python to JavaScript via a `QWebChannel` bridge.
+
+---
+
+### `find_saves()`
+
+```python
+def find_saves() -> list[pathlib.Path]
+```
+
+Discovers X4 save files from the default game directory (`~/Documents/Egosoft/X4/<id>/save/`). Returns manual saves (`save_*.xml.gz`) followed by autosaves (`autosave_*.xml.gz`), each group sorted by slot number. Returns an empty list if the directory is not found.
+
+---
+
+### Class: `SaveSelectDialog`
+
+```python
+class SaveSelectDialog(QDialog)
+```
+
+Modal dialog that lists all saves returned by `find_saves()` and lets the user pick one to scan. The most recently modified save is pre-selected. Double-clicking a row or pressing **Scan** accepts; **Cancel** rejects.
+
+**Constructor**
+
+```python
+def __init__(self, parent=None)
+```
+
+**Methods**
+
+`selected_path() -> pathlib.Path | None`
+Returns the `pathlib.Path` of the selected save, or `None` if no row is selected.
+
+---
+
+### Class: `ScanWorker`
+
+```python
+class ScanWorker(QThread)
+```
+
+Background thread that runs the full scanner pipeline (`load_sector_names` → `scan_save` → `scan_reputation` → `scan_ships` → `export_json`) without blocking the Qt event loop. Emits three signals:
+
+| Signal | Payload | When |
+|---|---|---|
+| `progress` | `str` — status message | After each pipeline step |
+| `finished` | — | Scan and JSON export complete |
+| `error` | `str` — traceback | On any unhandled exception |
+
+**Constructor**
+
+```python
+def __init__(self, save_path: pathlib.Path)
+```
+
+| Parameter | Type | Description |
+|---|---|---|
+| `save_path` | `pathlib.Path` | Path to the `.xml.gz` save file to scan. |
+
+---
+
+### Class: `ScanProgressDialog`
+
+```python
+class ScanProgressDialog(QDialog)
+```
+
+Modal dialog shown while `ScanWorker` runs. Displays an indeterminate progress bar and a status label updated via the worker's `progress` signal. The close button is disabled during scanning. Accepts when `finished` fires; rejects on `error`, storing the traceback in `error_msg`.
+
+**Constructor**
+
+```python
+def __init__(self, save_path: pathlib.Path, parent=None)
+```
+
+**Attributes**
+
+`error_msg: str | None` — set to the error traceback if the scan failed; `None` on success.
 
 ---
 
@@ -591,7 +700,7 @@ PyQt6 desktop UI. Loads `x4_empire_state.json` and renders the HTML dashboard (`
 class EmpireBridge(QObject)
 ```
 
-Python-to-JavaScript bridge object, registered with `QWebChannel` and exposed to the frontend as `channel.objects.bridge`. Add further `@pyqtSlot` methods here as the UI grows.
+Python-to-JavaScript bridge object, registered with `QWebChannel` and exposed to the frontend as `window.bridge`. Add further `@pyqtSlot` methods here as the UI grows.
 
 **Constructor**
 
@@ -623,31 +732,42 @@ Default size is 1200×800 with a minimum of 900×600.
 **Constructor**
 
 ```python
-def __init__(self, data: dict, html_path: str)
+def __init__(self, data: dict)
 ```
 
 | Parameter | Type | Description |
 |---|---|---|
 | `data` | `dict` | The loaded empire state dictionary, passed to `EmpireBridge`. |
-| `html_path` | `str` | Absolute path to `ui/ui.html`. |
 
 ---
 
 ### `load_json(path)`
 
 ```python
-def load_json(path: str) -> dict
+def load_json(path: pathlib.Path) -> dict
 ```
 
-Loads and parses a JSON file. Exits with code 1 if the file is not found.
+Loads and parses a JSON file.
 
 **Parameters**
 
 | Name | Type | Description |
 |---|---|---|
-| `path` | `str` | Path to the JSON file. |
+| `path` | `pathlib.Path` | Path to the JSON file. |
 
 **Returns** `dict` — parsed JSON content.
+
+---
+
+### `run_scan(parent=None)`
+
+```python
+def run_scan(parent=None) -> dict | None
+```
+
+Convenience function that sequences the save selector and progress dialog. Shows `SaveSelectDialog`; if accepted, runs `ScanProgressDialog`; if the scan succeeds, reads `x4_empire_state.json` from disk and returns it. Returns `None` if the user cancels at any point or the scan fails (errors are shown in a `QMessageBox`).
+
+The JSON is read back from disk rather than passed in memory because `export_json()` restructures `game_data` into the format `ui.html` expects.
 
 ---
 
@@ -657,11 +777,33 @@ Loads and parses a JSON file. Exits with code 1 if the file is not found.
 def main()
 ```
 
-Entry point for the UI. Parses the `--json` command-line argument (defaulting to `<project_root>/x4_empire_state.json`), loads the empire data, resolves the path to `ui.html`, and launches the Qt application.
+Entry point for the UI. Launch behaviour depends on whether `x4_empire_state.json` already exists:
 
-**CLI argument**
+- **JSON exists** — asks the user whether to run a new scan. Choosing **No** loads the existing JSON immediately. Choosing **Yes** opens the save selector; if the user cancels, falls back to the existing JSON.
+- **No JSON** — goes straight to the save selector. If the user cancels with no data to show, exits with code 0.
 
-`--json <path>` — optional path to an empire state JSON file.
+---
+
+### `ui/ui.html` — JavaScript helpers
+
+The HTML dashboard contains a set of JavaScript helper functions that transform raw JSON values into rendered HTML. The most relevant for ship data are listed below.
+
+---
+
+#### `hullBadge(hullOrigin)`
+
+Returns an HTML `<span>` chip coloured by hull origin faction, used to label the manufacturer of each ship in the fleet table. Captured ships (origin not in the standard faction set) receive a distinct warning colour.
+
+---
+
+#### `hullBar(pct, hullHp, maxHull)`
+
+Returns an HTML fragment containing a gradient health bar and a numeric label beneath it.
+
+- Bar colour transitions from red (hue 0°) at 0% health to green (hue 120°) at 100% health using an HSL colour string computed as `hsl(pct * 1.2, 100%, 42%)`.
+- Values above 100% (hull capacity mod installed) are rendered in blue (`#388bfd`) to distinguish them from normal health.
+- If `pct` is `null` (ship not in `SHIP_STATS`), only the raw HP is shown without a bar.
+- The label beneath the bar shows `Full (N HP)` when undamaged, `N% (current / max HP)` when damaged, or just raw HP when the max is unknown.
 
 ---
 
@@ -756,11 +898,78 @@ Auto-generated static lookup table mapping ship macro names to display names. No
 |---|---|---|
 | `SHIP_NAMES` | `dict[str, str]` | Maps ship macro name strings to in-game display names, e.g. `"ship_tel_s_trans_container_01_b_macro"` → `"Magpie Sentinel"`. Generated by `Legacy/generate_ship_names.py`. Covers base game and all DLC factions. |
 
-This file is committed to the repository. It only needs to be regenerated when new ships are added by a game update or DLC. Macros not present in this dict are handled gracefully by `resolve_ship_type()`, which constructs a name from the macro string rather than returning `None`. See `Legacy/generate_ship_names.py` for the generation process.
+This file is committed to the repository. It only needs to be regenerated when new ships are added by a game update or DLC. See `Legacy/generate_ship_names.py` for the generation process.
 
 ---
 
-## 11. `Legacy/generate_ship_names.py`
+## 11. `data/ship_stats.py`
+
+Auto-generated static lookup table mapping ship macro names to per-ship stats (currently hull HP). Not edited by hand — regenerated by `generate_ship_stats.py` whenever ship XMLs are updated.
+
+**Module-level constants**
+
+| Constant | Type | Description |
+|---|---|---|
+| `SHIP_STATS` | `dict[str, dict]` | Maps ship macro name strings to a nested dict of stats. Currently each entry contains only `max_hull`. Example: `"ship_arg_l_destroyer_01_a_macro": {"max_hull": 93000}`. |
+
+The dict is structured as `SHIP_STATS[macro]["stat_name"]` so that additional stats (e.g. cargo capacity, max speed) can be added in future without changing the key structure.
+
+This file is committed to the repository. It only needs to be regenerated when ship XMLs change (new DLC, game patch). See `generate_ship_stats.py` for the generation process.
+
+---
+
+## 12. `generate_ship_stats.py`
+
+One-time utility script that generates `data/ship_stats.py` by walking all ship macro XMLs in the `ship xml/` folder. Run from the project root after adding or updating ship XML files.
+
+**Required inputs**
+
+- `ship xml/` — folder of ship macro XMLs in the project root. XML files can be extracted from the game's `.cat` files using XRCatTool.
+
+**Module-level constants**
+
+| Constant | Type | Description |
+|---|---|---|
+| `SCRIPT_DIR` | `Path` | Project root, derived from `__file__`. |
+| `XML_DIR` | `Path` | Expected location of ship macro XMLs (`ship xml/`). |
+| `OUTPUT_FILE` | `Path` | Write target for the generated file (`data/ship_stats.py`). |
+| `SHIP_CLASSES` | `set[str]` | XML `class` attribute values that identify whole-ship macros: `"ship_s"`, `"ship_m"`, `"ship_l"`, `"ship_xl"`. Entries with other classes (drones, spacesuit frames, turret hardpoints) are skipped. |
+
+---
+
+### `extract_hull_max(xml_path)`
+
+```python
+def extract_hull_max(xml_path: pathlib.Path) -> tuple[str, int] | None
+```
+
+Parses a single ship macro XML file and returns the macro name and base max hull HP.
+
+The function reads the top-level `<macro>` element for its `name` and `class` attributes. Files whose class is not in `SHIP_CLASSES` are rejected immediately. The hull value is read from `<properties><hull max="..."/>`.
+
+**Parameters**
+
+| Name | Type | Description |
+|---|---|---|
+| `xml_path` | `pathlib.Path` | Path to a single ship macro XML file. |
+
+**Returns** `tuple[str, int]` — `(macro_name, max_hull_int)` if extraction succeeds, or `None` if the file should be skipped (wrong class, malformed XML, missing hull element).
+
+---
+
+### `main()` *(generate_ship_stats)*
+
+```python
+def main()
+```
+
+Walks every `.xml` file in `XML_DIR`, calls `extract_hull_max()` on each, accumulates results, and writes the `data/ship_stats.py` file. Prints a summary line showing how many ships were extracted and how many were skipped.
+
+The output file is sorted alphabetically by macro name and prefixed with a header comment warning that it is auto-generated and should not be edited by hand.
+
+---
+
+## 13. `Legacy/generate_ship_names.py`
 
 One-time utility script that generates `data/ships.py` from the game's extracted macro XML files and language file. Run from the project root after extracting ship macros from the game's `.cat` files using XRCatTool.
 

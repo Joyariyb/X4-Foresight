@@ -402,23 +402,6 @@
             Marines <span class="ft-count" id="crew-count-marine">0</span>
           </div>
         </div>
-        <div class="sec-header" style="margin-bottom:0;padding-bottom:8px">
-          <div class="sec-title">Crew Roster</div>
-          <div class="sec-line"></div>
-          <span class="sort-label">Sort</span>
-          <span id="crew-sort-indicator" style="font-family:var(--font-mono);font-size:10px;color:var(--teal);flex-shrink:0">Role ↑</span>
-          <select class="sort-select" id="crew-sort-select" onchange="setCrewSort(this.value)">
-            <option value="" disabled selected hidden>Change…</option>
-            <option value="name">Name</option>
-            <option value="role">Role</option>
-            <option value="piloting">Piloting</option>
-            <option value="management">Management</option>
-            <option value="engineering">Engineering</option>
-            <option value="morale">Morale</option>
-            <option value="boarding">Boarding</option>
-          </select>
-        </div>
-
         <div class="crew-layout">
           <div class="crew-roster panel">
             <table class="data-table" id="crew-table">
@@ -853,31 +836,6 @@
   let allCrewData      = [];
   let filteredCrewData = [];
   let crewRoleFilter   = 'all';
-  let crewSortKey      = 'role';
-  let crewSortDir      = 1;
-
-  const SKILL_KEYS = new Set(['piloting', 'management', 'engineering', 'morale', 'boarding']);
-
-  const CREW_SORT_LABELS = {
-    name: 'Name', role: 'Role',
-    piloting: 'Piloting', management: 'Management',
-    engineering: 'Engineering', morale: 'Morale', boarding: 'Boarding',
-  };
-
-  function setCrewSort(key) {
-    if (key === crewSortKey) {
-      crewSortDir *= -1;
-    } else {
-      crewSortKey = key;
-      // Skills rank highest-first by default; text fields rank A→Z.
-      crewSortDir = SKILL_KEYS.has(key) ? -1 : 1;
-    }
-    document.getElementById('crew-sort-select').value = '';
-    const arrow = crewSortDir === 1 ? '↑' : '↓';
-    document.getElementById('crew-sort-indicator').textContent =
-      `${CREW_SORT_LABELS[key] || key} ${arrow}`;
-    renderCrewRoster();
-  }
 
   // Hex values so we can do hex-alpha tricks like `${col}22` for badge backgrounds.
   const ROLE_COLOURS = {
@@ -925,23 +883,9 @@
   }
 
   function renderCrewRoster() {
-    const raw = crewRoleFilter === 'all'
+    filteredCrewData = crewRoleFilter === 'all'
       ? allCrewData
       : allCrewData.filter(c => c.role === crewRoleFilter);
-
-    filteredCrewData = [...raw].sort((a, b) => {
-      let av, bv;
-      if (SKILL_KEYS.has(crewSortKey)) {
-        av = (a.skills && a.skills[crewSortKey] != null) ? a.skills[crewSortKey] : -1;
-        bv = (b.skills && b.skills[crewSortKey] != null) ? b.skills[crewSortKey] : -1;
-      } else {
-        av = (a[crewSortKey] || '').toString().toLowerCase();
-        bv = (b[crewSortKey] || '').toString().toLowerCase();
-      }
-      if (av < bv) return -1 * crewSortDir;
-      if (av > bv) return  1 * crewSortDir;
-      return 0;
-    });
 
     document.querySelector('#crew-table tbody').innerHTML = filteredCrewData.map((c, i) => {
       const primaryKey = ROLE_PRIMARY[c.role] || 'piloting';
@@ -952,7 +896,7 @@
         <td style="white-space:nowrap">${c.name}</td>
         <td><span class="badge" style="background:${col}22;color:${col};border-color:${col}44">${lbl}</span></td>
         <td><span style="letter-spacing:-1px">${skillStars(primaryPts)}</span></td>
-        <td style="color:var(--text-dim);white-space:nowrap">${c.assigned_to || '—'}${c.assigned_code ? `<span class="mono" style="color:var(--yellow);font-size:11px;margin-left:6px">[${c.assigned_code}]</span>` : ''}</td>
+        <td style="color:var(--text-dim)">${c.assigned_to || '—'}</td>
         <td style="color:var(--text-faint)">${c.sector || '—'}</td>
       </tr>`;
     }).join('');
