@@ -130,23 +130,22 @@ def display_results(data: dict):
             print(f"  ┌─ SECTOR: {sector}  ({len(stations)} {station_word})")
 
             for i, s in enumerate(stations):
-                # Use corner piece on last station, tee on others
-                connector = "└──" if i == len(stations) - 1 else "├──"
+                is_last   = i == len(stations) - 1
+                connector = "└──" if is_last else "├──"
+                indent    = "       " if is_last else "│      "
 
-                # Station name line — name is the distinct header, code at the end
-                print(f"  {connector} {s['name']} [{s['code']}]")
+                # Module count on the name line so it's visible at a glance.
+                # Falls back to "?" if the field isn't present (older scan data).
+                mod_count = s.get("module_count")
+                mod_str   = f"  ·  {mod_count} modules" if mod_count is not None else ""
+                print(f"  {connector} {s['name']} [{s['code']}]{mod_str}")
 
-                # Production line — indented to align under the station name.
-                # Indent width matches the connector so text lines up cleanly.
-                indent = "       " if i == len(stations) - 1 else "│      "
                 if s["production"]:
                     print(f"  {indent} Produces : {s['production']}")
                 else:
                     print(f"  {indent} Produces : —")
 
                 # ── Hull health ───────────────────────────────────────────────
-                # hull_pct is None when STATION_STATS couldn't match any modules
-                # (e.g. after a DLC update adds new module types not yet extracted).
                 hull_pct = s.get("hull_pct")
                 hull_hp  = s.get("hull_hp")
                 hull_max = s.get("hull_max")
@@ -158,7 +157,9 @@ def display_results(data: dict):
                 else:
                     hull_str = "—"
 
-                # ── Shield health ─────────────────────────────────────────────
+                print(f"  {indent} Hull     : {hull_str}")
+
+                # ── Shield health — own line, coloured blue ───────────────────
                 # shield_pct is None when no shield generators are installed.
                 shield_pct = s.get("shield_pct")
                 shield_hp  = s.get("shield_hp")
@@ -171,9 +172,14 @@ def display_results(data: dict):
                 else:
                     shield_str = "None"
 
-                print(f"  {indent} Hull     : {hull_str:<30}  Shield : {BLUE}{shield_str}{RESET}")
+                print(f"  {indent} Shield   : {BLUE}{shield_str}{RESET}")
 
-            print()  # Blank line between sector groups for breathing room
+                # Blank line between stations within a sector for breathing room,
+                # but not after the last one (the sector group already adds one).
+                if not is_last:
+                    print(f"  │")
+
+            print()  # Blank line between sector groups
 
     else:
         print("    No player-owned stations detected.")

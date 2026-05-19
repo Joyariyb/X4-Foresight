@@ -90,6 +90,23 @@ def parse_production_from_construction(station_elem: ET.Element) -> str:
     return ", ".join(production)
 
 
+def _count_construction_modules(station_elem: ET.Element) -> int:
+    """
+    Counts every entry in the station's <construction><sequence> block.
+
+    Unlike _parse_station_modules(), this counts ALL module types — production,
+    habitat, storage, dock areas, connection pieces, defence, shields, etc. —
+    regardless of whether they appear in STATION_STATS. The result is the true
+    planned module count as the player built it.
+    """
+    construction = station_elem.find('construction')
+    if construction is None:
+        return 0
+    sequence = construction.find('sequence')
+    if sequence is None:
+        return 0
+    return sum(1 for _ in sequence.findall('entry'))
+
 
 def _parse_module_info(macro: str) -> dict:
     """
@@ -330,24 +347,26 @@ def scan_save(file_path: pathlib.Path, sector_names: dict) -> dict:
                         else:
                             display_name = "Unnamed Station"
 
-                        production = parse_production_from_construction(elem)
-                        modules    = _parse_station_modules(elem)
-                        health     = _parse_station_health(modules)
+                        production   = parse_production_from_construction(elem)
+                        module_count = _count_construction_modules(elem)
+                        modules      = _parse_station_modules(elem)
+                        health       = _parse_station_health(modules)
 
                         entry = {
-                            "name":       display_name,
-                            "code":       code,
-                            "class":      elem.get('class', ''),
-                            "macro":      macro,
-                            "sector":     station_sector_pending,
-                            "production": production,
-                            "hull_hp":    health["hull_hp"],
-                            "hull_max":   health["hull_max"],
-                            "hull_pct":   health["hull_pct"],
-                            "shield_hp":  health["shield_hp"],
-                            "shield_max": health["shield_max"],
-                            "shield_pct": health["shield_pct"],
-                            "modules":    modules,
+                            "name":         display_name,
+                            "code":         code,
+                            "class":        elem.get('class', ''),
+                            "macro":        macro,
+                            "sector":       station_sector_pending,
+                            "production":   production,
+                            "module_count": module_count,
+                            "hull_hp":      health["hull_hp"],
+                            "hull_max":     health["hull_max"],
+                            "hull_pct":     health["hull_pct"],
+                            "shield_hp":    health["shield_hp"],
+                            "shield_max":   health["shield_max"],
+                            "shield_pct":   health["shield_pct"],
+                            "modules":      modules,
                         }
 
                         if not any(s["code"] == code for s in data["stations"]):
