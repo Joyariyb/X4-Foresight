@@ -27,10 +27,9 @@ No formal test suite exists. Verification is done by running the pipeline agains
 
 ## Configuration
 
-Edit constants at the top of `x4_save_scanner.py`:
+Scan mode and ship tier are selected interactively at startup — there are no constants to edit.
 
-- `RUN_MODE`: `"full"` (complete pipeline) or `"ships"` (ships-only scan)
-- `SHIP_SCAN_TIER`: `1` (player ships only, fastest), `2` (+ NPC in station sectors), `3` (+ NPC in all ship sectors)
+The `SCAN_MODES` list in `x4_save_scanner.py` defines the available modes. Each entry declares which passes run and whether to export JSON. Adding a new mode means adding an entry to that list; the selector and dispatcher pick it up automatically.
 
 ## Architecture
 
@@ -63,24 +62,28 @@ All passes use `xml.etree.ElementTree.iterparse()` for memory efficiency on gian
 
 | Pass | Module | Extracts |
 |------|--------|----------|
-| 1 | `scanner.py` | Player identity, credits, stations + their production modules |
-| 2 | `scanner.py` | Faction reputation (raw float → log10 display scale) |
-| 3 | `ship_scanner.py` | Ships (player always; NPC conditional on `SHIP_SCAN_TIER`) |
+| 1 | `station_scanner.py` | Player identity, credits, stations + production, hull/shield health, managers |
+| 2 | `reputation_scanner.py` | Faction reputation (raw float → log10 display scale) |
+| 3 | `ship_scanner.py` | Ships (player always; NPC conditional on ship scan tier) |
 
 ### Key Modules
 
 | Module | Role |
 |--------|------|
-| `scanner.py` | Passes 1 & 2 — player stats, stations with sector tracking, reputation |
-| `ship_scanner.py` | Pass 3 — ship extraction with role/faction lookup, pilot data, docked ship extraction |
-| `language.py` | Loads X4 language file; resolves sector macro IDs to human names; provides `open_save()` |
-| `display.py` | ASCII console report with reputation bars, fleet grouping |
+| `scanner/scanner.py` | Coordinator — re-exports `scan_save` and `scan_reputation` so callers don't import sub-modules directly |
+| `scanner/station_scanner.py` | Pass 1 — player identity, credits, stations with sector tracking, hull/shield health, managers |
+| `scanner/reputation_scanner.py` | Pass 2 — faction reputation extraction and log10 scaling |
+| `scanner/ship_scanner.py` | Pass 3 — ship extraction with role/faction lookup, pilot data, docked ship extraction |
+| `scanner/crew_scanner.py` | Shared NPC parsing — pilot, service crew, marines, station managers |
+| `scanner/language.py` | Loads X4 language file; resolves sector macro IDs to human names; provides `open_save()` |
+| `display.py` | ASCII console report with reputation bars, fleet grouping, per-ship crew counts |
 | `export/jsonexport.py` | Builds structured JSON with fleet summaries by role/size/sector |
 | `ui/main_ui.py` | Startup flow (scan prompt, save selector, background scan thread), PyQt6 window + WebChannel bridge |
 | `ui/ui.html` | Single-file dashboard (dark theme, reads JSON via bridge) |
 | `data/factions.py` | Faction names, rep scaling, tier labels |
 | `data/ships.py` | Pre-generated macro → display name lookup |
 | `data/wares.py` | Production ware display names |
+| `data/station_stats.py` | Station module max hull and shield HP lookup |
 
 ### Python ↔ JavaScript Bridge
 

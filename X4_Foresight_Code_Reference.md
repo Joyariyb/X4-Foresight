@@ -7,10 +7,13 @@ A complete reference for all modules, classes, and functions in the X4 Foresight
 ## Table of Contents
 
 1. [🚀 Entry Points](#1-entry-points)
-   - [x4_save_scanner.py](#x4_save_scannerpy)
-   - [X4_Empire_Intelligence.pyw](#x4_empire_intelligencepyw)
+   1. [⌨️ x4_save_scanner.py](#x4_save_scannerpy)
+   2. [🪟 X4_Empire_Intelligence.pyw](#x4_empire_intelligencepyw)
 2. [🌐 scanner/language.py](#2-scannerlanguagepy)
 3. [🔍 scanner/scanner.py](#3-scannerscannerpy)
+   1. [🏗️ scanner/station_scanner.py](#scannerstationscannerpy)
+   2. [⭐ scanner/reputation_scanner.py](#scannerreputationscannerpy)
+   3. [👥 scanner/crew_scanner.py](#scannercrewscannerpy)
 4. [🚢 scanner/ship_scanner.py](#4-scannership_scannerpy)
 5. [📊 display.py](#5-displaypy)
 6. [📤 export/jsonexport.py](#6-exportjsonexportpy)

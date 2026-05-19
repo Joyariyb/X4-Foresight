@@ -27,7 +27,7 @@ A desktop application for scanning *X4: Foundations* save files and generating s
 
 - **Scans Your Save File:** Extracts player identity, stations, ships, reputation, and crew data from *X4: Foundations* save files.
 - **Generates Structured JSON:** Outputs `x4_empire_state.json` for use with AI assistants or external dashboards.
-- **Configurable Modes & Tiers:** Run in `full` or `ships` mode; set ship scan tiers (1–3) to control NPC fleet inclusion.
+- **Configurable Modes & Tiers:** Four scan modes selected interactively at startup (`full`, `stations`, `reputation`, `ships`); set ship scan tiers (1–3) to control NPC fleet inclusion.
 
 ---
 
@@ -58,15 +58,19 @@ A desktop application for scanning *X4: Foundations* save files and generating s
 
 ## 🔧 Configuration Options
 
-| Mode | Description |
-|------|-------------|
-| `full` | Default — scans all data (player, stations, fleet, reputation, crew) |
-| `ships` | Scans player + fleet only; excludes stations and reputation if desired |
+Modes are selected interactively at startup — no constants to edit.
 
-**Scan Tiers:**
-- **Tier 1:** Player + faction info
-- **Tier 2:** Add stations, managers
-- **Tier 3:** Include NPC ships (if enabled), crew details
+| Mode | Passes run | Description |
+|------|-----------|-------------|
+| `full` | All | Stations, reputation, ships + JSON export |
+| `stations` | 1 | Player identity, station health and production |
+| `reputation` | 2 | Faction standings only |
+| `ships` | 3 | Fleet scan, skips stations and reputation |
+
+**Ship Scan Tiers** (only prompted when the ships pass runs):
+- **Tier 1:** Player ships only (fastest)
+- **Tier 2:** + NPC ships in sectors where you have stations (requires stations pass)
+- **Tier 3:** + NPC ships in all sectors where you have player ships
 
 ---
 
@@ -93,22 +97,27 @@ A desktop application for scanning *X4: Foundations* save files and generating s
 
 ```
 X4 Foresight/
-├── x4_save_scanner.py       # CLI scanner entry point
+├── x4_save_scanner.py          # CLI scanner entry point
 ├── X4_Empire_Intelligence.pyw  # Windows launcher (no console)
-├── launcher.py               # PyQt6 desktop app wrapper
-├── display.py                # Console report formatter (ASCII art)
-├── export_json.py            # JSON export engine
-├── language.py               # Sector/ship name resolution
-├── scanner/                  # Scanner modules
-│   ├── pass1_player_identity.py
-│   ├── pass2_station_reputation.py
-│   └── pass3_fleet_crew.py
-├── data/                     # Auto-generated outputs
-│   ├── ships.py
-│   └── ship_stats.json
-└── ui/                       # Desktop application source
-    ├── main_ui.py            # PyQt6 app entry point
-    └── ui.html               # Embedded web dashboard
+├── display.py                  # Console report formatter (ASCII art)
+├── export/
+│   └── jsonexport.py           # JSON export engine
+├── scanner/
+│   ├── scanner.py              # Coordinator — re-exports public scan functions
+│   ├── station_scanner.py      # Pass 1 — player identity, stations, health
+│   ├── reputation_scanner.py   # Pass 2 — faction standings
+│   ├── ship_scanner.py         # Pass 3 — fleet and NPC ships
+│   ├── crew_scanner.py         # Shared NPC/crew parsing
+│   └── language.py             # Sector name resolution, open_save()
+├── data/
+│   ├── factions.py             # Faction names, rep scaling, tier labels
+│   ├── ships.py                # Macro → display name lookup
+│   ├── wares.py                # Production ware display names
+│   ├── station_stats.py        # Station module hull and shield stats
+│   └── ship_stats.py           # Ship base hull HP lookup
+└── ui/                         # Desktop application source
+    ├── main_ui.py              # PyQt6 app entry point
+    └── ui.html                 # Embedded web dashboard
 ```
 
 ---

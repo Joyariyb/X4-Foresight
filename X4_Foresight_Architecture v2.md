@@ -54,14 +54,16 @@ x4_save_scanner.py
 │     └── reads 0001-l044.xml
 │         returns { lang_id: sector_name }
 │
-├── scan_save()                  scanner/scanner.py       [Pass 1]
+├── scan_save()                  scanner/station_scanner.py  [Pass 1]
 │     ├── streams save file (via open_save)
 │     ├── calls macro_to_sector_name()
 │     ├── calls resolve_sector_from_location()
-│     └── calls parse_production_from_construction()
-│         returns game_data (player, stations)
+│     ├── calls parse_production_from_construction()
+│     ├── calls _parse_station_health()
+│     └── calls _parse_manager()        scanner/crew_scanner.py
+│         returns game_data (player, stations, managers)
 │
-├── scan_reputation()            scanner/scanner.py       [Pass 2]
+├── scan_reputation()            scanner/reputation_scanner.py  [Pass 2]
 │     ├── streams save file (via open_save) again
 │     ├── calls scale_reputation()      data/factions.py
 │     └── calls reputation_label()      data/factions.py
@@ -104,7 +106,9 @@ Three focused passes, each with a clear single responsibility, are simpler and m
 
 ### Pass 1 — Player Identity and Stations (`scan_save`)
 
-Tracks the current sector as it streams, so that any player-owned station encountered inherits the sector it's nested within. Uses a buffering technique: when a player station's opening tag is spotted, `elem.clear()` is suppressed for all descendants until the station's closing tag arrives, preserving child elements needed to parse production modules.
+Tracks the current sector as it streams, so that any player-owned station encountered inherits the sector it's nested within. Uses a buffering technique: when a player station's opening tag is spotted, `elem.clear()` is suppressed for all descendants until the station's closing tag arrives, preserving child elements needed to parse production modules, hull/shield health, and the assigned manager.
+
+Hull health is summed per module by matching each component's macro against `STATION_STATS` in `data/station_stats.py`. Shield health is summed from `shieldgenerator` class components. A DFS helper (`_station_components`) skips `ship_*` class subtrees to prevent docked ships from contaminating the station's health totals.
 
 ### Pass 2 — Faction Reputation (`scan_reputation`)
 
@@ -131,12 +135,25 @@ game_data = {
     # ── Stations ──────────────────────────────────────────────────────────────
     "stations": [
         {
-            "name":       str,   # Display name (custom, HQ, index, or "Unnamed")
-            "code":       str,   # Short identifier code, e.g. "APX-001"
-            "class":      str,   # XML class: "station", "factory", "headquarters", "complex"
-            "macro":      str,   # Raw macro string from save XML
-            "sector":     str,   # Human-readable sector name
-            "production": str,   # Comma-separated ware display names, or ""
+            "name":       str,          # Display name (custom, HQ, index, or "Unnamed")
+            "code":       str,          # Short identifier code, e.g. "APX-001"
+            "class":      str,          # XML class: "station", "factory", "headquarters", "complex"
+            "macro":      str,          # Raw macro string from save XML
+            "sector":     str,          # Human-readable sector name
+            "production": str,          # Comma-separated ware display names, or ""
+            "hull_hp":    float | None, # Current hull HP summed across all modules; None if no modules matched STATION_STATS
+            "hull_max":   float | None, # Max hull HP summed across all modules; None if no modules matched
+            "hull_pct":   float | None, # Hull health as a percentage (0–100); None if hull_max is None
+            "shield_hp":  float | None, # Current shield HP summed across all generators; None if no generators
+            "shield_max": float | None, # Max shield HP; None if no generators
+            "shield_pct": float | None, # Shield health as a percentage; None if no generators
+            "modules": [                # One entry per matched module component
+                {
+                    "macro":    str,   # Module component macro name
+                    "hull_hp":  float, # Current hull HP for this module
+                    "hull_max": int,   # Max hull HP for this module from STATION_STATS
+                },
+            ],
         },
         # ... one entry per player-owned station
     ],
@@ -205,6 +222,31 @@ game_data = {
             # ... only populated at scan tiers 2 and 3
         ],
     },
+
+    # ── Crew ──────────────────────────────────────────────────────────────────
+    # Merged list of all named crew across stations and ships.
+    # Station managers are added first (from Pass 1), ship crew appended after (Pass 3).
+    "crew": [
+        {
+            "name":          str,          # NPC display name
+            "role":          str,          # "manager" | "pilot" | "service" | "marine"
+            "skills":        dict,         # e.g. {"piloting": 8, "management": 4, ...}
+            "assigned_to":   str,          # Display name of the ship or station
+            "assigned_code": str,          # Code of the ship or station, e.g. "SIZ-939"
+            "assigned_type": str,          # "station" | "ship"
+            "sector":        str,          # Sector where the assignment is located
+        },
+        # ...
+    ],
+    "managers": [],   # Deprecated alias; crew entries with role == "manager" supersede this
+
+    # ── Scan flags ────────────────────────────────────────────────────────────
+    # Set to True when the corresponding pass has run. display_results() uses these
+    # to gate each section — unrun sections show "X scan not selected" rather than
+    # empty-data messages.
+    "stations_scanned":   bool,   # True after Pass 1 runs
+    "reputation_scanned": bool,   # True after Pass 2 runs
+    "ships_scanned":      bool,   # True after Pass 3 runs
 }
 ```
 
@@ -422,16 +464,23 @@ Rather than inline logic, the UI uses flat lookup objects and sets at the top of
 ```
 x4_save_scanner.py
 ├── scanner/language.py
-├── scanner/scanner.py
-│   ├── scanner/language.py
-│   ├── data/factions.py
-│   └── data/wares.py
+├── scanner/scanner.py              (coordinator — re-exports below)
+│   ├── scanner/station_scanner.py
+│   │   ├── scanner/language.py
+│   │   ├── scanner/crew_scanner.py
+│   │   ├── data/wares.py
+│   │   └── data/station_stats.py
+│   └── scanner/reputation_scanner.py
+│       ├── scanner/language.py
+│       └── data/factions.py
 ├── scanner/ship_scanner.py
 │   ├── scanner/language.py
+│   ├── scanner/crew_scanner.py
 │   ├── data/ships.py
 │   └── data/ship_stats.py
 ├── export/jsonexport.py
 └── display.py
+    └── data/factions.py            (FACTION_NAMES for NPC display)
 
 ui/main_ui.py
 ├── runs scanner pipeline (via ScanWorker background thread)
@@ -447,9 +496,11 @@ generate_ship_stats.py    (one-time utility)
 
 ### Notes
 
-`data/factions.py`, `data/wares.py`, `data/ships.py`, and `data/ship_stats.py` are all leaf nodes — they import nothing from the project and have no side effects. They are pure lookup tables.
+`data/factions.py`, `data/wares.py`, `data/ships.py`, `data/ship_stats.py`, and `data/station_stats.py` are all leaf nodes — they import nothing from the project and have no side effects. They are pure lookup tables.
 
-`scanner/language.py` is imported by both `scanner/scanner.py` and `scanner/ship_scanner.py`, making it the most widely shared module in the project.
+`scanner/language.py` is imported by `scanner/station_scanner.py`, `scanner/reputation_scanner.py`, and `scanner/ship_scanner.py`, making it the most widely shared module in the project.
+
+`scanner/crew_scanner.py` is imported by both `scanner/station_scanner.py` (for `_parse_manager`) and `scanner/ship_scanner.py` (for `_parse_pilot` and `_extract_people`).
 
 ---
 
@@ -457,26 +508,28 @@ generate_ship_stats.py    (one-time utility)
 
 ### Run Modes
 
-Controlled by `RUN_MODE` in `x4_save_scanner.py`. Edit this constant directly — there is no CLI flag.
+Selected interactively at startup. Defined by the `SCAN_MODES` list in `x4_save_scanner.py` — each entry declares which passes run and whether to export JSON. Adding a new mode requires only a new entry in the list.
 
 | Mode | Passes run | Output |
 |---|---|---|
-| `"full"` | All three passes + display + export | Console report + JSON file |
-| `"ships"` | Sector names + Pass 3 only | Console fleet section only, stub values for all other fields |
+| `full` | All three passes + display + export | Console report + JSON file |
+| `stations` | Pass 1 only | Player identity, station health, crew roster |
+| `reputation` | Pass 2 only | Faction standings |
+| `ships` | Pass 3 only | Fleet section only, stub values for all other fields |
 
-`"ships"` mode is useful when iterating on `ship_scanner.py` — it skips the 30–60 second overhead of Passes 1 and 2.
+Sections skipped by the chosen mode display `"X scan not selected"` rather than misleading empty-data messages. The `stations_scanned`, `reputation_scanned`, and `ships_scanned` flags in `game_data` drive this gating in `display_results()`.
 
 ### Ship Scan Tiers
 
-Controlled by `SHIP_SCAN_TIER` in `x4_save_scanner.py`. Only meaningful in `"full"` mode.
+Prompted only when the ships pass runs. Not applicable to other modes.
 
 | Tier | NPC ships included | How `context_sectors` is built |
 |---|---|---|
 | 1 | None | `station_sectors=None`, `ship_sectors=None` |
-| 2 | Sectors with player stations | `station_sectors={s["sector"] for s in game_data["stations"]}` |
-| 3 | Sectors with stations or player ships | Tier 2 + a preliminary tier-1 ship scan to collect ship sectors |
+| 2 | Sectors with player stations | `station_sectors={s["sector"] for s in game_data["stations"]}` — requires stations pass |
+| 3 | Sectors with stations or player ships | Tier 2 sectors + a pre-scan to collect player ship sectors |
 
-Tier 3 requires two ship scans: a fast tier-1 pre-scan to discover which sectors contain player ships, then the full scan with that sector set. The extra scan adds meaningful time on large save files.
+Tier 3 runs the ship scanner twice: a pre-scan collects player ships and their sectors, then the main scan uses `npc_only=True` to collect NPC ships in those sectors without re-scanning player ships. Tier 2 is only offered when the stations pass is also selected.
 
 ---
 
@@ -484,7 +537,7 @@ Tier 3 requires two ship scans: a fast tier-1 pre-scan to discover which sectors
 
 ### Configuration
 
-**`RUN_MODE` and `SHIP_SCAN_TIER` require manual editing.** These are module-level constants, not CLI arguments. Open `x4_save_scanner.py` and change them directly.
+**Scan mode and ship tier are selected interactively — no constants to edit.** Add new modes to the `SCAN_MODES` list in `x4_save_scanner.py`; add new ship tiers by extending `select_ship_tier()` and the `_run_ships_pass()` dispatcher.
 
 ### Input Data
 
