@@ -1,3 +1,4 @@
+# scanner/scanner_revised.py
 import pathlib
 import re
 from lxml import etree as ET
@@ -6,24 +7,31 @@ from data.factions import FACTION_NAMES, SKIP_FACTIONS, scale_reputation, reputa
 from scanner.language import macro_to_sector_name, resolve_sector_from_location, open_save
 
 # ─────────────────────────────────────────────────────────────────────────────
+#  MODULE OVERVIEW
+#  This module provides low-level XML parsing utilities for X4 save files.
+#  It extracts:
+#    - Player identity (name, credits, sector)
+#    - Owned stations (names, codes, production, managers)
+#    - Faction reputation (base standings + temporary boosters)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ─────────────────────────────────────────────────────────────────────────────
 #  STATION CLASS NAMES
 #  The XML 'class' attribute values X4 uses for player-built structures.
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Matches language reference strings like "{20101,22603}" — placeholders the
-# game resolves at runtime that we cannot use as display names.
 LANG_STRING_RE = re.compile(r'^\{\d+,\d+\}$')
 
 STATION_CLASSES = {"station", "factory", "headquarters", "complex"}
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  PRODUCTION MODULE PATTERN
-#  Station modules that produce wares use a consistent macro naming convention:
-#      prod_gen_WARENAME_macro
-#  e.g. prod_gen_energycells_macro, prod_gen_hullparts_macro
-#  We use a regular expression to extract the ware name from the middle.
-#  re.compile() pre-compiles the pattern once for efficiency — calling it
-#  millions of times on a large save file would be slow otherwise.
+#  Station production modules use the naming convention:
+#      prod_{prefix}_WARENAME_macro
+#  (e.g., prod_gen_energycells_macro)
+#  
+#  The regular expression pre-compiles for performance—calling re.compile() 
+#  repeatedly inside a loop processing large save files would be inefficient.
 # ─────────────────────────────────────────────────────────────────────────────
 
 PROD_MACRO_RE = re.compile(r'^prod_(?:\w+?)_(\w+)_macro$', re.IGNORECASE)
@@ -31,37 +39,29 @@ PROD_MACRO_RE = re.compile(r'^prod_(?:\w+?)_(\w+)_macro$', re.IGNORECASE)
 
 def parse_production_from_construction(station_elem: ET.Element) -> str:
     """
-    Reads the <construction><sequence> block inside a station element and
-    returns a comma-separated string of unique produced ware display names.
-
+    Extracts unique production outputs from a station's <construction><sequence> block.
+    
+    DISPLAY FORMAT:
+      Returns a comma-separated string of ware display names (e.g., "Energy Cells, Hull Parts")
+      
     WHY THIS WORKS:
-    Every production module in a station has an <entry> element whose 'macro'
-    attribute follows the pattern 'prod_gen_WARENAME_macro'. We extract the
-    ware name from the middle, look it up in WARE_NAMES for a display name,
-    and collect unique values.
-
-    WHY WE DEDUPLICATE:
-    The same production module type can appear multiple times (e.g. a station
-    might have three energycells modules for higher output). We only want to
-    list each ware once. We also skip the <snapshot> block that appears later
-    in the XML — it repeats the construction sequence as it was at a previous
-    point in time, so we'd get duplicates if we didn't stop at </sequence>.
-
-    HOW findall WORKS HERE:
-    elem.findall('.//entry') searches all descendant elements named 'entry',
-    regardless of how deeply nested they are. The './/' prefix means
-    "anywhere below this element". This handles the fact that <entry> elements
-    sit inside <construction><sequence> without us needing to navigate there
-    step by step.
-
-    WHY THIS FUNCTION RECEIVES THE WHOLE ELEMENT:
-    iterparse() only gives us access to child elements once the closing tag
-    has been read (the 'end' event). By the time we see </component> for a
-    station, all its children — including <construction><sequence> — are
-    already in memory and accessible via findall().
+      - Each production module has an <entry> element with a 'macro' attribute following the pattern 'prod_gen_WARENAME_macro'.
+      - We extract the ware name from the middle, look it up in WARE_NAMES for its display name.
+      - Duplicates are removed because multiple modules of the same type may exist (e.g., three energy cells).
+    
+    WHY WE IGNORE <snapshot>:
+      The XML contains a later <construction><snapshot> block that repeats the sequence from an earlier time point. 
+      We must stop parsing at </sequence> to avoid including stale duplicate entries.
+      
+    HOW FINDALL WORKS:
+      elem.findall('.//entry') searches all descendant <entry> elements regardless of nesting depth, 
+      which is necessary because <entry> can appear multiple levels deep.
+      
+    RETURNS:
+        A comma-separated string of unique ware display names, or an empty string if no production modules are found.
     """
-    seen_wares = set()      # tracks which wares we've already added
-    production = []         # ordered list for display (first occurrence wins)
+    seen_wares = set()      # Tracks wares we've already added to avoid duplicates
+    production = []         # Ordered list for display (first occurrence wins)
 
     # Navigate to <construction><sequence> explicitly so we don't accidentally
     # read the <snapshot> block, which repeats the sequence at an earlier time.
@@ -80,12 +80,12 @@ def parse_production_from_construction(station_elem: ET.Element) -> str:
         # Try to match the production module naming pattern
         m = PROD_MACRO_RE.match(macro)
         if not m:
-            continue    # not a production module — skip it
+            continue    # Not a production module — skip it
 
-        ware_id = m.group(1).lower()    # extract e.g. "energycells"
+        ware_id = m.group(1).lower()    # Extract e.g. "energycells"
 
         if ware_id in seen_wares:
-            continue    # already listed this ware — skip duplicates
+            continue    # Already listed this ware — skip duplicates
 
         seen_wares.add(ware_id)
 
@@ -98,14 +98,19 @@ def parse_production_from_construction(station_elem: ET.Element) -> str:
 
 def _parse_manager(station_elem: ET.Element) -> dict | None:
     """
-    Finds the manager assigned to a player station and returns their name and skills.
-
-    Station managers are stored the same way as ship pilots — a <control><post>
-    element with id="manager" references the manager's NPC component by ID.
-    That NPC component holds the name and <traits><skills> block.
-
-    Returns None if no manager is assigned or the manager has no readable name
-    (e.g. the station is newly built and the slot is still empty).
+    Finds and returns information about a station's assigned manager.
+    
+    HOW MANAGERS ARE STORED:
+      Managers are stored similarly to ship pilots — via a <control><post> element with id="manager" 
+      that references the manager's NPC component by ID. That NPC holds the name and <traits><skills> block.
+      
+    RETURNS:
+        A dictionary with {"name": str, "skills": dict} if a valid manager is found; 
+        None if no manager exists or the slot is empty.
+        
+    SPECIAL CASES:
+      - Returns None for newly built stations where the manager slot is still vacant.
+      - Returns None if the name attribute contains unresolved placeholders (e.g., "{12345,67890}").
     """
     control = station_elem.find('control')
     if control is None:
@@ -151,35 +156,33 @@ def _parse_manager(station_elem: ET.Element) -> dict | None:
 
 def scan_save(file_path: pathlib.Path, sector_names: dict) -> dict:
     """
-    Streams through the X4 save XML and extracts player data and stations.
-
-    WHY iterparse():
-    The save file is 700MB+. iterparse() reads it as a stream one element at
-    a time, keeping RAM usage low. We call elem.clear() on every 'end' event
-    to immediately release processed elements from memory.
-
-    HOW SECTOR TRACKING WORKS:
-    The universe XML is hierarchical: galaxy > cluster > sector > zone > objects.
-    Sector components use the 'macro' attribute (e.g. 'cluster_43_sector001_macro').
-    We track the most recently seen sector name as we stream through — when we
-    encounter a player station, whatever sector we last saw is its location.
-    This works because stations are always nested inside their sector in the XML.
-
-    HOW STATION NAMES ARE BUILT:
-    Priority order:
-      1. Custom name set by player in-game (the 'name' attribute)
-      2. Player HQ detected via macro name
-      3. nameindex attribute used as fallback number
-      4. Last resort: "Unnamed Station"
-
-    HOW STATION BUFFERING WORKS:
-    Normally we call elem.clear() after every 'end' event to free RAM. But to
-    read production modules we need a station's child elements, which would
-    already be cleared by the time we reach the station's own closing tag.
-    Solution: when we spot a player station on 'start', we save a reference to
-    it and set inside_station=True, which suppresses elem.clear() for all
-    descendants. When the station's closing tag arrives, children are still in
-    memory, we parse them, then clear everything and reset the flag.
+    First pass: Extracts player identity, credits, sector location, and all owned stations.
+    
+    STREAMING STRATEGY:
+      The save file is 700MB+. We use iterparse() to stream it element-by-element 
+      with low RAM usage. After processing each closing tag ('end' event), we call 
+      elem.clear() to release memory immediately.
+      
+    SECTOR TRACKING:
+      The universe XML is hierarchical: galaxy > cluster > sector > zone > objects.
+      Sector components use a 'macro' attribute (e.g., "cluster_43_sector001_macro").
+      As we stream through, we track the most recently seen sector name. When we 
+      encounter a player station, whatever sector was last active is its location.
+      
+    STATION NAME PRIORITY:
+      1. Custom in-game name ('name' attribute)
+      2. "Player HQ" (if macro contains "headquarters")
+      3. "Station #N" (using 'nameindex' fallback)
+      4. "Unnamed Station" (last resort)
+      
+    STATION BUFFERING:
+      Normally we clear elements after each 'end' event to free RAM. However, reading 
+      production modules requires access to the station's child elements. To solve this, 
+      when we detect a player station on 'start', we save a reference and set inside_station=True, 
+      which temporarily suppresses clearing until parsing is complete.
+      
+    RETURNS:
+        Dictionary with keys: player_name, player_credits, player_sector, stations (list), managers (list)
     """
     data = {
         "player_name":    None,
@@ -187,7 +190,7 @@ def scan_save(file_path: pathlib.Path, sector_names: dict) -> dict:
         "player_sector":  None,
         "stations":       [],
         "reputation":     [],
-        "managers":       [],   # crew entries for station managers
+        "managers":       [],   # Crew entries for station managers
     }
 
     in_player_faction = False   # True while inside <faction id="player">
@@ -311,20 +314,29 @@ def scan_save(file_path: pathlib.Path, sector_names: dict) -> dict:
 
 def scan_reputation(file_path: pathlib.Path) -> list:
     """
-    Second pass to extract faction reputation from the player's faction block.
-
-    WHY A SECOND PASS:
-    iterparse() can't easily track parent context during complex nested scanning.
-    A dedicated pass for reputation is cleaner and more reliable.
-
-    HOW REPUTATION IS STORED:
-    The player's standings are in <faction id="player"><relations>:
+    Second pass: Extracts faction reputation (base standing + temporary boosters).
+    
+    WHY A SEPARATE PASS:
+      Although reputation data lives in the same <faction id="player"> block as player info, 
+      parsing it alongside station extraction would complicate the logic. A dedicated pass is 
+      cleaner and more maintainable.
+      
+    DATA STRUCTURE:
+      Player standings are stored in <faction id="player"><relations>:
         <relation faction="argon" relation="0.0032"/>
         <booster faction="argon" relation="0.2562" time="326867.385"/>
-
-    Base 'relation' is the permanent standing. 'booster' entries are temporary
-    bonuses from missions that decay over time. We report base and booster
-    separately so you can see what's permanent vs temporary.
+      
+      - Base 'relation' = permanent standing
+      - Booster entries = temporary bonuses from missions that decay over time
+      
+    RETURNS:
+        List of dictionaries sorted by total reputation (highest first), each containing:
+          - faction_id: Internal identifier (e.g., "argon")
+          - faction_name: Human-readable name from FACTION_NAMES mapping
+          - value: Total scaled reputation
+          - base: Scaled base standing
+          - booster: Scaled temporary bonus (0 if none)
+          - tier: UI display tier string (e.g., "Hostile", "Neutral", "Friendly")
     """
     in_player_fac  = False
     in_relations   = False
@@ -382,7 +394,7 @@ def scan_reputation(file_path: pathlib.Path) -> list:
 
         raw_total    = raw_base + raw_booster
         scaled_total   = scale_reputation(raw_total)
-        scaled_base    = scale_reputation(raw_base)    if raw_base    != 0 else 0.0
+        scaled_base    = scale_reputation(raw_base) if raw_base != 0 else 0.0
         scaled_booster = scale_reputation(raw_booster) if raw_booster != 0 else 0.0
 
         faction_name = FACTION_NAMES.get(fid, fid.title())

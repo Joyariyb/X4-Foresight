@@ -15,32 +15,48 @@ def format_credits(amount_str: str) -> str:
 
 def display_results(data: dict):
     """
-    Prints the extracted data to console in a readable format.
+    Prints the extracted intelligence data to console in a readable, formatted report.
 
-    STATION LAYOUT:
-    Stations are grouped by sector so that multiple stations in the same
-    location are visually clustered together. The sector is printed once
-    as a header, with each station indented beneath it. Station name and
-    code appear on the first line, production on the second.
+    SUMMARY:
+    This function generates an X4 Foundations Empire Intelligence Report showing
+    player-owned stations, faction reputation standings, fleet composition with
+    hull health and pilot assignments, crew rosters, and NPC presence in monitored
+    sectors (tier 2/3+ only). Uses ASCII art for visual grouping and dynamic column
+    widths to handle variable-length ship names.
 
-    REPUTATION TABLE:
-    Values scaled to match in-game display (-30 to +30 range, log10 curve).
-    Shows Total (what the game UI displays), a visual bar, tier label,
-    the permanent Base value, and any temporary Booster from missions.
+    DISPLAY FORMAT:
+    - Stations are grouped by sector so that multiple stations in the same
+      location are visually clustered together. The sector is printed once
+      as a header, with each station indented beneath it. Station name and
+      code appear on the first line, production on the second.
+    - Reputation values are scaled to match in-game display (-30 to +30 range, log10 curve).
+      Shows Total (what the game UI displays), a visual bar, tier label,
+      the permanent Base value, and any temporary Booster from missions.
+    - Ships are grouped by sector, matching the station layout style. Each ship
+      shows its display name (player-given or code fallback), size, role,
+      current order, and hull origin. A pilot line is printed beneath each
+      ship only when a named pilot is assigned, keeping output compact for
+      large fleets where ships have generic computer-controlled crew.
+      Captured ships (hull origin differs from standard player factions)
+      are flagged with a ★ prefix.
+    - Crew roster groups all player-owned crew by role. Within each group the
+      primary skill for that role is shown first so the most useful number
+      is always visible at a glance without scanning the whole line.
+    - NPC presence (tiers 2/3 only) shows enemy and neutral ships grouped by
+      sector and faction, summarising their composition by role count. This
+      gives a quick threat and activity picture for sectors the player operates in.
 
-    PLAYER FLEET:
-    Ships grouped by sector, matching the station layout style. Each ship
-    shows its display name (player-given or code fallback), size, role,
-    current order, and hull origin. A pilot line is printed beneath each
-    ship only when a named pilot is assigned, keeping output compact for
-    large fleets. Captured ships (hull origin differs from standard player
-    factions) are flagged with a ★ prefix.
+    COLUMN WIDTHS:
+    - Ship name column dynamically calculates width based on longest ship name,
+      with minimum 20 and maximum 40 characters to keep output balanced.
+      Falls back to code if no custom name is provided.
+    - Crew roster uses dynamic widths for name (min 20, max 30) and assignment
+      columns (min 24, max 36) to ensure data fits cleanly.
 
-    NPC PRESENCE (tiers 2 / 3 only):
-    When NPC ship data was collected, a separate section groups enemy and
-    neutral ships by sector and faction, summarising their composition by
-    role count. This gives a quick threat and activity picture for sectors
-    the player operates in.
+    SPECIAL NOTATIONS:
+    - Hull Origin "★ X" indicates captured/unusual hull origin (non-standard player faction)
+    - Pilot sub-line shows only when named pilot assigned (compact output design)
+    - HP display priority: Full → percentage with raw HP → raw HP only → "Full"
     """
     SEP  = "═" * 68
     LINE = "─" * 68
@@ -175,7 +191,7 @@ def display_results(data: dict):
             print(f"\n  ┌─ SECTOR: {sector}  ({len(ships)} {ship_word})")
 
             for i, s in enumerate(ships):
-                # Corner piece on last ship, tee on all others — same as stations
+                # Corner piece on last ship, tee on all others
                 connector = "└──" if i == len(ships) - 1 else "├──"
                 indent    = "       " if i == len(ships) - 1 else "│      "
 
@@ -264,9 +280,11 @@ def display_results(data: dict):
         print(f"  CREW ROSTER  ({len(crew)} total — {summary})")
         print()
 
-        # Column widths — name and assignment sized to fit actual data
+        # Column widths — dynamically calculated based on actual data
+        # Name column: min 20, max 30 characters for balanced display
         name_col   = max((len(c["name"])        for c in crew), default=20)
         name_col   = max(20, min(30, name_col + 1))
+        # Assignment column: min 24, max 36 characters (faction name + code)
         assign_col = max((len(f"{c['assigned_to']} [{c['assigned_code']}]") for c in crew), default=24)
         assign_col = max(24, min(36, assign_col + 1))
 
@@ -310,7 +328,7 @@ def display_results(data: dict):
     # npc_ships list will be empty and this section is skipped entirely,
     # keeping the default output clean and fast.
     #
-    # WHY ROLE SUMMARY INSTEAD OF INDIVIDUAL SHIPS:
+    # ROLE SUMMARY INSTEAD OF INDIVIDUAL SHIPS:
     # Sectors can contain hundreds of NPC ships. Listing each one would make
     # the output unreadable. Grouping by faction and summarising by role
     # (e.g. "3× Fighter, 2× Corvette") gives a useful threat picture without

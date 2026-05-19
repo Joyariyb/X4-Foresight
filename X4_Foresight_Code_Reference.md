@@ -6,25 +6,25 @@ A complete reference for all modules, classes, and functions in the X4 Foresight
 
 ## Table of Contents
 
-1. [Entry Points](#1-entry-points)
+1. [🚀 Entry Points](#1-entry-points)
    - [x4_save_scanner.py](#x4_save_scannerpy)
    - [X4_Empire_Intelligence.pyw](#x4_empire_intelligencepyw)
-2. [scanner/language.py](#2-scannerlanguagepy)
-3. [scanner/scanner.py](#3-scannerscannerpy)
-4. [scanner/ship_scanner.py](#4-scannership_scannerpy)
-5. [display.py](#5-displaypy)
-6. [export/jsonexport.py](#6-exportjsonexportpy)
-7. [ui/main_ui.py](#7-uimain_uipy)
-8. [data/factions.py](#8-datafactionspy)
-9. [data/wares.py](#9-datawarespy)
-10. [data/ships.py](#10-datashipspy)
-11. [data/ship_stats.py](#11-dataship_statspy)
-12. [generate_ship_stats.py](#12-generate_ship_statspy)
-13. [Legacy/generate_ship_names.py](#13-legacygenerate_ship_namespy)
+2. [🌐 scanner/language.py](#2-scannerlanguagepy)
+3. [🔍 scanner/scanner.py](#3-scannerscannerpy)
+4. [🚢 scanner/ship_scanner.py](#4-scannership_scannerpy)
+5. [📊 display.py](#5-displaypy)
+6. [📤 export/jsonexport.py](#6-exportjsonexportpy)
+7. [🖥️ ui/main_ui.py](#7-uimain_uipy)
+8. [⚔️ data/factions.py](#8-datafactionspy)
+9. [📦 data/wares.py](#9-datawarespy)
+10. [📋 data/ships.py](#10-datashipspy)
+11. [📈 data/ship_stats.py](#11-dataship_statspy)
+12. [🔧 generate_ship_stats.py](#12-generate_ship_statspy)
+13. [🗂️ Legacy/generate_ship_names.py](#13-legacygenerate_ship_namespy)
 
 ---
 
-## 1. Entry Points
+## 🚀 1. Entry Points
 
 ### `x4_save_scanner.py`
 
@@ -66,7 +66,7 @@ Windows double-click launcher. Equivalent to running `python ui/main_ui.py` but 
 
 ---
 
-## 2. `scanner/language.py`
+## 🌐 2. `scanner/language.py`
 
 Handles parsing the X4 English language file (`0001-l044.xml`) to resolve human-readable names for sectors and ships. All other modules that need sector names call into this one.
 
@@ -134,11 +134,11 @@ Resolves a sector name from the `{20004,XXXXX}` reference format used in the sav
 
 ---
 
-## 3. `scanner/scanner.py`
+## 🔍 3. `scanner/scanner.py`
 
 Performs Pass 1 (player identity, credits, and stations) and Pass 2 (faction reputation) over the save file. Uses `xml.etree.ElementTree.iterparse()` for memory-efficient streaming of large save files.
 
-**Module-level constants**
+### ⚙️ Module Constants
 
 | Constant | Type | Description |
 |---|---|---|
@@ -146,6 +146,8 @@ Performs Pass 1 (player identity, credits, and stations) and Pass 2 (faction rep
 | `PROD_MACRO_RE` | `re.Pattern` | Pre-compiled regex matching production module macro names of the form `prod_<prefix>_<warename>_macro`. Group 1 captures the ware name. |
 
 ---
+
+### 🔧 Internal Helpers
 
 ### `parse_production_from_construction(station_elem)`
 
@@ -166,6 +168,8 @@ Each production module has an `<entry>` child whose `macro` attribute follows th
 **Returns** `str` — comma-separated display names (e.g. `"Energy Cells, Hull Parts"`), or an empty string if no production modules are found.
 
 ---
+
+### 📡 Scanner Passes
 
 ### `scan_save(file_path, sector_names)`
 
@@ -214,11 +218,11 @@ Base `<relation>` entries represent permanent standing. `<booster>` entries are 
 
 ---
 
-## 4. `scanner/ship_scanner.py`
+## 🚢 4. `scanner/ship_scanner.py`
 
 Performs Pass 3: scans the player fleet and optionally NPC ships in sectors of interest. Imports `SHIP_NAMES` from `data/ships.py` for display name lookup.
 
-**Module-level constants**
+### ⚙️ Module Constants
 
 **Imports**
 
@@ -234,6 +238,8 @@ Performs Pass 3: scans the player fleet and optionally NPC ships in sectors of i
 | `LANG_STRING_RE` | `re.Pattern` | Compiled regex matching language reference strings of the form `{digits,digits}`. Used to detect and discard unresolved name placeholders in ship `name` attributes. |
 
 ---
+
+### 🔡 Name & Role Resolution
 
 ### `extract_role(macro)`
 
@@ -290,6 +296,8 @@ Looks up a ship's type display name (e.g. `"Magpie Sentinel"`) from the `SHIP_NA
 **Returns** `str` with the display name if found, or `None` if the macro is absent from the lookup (e.g. new DLC ships not yet regenerated).
 
 ---
+
+### 🔬 Element Parsers
 
 ### `_parse_hull(ship_elem)`
 
@@ -404,6 +412,8 @@ Returns a list of software ware IDs installed on the ship, read from the `wares`
 
 ---
 
+### 📡 Public API
+
 ### `scan_ships(file_path, sector_names, station_sectors, ship_sectors)`
 
 ```python
@@ -483,7 +493,7 @@ Returns NPC ship counts grouped by sector and faction owner, useful for threat a
 
 ---
 
-## 5. `display.py`
+## 📊 5. `display.py`
 
 Formats the assembled `game_data` dictionary as a console report. Called by `x4_save_scanner.py` in both run modes.
 
@@ -535,11 +545,11 @@ The report contains five sections:
 
 ---
 
-## 6. `export/jsonexport.py`
+## 📤 6. `export/jsonexport.py`
 
 Builds and writes the structured JSON output file (`x4_empire_state.json`) used for AI prompt input and the desktop UI.
 
----
+### 🔧 Internal Helpers
 
 ### `_build_fleet_summary(player_ships)`
 
@@ -577,6 +587,8 @@ Produces a sector-level summary of NPC ship presence, grouped by sector, then fa
 
 ---
 
+### 📤 Public API
+
 ### `export_json(data, output_dir)`
 
 ```python
@@ -611,11 +623,11 @@ ships
 
 ---
 
-## 7. `ui/main_ui.py`
+## 🖥️ 7. `ui/main_ui.py`
 
 PyQt6 desktop UI. Presents a save selector dialog, runs the scanner pipeline in a background thread, then renders the HTML dashboard (`ui/ui.html`) in a native Qt window. Empire data is passed from Python to JavaScript via a `QWebChannel` bridge.
 
----
+### 🔍 Save Discovery
 
 ### `find_saves()`
 
@@ -647,6 +659,8 @@ def __init__(self, parent=None)
 Returns the `pathlib.Path` of the selected save, or `None` if no row is selected.
 
 ---
+
+### ⚙️ Scanner Thread
 
 ### Class: `ScanWorker`
 
@@ -693,6 +707,8 @@ def __init__(self, save_path: pathlib.Path, parent=None)
 `error_msg: str | None` — set to the error traceback if the scan failed; `None` on success.
 
 ---
+
+### 🌉 Bridge & Window
 
 ### Class: `EmpireBridge`
 
@@ -741,6 +757,8 @@ def __init__(self, data: dict)
 
 ---
 
+### 🚀 Helpers & Entry Point
+
 ### `load_json(path)`
 
 ```python
@@ -784,7 +802,7 @@ Entry point for the UI. Launch behaviour depends on whether `x4_empire_state.jso
 
 ---
 
-### `ui/ui.html` — JavaScript helpers
+### 🖥️ `ui/ui.html` — JavaScript Helpers
 
 The HTML dashboard contains a set of JavaScript helper functions that transform raw JSON values into rendered HTML. The most relevant for ship data are listed below.
 
@@ -807,7 +825,7 @@ Returns an HTML fragment containing a gradient health bar and a numeric label be
 
 ---
 
-## 8. `data/factions.py`
+## ⚔️ 8. `data/factions.py`
 
 Static lookup tables and scaling functions for faction data. Imported by `scanner/scanner.py`.
 
@@ -866,7 +884,7 @@ Returns a descriptive tier label for a scaled reputation value. Thresholds are a
 
 ---
 
-## 9. `data/wares.py`
+## 📦 9. `data/wares.py`
 
 Static lookup table mapping production ware IDs to display names. Imported by `scanner/scanner.py`.
 
@@ -888,7 +906,7 @@ def format_wares(overviewgraphs: str) -> str
 
 ---
 
-## 10. `data/ships.py`
+## 📋 10. `data/ships.py`
 
 Auto-generated static lookup table mapping ship macro names to display names. Not edited by hand.
 
@@ -902,7 +920,7 @@ This file is committed to the repository. It only needs to be regenerated when n
 
 ---
 
-## 11. `data/ship_stats.py`
+## 📈 11. `data/ship_stats.py`
 
 Auto-generated static lookup table mapping ship macro names to per-ship stats (currently hull HP). Not edited by hand — regenerated by `generate_ship_stats.py` whenever ship XMLs are updated.
 
@@ -918,7 +936,7 @@ This file is committed to the repository. It only needs to be regenerated when s
 
 ---
 
-## 12. `generate_ship_stats.py`
+## 🔧 12. `generate_ship_stats.py`
 
 One-time utility script that generates `data/ship_stats.py` by walking all ship macro XMLs in the `ship xml/` folder. Run from the project root after adding or updating ship XML files.
 
@@ -969,7 +987,7 @@ The output file is sorted alphabetically by macro name and prefixed with a heade
 
 ---
 
-## 13. `Legacy/generate_ship_names.py`
+## 🗂️ 13. `Legacy/generate_ship_names.py`
 
 One-time utility script that generates `data/ships.py` from the game's extracted macro XML files and language file. Run from the project root after extracting ship macros from the game's `.cat` files using XRCatTool.
 
@@ -978,7 +996,7 @@ One-time utility script that generates `data/ships.py` from the game's extracted
 - `extracted/` — folder of ship macro XMLs extracted from `.cat` files. Expected path structure: `extracted/assets/units/size_*/macros/ship_*_macro.xml`.
 - `0001-l044.xml` — X4 English language file, in the project root.
 
-**Module-level constants**
+### ⚙️ Module Constants
 
 | Constant | Type | Description |
 |---|---|---|
@@ -992,6 +1010,8 @@ One-time utility script that generates `data/ships.py` from the game's extracted
 | `FOOTER` | `str` | Closing brace written to the output file. |
 
 ---
+
+### 🔧 Functions
 
 ### `clean_text(text)`
 
