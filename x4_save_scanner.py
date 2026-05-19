@@ -8,11 +8,10 @@ Reads an unzipped X4 save file (save_001.xml) and extracts:
   - Faction reputation standings displayed as in-game values
   - Player fleet and optionally NPC ships in sectors of interest
 
-Then exports everything to x4_empire_state.json, ready to paste
-into an AI prompt for strategic advice.
+Then exports everything to x4_empire_state.json for use as structured data
+in AI prompts requiring strategic analysis.
 
 REQUIRED FILES (all in the same folder as this script):
-  save_001.xml     — your unzipped X4 save file
   0001-l044.xml    — X4 English language file (extracted from game .cat files
                      using X Tools, available free on Steam)
 
@@ -20,11 +19,11 @@ HOW SECTOR NAMES WORK:
   Sector components in the save file use a 'macro' attribute like
   'cluster_43_sector001_macro'. We convert this to a language file ID
   using the formula: cluster_num * 10 + sector_suffix, then look up
-  the human-readable name from page 20004 of the language file.
+  the human-readable name from the language file's sector naming table.
 
 HOW REPUTATION SCALING WORKS:
   X4 stores reputation internally as small floats (e.g. 0.0032).
-  The in-game UI applies a log10 curve to produce in-game display values.
+  The in-game UI applies a log10 curve to produce display values.
   This script replicates that scaling so figures match what you see in-game.
 
 SHIP SCAN TIERS:
@@ -38,7 +37,7 @@ RUN MODES:
   "ships" — Skips Pass 1 (player/stations) and Pass 2 (reputation) entirely.
              Loads sector names, scans ships only, and displays the fleet
              section with stub values for all other fields. Use this when
-             iterating on ship_scanner.py so you're not waiting for the full scan.
+             iterating on ship_scanner.py to avoid waiting for the full scan.
 """
 
 import pathlib
@@ -77,7 +76,7 @@ def select_save_file() -> pathlib.Path:
     """
     Interactive save file selector. Lists available X4 saves from the default
     game directory and prompts the user to choose one, with a fallback to any
-    save_001.xml placed directly in the program folder.
+    save_001.xml placed directly in the program folder for quick access.
     """
     x4_base   = pathlib.Path.home() / "Documents" / "Egosoft" / "X4"
     saves_dir = None
@@ -177,10 +176,10 @@ if __name__ == "__main__":
 
         # ─────────────────────────────────────────────────────────────────────
         #  SHIPS MODE
-        #  Bypasses Pass 1 and Pass 2 completely. Builds a minimal game_data
-        #  stub so display_results() can render the fleet section without any
-        #  changes to display.py. All non-ship fields are set to neutral dummy
-        #  values that make it obvious ships mode is active in the output.
+        #  Bypasses Pass 1 (player data/stations) and Pass 2 (reputation) entirely.
+        #  Builds a minimal game_data stub so display_results() can render the fleet
+        #  section without any changes to display.py. All non-ship fields are set to
+        #  neutral dummy values that clearly indicate ships mode is active in the output.
         # ─────────────────────────────────────────────────────────────────────
 
         if RUN_MODE == "ships":
@@ -206,7 +205,9 @@ if __name__ == "__main__":
 
         # ─────────────────────────────────────────────────────────────────────
         #  FULL MODE
-        #  Runs the complete pipeline exactly as before — no changes here.
+        #  Runs the complete pipeline: player data extraction, station analysis,
+        #  reputation calculation, ship scanning (with optional NPC inclusion),
+        #  display output to console, and JSON export for AI prompt usage.
         # ─────────────────────────────────────────────────────────────────────
 
         elif RUN_MODE == "full":

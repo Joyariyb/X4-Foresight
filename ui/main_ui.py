@@ -17,8 +17,7 @@ import sys
 # ── Chromium subprocess guard ──────────────────────────────────────────────────
 # PyInstaller + QtWebEngine can use the main exe as the Chromium renderer host.
 # Chromium passes --type=renderer (or similar) in that case. Exit immediately
-# so we don't re-enter the full application and cause an infinite spawn loop.
-# This must run before any Qt imports.
+# to prevent infinite spawn loops — this MUST run before any Qt imports.
 if any(arg.startswith('--type=') for arg in sys.argv[1:]):
     sys.exit(0)
 
@@ -41,6 +40,7 @@ from PyQt6.QtWidgets import (
 # ── Path setup — works both as source and as a PyInstaller bundle ─────────────
 # When frozen, scanner modules are already bundled; data files (HTML, icons)
 # live in sys._MEIPASS, while user files (JSON, lang) sit next to the exe.
+# User data (x4_empire_state.json, 0001-l044.xml) should be copied/copied TO executable directory
 
 if getattr(sys, 'frozen', False):
     ROOT      = pathlib.Path(sys.executable).parent
@@ -179,7 +179,7 @@ class LangSetupDialog(QDialog):
 def find_saves() -> list[pathlib.Path]:
     """
     Returns all X4 save files (manual saves then autosaves, each sorted by
-    slot number) found in the default game save directory.
+    slot name via lexicographic string comparison) found in the default game save directory.
     """
     x4_base   = pathlib.Path.home() / "Documents" / "Egosoft" / "X4"
     saves_dir = None
@@ -251,8 +251,8 @@ class SaveSelectDialog(QDialog):
 class ScanWorker(QThread):
     progress = pyqtSignal(str)
     # No data on finished — after the scan we read the exported JSON from disk
-    # rather than passing game_data directly. This matters because export_json()
-    # restructures game_data into a different format that ui.html expects.
+    # rather than passing game_data directly. This is critical because export_json()
+    # restructures game_data into a completely different format that ui.html expects.
     finished = pyqtSignal()
     error    = pyqtSignal(str)
 
@@ -275,9 +275,9 @@ class ScanWorker(QThread):
             game_data["ships"] = scan_ships(self._save_path, sector_names)
 
             self.progress.emit("Exporting JSON…")
-            # export_json writes the restructured data to x4_empire_state.json.
-            # We'll read that file back in the main thread rather than passing
-            # game_data through the signal, so the UI always gets the right format.
+            # CRITICAL: export_json writes the restructured data to x4_empire_state.json.
+            # We read that file back in the main thread rather than passing game_data through
+            # signals — this ensures UI always gets properly formatted data.
             export_json(game_data, output_dir=ROOT)
 
             self.finished.emit()
@@ -316,8 +316,7 @@ class ScanProgressDialog(QDialog):
         self._worker.start()
 
     def _on_finished(self):
-        # Scan and export are done — close the dialog so the caller can
-        # read the exported JSON from disk.
+        # Scan and export complete — close dialog so caller can read exported JSON from disk.
         self.accept()
 
     def _on_error(self, msg: str):
@@ -412,7 +411,7 @@ def main():
         if reply == QMessageBox.StandardButton.Yes:
             data = run_scan()
             if data is None:
-                # User cancelled the selector — fall back to existing JSON
+                # User cancelled selector — fall back to existing JSON
                 data = load_json(JSON_PATH)
         else:
             data = load_json(JSON_PATH)

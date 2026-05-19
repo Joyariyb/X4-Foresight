@@ -150,6 +150,62 @@ def _parse_manager(station_elem: ET.Element) -> dict | None:
     return None
 
 
+def _parse_station_health(station_elem: ET.Element) -> dict:
+    """
+    Extracts hull and shield HP from a fully-buffered station element.
+
+    Hull follows the same convention as ships: X4 only writes <hull value="..."/>
+    when the station has taken damage. A missing element means full health.
+
+    Shields are more complex than ships — a station can have zero or many
+    individual shield generator modules, each stored as a child <component>
+    whose class attribute starts with "shieldgenerator". Each generator has
+    its own <shield value="..."/> recording current HP. We aggregate across
+    all generators to produce a single total current-shield figure.
+
+    Without a station_stats max-HP table, we can't compute percentages yet.
+    Callers should treat None hull_hp as undamaged and shield_hp as a raw
+    aggregate until max values are available.
+
+    Returns a dict with:
+        hull_hp   — current hull HP as float, or None if undamaged
+        shield_hp — total current shield HP across all generators, or None if
+                    no generators are present / all are at full health
+    """
+    # Hull — absent element means full health, same pattern as ships.
+    hull_hp = None
+    hull_elem = station_elem.find('hull')
+    if hull_elem is not None:
+        try:
+            hull_hp = float(hull_elem.get('value', 0))
+        except (ValueError, TypeError):
+            pass
+
+    # Shields — sum current HP across every shield generator module.
+    # X4 only writes the <shield> child when the generator is damaged, so
+    # generators whose element is absent are implicitly at full capacity.
+    # We can't compute a total-shield percentage without knowing max HP per
+    # generator type, so we store the raw aggregate for now.
+    shield_total = 0.0
+    has_generators = False
+    for comp in station_elem.iter('component'):
+        if comp is station_elem:
+            continue
+        if not comp.get('class', '').startswith('shieldgenerator'):
+            continue
+        has_generators = True
+        shield_elem = comp.find('shield')
+        if shield_elem is not None:
+            try:
+                shield_total += float(shield_elem.get('value', 0))
+            except (ValueError, TypeError):
+                pass
+
+    shield_hp = shield_total if has_generators else None
+
+    return {"hull_hp": hull_hp, "shield_hp": shield_hp}
+
+
 # ═════════════════════════════════════════════════════════════════════════════
 #  SECTION 3 — PASS 1: PLAYER DATA AND STATIONS
 # ═════════════════════════════════════════════════════════════════════════════
