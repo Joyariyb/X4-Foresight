@@ -278,17 +278,14 @@ def display_results(data: dict):
 
                 max_hull = s.get("max_hull")
 
-                if hull_pct == 100.0 and max_hull:
-                    # Undamaged and we know the max — show Full with the total
+                if hull_pct is not None and hull_pct >= 99.9 and max_hull:
                     hp_str = f"Full  ({max_hull:,} HP)"
-                elif hull_pct == 100.0:
-                    # Undamaged but no max hull data available
+                elif hull_pct is not None and hull_pct >= 99.9:
                     hp_str = "Full"
                 elif hull_pct is not None:
-                    # Damaged — show percentage, current HP, and max HP
-                    hp_str = f"{hull_pct:.0f}%  ({hull_hp:,.0f} / {max_hull:,} HP)"
+                    # Use one decimal place to avoid rounding near-full ships to "100%"
+                    hp_str = f"{hull_pct:.1f}%  ({hull_hp:,.0f} / {max_hull:,} HP)"
                 elif hull_hp is not None:
-                    # Damaged but no max hull in lookup — show raw HP only
                     hp_str = f"{hull_hp:,.0f} HP"
                 else:
                     hp_str = "Full"
@@ -404,6 +401,7 @@ def display_results(data: dict):
     # individual ship data for the AI to reason about in more detail.
     if npc_ships:
         from collections import defaultdict, Counter
+        from data.factions import FACTION_NAMES as _FACTION_NAMES
 
         # Two-level grouping: sector → faction → { role: count }
         # defaultdict of defaultdict(Counter) means we never need to
@@ -428,14 +426,15 @@ def display_results(data: dict):
 
             faction_list = sorted(factions.items())
             for fi, (faction, roles) in enumerate(faction_list):
-                connector = "└──" if fi == len(faction_list) - 1 else "├──"
+                connector    = "└──" if fi == len(faction_list) - 1 else "├──"
+                faction_name = _FACTION_NAMES.get(faction, faction.title())
 
                 total = sum(roles.values())
                 # Most common roles listed first, e.g. "3× Fighter, 1× Corvette"
                 role_summary = ", ".join(
                     f"{count}× {role}" for role, count in roles.most_common()
                 )
-                print(f"  {connector} {faction:<36}  {total:>5}  {role_summary}")
+                print(f"  {connector} {faction_name:<36}  {total:>5}  {role_summary}")
 
         print()
 
