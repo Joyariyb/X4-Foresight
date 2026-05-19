@@ -16,6 +16,42 @@ STATION_CLASSES = {"station", "factory", "headquarters", "complex"}
 # Pre-compiled for performance — called on every entry in large save files.
 PROD_MACRO_RE = re.compile(r'^prod_(?:\w+?)_(\w+)_macro$', re.IGNORECASE)
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  MODULE INFO TABLES
+#  Used by _parse_module_info() to decode macro tokens into human-readable fields.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_MODULE_CATEGORIES = {
+    "buildmodule": "Build Module",
+    "cargo":       "Cargo",
+    "connect":     "Connection",
+    "defence":     "Defence",
+    "dockarea":    "Dock Area",
+    "hab":         "Habitat",
+    "pier":        "Pier",
+    "proc":        "Processing",
+    "prod":        "Production",
+    "radar":       "Radar",
+    "shield":      "Shield",
+    "storage":     "Storage",
+}
+
+# "gen" modules are cross-faction (no specific designer), so faction is None.
+_MODULE_FACTIONS = {
+    "arg": "Argon",
+    "par": "Paranid",
+    "tel": "Teladi",
+    "spl": "Split",
+    "ter": "Terran",
+    "bor": "Boron",
+    "xen": "Xenon",
+    "kha": "Kha'ak",
+    "pir": "Pirate",
+    "gen": None,
+}
+
+_SIZE_TOKENS = {"s", "m", "l", "xl"}
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  HELPERS
@@ -55,6 +91,30 @@ def parse_production_from_construction(station_elem: ET.Element) -> str:
 
 
 
+def _parse_module_info(macro: str) -> dict:
+    """
+    Decodes the category, designer faction, and size from a module macro string.
+
+    Macro format: {category}_{faction}_{size?}_{...}_{variant}_macro
+    Token[0] is always the category prefix; token[1] is always the faction code.
+    Size (s/m/l/xl) is found by scanning the remaining tokens — its position
+    varies by category so positional indexing would be fragile.
+    """
+    tokens   = macro.removesuffix("_macro").split("_")
+    category = _MODULE_CATEGORIES.get(tokens[0], tokens[0].title()) if tokens else macro
+    faction  = None
+    size     = None
+
+    if len(tokens) >= 2:
+        faction = _MODULE_FACTIONS.get(tokens[1], tokens[1].title())
+    for token in tokens[2:]:
+        if token in _SIZE_TOKENS:
+            size = token.upper()
+            break
+
+    return {"category": category, "faction": faction, "size": size}
+
+
 def _station_components(station_elem: ET.Element):
     """
     Yield every component element within a station, skipping docked ship subtrees.
@@ -75,76 +135,117 @@ def _station_components(station_elem: ET.Element):
         queue.extend(node)
 
 
-def _parse_station_health(station_elem: ET.Element) -> dict:
+def _parse_station_modules(station_elem: ET.Element) -> list[dict]:
     """
-    Extracts hull and shield health from a fully-buffered station element.
+    Iterates a fully-buffered station element and returns one dict per
+    structural module and shield generator found in STATION_STATS.
 
-    Hull: Iterates all module components and sums current vs max HP across
-    every module whose macro exists in STATION_STATS. Missing <hull> means
-    that module is at full health. Each module is recorded individually in
-    the returned 'modules' list for storage and export.
-
-    Shields: Sums capacity from all installed shield generator components.
-    Missing <shield> means that generator is at full capacity. Docked ship
-    components are excluded via _station_components().
+    All module types share the same list — shield generators are distinguished
+    by is_shield=True. This lets _parse_station_health() fold the list into
+    totals, and lets the UI show per-module detail without a second parse.
     """
-    hull_current   = 0.0
-    hull_max       = 0.0
-    shield_current = 0.0
-    shield_max     = 0.0
-    has_generators = False
-    modules        = []
+    modules = []
 
     for comp in _station_components(station_elem):
         macro       = comp.get('macro', '')
         stats_entry = STATION_STATS.get(macro, {})
+        is_shield   = 'max_shield' in stats_entry
+        is_hull     = 'max_hull'   in stats_entry
 
-        if 'max_hull' in stats_entry:
-            max_h     = stats_entry['max_hull']
+        if not is_hull and not is_shield:
+            continue
+
+        info = _parse_module_info(macro)
+
+        if is_shield:
+            max_cap  = stats_entry['max_shield']
+            cap_elem = comp.find('shield')
+            if cap_elem is not None:
+                try:
+                    current = float(cap_elem.get('value', max_cap))
+                except (ValueError, TypeError):
+                    current = max_cap
+            else:
+                current = max_cap
+            modules.append({
+                "macro":      macro,
+                "category":   info["category"],
+                "faction":    info["faction"],
+                "size":       info["size"],
+                "produces":   None,
+                "is_shield":  True,
+                "hull_hp":    None,
+                "hull_max":   None,
+                "hull_pct":   None,
+                "shield_hp":  current,
+                "shield_max": max_cap,
+                "shield_pct": (current / max_cap * 100.0) if max_cap else None,
+            })
+        else:
+            max_hull  = stats_entry['max_hull']
             hull_elem = comp.find('hull')
             if hull_elem is not None:
                 try:
-                    current_h = float(hull_elem.get('value', max_h))
+                    current_h = float(hull_elem.get('value', max_hull))
                 except (ValueError, TypeError):
-                    current_h = max_h
+                    current_h = max_hull
             else:
-                current_h = max_h
+                current_h = max_hull
 
-            hull_current += current_h
-            hull_max     += max_h
+            ware_id  = stats_entry.get('produces')
+            produces = WARE_NAMES.get(ware_id, ware_id.replace('_', ' ').title()) if ware_id else None
+
             modules.append({
-                "macro":    macro,
-                "hull_hp":  current_h,
-                "hull_max": max_h,
+                "macro":      macro,
+                "category":   info["category"],
+                "faction":    info["faction"],
+                "size":       info["size"],
+                "produces":   produces,
+                "is_shield":  False,
+                "hull_hp":    current_h,
+                "hull_max":   max_hull,
+                "hull_pct":   (current_h / max_hull * 100.0) if max_hull else None,
+                "shield_hp":  None,
+                "shield_max": None,
+                "shield_pct": None,
             })
 
-        if comp.get('class', '').startswith('shieldgenerator') and 'max_shield' in stats_entry:
-            has_generators = True
-            max_sh         = stats_entry['max_shield']
-            shield_elem    = comp.find('shield')
-            if shield_elem is not None:
-                try:
-                    shield_current += float(shield_elem.get('value', max_sh))
-                except (ValueError, TypeError):
-                    shield_current += max_sh
-            else:
-                shield_current += max_sh
-            shield_max += max_sh
+    return modules
 
-    if hull_max > 0:
-        hull_pct     = (hull_current / hull_max) * 100.0
+
+def _parse_station_health(modules: list[dict]) -> dict:
+    """
+    Folds a module list into station-level hull and shield totals.
+    Separated from _parse_station_modules() so either can be called independently.
+    """
+    hull_current   = 0.0
+    hull_max_total = 0.0
+    shield_current = 0.0
+    shield_max_total = 0.0
+    has_shields    = False
+
+    for mod in modules:
+        if mod["is_shield"]:
+            has_shields        = True
+            shield_current    += mod["shield_hp"]
+            shield_max_total  += mod["shield_max"]
+        else:
+            hull_current   += mod["hull_hp"]
+            hull_max_total += mod["hull_max"]
+
+    if hull_max_total > 0:
+        hull_pct     = (hull_current / hull_max_total) * 100.0
         hull_out     = hull_current
-        hull_max_out = hull_max
+        hull_max_out = hull_max_total
     else:
         hull_out = hull_max_out = hull_pct = None
-        modules  = []
 
-    if not has_generators:
+    if not has_shields:
         shield_hp = shield_max_out = shield_pct = None
-    elif shield_max > 0:
+    elif shield_max_total > 0:
         shield_hp      = shield_current
-        shield_max_out = shield_max
-        shield_pct     = (shield_current / shield_max) * 100.0
+        shield_max_out = shield_max_total
+        shield_pct     = (shield_current / shield_max_total) * 100.0
     else:
         shield_hp      = shield_current if shield_current > 0 else None
         shield_max_out = None
@@ -157,7 +258,6 @@ def _parse_station_health(station_elem: ET.Element) -> dict:
         "shield_hp":  shield_hp,
         "shield_max": shield_max_out,
         "shield_pct": shield_pct,
-        "modules":    modules,
     }
 
 
@@ -251,7 +351,8 @@ def scan_save(file_path: pathlib.Path, sector_names: dict) -> dict:
                             display_name = "Unnamed Station"
 
                         production = parse_production_from_construction(elem)
-                        health     = _parse_station_health(elem)
+                        modules    = _parse_station_modules(elem)
+                        health     = _parse_station_health(modules)
 
                         entry = {
                             "name":       display_name,
@@ -266,7 +367,7 @@ def scan_save(file_path: pathlib.Path, sector_names: dict) -> dict:
                             "shield_hp":  health["shield_hp"],
                             "shield_max": health["shield_max"],
                             "shield_pct": health["shield_pct"],
-                            "modules":    health["modules"],
+                            "modules":    modules,
                         }
 
                         if not any(s["code"] == code for s in data["stations"]):
