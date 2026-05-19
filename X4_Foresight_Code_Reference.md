@@ -11,9 +11,9 @@ A complete reference for all modules, classes, and functions in the X4 Foresight
    2. [🪟 X4_Empire_Intelligence.pyw](#x4_empire_intelligencepyw)
 2. [🌐 scanner/language.py](#2-scannerlanguagepy)
 3. [🔍 scanner/scanner.py](#3-scannerscannerpy)
-   1. [🏗️ scanner/station_scanner.py](#scannerstationscannerpy)
-   2. [⭐ scanner/reputation_scanner.py](#scannerreputationscannerpy)
-   3. [👥 scanner/crew_scanner.py](#scannercrewscannerpy)
+   1. [🏗️ scanner/station_scanner.py](#scannerstation_scannerpy)
+   2. [⭐ scanner/reputation_scanner.py](#scannerreputation_scannerpy)
+   3. [👥 scanner/crew_scanner.py](#scannercrew_scannerpy)
 4. [🚢 scanner/ship_scanner.py](#4-scannership_scannerpy)
 5. [📊 display.py](#5-displaypy)
 6. [📤 export/jsonexport.py](#6-exportjsonexportpy)
@@ -39,27 +39,30 @@ The main entry point for the scanner pipeline. Run this directly from the projec
 |---|---|---|
 | `SCRIPT_DIR` | `Path` | Absolute path to the project root, derived from `__file__`. |
 | `LANG_FILE` | `Path` | Expected location of the X4 English language file (`0001-l044.xml`). |
-| `RUN_MODE` | `str` | Controls which passes execute. `"full"` runs the complete pipeline; `"ships"` skips Pass 1 and Pass 2 and scans ships only. |
-| `SHIP_SCAN_TIER` | `int` | Controls NPC ship inclusion in full mode. `1` = player ships only, `2` = + NPC ships in station sectors, `3` = + NPC ships in all player ship sectors. Only meaningful when `RUN_MODE = "full"`. |
+| `SCAN_MODES` | `list[dict]` | Registry of available scan modes. Each entry declares a `key`, `label`, `desc`, `passes` (list of pass names to run), and `export` (whether to write JSON). Add new modes here — the selector and dispatcher pick them up automatically. |
 
-**`select_save_file() -> pathlib.Path`**
+**Interactive selectors**
 
-Interactive console save selector. Discovers saves from `~/Documents/Egosoft/X4/<id>/save/` and lists them with timestamps. The user enters a number (`1–N`), `L` for the latest save, or `R` to use `save_001.xml` in the project root (fallback). Exits with code 1 if no saves and no root fallback are found.
+| Function | Description |
+|---|---|
+| `select_save_file()` | Lists available saves from `~/Documents/Egosoft/X4/<id>/save/` with timestamps. Accepts a number (`1–N`), `L` for latest, or `R` for the `save_001.xml` root fallback. Exits with code 1 if no saves are found. |
+| `select_mode()` | Presents the `SCAN_MODES` menu and returns the chosen mode dict. |
+| `select_ship_tier(stations_active)` | Prompts for ship scan tier (1–3). Tier 2 is only offered when the stations pass is also running, since it needs station sector data. |
 
 **Execution flow**
 
-On launch, `select_save_file()` runs first. The chosen path is passed to all subsequent scanner calls.
+On launch the script runs interactively: `select_save_file()` → `select_mode()` → `select_ship_tier()` (if ships pass is selected). The chosen save path and mode are passed to all subsequent calls.
 
-In `"full"` mode the script then runs four sequential passes and exports:
+The script then runs whichever passes the chosen mode declares, in order:
 
-1. `load_sector_names()` — loads the language file for human-readable sector names.
-2. `scan_save()` — Pass 1, extracts player identity, credits, and stations.
-3. `scan_reputation()` — Pass 2, extracts faction reputation standings.
-4. `scan_ships()` — Pass 3, scans the player fleet and optionally NPC ships depending on `SHIP_SCAN_TIER`.
-5. `display_results()` — prints the console report.
-6. `export_json()` — writes `x4_empire_state.json`.
+1. `load_sector_names()` — always runs; loads the language file for human-readable sector names.
+2. `_run_stations_pass()` — Pass 1 (if `"stations"` in mode passes): player identity, credits, stations.
+3. `_run_reputation_pass()` — Pass 2 (if `"reputation"` in mode passes): faction standings.
+4. `_run_ships_pass()` — Pass 3 (if `"ships"` in mode passes): fleet and optionally NPC ships.
+5. `display_results()` — prints the console report regardless of which passes ran.
+6. `export_json()` — writes `x4_empire_state.json` only if the mode's `export` flag is set.
 
-In `"ships"` mode, only `load_sector_names()` and `scan_ships()` run. A stub `game_data` dict is constructed so `display_results()` can render the fleet section without modification.
+A `game_data` stub is initialised with empty values for all keys before any passes run, so `display_results()` always receives a complete dict and can display "not selected" messages for skipped passes.
 
 ---
 
@@ -139,7 +142,20 @@ Resolves a sector name from the `{20004,XXXXX}` reference format used in the sav
 
 ## 🔍 3. `scanner/scanner.py`
 
-Performs Pass 1 (player identity, credits, and stations) and Pass 2 (faction reputation) over the save file. Uses `xml.etree.ElementTree.iterparse()` for memory-efficient streaming of large save files.
+Thin coordinator module. Re-exports the public scanner functions from their sub-modules so callers can import from a single namespace without needing to know which sub-module each function lives in.
+
+| Re-export | Source module |
+|---|---|
+| `scan_save` | `scanner.station_scanner` |
+| `scan_reputation` | `scanner.reputation_scanner` |
+
+`scan_ships` is imported directly from `scanner.ship_scanner` by callers — its richer signature (tier flags, `npc_only`) does not fit a simple re-export pattern.
+
+---
+
+### scanner/station_scanner.py
+
+Pass 1 scanner. Streams the save XML and extracts player identity, credits, sector location, and all owned stations with their production, health, and manager data. Uses `lxml.etree.iterparse()` for memory-efficient streaming of 700 MB+ files.
 
 ### ⚙️ Module Constants
 
@@ -172,7 +188,47 @@ Each production module has an `<entry>` child whose `macro` attribute follows th
 
 ---
 
-### 📡 Scanner Passes
+### `_station_components(station_elem)`
+
+```python
+def _station_components(station_elem: ET.Element) -> Iterator[ET.Element]
+```
+
+Generator that yields every component element within a station while skipping docked ship subtrees. Prevents hull and shield stats from ships docked at the station from polluting the station's own health totals.
+
+**Parameters**
+
+| Name | Type | Description |
+|---|---|---|
+| `station_elem` | `ET.Element` | The buffered station element. |
+
+**Yields** `ET.Element` — component elements that belong to the station structure (not to any docked ships inside it).
+
+---
+
+### `_parse_station_health(station_elem)`
+
+```python
+def _parse_station_health(station_elem: ET.Element) -> dict
+```
+
+Extracts hull and shield health from a fully-buffered station element by walking all of its component modules.
+
+Hull HP is summed across every module whose macro exists in `STATION_STATS`. A missing `<hull>` child means that module is at full health. Each module is recorded individually in the returned `modules` list.
+
+Shield capacity is summed across all installed shield generator components. Missing `<shield>` means full capacity. Docked ship components are excluded via `_station_components()`.
+
+**Parameters**
+
+| Name | Type | Description |
+|---|---|---|
+| `station_elem` | `ET.Element` | The buffered station element with children in memory. |
+
+**Returns** `dict` with keys: `hull_hp`, `hull_max`, `hull_pct`, `shield_hp`, `shield_max`, `shield_pct`, `modules` (list of per-module dicts with `macro`, `hull_hp`, `hull_max`).
+
+---
+
+### 📡 Public API
 
 ### `scan_save(file_path, sector_names)`
 
@@ -184,7 +240,7 @@ Streams through the X4 save XML (Pass 1) and extracts player identity, credits, 
 
 Uses `iterparse()` with `start` and `end` events to keep RAM usage low, calling `elem.clear()` after each processed element. Sector context is tracked as a running variable — whenever a `sector`-class component is seen, `current_sector` is updated, so any station encountered afterward inherits the correct location.
 
-Station buffering is used to preserve child elements in memory: when a player station's opening tag is detected, `elem.clear()` is suppressed for all descendants until the station's closing tag arrives, at which point `parse_production_from_construction()` is called before clearing.
+Station buffering is used to preserve child elements in memory: when a player station's opening tag is detected, `elem.clear()` is suppressed for all descendants until the station's closing tag arrives, at which point `parse_production_from_construction()` and `_parse_station_health()` are called before clearing.
 
 Station names are resolved in priority order: player-given name → HQ detection via macro → `nameindex` fallback → `"Unnamed Station"`.
 
@@ -192,14 +248,18 @@ Station names are resolved in priority order: player-given name → HQ detection
 
 | Name | Type | Description |
 |---|---|---|
-| `file_path` | `pathlib.Path` | Path to the unzipped save file. |
+| `file_path` | `pathlib.Path` | Path to the save file (`.xml` or `.xml.gz`). |
 | `sector_names` | `dict` | Dictionary returned by `load_sector_names()`. |
 
-**Returns** `dict` with keys: `player_name`, `player_credits`, `player_sector`, `stations` (list of station dicts), `reputation` (empty list, filled by Pass 2).
+**Returns** `dict` with keys: `player_name`, `player_credits`, `player_sector`, `stations` (list of station dicts), `reputation` (empty list, filled by Pass 2), `managers` (list of manager crew dicts).
 
-Each station dict contains: `name`, `code`, `class`, `macro`, `sector`, `production`.
+Each station dict contains: `name`, `code`, `class`, `macro`, `sector`, `production`, `hull_hp`, `hull_max`, `hull_pct`, `shield_hp`, `shield_max`, `shield_pct`, `modules`.
 
 ---
+
+### scanner/reputation_scanner.py
+
+Pass 2 scanner. Streams the save XML and extracts faction reputation standings from the player faction's `<relations>` block.
 
 ### `scan_reputation(file_path)`
 
@@ -211,13 +271,113 @@ Second pass over the save file. Extracts faction reputation standings from the `
 
 Base `<relation>` entries represent permanent standing. `<booster>` entries are temporary mission bonuses. Both are extracted separately and reported alongside the combined total. Raw internal floats are converted to in-game display values using `scale_reputation()` from `data/factions.py`. Factions in `SKIP_FACTIONS` (internal/non-playable) are excluded. Results are sorted by total reputation descending.
 
+The pass breaks out of the parse loop immediately after the player faction's closing `</faction>` tag — it does not scan the rest of the file.
+
 **Parameters**
 
 | Name | Type | Description |
 |---|---|---|
-| `file_path` | `pathlib.Path` | Path to the unzipped save file. |
+| `file_path` | `pathlib.Path` | Path to the save file (`.xml` or `.xml.gz`). |
 
 **Returns** `list[dict]`, each dict containing: `faction_id`, `faction_name`, `value` (scaled total), `base` (scaled permanent), `booster` (scaled temporary), `tier` (label string).
+
+---
+
+### scanner/crew_scanner.py
+
+Shared NPC parsing utilities used by both `station_scanner.py` and `ship_scanner.py`. Contains no public scanner pass — all functions are internal helpers imported directly by the pass modules.
+
+### ⚙️ Module Constants
+
+| Constant | Type | Description |
+|---|---|---|
+| `LANG_STRING_RE` | `re.Pattern` | Compiled regex matching language reference strings of the form `{digits,digits}`. Used to detect and discard unresolved name placeholders in NPC `name` attributes. |
+
+---
+
+### 🔧 Helpers
+
+### `_parse_character_macro(macro)`
+
+```python
+def _parse_character_macro(macro: str) -> dict
+```
+
+Extracts appearance metadata from a character macro string. X4 character macros encode faction, gender, ethnicity, role, and variant in their name segments (e.g. `character_arg_male_cau_pilot_01_macro`).
+
+**Parameters**
+
+| Name | Type | Description |
+|---|---|---|
+| `macro` | `str` | Character macro string from the save XML. |
+
+**Returns** `dict` with keys: `faction`, `gender`, `ethnicity`, `variant` — each a `str` or `None` if not encoded in the macro.
+
+---
+
+### `_parse_pilot(ship_elem)`
+
+```python
+def _parse_pilot(ship_elem: ET.Element) -> dict
+```
+
+Finds the NPC assigned to the `aipilot` post in the ship's `<control>` block, then resolves their name and skill ratings by matching the post's component ID against NPC elements in the ship subtree.
+
+Pilot names stored as unresolved language reference strings (matching `LANG_STRING_RE`) are discarded; the function returns `{"name": None, "skills": {}}` for any ship without a named, resolved pilot.
+
+**Parameters**
+
+| Name | Type | Description |
+|---|---|---|
+| `ship_elem` | `ET.Element` | The buffered ship element with children in memory. |
+
+**Returns** `dict` with keys: `name` (`str` or `None`) and `skills` (`dict` with keys `piloting`, `management`, `morale`, `engineering`, `boarding`, each an `int`; empty dict if no pilot found).
+
+---
+
+### `_extract_people(ship_elem, ship_name, ship_code, ship_sector)`
+
+```python
+def _extract_people(
+    ship_elem:   ET.Element,
+    ship_name:   str,
+    ship_code:   str,
+    ship_sector: str,
+) -> list[dict]
+```
+
+Extracts service crew and marines from the `<people>` block of a player ship. These are stored as `<person>` elements with a seed child rather than as full NPC components — placeholder names (`"Service Crew #N"`, `"Marine #N"`) are assigned since decoding the seed requires game runtime tables that are not available.
+
+**Parameters**
+
+| Name | Type | Description |
+|---|---|---|
+| `ship_elem` | `ET.Element` | The buffered ship element. |
+| `ship_name` | `str` | Display name of the ship (used as `assigned_to`). |
+| `ship_code` | `str` | Ship code identifier (used as `assigned_code`). |
+| `ship_sector` | `str` | Resolved sector name where the ship is located. |
+
+**Returns** `list[dict]`, each dict containing: `name`, `role`, `skills`, `assigned_to`, `assigned_code`, `assigned_type` (`"ship"`), `sector`, `faction`, `gender`, `ethnicity`, `variant`, `seed`.
+
+---
+
+### `_parse_manager(station_elem)`
+
+```python
+def _parse_manager(station_elem: ET.Element) -> dict | None
+```
+
+Finds the station's assigned manager NPC and returns their name and skills. Managers are stored via `<control><post id="manager" component="[0xABC]"/>` pointing to a `<component class="npc">` element in the station subtree.
+
+Called by `station_scanner.scan_save()` after a station element is fully buffered.
+
+**Parameters**
+
+| Name | Type | Description |
+|---|---|---|
+| `station_elem` | `ET.Element` | The buffered station element with children in memory. |
+
+**Returns** `dict` with keys `name` (`str`) and `skills` (`dict`), or `None` if the manager slot is vacant or the name is an unresolved language reference.
 
 ---
 
