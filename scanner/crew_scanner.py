@@ -7,6 +7,27 @@ from lxml import etree as ET
 LANG_STRING_RE = re.compile(r'^\{\d+,\d+\}$')
 
 
+def _iter_components(root: ET.Element):
+    """
+    Yields every component element in root's subtree, skipping ship subtrees.
+
+    Used by both station and ship parsers to iterate their own modules without
+    accidentally including equipment from ships docked inside them. The moment
+    a ship_* class component is encountered, that ship and all its children are
+    skipped entirely — their equipment belongs to them, not to the parent.
+    """
+    queue = list(root)
+    while queue:
+        node = queue.pop()
+        if node.tag != 'component':
+            queue.extend(node)
+            continue
+        if node.get('class', '').startswith('ship_'):
+            continue
+        yield node
+        queue.extend(node)
+
+
 def _parse_character_macro(macro: str) -> dict:
     """
     Extracts appearance metadata from a character macro string.

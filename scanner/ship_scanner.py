@@ -81,7 +81,8 @@ ORDER_LABELS = {
     "Explore":              "Exploring",
 }
 
-from scanner.crew_scanner import LANG_STRING_RE, _parse_pilot, _extract_people
+from scanner.crew_scanner import LANG_STRING_RE, _parse_pilot, _extract_people, _iter_components
+from data.station_stats import STATION_STATS
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -307,6 +308,56 @@ def _parse_hull(ship_elem: ET.Element) -> float | None:
 
 
 
+def _parse_shield(ship_elem: ET.Element) -> dict:
+    """
+    Returns total shield HP, max, and percentage for a ship.
+
+    Ship shields are stored on individual shieldgenerator class components
+    nested inside the ship element — there is no aggregate <shield> on the
+    ship itself. Absent <shield> on a generator means it is at full capacity,
+    matching the same convention used for hull HP.
+
+    _iter_components() is used so that shield generators on docked ships
+    (inside a carrier) are not counted toward the carrier's own shield total.
+
+    Max shield per generator comes from STATION_STATS — ships and stations use
+    the same equipment macros, so no separate lookup table is needed.
+
+    Returns a dict with shield_hp, shield_max, shield_pct — all None if the
+    ship has no shield generators installed.
+    """
+    current   = 0.0
+    max_total = 0.0
+    found_any = False
+
+    for comp in _iter_components(ship_elem):
+        if not comp.get('class', '').startswith('shieldgenerator'):
+            continue
+        stats = STATION_STATS.get(comp.get('macro', ''), {})
+        if 'max_shield' not in stats:
+            continue
+        found_any = True
+        max_cap   = stats['max_shield']
+        sh_elem   = comp.find('shield')
+        if sh_elem is not None:
+            try:
+                current += float(sh_elem.get('value', max_cap))
+            except (ValueError, TypeError):
+                current += max_cap
+        else:
+            current += max_cap
+        max_total += max_cap
+
+    if not found_any:
+        return {"shield_hp": None, "shield_max": None, "shield_pct": None}
+
+    return {
+        "shield_hp":  current,
+        "shield_max": max_total,
+        "shield_pct": (current / max_total * 100.0) if max_total else None,
+    }
+
+
 def _parse_software(ship_elem: ET.Element) -> list[str]:
     """
     Returns a list of software ware IDs installed on the ship.
@@ -355,8 +406,8 @@ def _extract_docked_ships(
         pilot       = _parse_pilot(child)
         sw          = _parse_software(child)
         cmdr        = _parse_commander(child)
-        hull_hp     = _parse_hull(child)
-        max_hull    = SHIP_STATS.get(macro, {}).get("max_hull")
+        hull_hp  = _parse_hull(child)
+        max_hull = SHIP_STATS.get(macro, {}).get("max_hull")
 
         if hull_hp is None:
             hull_pct = 100.0
@@ -364,6 +415,8 @@ def _extract_docked_ships(
             hull_pct = (hull_hp / max_hull) * 100.0
         else:
             hull_pct = None
+
+        shield = _parse_shield(child)
 
         raw_name = child.get('name')
         if raw_name and not LANG_STRING_RE.match(raw_name):
@@ -388,6 +441,9 @@ def _extract_docked_ships(
             "hull_hp":     hull_hp,
             "hull_pct":    hull_pct,
             "max_hull":    max_hull,
+            "shield_hp":   shield["shield_hp"],
+            "shield_max":  shield["shield_max"],
+            "shield_pct":  shield["shield_pct"],
         })
 
     return docked
@@ -623,6 +679,8 @@ def scan_ships(
                             else:
                                 hull_pct = None
 
+                            shield = _parse_shield(se)
+
                             player_ships.append({
                                 "code":        code,
                                 "name":        name,
@@ -630,16 +688,19 @@ def scan_ships(
                                 "size":        size,
                                 "macro":       macro,
                                 "role":        role,
-                                "hull_origin": hull,      # faction that manufactured the hull, e.g. "Argon"
+                                "hull_origin": hull,
                                 "owner":       owner,
                                 "sector":      sector,
                                 "order":       order,
                                 "pilot":       pilot,
                                 "software":    sw,
                                 "commander":   cmdr,
-                                "hull_hp":     hull_hp,   # current HP as a raw float, or None if undamaged
-                                "hull_pct":    hull_pct,  # 0–100 float, or None if max hull is unknown
-                                "max_hull":    max_hull,  # base max HP from the ship's macro, or None
+                                "hull_hp":     hull_hp,
+                                "hull_pct":    hull_pct,
+                                "max_hull":    max_hull,
+                                "shield_hp":   shield["shield_hp"],
+                                "shield_max":  shield["shield_max"],
+                                "shield_pct":  shield["shield_pct"],
                             })
                             # Also extract any ships docked inside this one.
                             # Carriers hold fighter wings internally — those ships

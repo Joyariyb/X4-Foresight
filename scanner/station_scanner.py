@@ -4,7 +4,7 @@ from lxml import etree as ET
 from data.wares import WARE_NAMES
 from data.station_stats import STATION_STATS
 from scanner.language import macro_to_sector_name, resolve_sector_from_location, open_save
-from scanner.crew_scanner import _parse_manager
+from scanner.crew_scanner import _parse_manager, _iter_components
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  CONSTANTS
@@ -115,26 +115,6 @@ def _parse_module_info(macro: str) -> dict:
     return {"category": category, "faction": faction, "size": size}
 
 
-def _station_components(station_elem: ET.Element):
-    """
-    Yield every component element within a station, skipping docked ship subtrees.
-
-    elem.iter('component') recurses into ships docked at the station — their
-    shield generators and equipment would pollute the station's own hull and
-    shield totals. We stop recursion the moment we hit a ship_* class component.
-    """
-    queue = list(station_elem)
-    while queue:
-        node = queue.pop()
-        if node.tag != 'component':
-            queue.extend(node)
-            continue
-        if node.get('class', '').startswith('ship_'):
-            continue  # skip this ship and everything inside it
-        yield node
-        queue.extend(node)
-
-
 def _parse_station_modules(station_elem: ET.Element) -> list[dict]:
     """
     Iterates a fully-buffered station element and returns one dict per
@@ -146,7 +126,7 @@ def _parse_station_modules(station_elem: ET.Element) -> list[dict]:
     """
     modules = []
 
-    for comp in _station_components(station_elem):
+    for comp in _iter_components(station_elem):
         macro       = comp.get('macro', '')
         stats_entry = STATION_STATS.get(macro, {})
         is_shield   = 'max_shield' in stats_entry
