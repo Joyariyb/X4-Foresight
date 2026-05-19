@@ -1,3 +1,30 @@
+import sys
+import os
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  ANSI COLOUR SUPPORT
+#  On Windows, Virtual Terminal Processing must be enabled before escape codes
+#  work in CMD. We attempt this once at import time and fall back to empty
+#  strings if it fails or if stdout isn't a real terminal (e.g. piped to file).
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _enable_ansi() -> bool:
+    if not sys.stdout.isatty():
+        return False
+    if os.name == 'nt':
+        try:
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            # ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING
+            kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
+        except Exception:
+            return False
+    return True
+
+_ANSI = _enable_ansi()
+BLUE  = '\033[94m' if _ANSI else ''
+RESET = '\033[0m'  if _ANSI else ''
+
 # ═════════════════════════════════════════════════════════════════════════════
 #  SECTION 2 — HELPERS
 # ═════════════════════════════════════════════════════════════════════════════
@@ -144,7 +171,7 @@ def display_results(data: dict):
                 else:
                     shield_str = "None"
 
-                print(f"  {indent} Hull     : {hull_str:<30}  Shield : {shield_str}")
+                print(f"  {indent} Hull     : {hull_str:<30}  Shield : {BLUE}{shield_str}{RESET}")
 
             print()  # Blank line between sector groups for breathing room
 
@@ -240,11 +267,8 @@ def display_results(data: dict):
         )
         name_col = max(20, min(40, name_col + 1))
 
-        # Column headers — aligned to the data lines printed below.
-        # "Hull Origin" = the faction that manufactured the ship.
-        # "HP" = current hull hit points (blank means undamaged / full health).
-        print(f"    {'Ship / Pilot':<{name_col}} {'Size':<4}  {'Role':<16}  {'Order':<22}  {'Hull Origin':<14}  {'HP'}")
-        print(f"    {'─' * name_col} {'─' * 4}  {'─' * 16}  {'─' * 22}  {'─' * 14}  {'─' * 10}")
+        print(f"    {'Ship / Pilot':<{name_col}} {'Size':<4}  {'Role':<16}  {'Order':<22}  {'Hull Origin':<14}  HP / Shield")
+        print(f"    {'─' * name_col} {'─' * 4}  {'─' * 16}  {'─' * 22}  {'─' * 14}  {'─' * 16}")
 
         for sector, ships in sectors_seen.items():
             ship_word = "ship" if len(ships) == 1 else "ships"
@@ -268,14 +292,8 @@ def display_results(data: dict):
                                                "terran", "boron", "antigone"):
                     hull_origin = f"★ {hull_origin}"   # ★ makes captured ships immediately visible
 
-                # Build the HP display string.
-                # Priority order for what we can show:
-                #   1. hull_pct == 100  → ship is undamaged, show "Full"
-                #   2. hull_pct known   → show percentage + raw HP, e.g. "72%  (7,152 HP)"
-                #   3. hull_pct is None → max hull unknown (modded ship?), show raw HP only
                 hull_hp  = s.get("hull_hp")
                 hull_pct = s.get("hull_pct")
-
                 max_hull = s.get("max_hull")
 
                 if hull_pct is not None and hull_pct >= 99.9 and max_hull:
@@ -283,17 +301,34 @@ def display_results(data: dict):
                 elif hull_pct is not None and hull_pct >= 99.9:
                     hp_str = "Full"
                 elif hull_pct is not None:
-                    # Use one decimal place to avoid rounding near-full ships to "100%"
                     hp_str = f"{hull_pct:.1f}%  ({hull_hp:,.0f} / {max_hull:,} HP)"
                 elif hull_hp is not None:
                     hp_str = f"{hull_hp:,.0f} HP"
                 else:
                     hp_str = "Full"
 
-                print(
+                shield_hp  = s.get("shield_hp")
+                shield_pct = s.get("shield_pct")
+                shield_max = s.get("shield_max")
+
+                if shield_pct is not None and shield_pct >= 99.9 and shield_max:
+                    shield_str = f"Full  ({shield_max:,.0f} HP)"
+                elif shield_pct is not None and shield_pct >= 99.9:
+                    shield_str = "Full"
+                elif shield_pct is not None:
+                    shield_str = f"{shield_pct:.1f}%  ({shield_hp:,.0f} / {shield_max:,.0f} HP)"
+                elif shield_hp is not None:
+                    shield_str = f"{shield_hp:,.0f} HP"
+                else:
+                    shield_str = None  # no generators installed — omit entirely
+
+                ship_line = (
                     f"  {connector} {display_name:<{name_col}} {s['size']:<4}  "
                     f"{s['role']:<16}  {s['order']:<22}  {hull_origin:<14}  {hp_str}"
                 )
+                if shield_str is not None:
+                    ship_line += f"  ·  {BLUE}{shield_str}{RESET}"
+                print(ship_line)
 
                 # Pilot sub-line — only printed when a named pilot is assigned.
                 # Skills shown as compact codes (Plt/Mgt/Eng/Mor) to stay
