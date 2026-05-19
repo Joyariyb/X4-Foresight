@@ -1,4 +1,14 @@
 """
+COMMANDS FOR XTOOL or XCAT TOOL DO NOT DELETE 
+EXTRACTS DATA FROM .CAT FILES RELATING TO SHIELDS. BOTTOM ONE IS FOR DLC
+for /L %i in (1,1,9) do XRCatTool -in "C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\0%i.cat" -out "C:\Users\lenovo\Documents\GitHub\X4 Foresight\shield xml" -include "SurfaceElements.*macros.*shield_.*\.xml"
+for /D %d in ("C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\extensions\*") do for /L %i in (1,1,3) do XRCatTool -in "%~d\ext_0%i.cat" -out "C:\Users\lenovo\Documents\GitHub\X4 Foresight\shield xml" -include "SurfaceElements.*macros.*shield_.*\.xml"
+
+EXTRACTS DATA FROM .CAT FILES RELATING TO STATION HULL
+
+for /L %i in (1,1,9) do XRCatTool -in "C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\0%i.cat" -out "C:\Users\lenovo\Documents\GitHub\X4 Foresight\station xml" -include "structures.*macros.*_macro\.xml"
+
+
 generate_station_stats.py
 =========================
 Reads station module macro XMLs from 'station xml/' and shield equipment macro

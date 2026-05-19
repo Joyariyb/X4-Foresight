@@ -65,19 +65,29 @@ def display_results(data: dict):
     print(f"\n{SEP}")
     print("         X4 FOUNDATIONS — EMPIRE INTELLIGENCE REPORT v4.1")
     print(SEP)
-    print(f"  PILOT          : {data['player_name'] or 'Unknown'}")
-    print(f"  CURRENT SECTOR : {data['player_sector'] or 'Unknown'}")
-    credits_str = format_credits(data['player_credits']) if data['player_credits'] else "Not found"
-    print(f"  CREDITS        : {credits_str}")
+    if data.get("stations_scanned"):
+        print(f"  PILOT          : {data['player_name'] or 'Unknown'}")
+        print(f"  CURRENT SECTOR : {data['player_sector'] or 'Unknown'}")
+        credits_str = format_credits(data['player_credits']) if data['player_credits'] else "Not found"
+        print(f"  CREDITS        : {credits_str}")
+    else:
+        print(f"  PILOT          : Station scan not selected")
+        print(f"  CURRENT SECTOR : Station scan not selected")
+        print(f"  CREDITS        : Station scan not selected")
     print(LINE)
 
     # ── STATIONS — grouped by sector ──────────────────────────────────────────
     # We build an ordered dict of { sector_name: [station, station, ...] }
     # preserving the order sectors are first encountered in the save file.
-    print(f"  OWNED STATIONS  ({len(data['stations'])} total)")
+    if data.get("stations_scanned"):
+        print(f"  OWNED STATIONS  ({len(data['stations'])} total)")
+    else:
+        print(f"  OWNED STATIONS")
     print()
 
-    if data["stations"]:
+    if not data.get("stations_scanned"):
+        print("    Station scan not selected.")
+    elif data["stations"]:
         # Group stations by sector, preserving encounter order
         sectors_seen = {}   # { sector_name: [station dicts] }
         for s in data["stations"]:
@@ -143,32 +153,38 @@ def display_results(data: dict):
 
     print(LINE)
 
+
     # ── REPUTATION ────────────────────────────────────────────────────────────
     # Displayed as in-game values (log10 curve, range -30 to +30).
     # Base = permanent standing | Booster = temporary mission bonus.
     # Total = base + booster combined, matching what the in-game UI shows.
-    print(f"  FACTION REPUTATION  ({len(data['reputation'])} factions)"
-          f"   [  -30 ◄ hostile · neutral · friendly ► +30  ]")
-    print()
-    print(f"    {'Faction':<38} {'Total':>6}  {'':22}  {'Tier':<10}  {'Base':>6}  {'Boost':>6}")
-    print(f"    {'─' * 38} {'─' * 6}  {'─' * 22}  {'─' * 10}  {'─' * 6}  {'─' * 6}")
+    if data.get("reputation_scanned"):
+        print(f"  FACTION REPUTATION  ({len(data['reputation'])} factions)"
+              f"   [  -30 ◄ hostile · neutral · friendly ► +30  ]")
+        print()
+        print(f"    {'Faction':<38} {'Total':>6}  {'':22}  {'Tier':<10}  {'Base':>6}  {'Boost':>6}")
+        print(f"    {'─' * 38} {'─' * 6}  {'─' * 22}  {'─' * 10}  {'─' * 6}  {'─' * 6}")
 
-    if data["reputation"]:
-        for r in data["reputation"]:
-            # Scale -30..+30 onto a 20-character visual bar.
-            # Adding 30 shifts the range to 0..60, dividing by 60 normalises
-            # to 0..1, multiplying by 20 gives the bar character count.
-            bar_val = int((r['value'] + 30) / 60 * 20)
-            bar_val = max(0, min(20, bar_val))
-            bar     = "█" * bar_val + "░" * (20 - bar_val)
+        if data["reputation"]:
+            for r in data["reputation"]:
+                # Scale -30..+30 onto a 20-character visual bar.
+                # Adding 30 shifts the range to 0..60, dividing by 60 normalises
+                # to 0..1, multiplying by 20 gives the bar character count.
+                bar_val = int((r['value'] + 30) / 60 * 20)
+                bar_val = max(0, min(20, bar_val))
+                bar     = "█" * bar_val + "░" * (20 - bar_val)
 
-            booster_str = f"{r['booster']:>+6.2f}" if r['booster'] != 0 else "     —"
-            print(
-                f"    {r['faction_name']:<38} {r['value']:>+6.2f}  [{bar}]  "
-                f"{r['tier']:<10}  {r['base']:>+6.2f}  {booster_str}"
-            )
+                booster_str = f"{r['booster']:>+6.2f}" if r['booster'] != 0 else "     —"
+                print(
+                    f"    {r['faction_name']:<38} {r['value']:>+6.2f}  [{bar}]  "
+                    f"{r['tier']:<10}  {r['base']:>+6.2f}  {booster_str}"
+                )
+        else:
+            print("    No reputation data found.")
     else:
-        print("    No reputation data found.")
+        print(f"  FACTION REPUTATION")
+        print()
+        print("    Reputation scan not selected.")
 
     print(LINE)
 
@@ -182,10 +198,25 @@ def display_results(data: dict):
     player_ships = ships_data.get("player_ships", [])
     npc_ships    = ships_data.get("npc_ships", [])
 
-    print(f"  PLAYER FLEET  ({len(player_ships)} ships)")
+    # Pre-compute service crew and marine counts per ship code so we can
+    # display them inline without re-scanning the full crew list per ship.
+    crew = data.get("crew", [])
+    from collections import defaultdict
+    _ship_crew: dict = defaultdict(lambda: {"service": 0, "marine": 0})
+    for _c in crew:
+        if _c["role"] in ("service", "marine"):
+            _ship_crew[_c["assigned_code"]][_c["role"]] += 1
+
+    if data.get("ships_scanned"):
+        print(f"  PLAYER FLEET  ({len(player_ships)} ships)")
+    else:
+        print(f"  PLAYER FLEET")
     print()
 
-    if player_ships:
+    if not data.get("ships_scanned"):
+        print("    Ships scan not selected.")
+        print()
+    elif player_ships:
         # Group by sector, preserving encounter order
         sectors_seen = {}   # { sector_name: [ship dicts] }
         for s in player_ships:
@@ -283,6 +314,16 @@ def display_results(data: dict):
                         )
                     print(f"  {indent}  ↳ {pilot_name}{skill_str}")
 
+                # Crew count line — only shown when the ship carries service
+                # crew or marines; skipped entirely for empty ships.
+                sc = _ship_crew[s["code"]]["service"]
+                mc = _ship_crew[s["code"]]["marine"]
+                if sc or mc:
+                    parts = []
+                    if sc: parts.append(f"Service: {sc}")
+                    if mc: parts.append(f"Marines: {mc}")
+                    print(f"  {indent}  ↳ {' · '.join(parts)}")
+
         print()
 
     else:
@@ -293,11 +334,15 @@ def display_results(data: dict):
     # Groups all player-owned crew by role. Within each group the primary skill
     # for that role is shown first so the most useful number is always visible
     # at a glance without scanning the whole line.
-    crew = data.get("crew", [])
-    if crew:
+    # The crew roster is only shown when the stations pass ran — pilots are
+    # already displayed inline in the fleet section, so the roster's purpose
+    # is listing station managers alongside their assigned pilots.
+    named_crew = [c for c in crew if c["role"] in ("manager", "pilot")]
+    if data.get("stations_scanned") and named_crew:
         print(LINE)
 
-        # Tally by role for the header summary
+        # Header summary includes all roles for a complete picture, even though
+        # the table below only lists named crew (managers and pilots).
         from collections import Counter
         role_counts = Counter(c["role"] for c in crew)
         summary_parts = []
@@ -306,30 +351,24 @@ def display_results(data: dict):
             if role_counts[role_key]:
                 summary_parts.append(f"{role_counts[role_key]} {label}")
         summary = " · ".join(summary_parts)
-        print(f"  CREW ROSTER  ({len(crew)} total — {summary})")
+        print(f"  CREW ROSTER  ({len(named_crew)} named — {summary})")
         print()
 
-        # Column widths — dynamically calculated based on actual data
-        # Name column: min 20, max 30 characters for balanced display
-        name_col   = max((len(c["name"])        for c in crew), default=20)
+        # Column widths based only on named crew so generic service crew names
+        # (e.g. "Service Crew #1") don't inflate the columns unnecessarily.
+        name_col   = max((len(c["name"])        for c in named_crew), default=20)
         name_col   = max(20, min(30, name_col + 1))
-        # Assignment column: min 24, max 36 characters (faction name + code)
-        assign_col = max((len(f"{c['assigned_to']} [{c['assigned_code']}]") for c in crew), default=24)
+        assign_col = max((len(f"{c['assigned_to']} [{c['assigned_code']}]") for c in named_crew), default=24)
         assign_col = max(24, min(36, assign_col + 1))
 
         print(f"    {'Name':<{name_col}} {'Role':<9}  {'Assigned To':<{assign_col}}  Skills")
         print(f"    {'─' * name_col} {'─' * 9}  {'─' * assign_col}  {'─' * 30}")
 
-        # Role display order and which skills to show for each
-        ROLE_ORDER  = ["manager", "pilot", "service", "marine"]
-        ROLE_LABELS = {"manager": "Manager", "pilot": "Pilot",
-                       "service": "Service", "marine": "Marine"}
-        # Primary skill for each role comes first in the display order
+        ROLE_ORDER  = ["manager", "pilot"]
+        ROLE_LABELS = {"manager": "Manager", "pilot": "Pilot"}
         ROLE_SKILLS = {
             "manager": ["management", "morale", "engineering"],
             "pilot":   ["piloting", "management", "engineering", "morale"],
-            "service": ["engineering", "morale", "piloting"],
-            "marine":  ["boarding", "morale", "engineering"],
         }
         SKILL_ABBREV = {
             "piloting": "Plt", "management": "Mgt", "engineering": "Eng",
@@ -337,7 +376,7 @@ def display_results(data: dict):
         }
 
         for role_key in ROLE_ORDER:
-            group = [c for c in crew if c["role"] == role_key]
+            group = [c for c in named_crew if c["role"] == role_key]
             if not group:
                 continue
             for c in group:

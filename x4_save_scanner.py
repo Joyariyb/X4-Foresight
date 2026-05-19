@@ -1,45 +1,24 @@
 """
-X4 FOUNDATIONS — SAVE FILE SCANNER  v4.1
+X4 FOUNDATIONS — SAVE FILE SCANNER  v4.2
 ==========================================
-Reads an unzipped X4 save file (save_001.xml) and extracts:
-  - Pilot name and current sector
-  - Credits / liquid cash
-  - All player-owned stations with sector locations and production
-  - Faction reputation standings displayed as in-game values
-  - Player fleet and optionally NPC ships in sectors of interest
+Reads an unzipped X4 save file and extracts empire data across up to three passes:
 
-Then exports everything to x4_empire_state.json for use as structured data
-in AI prompts requiring strategic analysis.
+  Pass 1 — Stations  : player identity, credits, owned stations + health
+  Pass 2 — Reputation: faction standing breakdown (log10-scaled to in-game values)
+  Pass 3 — Ships     : player fleet and optionally NPC ships in sectors of interest
 
-REQUIRED FILES (all in the same folder as this script):
-  0001-l044.xml    — X4 English language file (extracted from game .cat files
-                     using X Tools, available free on Steam)
+Output: console report via display.py, and optionally x4_empire_state.json for AI use.
 
-HOW SECTOR NAMES WORK:
-  Sector components in the save file use a 'macro' attribute like
-  'cluster_43_sector001_macro'. We convert this to a language file ID
-  using the formula: cluster_num * 10 + sector_suffix, then look up
-  the human-readable name from the language file's sector naming table.
+SHIP SCAN TIERS (Pass 3 only):
+  1 — Player ships only                           (fastest)
+  2 — + NPC ships in sectors where you have stations
+  3 — + NPC ships in all sectors where you have ships
 
-HOW REPUTATION SCALING WORKS:
-  X4 stores reputation internally as small floats (e.g. 0.0032).
-  The in-game UI applies a log10 curve to produce display values.
-  This script replicates that scaling so figures match what you see in-game.
-
-SHIP SCAN TIERS:
-  1 — Player ships only (default, fastest)
-  2 — Player ships + NPC ships in sectors where you have stations
-  3 — Player ships + NPC ships in all sectors where you have ships
-
-RUN MODES:
-  "full"     — Runs the complete pipeline: player data, stations, reputation,
-               ships, display, and JSON export. Normal production usage.
-  "stations" — Runs Pass 1 only (player data + stations). Skips reputation
-               and ship scanning. Use when iterating on station display (~5s).
-  "ships"    — Skips Pass 1 (player/stations) and Pass 2 (reputation) entirely.
-               Loads sector names, scans ships only, and displays the fleet
-               section with stub values for all other fields. Use this when
-               iterating on ship_scanner.py to avoid waiting for the full scan.
+RUN MODES — selected interactively at startup:
+  Full        — all three passes + JSON export
+  Stations    — Pass 1 only (~5s, use when iterating on station display)
+  Reputation  — Pass 2 only (fast, reads one block of the save)
+  Ships       — Pass 3 only (no station or reputation data)
 """
 
 import pathlib
@@ -48,23 +27,18 @@ import time
 import traceback
 from datetime import datetime
 
-# Force UTF-8 output so Unicode box-drawing characters in display.py render
-# correctly regardless of the Windows console's default code page (cp1252).
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
-# ── Allow running from the project root without installing as a package ───────
-# Add the project root to sys.path so that 'scanner', 'data', 'export' are
-# importable as packages regardless of the working directory.
 ROOT = pathlib.Path(__file__).parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scanner.language import load_sector_names
-from scanner.scanner  import scan_save, scan_reputation
-from scanner.ship_scanner    import scan_ships
-from export.jsonexport import export_json
-from display          import display_results
+from scanner.language           import load_sector_names
+from scanner.scanner            import scan_save, scan_reputation
+from scanner.ship_scanner       import scan_ships
+from export.jsonexport          import export_json
+from display                    import display_results
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  FILE PATHS
@@ -73,13 +47,49 @@ from display          import display_results
 SCRIPT_DIR = pathlib.Path(__file__).parent
 LANG_FILE  = SCRIPT_DIR / "0001-l044.xml"
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  SCAN MODE REGISTRY
+#  Each entry declares which passes the mode runs and whether to export JSON.
+#  Add new modes here — the selector and dispatcher pick them up automatically.
+# ─────────────────────────────────────────────────────────────────────────────
+
+SCAN_MODES = [
+    {
+        "key":    "full",
+        "label":  "Full scan",
+        "desc":   "All passes — stations, reputation, ships + JSON export",
+        "passes": ["stations", "reputation", "ships"],
+        "export": True,
+    },
+    {
+        "key":    "stations",
+        "label":  "Stations only",
+        "desc":   "Player data and station health  (~5s)",
+        "passes": ["stations"],
+        "export": False,
+    },
+    {
+        "key":    "reputation",
+        "label":  "Reputation only",
+        "desc":   "Faction standing breakdown",
+        "passes": ["reputation"],
+        "export": False,
+    },
+    {
+        "key":    "ships",
+        "label":  "Ships only",
+        "desc":   "Fleet scan, skips stations and reputation",
+        "passes": ["ships"],
+        "export": False,
+    },
+]
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  INTERACTIVE SELECTORS
+# ─────────────────────────────────────────────────────────────────────────────
 
 def select_save_file() -> pathlib.Path:
-    """
-    Interactive save file selector. Lists available X4 saves from the default
-    game directory and prompts the user to choose one, with a fallback to any
-    save_001.xml placed directly in the program folder for quick access.
-    """
+    """Lists available X4 saves and prompts the user to choose one."""
     x4_base   = pathlib.Path.home() / "Documents" / "Egosoft" / "X4"
     saves_dir = None
 
@@ -135,164 +145,207 @@ def select_save_file() -> pathlib.Path:
                 return all_saves[idx - 1]
         print("  Invalid selection, try again.")
 
+
+def select_mode() -> dict:
+    """Presents the scan mode menu and returns the chosen mode dict."""
+    print()
+    print("  ── SELECT MODE ────────────────────────────────────────────────────")
+    print()
+    for i, mode in enumerate(SCAN_MODES, 1):
+        print(f"  [{i}]  {mode['label']:<20}  {mode['desc']}")
+    print()
+
+    while True:
+        choice = input(f"  Select [1-{len(SCAN_MODES)}]: ").strip()
+        if choice.isdigit():
+            idx = int(choice)
+            if 1 <= idx <= len(SCAN_MODES):
+                return SCAN_MODES[idx - 1]
+        print("  Invalid selection, try again.")
+
+
+def select_ship_tier(stations_active: bool) -> int:
+    """
+    Prompts for a ship scan tier.
+
+    Tier 2 needs station sector data so it is only offered when the stations
+    pass is also running. Tier 3 discovers sectors from the player ship pre-scan
+    and works independently of the stations pass.
+    """
+    print()
+    print("  ── SHIP SCAN TIER ─────────────────────────────────────────────────")
+    print()
+    print("  [1]  Player ships only                    (fastest)")
+    if stations_active:
+        print("  [2]  + NPC ships in sectors with stations")
+    print("  [3]  + NPC ships in all player ship sectors")
+    print()
+
+    valid = {1, 3} | ({2} if stations_active else set())
+
+    while True:
+        choice = input(f"  Select [1/{'2/' if stations_active else ''}3]: ").strip()
+        if choice.isdigit() and int(choice) in valid:
+            return int(choice)
+        print("  Invalid selection, try again.")
+
+
 # ─────────────────────────────────────────────────────────────────────────────
-#  RUN MODE
-#  Controls which passes are executed on each run.
-#
-#  "full"     — complete pipeline (player, stations, reputation, ships, export)
-#  "stations" — Pass 1 only (player + stations); fastest for iterating on station display
-#  "ships"    — ships scan only; skips Pass 1 and Pass 2 entirely
-#
-#  Switch to "stations" when iterating on station display to avoid the ~90s ship scan.
-#  Switch to "ships" when iterating on ship_scanner.py.
+#  PASS RUNNERS
+#  Each function runs exactly one scanner pass and returns its raw output.
+#  The dispatcher below decides which ones to call — nothing runs twice.
 # ─────────────────────────────────────────────────────────────────────────────
 
-RUN_MODE = "stations"  # "full" | "ships" | "stations"
+def _run_stations_pass(save_file: pathlib.Path, sector_names: dict) -> dict:
+    t0     = time.perf_counter()
+    result = scan_save(save_file, sector_names)
+    print(f"[Done] Stations pass completed in {time.perf_counter() - t0:.2f}s")
+    return result
+
+
+def _run_reputation_pass(save_file: pathlib.Path) -> list:
+    t0     = time.perf_counter()
+    result = scan_reputation(save_file)
+    print(f"[Done] Reputation pass completed in {time.perf_counter() - t0:.2f}s")
+    return result
+
+
+def _run_ships_pass(
+    save_file:    pathlib.Path,
+    sector_names: dict,
+    ship_tier:    int,
+    station_sectors: set | None,
+) -> dict:
+    """
+    Runs the ships pass at the requested tier.
+
+    Tier 3 uses a two-scan strategy to avoid scanning player ships twice:
+      - Pre-scan (no npc_only) finds player ships and their sectors.
+      - Main scan (npc_only=True) collects NPC ships in those sectors only.
+    The two results are stitched together before returning.
+
+    Tiers 1 and 2 do a single scan — no pre-scan needed.
+    """
+    ship_sectors = None
+
+    if ship_tier == 3:
+        # Pre-scan: player ships only, so we can discover which sectors they're in.
+        # npc_only is False here — we need player ships to build ship_sectors.
+        print("[Ships] Pre-scan to locate player ship sectors for tier 3...")
+        t0         = time.perf_counter()
+        pre_scan   = scan_ships(save_file, sector_names)
+        print(f"[Done] Pre-scan completed in {time.perf_counter() - t0:.2f}s")
+
+        ship_sectors = (
+            {s["sector"] for s in pre_scan["player_ships"]}
+            | (station_sectors or set())
+        )
+
+        # Main scan: NPC ships only in the combined sector set.
+        # npc_only=True skips player ship buffering since we already have them.
+        t0        = time.perf_counter()
+        main_scan = scan_ships(
+            save_file, sector_names,
+            station_sectors=station_sectors,
+            ship_sectors=ship_sectors,
+            npc_only=True,
+        )
+        print(f"[Done] Ships pass completed in {time.perf_counter() - t0:.2f}s")
+
+        return {
+            "player_ships": pre_scan["player_ships"],
+            "npc_ships":    main_scan["npc_ships"],
+            "crew":         pre_scan.get("crew", []),
+        }
+
+    else:
+        # Tiers 1 and 2 — single scan, no duplication.
+        t0     = time.perf_counter()
+        result = scan_ships(
+            save_file, sector_names,
+            station_sectors=station_sectors,
+        )
+        print(f"[Done] Ships pass completed in {time.perf_counter() - t0:.2f}s")
+        return result
+
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  SHIP SCAN TIER
-#  1 = player ships only (default — fastest, no extra RAM)
-#  2 = + NPC ships in sectors where you have stations
-#  3 = + NPC ships in all sectors where you have ships
-#
-#  Note: Tiers 2 and 3 require station/ship sector data from Pass 1, so they
-#  are only meaningful in RUN_MODE = "full". In "ships" mode, tier 1 is always
-#  used regardless of this setting.
-# ─────────────────────────────────────────────────────────────────────────────
-
-SHIP_SCAN_TIER = 3
-
-# ═════════════════════════════════════════════════════════════════════════════
 #  ENTRY POINT
-# ═════════════════════════════════════════════════════════════════════════════
+# ─────────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     try:
         SAVE_FILE = select_save_file()
-        print(f"\n  Loading: {SAVE_FILE.name}\n")
+        print(f"\n  Loading: {SAVE_FILE.name}")
 
-        # ── Sector names are always needed — both full and ships mode use them
-        # to resolve human-readable sector names from macro strings.
+        mode = select_mode()
+        passes = mode["passes"]
+
+        ship_tier = 1
+        if "ships" in passes:
+            ship_tier = select_ship_tier(stations_active="stations" in passes)
+
+        print()
+
+        # Sector names are needed by both the stations and ships passes.
+        # Load once and share — no point reading the language file twice.
         t0 = time.perf_counter()
         sector_names = load_sector_names(LANG_FILE)
         print(f"[Done] Sector names loaded in {time.perf_counter() - t0:.2f}s")
 
-        # ─────────────────────────────────────────────────────────────────────
-        #  STATIONS MODE
-        #  Runs only Pass 1 (player data + stations). Skips reputation and ship
-        #  scanning entirely so iterations on station display are fast (~5s vs ~90s).
-        # ─────────────────────────────────────────────────────────────────────
+        # ── Build game_data incrementally from whichever passes run ───────────
+        # Initialise with empty stubs so display_results() always gets a complete
+        # dict regardless of which passes were skipped.
+        game_data: dict = {
+            "player_name":      None,
+            "player_credits":   None,
+            "player_sector":    None,
+            "stations":         [],
+            "reputation":       [],
+            "ships":            {"player_ships": [], "npc_ships": []},
+            "crew":               [],
+            "managers":           [],
+            "stations_scanned":   False,
+            "reputation_scanned": False,
+            "ships_scanned":      False,
+        }
 
-        if RUN_MODE == "stations":
-            print("[Mode] Stations-only scan — skipping reputation and ships passes.")
+        # ── Pass 1: stations ──────────────────────────────────────────────────
+        if "stations" in passes:
+            result = _run_stations_pass(SAVE_FILE, sector_names)
+            game_data.update(result)
+            # Managers from Pass 1 seed the crew list; ship crew is added below.
+            game_data["crew"] = result.get("managers", [])
+            game_data["stations_scanned"] = True
 
-            t0        = time.perf_counter()
-            game_data = scan_save(SAVE_FILE, sector_names)
-            print(f"[Done] Pass 1 completed in {time.perf_counter() - t0:.2f}s")
+        # ── Pass 2: reputation ────────────────────────────────────────────────
+        if "reputation" in passes:
+            game_data["reputation"] = _run_reputation_pass(SAVE_FILE)
+            game_data["reputation_scanned"] = True
 
-            game_data["reputation"] = []
-            game_data["ships"]      = {"player_ships": [], "npc_ships": []}
-            game_data["crew"]       = game_data.get("managers", [])
-
-            display_results(game_data)
-
-        # ─────────────────────────────────────────────────────────────────────
-        #  SHIPS MODE
-        #  Bypasses Pass 1 (player data/stations) and Pass 2 (reputation) entirely.
-        #  Builds a minimal game_data stub so display_results() can render the fleet
-        #  section without any changes to display.py. All non-ship fields are set to
-        #  neutral dummy values that clearly indicate ships mode is active in the output.
-        # ─────────────────────────────────────────────────────────────────────
-
-        elif RUN_MODE == "ships":
-            print("[Mode] Ships-only scan — skipping player, stations, and reputation passes.")
-
-            t0    = time.perf_counter()
-            ships = scan_ships(SAVE_FILE, sector_names)
-            print(f"[Done] Ships scan completed in {time.perf_counter() - t0:.2f}s")
-
-            # Stub out everything display_results() expects beyond ships.
-            # These values won't appear in any meaningful output context —
-            # they just satisfy the dict shape so we don't touch display.py.
-            game_data = {
-                "player_name":    "— ships mode —",
-                "player_sector":  "—",
-                "player_credits": "0",
-                "stations":       [],
-                "reputation":     [],
-                "ships":          ships,
-            }
-
-            display_results(game_data)
-
-        # ─────────────────────────────────────────────────────────────────────
-        #  FULL MODE
-        #  Runs the complete pipeline: player data extraction, station analysis,
-        #  reputation calculation, ship scanning (with optional NPC inclusion),
-        #  display output to console, and JSON export for AI prompt usage.
-        # ─────────────────────────────────────────────────────────────────────
-
-        elif RUN_MODE == "full":
-            t0        = time.perf_counter()
-            game_data = scan_save(SAVE_FILE, sector_names)
-            print(f"[Done] Pass 1 completed in {time.perf_counter() - t0:.2f}s")
-
-            t0 = time.perf_counter()
-            game_data["reputation"] = scan_reputation(SAVE_FILE)
-            print(f"[Done] Pass 2 completed in {time.perf_counter() - t0:.2f}s")
-
-            station_sectors: set[str] | None = None
-            ship_sectors:    set[str] | None = None
-
-            if SHIP_SCAN_TIER >= 2:
-                station_sectors = {s["sector"] for s in game_data["stations"]}
-
-            if SHIP_SCAN_TIER == 3:
-                print("[Ships] Pre-scan to locate player ship sectors for tier 3...")
-                t0         = time.perf_counter()
-                tier1_data = scan_ships(SAVE_FILE, sector_names)
-                print(f"[Done] Tier 3 pre-scan completed in {time.perf_counter() - t0:.2f}s")
-                ship_sectors = (
-                    {s["sector"] for s in tier1_data["player_ships"]}
-                    | (station_sectors or set())
-                )
-
-            # In tier 3, the pre-scan above already found all player ships, so
-            # the main scan only needs to collect NPC ships (npc_only=True skips
-            # player ship buffering, halving the work). We then stitch the two
-            # results back together. Tiers 1 and 2 do a single combined scan.
-            t0       = time.perf_counter()
-            npc_only = (SHIP_SCAN_TIER == 3)
-            main_scan = scan_ships(
-                SAVE_FILE,
-                sector_names,
-                station_sectors=station_sectors,
-                ship_sectors=ship_sectors,
-                npc_only=npc_only,
+        # ── Pass 3: ships ─────────────────────────────────────────────────────
+        if "ships" in passes:
+            # Station sectors are only available if Pass 1 ran — otherwise None
+            # and the ships pass will treat it as tier 1 regardless.
+            station_sectors = (
+                {s["sector"] for s in game_data["stations"]}
+                if "stations" in passes else None
             )
-            print(f"[Done] Ships scan completed in {time.perf_counter() - t0:.2f}s")
+            ships_result = _run_ships_pass(
+                SAVE_FILE, sector_names, ship_tier, station_sectors
+            )
+            game_data["ships"] = {
+                "player_ships": ships_result["player_ships"],
+                "npc_ships":    ships_result["npc_ships"],
+            }
+            # Append ship crew after station managers so managers appear first.
+            game_data["crew"] += ships_result.get("crew", [])
+            game_data["ships_scanned"] = True
 
-            if SHIP_SCAN_TIER == 3:
-                # Re-use the player ships and crew we already found in the
-                # pre-scan instead of scanning for them a second time.
-                game_data["ships"] = {
-                    "player_ships": tier1_data["player_ships"],
-                    "npc_ships":    main_scan["npc_ships"],
-                }
-                ship_crew = tier1_data.get("crew", [])
-            else:
-                game_data["ships"] = main_scan
-                ship_crew = main_scan.get("crew", [])
+        display_results(game_data)
 
-            # Merge station managers (from Pass 1) with ship crew (from Pass 3).
-            # Managers come first so they appear at the top of the roster.
-            game_data["crew"] = game_data.get("managers", []) + ship_crew
-
-            display_results(game_data)
+        if mode["export"]:
             export_json(game_data, output_dir=SCRIPT_DIR)
-
-        else:
-            print(f"[Error] Unknown RUN_MODE '{RUN_MODE}'. Valid options: 'full', 'ships'.")
 
     except Exception as e:
         print(f"\n[FATAL ERROR] {e}")
