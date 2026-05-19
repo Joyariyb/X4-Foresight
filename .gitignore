@@ -42,3 +42,5 @@ Complete cat Dump.txt
 npc_agent.xml
 npc_instantiation.xml
 people.xml
+/shield xml
+/station xml

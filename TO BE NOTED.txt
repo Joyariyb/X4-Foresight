@@ -1,3 +1,20 @@
+STATION MODULE DATA — FUTURE FIELDS
+=====================================
+The following fields are available in station module macro XMLs and should be
+extracted when station economy/crew features are implemented:
+
+  workforce max (production modules)
+    XML path: properties/workforce[@max]
+    Meaning:  Maximum number of workers the module can employ.
+
+  workforce capacity + race (habitation modules)
+    XML path: properties/workforce[@capacity] and properties/workforce[@race]
+    Meaning:  How many workers the module can house and which race they are.
+
+These are NOT currently extracted by generate_station_stats.py. Add them to
+Pass 1 of that script when station crew/economy data is needed.
+
+
 BEHEMOTH E — HULL HP ABOVE BASE MAX
 =====================================
 The Behemoth E destroyer displays "100%  (101,857 / 102,000 HP)" rather than

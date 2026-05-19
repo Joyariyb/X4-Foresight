@@ -107,6 +107,35 @@ def display_results(data: dict):
                 else:
                     print(f"  {indent} Produces : —")
 
+                # ── Hull health ───────────────────────────────────────────────
+                # hull_pct is None when STATION_STATS couldn't match any modules
+                # (e.g. after a DLC update adds new module types not yet extracted).
+                hull_pct = s.get("hull_pct")
+                hull_hp  = s.get("hull_hp")
+                hull_max = s.get("hull_max")
+
+                if hull_pct is not None and hull_pct >= 99.9:
+                    hull_str = f"Full  ({hull_max:,.0f} HP)"
+                elif hull_pct is not None:
+                    hull_str = f"{hull_pct:.0f}%  ({hull_hp:,.0f} / {hull_max:,.0f} HP)"
+                else:
+                    hull_str = "—"
+
+                # ── Shield health ─────────────────────────────────────────────
+                # shield_pct is None when no shield generators are installed.
+                shield_pct = s.get("shield_pct")
+                shield_hp  = s.get("shield_hp")
+                shield_max = s.get("shield_max")
+
+                if shield_pct is not None and shield_pct >= 99.9:
+                    shield_str = f"Full  ({shield_max:,.0f} HP)"
+                elif shield_pct is not None:
+                    shield_str = f"{shield_pct:.0f}%  ({shield_hp:,.0f} / {shield_max:,.0f} HP)"
+                else:
+                    shield_str = "None"
+
+                print(f"  {indent} Hull     : {hull_str:<30}  Shield : {shield_str}")
+
             print()  # Blank line between sector groups for breathing room
 
     else:

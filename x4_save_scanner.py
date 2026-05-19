@@ -32,12 +32,14 @@ SHIP SCAN TIERS:
   3 — Player ships + NPC ships in all sectors where you have ships
 
 RUN MODES:
-  "full"  — Runs the complete pipeline: player data, stations, reputation,
-             ships, display, and JSON export. Normal production usage.
-  "ships" — Skips Pass 1 (player/stations) and Pass 2 (reputation) entirely.
-             Loads sector names, scans ships only, and displays the fleet
-             section with stub values for all other fields. Use this when
-             iterating on ship_scanner.py to avoid waiting for the full scan.
+  "full"     — Runs the complete pipeline: player data, stations, reputation,
+               ships, display, and JSON export. Normal production usage.
+  "stations" — Runs Pass 1 only (player data + stations). Skips reputation
+               and ship scanning. Use when iterating on station display (~5s).
+  "ships"    — Skips Pass 1 (player/stations) and Pass 2 (reputation) entirely.
+               Loads sector names, scans ships only, and displays the fleet
+               section with stub values for all other fields. Use this when
+               iterating on ship_scanner.py to avoid waiting for the full scan.
 """
 
 import pathlib
@@ -137,14 +139,15 @@ def select_save_file() -> pathlib.Path:
 #  RUN MODE
 #  Controls which passes are executed on each run.
 #
-#  "full"  — complete pipeline (player, stations, reputation, ships, export)
-#  "ships" — ships scan only; skips Pass 1 and Pass 2 entirely
+#  "full"     — complete pipeline (player, stations, reputation, ships, export)
+#  "stations" — Pass 1 only (player + stations); fastest for iterating on station display
+#  "ships"    — ships scan only; skips Pass 1 and Pass 2 entirely
 #
-#  Switch to "ships" when iterating on ship_scanner.py to avoid the overhead of
-#  scanning stations and reputation on every test run.
+#  Switch to "stations" when iterating on station display to avoid the ~90s ship scan.
+#  Switch to "ships" when iterating on ship_scanner.py.
 # ─────────────────────────────────────────────────────────────────────────────
 
-RUN_MODE = "full"  # "full" | "ships"
+RUN_MODE = "stations"  # "full" | "ships" | "stations"
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  SHIP SCAN TIER
@@ -175,6 +178,25 @@ if __name__ == "__main__":
         print(f"[Done] Sector names loaded in {time.perf_counter() - t0:.2f}s")
 
         # ─────────────────────────────────────────────────────────────────────
+        #  STATIONS MODE
+        #  Runs only Pass 1 (player data + stations). Skips reputation and ship
+        #  scanning entirely so iterations on station display are fast (~5s vs ~90s).
+        # ─────────────────────────────────────────────────────────────────────
+
+        if RUN_MODE == "stations":
+            print("[Mode] Stations-only scan — skipping reputation and ships passes.")
+
+            t0        = time.perf_counter()
+            game_data = scan_save(SAVE_FILE, sector_names)
+            print(f"[Done] Pass 1 completed in {time.perf_counter() - t0:.2f}s")
+
+            game_data["reputation"] = []
+            game_data["ships"]      = {"player_ships": [], "npc_ships": []}
+            game_data["crew"]       = game_data.get("managers", [])
+
+            display_results(game_data)
+
+        # ─────────────────────────────────────────────────────────────────────
         #  SHIPS MODE
         #  Bypasses Pass 1 (player data/stations) and Pass 2 (reputation) entirely.
         #  Builds a minimal game_data stub so display_results() can render the fleet
@@ -182,7 +204,7 @@ if __name__ == "__main__":
         #  neutral dummy values that clearly indicate ships mode is active in the output.
         # ─────────────────────────────────────────────────────────────────────
 
-        if RUN_MODE == "ships":
+        elif RUN_MODE == "ships":
             print("[Mode] Ships-only scan — skipping player, stations, and reputation passes.")
 
             t0    = time.perf_counter()
