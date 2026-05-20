@@ -157,6 +157,7 @@
     .station-tab-btn { padding: 3px 10px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); background: transparent; border: 1px solid var(--border); border-radius: 2px; cursor: pointer; user-select: none; white-space: nowrap; transition: color 0.12s, border-color 0.12s; }
     .station-tab-btn:hover { color: var(--text-dim); border-color: var(--text-faint); }
     .station-tab-btn.active { color: var(--teal); border-color: var(--teal); }
+    .docked-ship-row:hover { background: var(--bg-panel); }
 
     /* ── SORT DROPDOWN ── */
     /* Sits inline in the section header, right of the divider line */
@@ -655,7 +656,7 @@
       const pilotNameSpan = pilotCrewIdx >= 0
         ? `<span class="crew-link" data-crew-idx="${pilotCrewIdx}">${pilot}</span>`
         : pilot;
-      return `<tr>
+      return `<tr data-code="${s.code}">
         <td style="white-space:nowrap">
           <span class="ship-name">${nameStr}</span>
           <span class="mono" style="color:var(--yellow);font-size:11px;margin-left:8px">${s.code}</span>
@@ -819,7 +820,7 @@
       const sCol  = SIZE_COLOURS[s.size]   || 'var(--text-dim)';
       const oCol  = ORDER_COLOURS[s.order] || 'var(--text-dim)';
       const oIcon = ORDER_ICONS[s.order]   || 'ti-circle';
-      return `<tr>
+      return `<tr data-code="${s.code}">
         <td style="white-space:nowrap;height:34px">
           <span class="ship-name">${s.name || '—'}</span>
           <span class="mono" style="color:var(--yellow);font-size:11px;margin-left:8px">${s.code}</span>
@@ -1015,6 +1016,33 @@
   }
 
   // Derives a human-readable station type from the number of production wares.
+  // Switches to the Fleet tab, activates the correct faction subtab, and scrolls
+  // to the row matching the given ship code, briefly flashing it in the faction's
+  // colour so the user can spot it instantly.
+  // faction defaults to 'player'; pass a faction id (e.g. 'civilian') for NPC ships.
+  function jumpToShip(code, faction) {
+    faction = faction || 'player';
+    const fleetNavTab = document.querySelector('.nav-tab[onclick*="\'fleet\'"]');
+    switchTab('fleet', fleetNavTab);
+    switchFleetTab(faction, document.querySelector(`.fleet-subtab[data-faction="${faction}"]`));
+
+    // Player ships live in #fleet-table; NPC ships live in their own per-faction table.
+    const tableSelector = faction === 'player' ? '#fleet-table' : `#npc-table-${faction}`;
+    const row = document.querySelector(`${tableSelector} tr[data-code="${code}"]`);
+    if (!row) return;
+    row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    // Flash using the faction's theme colour so the highlight feels appropriate.
+    const flashColor = faction === 'player'
+      ? 'var(--teal-dim)'
+      : hexToRgba(FACTION_COLOURS[faction] || '#6e7681', 0.18);
+    row.style.transition = '';
+    row.style.background = flashColor;
+    requestAnimationFrame(() => {
+      row.style.transition = 'background 1.5s';
+      row.style.background = '';
+    });
+  }
+
   function stationTypeLabel(s) {
     const wares = s.production ? s.production.split(',').filter(w => w.trim()) : [];
     if (wares.length === 0) return 'Defence Platform';
@@ -1259,12 +1287,26 @@
       const dockedRows = dockedShips.length === 0
         ? `<div style="padding:12px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No docked ships</div>`
         : dockedShips.map(ds => {
-            const cls = ds.class ? ds.class.replace('ship_', '').toUpperCase() : '?';
-            return `<div style="display:flex;align-items:center;gap:10px;padding:6px 14px;border-bottom:1px solid var(--border)">
+            // Look up the ship first in the player fleet, then in the full NPC list.
+            // This handles both directly-owned ships and civilian-faction ships that
+            // are docked here but belong to X4's ambient civilian faction.
+            const matchedPlayer = players.find(p => p.code === ds.code);
+            const matchedNpc    = !matchedPlayer ? npcShips.find(n => n.code === ds.code) : null;
+            const matched       = matchedPlayer || matchedNpc;
+            const shipName      = matched ? (matched.name || ds.macro) : ds.macro;
+            const cls           = ds.class ? ds.class.replace('ship_', '').toUpperCase() : '?';
+            // Determine which fleet subtab to navigate to on click.
+            const shipFaction   = matchedNpc ? matchedNpc.owner : 'player';
+            const clickable     = !!matched && !ds.under_construction;
+            return `<div class="${clickable ? 'docked-ship-row' : ''}"
+                         style="display:flex;align-items:center;gap:10px;padding:6px 14px;border-bottom:1px solid var(--border);${clickable ? 'cursor:pointer' : ''}"
+                         ${clickable ? `onclick="jumpToShip('${ds.code}', '${shipFaction}')"` : ''}>
               <span style="font-family:var(--font-mono);color:var(--yellow);font-size:11px;min-width:64px">${ds.code}</span>
               <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);padding:1px 5px;border:1px solid var(--border);border-radius:2px">${cls}</span>
-              <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ds.macro}</span>
-              ${ds.under_construction ? '<span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.1em;color:var(--amber)">CONSTRUCTING</span>' : ''}
+              <span class="ship-name" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${shipName}</span>
+              ${ds.under_construction
+                ? '<span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.1em;color:var(--amber)">CONSTRUCTING</span>'
+                : clickable ? '<span style="font-family:var(--font-mono);font-size:9px;color:var(--text-faint)">→ Fleet</span>' : ''}
             </div>`;
           }).join('');
 

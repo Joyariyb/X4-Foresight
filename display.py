@@ -149,6 +149,10 @@ def display_results(data: dict):
                 mod_str   = f"  ·  {mod_count} modules" if mod_count is not None else ""
                 print(f"  {connector} {s['name']} [{s['code']}]{mod_str}")
 
+                status = s.get("status", "Operational")
+                if status != "Operational":
+                    print(f"  {indent} Status   : {status}")
+
                 if s["production"]:
                     print(f"  {indent} Produces : {s['production']}")
                 else:

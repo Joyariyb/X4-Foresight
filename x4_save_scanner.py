@@ -36,7 +36,7 @@ if str(ROOT) not in sys.path:
 
 from scanner.language           import load_sector_names
 from scanner.scanner            import scan_save, scan_reputation
-from scanner.ship_scanner       import scan_ships
+from scanner.ship_scanner       import scan_ships, merge_station_docked_ships
 from export.jsonexport          import export_json
 from display                    import display_results
 
@@ -334,6 +334,15 @@ if __name__ == "__main__":
             ships_result = _run_ships_pass(
                 SAVE_FILE, sector_names, ship_tier, station_sectors
             )
+            # If the stations pass also ran, plug any station-docked player ships
+            # that the ship scanner missed back into player_ships now — before
+            # the JSON export — so they appear in the fleet with translated names.
+            if "stations" in passes:
+                merge_station_docked_ships(
+                    game_data["stations"],
+                    ships_result["player_ships"],
+                )
+
             game_data["ships"] = {
                 "player_ships": ships_result["player_ships"],
                 "npc_ships":    ships_result["npc_ships"],

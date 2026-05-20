@@ -16,6 +16,14 @@ STATION_CLASSES = {"station", "factory", "headquarters", "complex"}
 # Pre-compiled for performance — called on every entry in large save files.
 PROD_MACRO_RE = re.compile(r'^prod_(?:\w+?)_(\w+)_macro$', re.IGNORECASE)
 
+# Maps the raw XML state attribute on a station <component> to a player-facing label.
+# Operational stations have no state attribute at all — the absent case defaults to "Operational".
+# "wreck" stations remain in the save file as destroyed objects until the game cleans them up.
+_STATE_LABELS = {
+    "construction": "Under Construction",
+    "wreck":        "Destroyed",
+}
+
 # ─────────────────────────────────────────────────────────────────────────────
 #  MODULE INFO TABLES
 #  Used by _parse_module_info() to decode macro tokens into human-readable fields.
@@ -546,12 +554,20 @@ def scan_save(file_path: pathlib.Path, sector_names: dict) -> dict:
                         storage       = _parse_station_storage(elem)
                         docked_ships  = _extract_station_docked_ships(elem)
 
+                        _STATE_LABELS = {
+                            "construction": "Under Construction",
+                            "wreck":        "Destroyed",
+                        }
+                        raw_state = elem.get('state')
+                        status    = _STATE_LABELS.get(raw_state, "Operational")
+
                         entry = {
                             "name":          display_name,
                             "code":          code,
                             "class":         elem.get('class', ''),
                             "macro":         macro,
                             "sector":        station_sector_pending,
+                            "status":        status,
                             "production":    production,
                             "module_count":  module_count,
                             "docked_ships":  docked_ships,

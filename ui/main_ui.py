@@ -53,7 +53,7 @@ else:
 
 from scanner.language import load_sector_names, open_save  # noqa: E402
 from scanner.scanner import scan_save, scan_reputation      # noqa: E402
-from scanner.ship_scanner import scan_ships                 # noqa: E402
+from scanner.ship_scanner import scan_ships, merge_station_docked_ships  # noqa: E402
 from export.jsonexport import export_json                   # noqa: E402
 
 JSON_PATH = ROOT / "x4_empire_state.json"
@@ -281,6 +281,15 @@ class ScanWorker(QThread):
                 self._save_path, sector_names,
                 station_sectors=station_sectors,
             )
+
+            # Fill in any player ships that sat in a station bay and were missed
+            # by the ship scanner's iterparse pass. This runs before export so
+            # the JSON always contains a complete fleet list.
+            merge_station_docked_ships(
+                game_data["stations"],
+                ships_result["player_ships"],
+            )
+
             game_data["ships"] = {
                 "player_ships": ships_result["player_ships"],
                 "npc_ships":    ships_result["npc_ships"],

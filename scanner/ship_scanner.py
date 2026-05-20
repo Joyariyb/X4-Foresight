@@ -751,6 +751,106 @@ def scan_ships(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+#  STATION-DOCKED SHIP MERGE
+# ─────────────────────────────────────────────────────────────────────────────
+
+def merge_station_docked_ships(
+    stations:     list[dict],
+    player_ships: list[dict],
+) -> list[dict]:
+    """
+    Adds player ships docked at stations that the main ship scanner missed.
+
+    WHY THIS IS NEEDED:
+      During Pass 3, the ship scanner streams the save XML with iterparse. Ships
+      docked inside carrier hulls are blocked by the `inside_ship` flag and are
+      recovered separately via `_extract_docked_ships()`. However, ships sitting
+      in a *station's* docking bays can have a different XML layout — particularly
+      at the player HQ, where ships under construction or stored in dry-dock bays
+      sometimes lack the top-level attributes (sector macro, space connection) that
+      the ship scanner relies on to decide whether to buffer them. These ships are
+      captured reliably by the station scanner's `_extract_station_docked_ships()`
+      but they end up only in each station's `docked_ships` list, never in
+      `player_ships`.
+
+    NOTE ON "CIVILIAN" SHIPS:
+      Ships with owner="civilian" are not player-owned — they belong to X4's
+      ambient civilian faction (mass traffic, neutral storyline vessels, etc.).
+      The UI handles civilian ships that are docked at player stations by looking
+      them up in npc_ships and navigating to the CIV fleet subtab on click.
+      Only ships with owner="player" are merged here.
+
+    WHAT IT DOES:
+      Iterates every station's `docked_ships` list, finds any player-owned ship
+      whose code is not already in `player_ships`, and appends a stub entry so the
+      ship appears in the fleet data with a correct translated name, size, role, and
+      sector. Health and pilot data are unavailable from the station scanner, so
+      those fields are set to None.
+
+    Args:
+        stations:     List of station dicts from Pass 1 (scan_save). Each entry
+                      must have a 'sector' key and an optional 'docked_ships' list.
+        player_ships: The player fleet list from Pass 3 (scan_ships). Modified in
+                      place and also returned for convenience.
+
+    Returns:
+        The updated player_ships list with any missing station-docked ships added.
+    """
+    # Build a set of codes we already have so the lookup is O(1) per ship.
+    existing_codes = {s["code"] for s in player_ships}
+
+    for station in stations:
+        station_sector = station.get("sector", "Unknown")
+
+        for ds in station.get("docked_ships", []):
+            # Only add ships the player directly owns. Civilian-faction ships
+            # (owner="civilian") that happen to be docked here are handled
+            # entirely on the UI side — they already exist in npc_ships with
+            # full data and the fleet tab navigates to the CIV subtab for them.
+            if ds.get("owner") != "player":
+                continue
+            code = ds.get("code", "")
+            if not code or code in existing_codes:
+                continue
+
+            macro = ds.get("macro", "")
+            cls   = ds.get("class", "")
+
+            # Build a complete stub that matches the shape of a normal player_ships
+            # entry. Fields that require parsing the full ship XML subtree (pilot,
+            # software, hull/shield health) are left as None — the UI handles None
+            # gracefully, and a future scanner improvement could fill these in.
+            player_ships.append({
+                "code":        code,
+                "name":        resolve_ship_type(macro),
+                "class":       cls,
+                "size":        SIZE_LABELS.get(cls, cls),
+                "macro":       macro,
+                "role":        extract_role(macro),
+                "hull_origin": extract_faction_from_macro(macro),
+                "owner":       "player",
+                "sector":      station_sector,
+                # Ships in a station bay are not executing an active order — show
+                # "Docked" so they appear in the fleet tab under a sensible label.
+                "order":       "Docked",
+                "pilot":       {"name": None, "skills": []},
+                "software":    {},
+                "commander":   None,
+                # Health data is not available from the station scanner's docked
+                # ship extraction — would require buffering the full ship subtree.
+                "hull_hp":     None,
+                "hull_pct":    None,
+                "max_hull":    None,
+                "shield_hp":   None,
+                "shield_max":  None,
+                "shield_pct":  None,
+            })
+            existing_codes.add(code)
+
+    return player_ships
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 #  SUMMARY HELPERS
 #  These are used by display.py for the console report. The JSON export uses
 #  its own summary builder in export/jsonexport.py instead.
