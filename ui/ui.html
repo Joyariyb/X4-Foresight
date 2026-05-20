@@ -29,7 +29,7 @@
       --lime:         #39ff14;
       --text:         #c9d1d9;
       --text-dim:     #8b949e;
-      --text-faint:   #3d444d;
+      --text-faint:   #3fb950;
       --font-ui:      'Barlow', sans-serif;
       --font-mono:    'Share Tech Mono', monospace;
       --font-cond:    'Barlow Condensed', sans-serif;
@@ -1242,13 +1242,13 @@
       // Shield cell inner HTML — null renders a "NO SHIELDS" label centred in the bar area
       const shieldDisplay = shieldPct == null
         ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-             <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-faint)">Shields</span>
+             <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--red)">Shields</span>
            </div>
            <div style="height:22px;background:var(--border);border-radius:2px;display:flex;align-items:center;justify-content:center">
              <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--red)">No Shields</span>
            </div>`
         : `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-             <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-faint)">Shields</span>
+             <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:${attnColor(shieldColor)}">Shields</span>
              <span style="font-family:var(--font-mono);font-size:11px;color:${shieldColor}">${shieldPctStr}</span>
            </div>
            <div style="height:22px;background:var(--border);border-radius:2px;overflow:hidden">
@@ -1264,6 +1264,13 @@
                         : statusRaw.includes('wreck')        ? 'var(--red)'
                         : 'var(--green)';
 
+      // Two-state label colour rule: amber/red values demand attention so the
+      // label inherits the same colour as its value — they read as one unit.
+      // Any other colour (green, teal, blue) is "healthy/normal" so the label
+      // stays muted and only the value carries the colour.
+      const attnColor = col =>
+        (col === 'var(--amber)' || col === 'var(--red)') ? col : 'var(--text-faint)';
+
       // Stats
       const dockedShips  = s.docked_ships || [];
       const shipCount    = dockedShips.length;
@@ -1272,10 +1279,11 @@
       const storageStr   = storageRaw != null ? Math.round(storageRaw) + '%' : '—';
       const storageColor = storageRaw != null ? (storageRaw > 90 ? 'var(--red)' : storageRaw > 70 ? 'var(--amber)' : 'var(--teal)') : 'var(--text-faint)';
 
-      // Stat cell builder — last cell omits the right border
+      // Stat cell builder — each cell is its own slightly lighter box.
+      // Label colour follows the two-state rule via attnColor().
       const sc = (lbl, val, col = 'var(--text)', last = false) =>
-        `<div style="padding:10px 12px;text-align:center${last ? '' : ';border-right:1px solid var(--border)'}">
-           <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-faint);margin-bottom:5px">${lbl}</div>
+        `<div style="padding:10px 12px;text-align:center;background:var(--bg-card);border-radius:3px">
+           <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:${attnColor(col)};margin-bottom:5px">${lbl}</div>
            <div style="font-family:var(--font-mono);font-size:20px;color:${col}">${val}</div>
          </div>`;
 
@@ -1384,7 +1392,7 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
           <div style="padding:7px 14px;border-right:1px solid var(--border)">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-              <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-faint)">Hull</span>
+              <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:${attnColor(hullColor)}">Hull</span>
               <span style="font-family:var(--font-mono);font-size:11px;color:${hullColor}">${hullPctStr}</span>
             </div>
             <div style="height:22px;background:var(--border);border-radius:2px;overflow:hidden">
@@ -1396,7 +1404,7 @@
           </div>
         </div>
         <!-- Stats row: Modules | Crew | Ships | Storage -->
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border)">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px;background:var(--bg-panel);border-bottom:1px solid var(--border)">
           ${sc('Modules', modCount)}
           ${sc('Crew', '—', 'var(--text-faint)')}
           ${sc('Ships', shipCount, shipCount > 0 ? 'var(--teal)' : 'var(--text-faint)')}
