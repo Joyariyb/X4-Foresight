@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.51) at 17.06.2021_17-15-16-->
+<macros>
+  <macro name="buildmodule_gen_stations_01_macro" class="buildmodule">
+    <component ref="generic_buildmodule" />
+    <properties>
+      <hull integrated="1" />
+      <builder optimalprocessorunits="30" />
+    </properties>
+    <connections>
+      <connection name="buildprocessorconnection_01" ref="buildprocessorconnection">
+        <macro ref="buildprocessor_gen_01_macro" connection="object" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

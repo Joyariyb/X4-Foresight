@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.61) at 21.03.2022_12-19-18-->
+<macros>
+  <macro name="landmarks_gen_exploration_01_macro" class="object">
+    <component ref="landmarks_gen_exploration_01" />
+    <properties>
+      <identification name="{20109,5301}" landmark="1" icon="mapob_poi" />
+      <hull min="10" max="1000000" />
+      <effects>
+        <longrangescan ref="scfx_result_special_01" />
+      </effects>
+    </properties>
+    <connections>
+      <connection ref="Connection002">
+        <macro ref="interactive_repairpanel_01_macro" connection="Connection01" />
+      </connection>
+      <connection ref="Connection003">
+        <macro ref="interactive_repairpanel_01_macro" connection="Connection01" />
+      </connection>
+      <connection ref="Connection004">
+        <macro ref="interactive_repairpanel_01_macro" connection="Connection01" />
+      </connection>
+      <connection ref="Connection005">
+        <macro ref="interactive_repairpanel_01_macro" connection="Connection01" />
+      </connection>
+      <connection ref="Connection007">
+        <macro ref="sm_gen_wares_exploration_02_b_macro" connection="Connection01" />
+      </connection>
+      <connection ref="Connection01">
+        <macro ref="interactive_repairpanel_01_macro" connection="Connection01" />
+      </connection>
+      <connection ref="Connection06">
+        <macro ref="sm_gen_wares_exploration_02_d_macro" connection="Connection01" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

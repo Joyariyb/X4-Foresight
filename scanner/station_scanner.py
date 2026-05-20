@@ -1,7 +1,7 @@
 import pathlib
 import re
 from lxml import etree as ET
-from data.wares import WARE_NAMES
+from data.wares import WARE_NAMES, WARE_VOLUME, WARE_TRANSPORT
 from data.station_stats import STATION_STATS
 from scanner.language import macro_to_sector_name, resolve_sector_from_location, open_save
 from scanner.crew_scanner import _parse_manager, _iter_components
@@ -248,6 +248,160 @@ def _parse_station_modules(station_elem: ET.Element) -> list[dict]:
     return modules
 
 
+def _classify_reservation(flags: str) -> str:
+    """
+    Returns 'buy', 'sell', or 'ignore' for a trade reservation entry.
+
+    Reverse-engineered from live save data against known in-game fill values:
+    - sellermoneyvirtual|buyermoneyvirtual (no invertfactionrestriction): incoming
+      cargo en route to this station — pre-allocates space, adds to displayed fill.
+    - sellermoneyvirtual|buyermoneyvirtual|invertfactionrestriction: goods
+      physically present but committed to an outgoing order — subtracts from fill.
+    - sell|virtual: virtual offer not backed by physical goods (e.g. in transit),
+      not reflected in the game's displayed fill — ignored.
+    """
+    parts = set(flags.split('|'))
+    if 'virtual' in parts and 'sell' in parts:
+        return 'ignore'
+    if 'invertfactionrestriction' in parts:
+        return 'sell'
+    if 'buyermoneyvirtual' in parts:
+        return 'buy'
+    return 'ignore'
+
+
+def _parse_station_storage(station_elem: ET.Element) -> dict:
+    """
+    Returns per-type and total cargo storage utilisation for the station.
+
+    Iterates instantiated <component class="storage"> subtrees within the
+    station — each one carries a <cargo><ware ware="X" amount="Y"/></cargo>
+    block with its current stock. The module type (container / solid / liquid)
+    is inferred from the macro name substring. Amounts are converted to m³
+    using WARE_VOLUME; the default for unknown wares is 1 m³/unit.
+
+    Only modules present in STATION_STATS with a cargo_capacity are counted —
+    this naturally excludes ship cargo holds (their macros aren't in that dict).
+    _iter_components() skips ship subtrees, so docked ships' cargo never bleeds
+    into the station's totals even if they happened to share a macro name.
+
+    Modules whose macro name contains none of container/solid/liquid (e.g.
+    tradestation storage) are counted toward the total only, not any type bar.
+    """
+    # Per-type accumulators: [current_m3, max_m3]
+    acc = {"container": [0.0, 0], "solid": [0.0, 0], "liquid": [0.0, 0]}
+    total_m3  = 0.0
+    total_max = 0
+
+    for comp in _iter_components(station_elem):
+        if comp.get('class') != 'storage':
+            continue
+        macro    = comp.get('macro', '')
+        capacity = STATION_STATS.get(macro, {}).get('cargo_capacity')
+        if not capacity:
+            continue
+
+        # Map macro name to type; tradestation-style modules fall through to None
+        m = macro.lower()
+        if 'container' in m:
+            type_key = 'container'
+        elif 'solid' in m:
+            type_key = 'solid'
+        elif 'liquid' in m:
+            type_key = 'liquid'
+        else:
+            type_key = None
+
+        # Sum current stock in m³ from the module's <cargo> block
+        current_m3 = 0.0
+        cargo_elem = comp.find('cargo')
+        if cargo_elem is not None:
+            for ware_elem in cargo_elem.findall('ware'):
+                ware_id = ware_elem.get('ware', '')
+                try:
+                    amount = float(ware_elem.get('amount', 0))
+                except (ValueError, TypeError):
+                    amount = 0.0
+                current_m3 += amount * WARE_VOLUME.get(ware_id, 1.0)
+
+        if type_key:
+            acc[type_key][0] += current_m3
+            acc[type_key][1] += capacity
+        total_m3  += current_m3
+        total_max += capacity
+
+    # ── Trade reservation adjustments ─────────────────────────────────────────
+    # Parse <trade><reservations> to compute fill values matching the game UI.
+    # Raw physical values (acc) and adjusted values (adj) are kept separate so
+    # both are available independently in the exported JSON.
+    #
+    # adj starts as a copy of physical m³, then:
+    #   buy  reservations add m³  (incoming cargo pre-allocating storage space)
+    #   sell reservations subtract m³ (physically present goods committed outgoing)
+    adj          = {t: acc[t][0] for t in ("container", "solid", "liquid")}
+    adj_total_m3 = total_m3
+
+    trade_elem = station_elem.find('trade')
+    if trade_elem is not None:
+        res_elem = trade_elem.find('reservations')
+        if res_elem is not None:
+            for res in res_elem.findall('reservation'):
+                ware_id = res.get('ware', '')
+                flags   = res.get('flags', '')
+                try:
+                    amount = float(res.get('amount', 0))
+                except (ValueError, TypeError):
+                    amount = 0.0
+
+                rtype = _classify_reservation(flags)
+                if rtype == 'ignore':
+                    continue
+
+                transport = WARE_TRANSPORT.get(ware_id)
+                if transport not in adj:
+                    continue
+
+                delta = amount * WARE_VOLUME.get(ware_id, 1.0)
+                if rtype == 'buy':
+                    adj[transport]  += delta
+                    adj_total_m3    += delta
+                elif rtype == 'sell':
+                    adj[transport]  -= delta
+                    adj_total_m3    -= delta
+
+    result: dict = {}
+    for type_key in ("container", "solid", "liquid"):
+        m3, max_v = acc[type_key]
+        adj_m3    = adj[type_key]
+        if max_v > 0:
+            result[f"cargo_{type_key}_m3"]      = m3
+            result[f"cargo_{type_key}_max"]     = max_v
+            result[f"cargo_{type_key}_pct"]     = (m3 / max_v) * 100.0
+            result[f"cargo_{type_key}_adj_m3"]  = adj_m3
+            result[f"cargo_{type_key}_adj_pct"] = (adj_m3 / max_v) * 100.0
+        else:
+            result[f"cargo_{type_key}_m3"]      = None
+            result[f"cargo_{type_key}_max"]     = None
+            result[f"cargo_{type_key}_pct"]     = None
+            result[f"cargo_{type_key}_adj_m3"]  = None
+            result[f"cargo_{type_key}_adj_pct"] = None
+
+    if total_max > 0:
+        result["cargo_m3"]      = total_m3
+        result["cargo_max"]     = total_max
+        result["cargo_pct"]     = (total_m3 / total_max) * 100.0
+        result["cargo_adj_m3"]  = adj_total_m3
+        result["cargo_adj_pct"] = (adj_total_m3 / total_max) * 100.0
+    else:
+        result["cargo_m3"]      = None
+        result["cargo_max"]     = None
+        result["cargo_pct"]     = None
+        result["cargo_adj_m3"]  = None
+        result["cargo_adj_pct"] = None
+
+    return result
+
+
 def _parse_station_health(modules: list[dict]) -> dict:
     """
     Folds a module list into station-level hull and shield totals.
@@ -389,6 +543,7 @@ def scan_save(file_path: pathlib.Path, sector_names: dict) -> dict:
                         module_count  = _count_construction_modules(elem)
                         modules       = _parse_station_modules(elem)
                         health        = _parse_station_health(modules)
+                        storage       = _parse_station_storage(elem)
                         docked_ships  = _extract_station_docked_ships(elem)
 
                         entry = {
@@ -406,6 +561,26 @@ def scan_save(file_path: pathlib.Path, sector_names: dict) -> dict:
                             "shield_hp":     health["shield_hp"],
                             "shield_max":    health["shield_max"],
                             "shield_pct":    health["shield_pct"],
+                            "cargo_container_m3":      storage["cargo_container_m3"],
+                            "cargo_container_max":     storage["cargo_container_max"],
+                            "cargo_container_pct":     storage["cargo_container_pct"],
+                            "cargo_container_adj_m3":  storage["cargo_container_adj_m3"],
+                            "cargo_container_adj_pct": storage["cargo_container_adj_pct"],
+                            "cargo_solid_m3":          storage["cargo_solid_m3"],
+                            "cargo_solid_max":         storage["cargo_solid_max"],
+                            "cargo_solid_pct":         storage["cargo_solid_pct"],
+                            "cargo_solid_adj_m3":      storage["cargo_solid_adj_m3"],
+                            "cargo_solid_adj_pct":     storage["cargo_solid_adj_pct"],
+                            "cargo_liquid_m3":         storage["cargo_liquid_m3"],
+                            "cargo_liquid_max":        storage["cargo_liquid_max"],
+                            "cargo_liquid_pct":        storage["cargo_liquid_pct"],
+                            "cargo_liquid_adj_m3":     storage["cargo_liquid_adj_m3"],
+                            "cargo_liquid_adj_pct":    storage["cargo_liquid_adj_pct"],
+                            "cargo_m3":                storage["cargo_m3"],
+                            "cargo_max":               storage["cargo_max"],
+                            "cargo_pct":               storage["cargo_pct"],
+                            "cargo_adj_m3":            storage["cargo_adj_m3"],
+                            "cargo_adj_pct":           storage["cargo_adj_pct"],
                             "modules":       modules,
                         }
 

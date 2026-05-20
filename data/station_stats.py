@@ -6,9 +6,10 @@
 #  Re-run after extracting new XMLs from X4's .cat files.
 #
 #  CURRENT KEYS PER ENTRY:
-#    max_hull    — base maximum hull HP (station structure modules)
-#    max_shield  — shield recharge capacity in HP (shield equipment macros)
-#    produces    — ware produced by this module (production modules only)
+#    max_hull        — base maximum hull HP (station structure modules)
+#    max_shield      — shield recharge capacity in HP (shield equipment macros)
+#    produces        — ware produced by this module (production modules only)
+#    cargo_capacity  — maximum cargo volume in m³ (storage modules only)
 # ─────────────────────────────────────────────────────────────────────────────
 
 STATION_STATS = {
@@ -715,87 +716,115 @@ STATION_STATS = {
     },
     'storage_arg_l_container_01_macro': {
         'max_hull': 565000,
+        'cargo_capacity': 1000000,
     },
     'storage_arg_l_liquid_01_macro': {
         'max_hull': 565000,
+        'cargo_capacity': 1000000,
     },
     'storage_arg_l_solid_01_macro': {
         'max_hull': 565000,
+        'cargo_capacity': 1000000,
     },
     'storage_arg_l_tradestation_01_macro': {
         'max_hull': 643000,
+        'cargo_capacity': 300000,
     },
     'storage_arg_m_container_01_macro': {
         'max_hull': 285000,
+        'cargo_capacity': 250000,
     },
     'storage_arg_m_liquid_01_macro': {
         'max_hull': 285000,
+        'cargo_capacity': 500000,
     },
     'storage_arg_m_solid_01_macro': {
         'max_hull': 285000,
+        'cargo_capacity': 500000,
     },
     'storage_arg_s_container_01_macro': {
         'max_hull': 114000,
+        'cargo_capacity': 50000,
     },
     'storage_arg_s_liquid_01_macro': {
         'max_hull': 114000,
+        'cargo_capacity': 100000,
     },
     'storage_arg_s_solid_01_macro': {
         'max_hull': 114000,
+        'cargo_capacity': 100000,
     },
     'storage_par_l_container_01_macro': {
         'max_hull': 653000,
+        'cargo_capacity': 1000000,
     },
     'storage_par_l_liquid_01_macro': {
         'max_hull': 653000,
+        'cargo_capacity': 1000000,
     },
     'storage_par_l_solid_01_macro': {
         'max_hull': 653000,
+        'cargo_capacity': 1000000,
     },
     'storage_par_m_container_01_macro': {
         'max_hull': 304000,
+        'cargo_capacity': 250000,
     },
     'storage_par_m_liquid_01_macro': {
         'max_hull': 304000,
+        'cargo_capacity': 500000,
     },
     'storage_par_m_solid_01_macro': {
         'max_hull': 304000,
+        'cargo_capacity': 500000,
     },
     'storage_par_s_container_01_macro': {
         'max_hull': 133000,
+        'cargo_capacity': 50000,
     },
     'storage_par_s_liquid_01_macro': {
         'max_hull': 133000,
+        'cargo_capacity': 100000,
     },
     'storage_par_s_solid_01_macro': {
         'max_hull': 133000,
+        'cargo_capacity': 100000,
     },
     'storage_tel_l_container_01_macro': {
         'max_hull': 531000,
+        'cargo_capacity': 1000000,
     },
     'storage_tel_l_liquid_01_macro': {
         'max_hull': 531000,
+        'cargo_capacity': 1000000,
     },
     'storage_tel_l_solid_01_macro': {
         'max_hull': 531000,
+        'cargo_capacity': 1000000,
     },
     'storage_tel_m_container_01_macro': {
         'max_hull': 259000,
+        'cargo_capacity': 250000,
     },
     'storage_tel_m_liquid_01_macro': {
         'max_hull': 259000,
+        'cargo_capacity': 500000,
     },
     'storage_tel_m_solid_01_macro': {
         'max_hull': 259000,
+        'cargo_capacity': 500000,
     },
     'storage_tel_s_container_01_macro': {
         'max_hull': 111000,
+        'cargo_capacity': 50000,
     },
     'storage_tel_s_liquid_01_macro': {
         'max_hull': 111000,
+        'cargo_capacity': 100000,
     },
     'storage_tel_s_solid_01_macro': {
         'max_hull': 111000,
+        'cargo_capacity': 100000,
     },
     'struct_arg_arc_01_macro': {
         'max_hull': 290000,

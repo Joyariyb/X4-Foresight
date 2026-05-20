@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: unai (192.168.3.112) on 2025-06-24 16:35:55-->
+<macros>
+  <macro name="scs_gen_asteroid_destructible_hatch_32_01_macro" class="detector">
+    <component ref="scs_gen_asteroid_destructible_hatch_32_01" />
+    <properties>
+      <identification name="{0,0,#'scs_gen_asteroid_destructible_hatch_32_01'}" />
+    </properties>
+  </macro>
+</macros>

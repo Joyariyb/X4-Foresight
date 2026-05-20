@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Markus (192.168.3.127) at 26.08.2019_13-26-56-->
+<macros>
+  <macro name="landmarks_par_monument_top_01_macro" class="destructible">
+    <component ref="landmarks_par_monument_top_01" />
+    <properties>
+      <identification name="{20104,30601}" description="{20104,30602}" />
+      <hull invulnerable="1" />
+    </properties>
+  </macro>
+</macros>

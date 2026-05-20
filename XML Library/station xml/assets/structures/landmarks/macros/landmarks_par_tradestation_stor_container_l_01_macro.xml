@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.62) at 24.06.2021_11-37-18-->
+<macros>
+  <macro name="landmarks_par_tradestation_stor_container_l_01_macro" class="destructible">
+    <component ref="landmarks_par_tradestation_stor_container_l_01" />
+    <properties>
+      <identification name="{20104,20601}" description="{20104,20602}" />
+      <build>
+        <sets>
+          <set ref="tradestation_paranid" />
+        </sets>
+      </build>
+      <explosiondamage value="1000" shield="5000" />
+      <hull max="100000" />
+      <secrecy level="1" />
+    </properties>
+  </macro>
+</macros>

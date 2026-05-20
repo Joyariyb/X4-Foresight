@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Lino (192.168.3.77) at 22.07.2021_12-05-15-->
+<macros>
+  <macro name="ware_inventory_agiheuristiccore_macro" class="object">
+    <component ref="ware_inventory_agiheuristiccore" />
+  </macro>
+</macros>

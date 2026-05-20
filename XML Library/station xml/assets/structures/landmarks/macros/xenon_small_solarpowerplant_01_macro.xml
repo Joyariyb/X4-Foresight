@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Florian (192.168.3.178) on 2022-08-04 15:42:21-->
+<macros>
+  <macro name="xenon_small_solarpowerplant_01_macro" class="station">
+    <component ref="xenon_small_solarpowerplant_01" />
+    <properties>
+      <identification icon="mapob_energy" hudicon="si_energy" />
+    </properties>
+    <connections>
+      <connection ref="ConnectionFor_dockarea_gen_m_inv_01_macro">
+        <macro ref="dockarea_gen_m_inv_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockarea_gen_s_inv_01_macro">
+        <macro ref="dockarea_gen_s_inv_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockarea_xen_m_station_01_macro">
+        <macro ref="dockarea_xen_m_station_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_xenon_small_station_01_base_macro">
+        <macro ref="xenon_small_station_01_base_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_xenon_small_station_01_solarpanel_01_macro">
+        <macro ref="xenon_small_station_01_solarpanel_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_xenon_small_station_01_solarpanel_01_macro1">
+        <macro ref="xenon_small_station_01_solarpanel_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_xenon_small_station_01_storage_01_macro">
+        <macro ref="xenon_small_station_01_storage_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_xenon_small_station_01_storage_01_macro1">
+        <macro ref="xenon_small_station_01_storage_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_xenon_small_station_01_storage_01_macro2">
+        <macro ref="xenon_small_station_01_storage_01_macro" connection="position" />
+      </connection>
+      <connection ref="connection_controlroom01">
+        <macro ref="control_room_macro" connection="connection01" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

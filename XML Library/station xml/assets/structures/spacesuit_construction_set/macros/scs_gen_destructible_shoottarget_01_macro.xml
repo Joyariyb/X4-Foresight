@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: nick (192.168.3.56) on 2024-02-22 15:42:40-->
+<macros>
+  <macro name="scs_gen_destructible_shoottarget_01_macro" class="destructible">
+    <component ref="scs_gen_destructible_shoottarget_01" />
+    <properties>
+      <identification name="{20109,15001}" />
+      <hull min="1" max="3" threshold="0.66" />
+      <autoaim allow="0" />
+    </properties>
+  </macro>
+</macros>

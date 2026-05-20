@@ -8,6 +8,18 @@ EXTRACTS DATA FROM .CAT FILES RELATING TO STATION HULL
 
 for /L %i in (1,1,9) do XRCatTool -in "C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\0%i.cat" -out "C:\Users\lenovo\Documents\GitHub\X4 Foresight\station xml" -include "structures.*macros.*_macro\.xml"
 
+EXTRACTS DATA FROM .CAT FILES FOR WARES
+for /L %i in (1,1,9) do XRCatTool -in "C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\0%i.cat" -out "C:\Users\lenovo\Documents\GitHub\X4 Foresight\station xml" -include "wares.*macros.*_macro\.xml"
+
+
+for /L %i in (1,1,9) do XRCatTool -in "C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\0%i.cat" -out "C:\Users\lenovo\Documents\GitHub\X4 Foresight\XML Library" -include "libraries/wares\.xml"
+
+for /L %i in (1,1,9) do XRCatTool -in "C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\0%i.cat" -out "C:\Users\lenovo\Documents\GitHub\X4 Foresight\XML Library" -include "libraries/macro\.xml"
+
+for /L %i in (1,1,9) do XRCatTool -in "C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\0%i.cat" -out "C:\Users\lenovo\Documents\GitHub\X4 Foresight\XML Library" -include "libraries/modules\.xml"
+
+for /L %i in (1,1,9) do XRCatTool -in "C:\Program Files (x86)\Steam\steamapps\common\X4 Foundations\0%i.cat" -out "C:\Users\lenovo\Documents\GitHub\X4 Foresight\XML Library" -include "libraries/mapdefaults\.xml"
+
 
 generate_station_stats.py
 =========================

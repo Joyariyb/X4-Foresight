@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Florian (192.168.3.178) on 2022-08-04 15:37:01-->
+<macros>
+  <macro name="station_gen_piratebase_base_01_macro" class="station">
+    <component ref="station_gen_piratebase_base_01" />
+    <properties>
+      <identification name="{20102,1501}" icon="mapob_piratestation" factionhqicon="mapob_piratestation_headquarter" hudicon="si_piratestation" />
+      <build>
+        <sets>
+          <set ref="piratebase" />
+        </sets>
+      </build>
+      <workforce max="150" />
+    </properties>
+    <connections>
+      <connection ref="controlroom">
+        <macro ref="control_room_macro" connection="connection01" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

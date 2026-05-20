@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.53) on 2024-11-18 15:23:47-->
+<macros>
+  <macro name="ship_xen_xl_mothership_01_a_macro" class="ship_xl">
+    <component ref="ship_xen_xl_mothership_01_a" />
+    <properties>
+      <identification name="{20101,72101}" makerrace="xenon" description="{20101,72111}" icon="ship_xl_battleship_01" />
+      <software>
+        <software ware="software_dockmk2" compatible="1" />
+        <software ware="software_flightassistmk1" default="1" />
+        <software ware="software_scannerlongrangemk1" default="1" />
+        <software ware="software_scannerlongrangemk2" compatible="1" />
+        <software ware="software_scannerobjectmk1" default="1" />
+        <software ware="software_scannerobjectmk2" compatible="1" />
+        <software ware="software_targetmk1" default="1" />
+        <software ware="software_trademk1" compatible="1" />
+      </software>
+      <jerk>
+        <forward accel="0.2" decel="0.8" ratio="3" />
+        <forward_boost accel="0.2" ratio="3" />
+        <forward_travel accel="0.2" decel="0.9" ratio="3" />
+        <strafe value="0.2" />
+        <angular value="0.2" />
+      </jerk>
+      <explosiondamage value="1500" shield="24000" />
+      <storage missile="0" unit="0" deployable="0" />
+      <hull max="1496000" />
+      <effects>
+        <explosion ref="finalexplosion_xenon_mothership_01" />
+      </effects>
+      <secrecy level="2" />
+      <steeringcurve>
+        <point position="1.01" value="1" />
+        <point position="1.2" value="0.9" />
+        <point position="1.6" value="0.8" />
+        <point position="2.1" value="0.45" />
+        <point position="2.4" value="0.28" />
+        <point position="2.7" value="0.2" />
+      </steeringcurve>
+      <purpose primary="fight" />
+      <people capacity="0" />
+      <physics mass="2796.027">
+        <inertia pitch="4396.068" yaw="4396.068" roll="3516.855" />
+        <drag forward="639.205" reverse="2556.821" horizontal="879.361" vertical="879.361" pitch="1133.285" yaw="1133.285" roll="1133.285" />
+      </physics>
+      <thruster tags="extralarge" />
+      <capture allow="0" />
+      <ship type="battleship" />
+    </properties>
+    <connections>
+      <connection ref="ConnectionForprops_xen_generator_01_macro">
+        <macro ref="props_xen_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForprops_xen_generator_01_macro#001">
+        <macro ref="props_xen_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForprops_xen_generator_01_macro#002">
+        <macro ref="props_xen_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForprops_xen_generator_01_macro#003">
+        <macro ref="props_xen_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForprops_xen_generator_01_macro#004">
+        <macro ref="props_xen_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForprops_xen_generator_01_macro#005">
+        <macro ref="props_xen_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForprops_xen_generator_01_macro#006">
+        <macro ref="props_xen_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForprops_xen_generator_01_macro#007">
+        <macro ref="props_xen_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForprops_xen_generator_01_macro#008">
+        <macro ref="props_xen_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForprops_xen_generator_01_macro#009">
+        <macro ref="props_xen_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForprops_xen_generator_01_macro#010">
+        <macro ref="props_xen_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForprops_xen_generator_01_macro#011">
+        <macro ref="props_xen_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForprops_xen_generator_01_macro#012">
+        <macro ref="props_xen_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForprops_xen_generator_01_macro#013">
+        <macro ref="props_xen_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForprops_xen_generator_01_macro#014">
+        <macro ref="props_xen_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForprops_xen_generator_01_macro#015">
+        <macro ref="props_xen_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForprops_xen_generator_01_macro#016">
+        <macro ref="props_xen_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForprops_xen_generator_01_macro#017">
+        <macro ref="props_xen_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForprops_xen_generator_01_macro#018">
+        <macro ref="props_xen_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForprops_xen_generator_01_macro#019">
+        <macro ref="props_xen_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForship_xen_xl_mothership_01_damagebody_01_macro">
+        <macro ref="ship_xen_xl_mothership_01_damagebody_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForship_xen_xl_mothership_01_part_01_macro">
+        <macro ref="ship_xen_xl_mothership_01_part_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForship_xen_xl_mothership_01_part_02_macro">
+        <macro ref="ship_xen_xl_mothership_01_part_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForship_xen_xl_mothership_01_part_03_macro">
+        <macro ref="ship_xen_xl_mothership_01_part_03_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForship_xen_xl_mothership_01_part_04_macro">
+        <macro ref="ship_xen_xl_mothership_01_part_04_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForship_xen_xl_mothership_01_part_05_macro">
+        <macro ref="ship_xen_xl_mothership_01_part_05_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForship_xen_xl_mothership_01_part_06_macro">
+        <macro ref="ship_xen_xl_mothership_01_part_06_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForship_xen_xl_mothership_01_part_06_macro#001">
+        <macro ref="ship_xen_xl_mothership_01_part_06_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForship_xen_xl_mothership_01_part_06_macro#002">
+        <macro ref="ship_xen_xl_mothership_01_part_06_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForship_xen_xl_mothership_01_part_06_macro#003">
+        <macro ref="ship_xen_xl_mothership_01_part_06_macro" connection="position" />
+      </connection>
+      <connection ref="con_cockpit_01">
+        <macro ref="cockpit_gen_invisible_01_macro" connection="ship" />
+      </connection>
+      <connection ref="con_engine_01">
+        <macro ref="engine_xen_xl_mothership_01_allround_mk1_macro" connection="con_engine_01" />
+      </connection>
+      <connection ref="con_shield_xl_01">
+        <macro ref="shield_xen_xl_mothership_01_mk1_macro" connection="con_shield" />
+      </connection>
+      <connection ref="con_shield_xl_02">
+        <macro ref="shield_xen_xl_mothership_01_mk1_macro" connection="con_shield" />
+      </connection>
+      <connection ref="con_shield_xl_03">
+        <macro ref="shield_xen_xl_mothership_01_mk1_macro" connection="con_shield" />
+      </connection>
+      <connection ref="con_shield_xl_04">
+        <macro ref="shield_xen_xl_mothership_01_mk1_macro" connection="con_shield" />
+      </connection>
+      <connection ref="con_turret_large_01">
+        <macro ref="turret_xen_l_plasma_01_mk1_story_macro" connection="con_turret" />
+      </connection>
+      <connection ref="con_turret_large_02">
+        <macro ref="turret_xen_l_plasma_01_mk1_story_macro" connection="con_turret" />
+      </connection>
+      <connection ref="con_turret_large_03">
+        <macro ref="turret_xen_l_plasma_01_mk1_story_macro" connection="con_turret" />
+      </connection>
+      <connection ref="con_turret_large_04">
+        <macro ref="turret_xen_l_plasma_01_mk1_story_macro" connection="con_turret" />
+      </connection>
+      <connection ref="con_turret_large_05">
+        <macro ref="turret_xen_l_plasma_01_mk1_story_macro" connection="con_turret" />
+      </connection>
+      <connection ref="con_turret_large_06">
+        <macro ref="turret_xen_l_plasma_01_mk1_story_macro" connection="con_turret" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

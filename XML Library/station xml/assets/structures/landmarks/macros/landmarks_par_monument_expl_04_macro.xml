@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Markus (192.168.3.77) at 30.03.2020_10-23-38-->
+<macros>
+  <macro name="landmarks_par_monument_expl_04_macro" class="object">
+    <component ref="landmarks_par_monument_expl_04" />
+    <properties>
+      <identification name="{20103,1201}" description="{20103,1202}" />
+    </properties>
+  </macro>
+</macros>

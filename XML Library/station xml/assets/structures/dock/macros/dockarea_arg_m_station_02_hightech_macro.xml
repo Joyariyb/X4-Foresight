@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Alexei (192.168.3.57) at 15.11.2021_11-56-45-->
+<macros>
+  <macro name="dockarea_arg_m_station_02_hightech_macro" class="dockarea">
+    <component ref="dockarea_arg_m_station_02_hightech" />
+    <properties>
+      <identification name="{20104,70601}" shortname="{20104,70603}" description="{20104,70602}" />
+      <build>
+        <sets>
+          <set ref="factory" />
+          <set ref="headquarters_player" />
+          <set ref="tradestation_argon" />
+          <set ref="tradestation_paranid" />
+          <set ref="tradestation_teladi" />
+          <set ref="piratebase" />
+        </sets>
+      </build>
+      <explosiondamage value="1000" shield="5000" />
+      <storage unit="15" />
+      <hull max="530000" />
+      <sounds>
+        <ambient ref="dockingbay_ambient_01" />
+      </sounds>
+      <sound_occlusion inside="0.2" outside="0.2" />
+    </properties>
+    <connections>
+      <connection ref="ConnectionFor_dockingbay_arg_m_01_hightech_macro">
+        <macro ref="dockingbay_arg_m_01_hightech_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_arg_m_01_hightech_macro1">
+        <macro ref="dockingbay_arg_m_01_hightech_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_arg_m_01_hightech_macro2">
+        <macro ref="dockingbay_arg_m_01_hightech_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_arg_s_01_hightech_macro">
+        <macro ref="dockingbay_arg_s_01_hightech_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_arg_s_01_hightech_macro1">
+        <macro ref="dockingbay_arg_s_01_hightech_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_arg_s_01_hightech_macro2">
+        <macro ref="dockingbay_arg_s_01_hightech_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_arg_s_01_hightech_macro3">
+        <macro ref="dockingbay_arg_s_01_hightech_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_arg_s_01_hightech_macro4">
+        <macro ref="dockingbay_arg_s_01_hightech_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_arg_s_01_hightech_macro5">
+        <macro ref="dockingbay_arg_s_01_hightech_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_room_arg_m_station_02_hightech_macro">
+        <macro ref="room_arg_m_station_02_hightech_macro" connection="position" />
+      </connection>
+      <connection ref="con_dock_xs_01">
+        <macro ref="dock_gen_xs_ship_01_macro" connection="Connection_component" />
+      </connection>
+      <connection ref="con_dock_xs_02">
+        <macro ref="dock_gen_xs_ship_01_macro" connection="Connection_component" />
+      </connection>
+      <connection ref="con_shipstorage_m_01">
+        <macro ref="shipstorage_gen_m_01_macro" connection="object" />
+      </connection>
+      <connection ref="con_shipstorage_s_01">
+        <macro ref="shipstorage_gen_s_01_macro" connection="object" />
+      </connection>
+      <connection ref="con_shipstorage_xs_01">
+        <macro ref="shipstorage_gen_xs_01_macro" connection="object" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

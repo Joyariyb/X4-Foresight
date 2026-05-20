@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: nick (192.168.3.53) on 2023-10-17 16:12:16-->
+<macros>
+  <macro name="scs_gen_prop_barrel_01_macro" class="object">
+    <component ref="scs_gen_prop_barrel_01" />
+    <properties>
+      <identification name="{20109,14701}" />
+    </properties>
+  </macro>
+</macros>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Matthias (192.168.3.149) at 01.06.2018_13-14-12-->
+<macros>
+  <macro name="radar_par_standard_01_macro" class="radar">
+    <component ref="radar_par_standard_01" />
+    <properties>
+      <identification unique="0" />
+      <hull max="400000" />
+      <secrecy level="3" />
+    </properties>
+  </macro>
+</macros>

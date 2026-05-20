@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Mighty Roger (192.168.3.104) at 08.12.2021_16-41-32-->
+<macros>
+  <macro name="landmarks_tel_prison_hangar_01_macro" class="destructible">
+    <component ref="landmarks_tel_prison_hangar_01" />
+    <properties>
+      <identification name="{20007, 3081}" />
+    </properties>
+    <connections>
+      <connection ref="ConnectionDoorControl1">
+        <macro ref="interactive_pir_doorcontrol_01_macro" connection="Connection01" />
+      </connection>
+      <connection ref="ConnectionDoorControl2">
+        <macro ref="interactive_pir_doorcontrol_01_macro" connection="Connection01" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

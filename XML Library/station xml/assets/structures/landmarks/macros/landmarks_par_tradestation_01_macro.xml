@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Florian (192.168.3.178) on 2022-08-04 15:33:26-->
+<macros>
+  <macro name="landmarks_par_tradestation_01_macro" class="station">
+    <component ref="landmarks_par_tradestation_01" />
+    <properties>
+      <identification name="{20102,1211}" icon="mapob_tradestation" factionhqicon="mapob_tradestation_headquarter" hudicon="si_tradestation" />
+      <hull max="100000" />
+    </properties>
+    <connections>
+      <connection ref="ConnectionFor_landmarks_par_tradestation_living_01_macro">
+        <macro ref="landmarks_par_tradestation_living_01_macro" connection="space" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_par_tradestation_living_02_macro">
+        <macro ref="landmarks_par_tradestation_living_02_macro" connection="space" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_par_tradestation_stor_solid_l_01_macro">
+        <macro ref="landmarks_par_tradestation_stor_container_l_01_macro" connection="space" />
+      </connection>
+      <connection ref="connection_controlroom01">
+        <macro ref="control_room_macro" connection="connection01" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

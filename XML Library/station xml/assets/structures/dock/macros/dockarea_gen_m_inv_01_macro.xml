@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Lino (192.168.3.140) at 09.03.2017_17-27-07-->
+<macros>
+  <macro name="dockarea_gen_m_inv_01_macro" class="dockarea">
+    <component ref="dockarea_gen_m_inv_01" />
+    <properties>
+      <identification unique="0" />
+      <hull integrated="1" />
+    </properties>
+    <connections>
+      <connection ref="ConnectionFor_dockingbay_gen_m_inv_macro">
+        <macro ref="dockingbay_gen_m_inv_macro" connection="position" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

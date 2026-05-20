@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.81) at 14.01.2020_10-49-14-->
+<macros>
+  <macro name="station_xen_factory_base_01_macro" class="station">
+    <component ref="station_xen_factory_base_01" />
+    <properties>
+      <identification name="{20102,1411}" />
+      <build>
+        <sets>
+          <set ref="factory_xenon" />
+        </sets>
+      </build>
+    </properties>
+    <connections>
+      <connection ref="controlroom">
+        <macro ref="control_room_macro" connection="Connection01" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

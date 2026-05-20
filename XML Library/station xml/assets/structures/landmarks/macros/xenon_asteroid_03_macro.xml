@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.51) at 17.06.2021_17-06-26-->
+<macros>
+  <macro name="xenon_asteroid_03_macro" class="defencemodule">
+    <component ref="xenon_asteroid_03" />
+    <properties>
+      <identification name="{20001,801}" hidden="1" />
+      <hull max="1000000" />
+      <effects>
+        <explosion ref="explosion_asteroid_a_l" />
+      </effects>
+    </properties>
+  </macro>
+</macros>

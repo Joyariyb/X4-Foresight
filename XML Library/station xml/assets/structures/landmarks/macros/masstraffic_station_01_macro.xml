@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Florian (192.168.3.178) on 2022-08-04 15:34:28-->
+<macros>
+  <macro name="masstraffic_station_01_macro" class="station">
+    <component ref="masstraffic_station_01" />
+    <properties>
+      <identification name="{20102,5011}" description="{20102,5012}" icon="mapob_poi" hudicon="si_poi" />
+    </properties>
+    <connections>
+      <connection ref="ConnectionFor_masstraffic_station_01_center_01_macro">
+        <macro ref="masstraffic_station_01_center_01_macro" connection="space" />
+      </connection>
+      <connection ref="ConnectionFor_props_adsigns_balloon_01">
+        <macro>
+          <component ref="props_adsigns_balloon_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_props_adsigns_balloon_011">
+        <macro>
+          <component ref="props_adsigns_balloon_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_props_adsigns_balloon_012">
+        <macro>
+          <component ref="props_adsigns_balloon_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_props_adsigns_balloon_013">
+        <macro>
+          <component ref="props_adsigns_balloon_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_props_adsigns_balloon_02">
+        <macro>
+          <component ref="props_adsigns_balloon_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_props_adsigns_balloon_021">
+        <macro>
+          <component ref="props_adsigns_balloon_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_props_adsigns_bt_ship_xl">
+        <macro>
+          <component ref="props_adsigns_bt_ship_xl" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_props_adsigns_bt_ship_xl1">
+        <macro>
+          <component ref="props_adsigns_bt_ship_xl" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_props_adsigns_bt_ship_xl2">
+        <macro>
+          <component ref="props_adsigns_bt_ship_xl" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_props_adsigns_bt_ship_xl3">
+        <macro>
+          <component ref="props_adsigns_bt_ship_xl" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_props_adsigns_holder_01">
+        <macro>
+          <component ref="props_adsigns_holder_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_props_adsigns_holder_011">
+        <macro>
+          <component ref="props_adsigns_holder_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="connection_controlroom01">
+        <macro ref="control_room_macro" connection="connection01" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

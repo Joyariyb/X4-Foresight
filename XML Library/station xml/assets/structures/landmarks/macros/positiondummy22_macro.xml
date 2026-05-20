@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Markus (192.168.3.78) at 05.07.2021_09-45-03-->
+<macros>
+  <macro name="positiondummy22_macro" class="destructible">
+    <component ref="positiondummy" />
+    <properties>
+      <identification name="{10002,606}" />
+    </properties>
+  </macro>
+</macros>

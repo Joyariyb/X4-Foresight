@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.63) at 06.01.2021_10-36-04-->
+<macros>
+  <macro name="landmarks_kha_hive_arm_01_macro" class="defencemodule">
+    <component ref="landmarks_kha_hive_arm_01" />
+    <properties>
+      <identification name="{20104,102401}" description="{20104,102402}" />
+      <explosioneffect strength="20000" />
+      <hull invulnerable="0" max="3500000" />
+      <effects>
+        <explosion ref="ship_explosion_generator_khastation" />
+      </effects>
+      <loadouts>
+        <loadout id="default">
+          <groups>
+            <shields macro="shield_kha_m_standard_02_mk1_macro" path=".." group="group01" exact="3" />
+            <shields macro="shield_kha_m_standard_02_mk1_macro" path=".." group="group02" exact="3" />
+            <shields macro="shield_kha_m_standard_02_mk1_macro" path=".." group="group03" exact="3" />
+            <turrets macro="turret_kha_m_beam_01_mk1_macro" path=".." group="group01" exact="3" />
+            <turrets macro="turret_kha_m_beam_01_mk1_macro" path=".." group="group02" exact="3" />
+            <turrets macro="turret_kha_m_beam_01_mk1_macro" path=".." group="group03" exact="3" />
+          </groups>
+        </loadout>
+      </loadouts>
+    </properties>
+  </macro>
+</macros>

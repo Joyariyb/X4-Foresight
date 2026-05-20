@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Mighty Roger (192.168.3.67) on 2023-01-11 09:14:29-->
+<macros>
+  <macro name="landmarks_kha_hive_01_macro" class="station">
+    <component ref="landmarks_kha_hive_01" />
+    <properties>
+      <identification name="{20102,5021}" description="{20102,5022}" icon="mapob_hive" hudicon="si_hive" />
+      <build buildstorage="0" />
+      <hull invulnerable="0" />
+    </properties>
+    <connections>
+      <connection ref="ConnectionFor_landmarks_kha_hive_arm_01_macro">
+        <macro ref="landmarks_kha_hive_arm_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_kha_hive_arm_01_macro1">
+        <macro ref="landmarks_kha_hive_arm_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_kha_hive_arm_01_macro2">
+        <macro ref="landmarks_kha_hive_arm_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_kha_hive_arm_01_macro3">
+        <macro ref="landmarks_kha_hive_arm_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_kha_hive_arm_01_macro4">
+        <macro ref="landmarks_kha_hive_arm_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_kha_hive_arm_01_macro5">
+        <macro ref="landmarks_kha_hive_arm_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_kha_hive_cluster_01_macro">
+        <macro ref="landmarks_kha_hive_cluster_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_kha_hive_cluster_01_macro1">
+        <macro ref="landmarks_kha_hive_cluster_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_kha_hive_cluster_01_macro2">
+        <macro ref="landmarks_kha_hive_cluster_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_kha_hive_cluster_01_macro3">
+        <macro ref="landmarks_kha_hive_cluster_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_kha_hive_cluster_01_macro4">
+        <macro ref="landmarks_kha_hive_cluster_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_kha_hive_cluster_01_macro5">
+        <macro ref="landmarks_kha_hive_cluster_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_kha_hive_cluster_01_macro6">
+        <macro ref="landmarks_kha_hive_cluster_01_macro" connection="position" />
+      </connection>
+      <connection ref="connection_controlroom01">
+        <macro ref="control_room_macro" connection="connection01" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

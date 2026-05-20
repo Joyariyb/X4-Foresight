@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: aj (192.168.3.55) on 2025-01-15 09:37:29-->
+<macros>
+  <macro name="ship_pir_s_trans_condensate_01_a_macro" class="ship_s">
+    <component ref="ship_pir_s_trans_container_01" />
+    <properties>
+      <identification name="{20101,81903}" makerrace="argon" description="{20101,81913}" icon="ship_s_courier_01" />
+      <software>
+        <software ware="software_dockmk2" compatible="1" />
+        <software ware="software_flightassistmk1" default="1" />
+        <software ware="software_scannerlongrangemk1" default="1" />
+        <software ware="software_scannerlongrangemk2" compatible="1" />
+        <software ware="software_scannerobjectmk1" default="1" />
+        <software ware="software_scannerobjectmk2" compatible="1" />
+        <software ware="software_targetmk1" compatible="1" />
+        <software ware="software_trademk1" compatible="1" />
+      </software>
+      <jerk>
+        <forward accel="0.5" decel="0.8" ratio="3" />
+        <forward_boost accel="0.4" ratio="3" />
+        <forward_travel accel="0.4" decel="0.9" ratio="3" />
+        <strafe value="0.7" />
+        <angular value="0.7" />
+      </jerk>
+      <storage missile="10" />
+      <hull max="2200" />
+      <secrecy level="1" />
+      <steeringcurve>
+        <point position="1.01" value="1" />
+        <point position="1.15" value="0.65" />
+        <point position="1.4" value="0.4" />
+        <point position="1.8" value="0.27" />
+        <point position="2.25" value="0.1" />
+      </steeringcurve>
+      <purpose primary="trade" />
+      <people capacity="4" />
+      <physics mass="19.407">
+        <inertia pitch="5.235" yaw="5.235" roll="4.188" />
+        <drag forward="5.679" reverse="22.82" horizontal="6.7" vertical="6.7" pitch="6.6" yaw="7.8" roll="5.8" />
+        <accfactors horizontal="0.9" vertical="0.9" />
+      </physics>
+      <thruster tags="small" />
+      <ship type="courier" />
+    </properties>
+    <connections>
+      <connection ref="con_cockpit">
+        <macro ref="cockpit_gen_virtual_01_macro" connection="ship" />
+      </connection>
+      <connection ref="con_dock_xs">
+        <macro ref="dock_gen_xs_ship_01_macro" connection="Connection_component" />
+      </connection>
+      <connection ref="con_shipstorage_xs_01">
+        <macro ref="shipstorage_gen_xs_01_macro" connection="object" />
+      </connection>
+      <connection ref="con_storage01">
+        <macro ref="storage_pir_s_trans_condensate_01_a_macro" connection="ShipConnection" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.51) at 17.06.2021_17-06-25-->
+<macros>
+  <macro name="xenon_small_station_01_base_macro" class="defencemodule">
+    <component ref="xenon_small_station_01_base" />
+    <properties>
+      <identification name="{20104,101801}" makerrace="xenon" description="{20104,101802}" />
+      <build>
+        <sets>
+          <set ref="defence_xenon" />
+          <set ref="factory_xenon" />
+          <set ref="shipyard_xenon" />
+        </sets>
+      </build>
+      <explosiondamage value="3000" shield="15000" />
+      <storage unit="25" />
+      <hull max="3300000" />
+      <secrecy level="3" />
+    </properties>
+  </macro>
+</macros>

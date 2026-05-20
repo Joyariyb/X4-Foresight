@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.68) at 19.05.2021_16-57-36-->
+<macros>
+  <macro name="struct_gen_venturervertical_02_macro" class="connectionmodule">
+    <component ref="struct_gen_venturervertical_02" />
+    <properties>
+      <identification name="{20104,53401}" shortname="{20104,53403}" description="{20104,53402}" type="moduletypes_venture" />
+      <build>
+        <sets>
+          <set ref="factory" />
+          <set ref="headquarters_player" />
+        </sets>
+      </build>
+      <hull max="143000" />
+    </properties>
+  </macro>
+</macros>

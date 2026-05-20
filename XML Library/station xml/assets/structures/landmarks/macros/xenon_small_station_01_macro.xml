@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Florian (192.168.3.178) on 2022-08-04 15:48:09-->
+<macros>
+  <macro name="xenon_small_station_01_macro" class="station">
+    <component ref="xenon_small_station_01" />
+    <properties>
+      <identification name="{20102,1431}" icon="mapob_factory" hudicon="si_factory" />
+    </properties>
+    <connections>
+      <connection ref="ConnectionFor_xenon_small_station_01_base_macro">
+        <macro ref="xenon_small_station_01_base_macro" connection="position" />
+      </connection>
+      <connection ref="connection_controlroom01">
+        <macro ref="control_room_macro" connection="connection01" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

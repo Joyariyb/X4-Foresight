@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.55) on 2023-12-22 15:17:44-->
+<macros>
+  <macro name="buildstorage_gen_base_01_macro" class="buildstorage">
+    <component ref="buildstorage_gen_base_01" />
+    <properties>
+      <identification name="{20102,5031}" icon="mapob_buildstorage" hudicon="si_buildstorage" />
+      <hull invulnerable="1" />
+      <effects>
+        <explosion ref="explosion_m_02" />
+      </effects>
+    </properties>
+    <connections>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="connection_controlroom01">
+        <macro ref="control_room_macro" connection="connection01" />
+      </connection>
+      <connection ref="con_buildmodule01">
+        <macro ref="buildmodule_gen_stations_01_macro" connection="object" />
+      </connection>
+      <connection ref="con_dock_sm_001">
+        <macro ref="dockingbay_gen_sm_buildstorage_01_macro" connection="con_component01" />
+      </connection>
+      <connection ref="con_dock_sm_002">
+        <macro ref="dockingbay_gen_sm_buildstorage_01_macro" connection="con_component01" />
+      </connection>
+      <connection ref="con_storage01">
+        <macro ref="storage_gen_buildstorage_01_macro" connection="con_storage" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

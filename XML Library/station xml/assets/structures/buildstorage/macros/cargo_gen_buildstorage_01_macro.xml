@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.81) at 15.06.2018_13-08-10-->
+<macros>
+  <macro name="cargo_gen_buildstorage_01_macro" class="cargobay">
+    <component ref="cargo_gen_buildstorage_01" />
+    <properties>
+      <identification unique="0" />
+      <hull max="2500" />
+    </properties>
+  </macro>
+</macros>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Lorrainer (192.168.3.133) at 10.08.2018_15-13-20-->
+<macros>
+  <macro name="dockingbay_gen_sm_venturer_01_macro" class="dockingbay">
+    <component ref="dockingbay_gen_sm_venturer_01" />
+    <properties>
+      <identification name="{20104,79701}" description="{20104,79702}" unique="0" />
+      <dock external="1" allowbuild="0" allowtrade="0" ventureronly="1" uselandinggear="0" />
+      <room walkable="0" />
+      <docksize tags="dock_s dock_m" />
+    </properties>
+  </macro>
+</macros>

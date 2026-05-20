@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.68) at 19.05.2021_16-57-24-->
+<macros>
+  <macro name="struct_gen_venturercross_01_macro" class="connectionmodule">
+    <component ref="struct_gen_venturercross_01" />
+    <properties>
+      <identification name="{20104,53201}" shortname="{20104,53203}" description="{20104,53202}" type="moduletypes_venture" />
+      <build>
+        <sets>
+          <set ref="factory" />
+          <set ref="headquarters_player" />
+        </sets>
+      </build>
+      <hull max="120000" />
+    </properties>
+  </macro>
+</macros>

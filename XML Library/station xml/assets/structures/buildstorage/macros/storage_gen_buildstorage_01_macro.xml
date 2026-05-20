@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.81) on 2024-01-02 14:29:57-->
+<macros>
+  <macro name="storage_gen_buildstorage_01_macro" class="storage">
+    <component ref="storage_gen_buildstorage_01" />
+    <properties>
+      <cargo max="2000000000" tags="container liquid solid" />
+      <hull integrated="1" />
+      <secrecy level="-1" />
+    </properties>
+    <connections>
+      <connection ref="con_cargobay_001">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_002">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_003">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_004">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_005">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_006">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_007">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_008">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_009">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_010">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_011">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_012">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_013">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_014">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_015">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_016">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_017">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_018">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_019">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_020">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_021">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_022">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_023">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_024">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_025">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_026">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_027">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_028">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_029">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_030">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_031">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_032">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_033">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_034">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_035">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_036">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_037">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_038">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_039">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_040">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_041">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+      <connection ref="con_cargobay_042">
+        <macro ref="cargo_gen_buildstorage_01_macro" connection="con_cargobay_001" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Markus (192.168.3.127) at 11.09.2019_16-40-18-->
+<macros>
+  <macro name="landmarks_par_monument_expldummy_01_macro" class="object">
+    <component ref="landmarks_par_monument_expldummy_01" />
+    <properties>
+      <explosioneffect strength="5000" />
+      <effects>
+        <explosion ref="pm_surfaceexplosions_l" />
+      </effects>
+    </properties>
+  </macro>
+</macros>

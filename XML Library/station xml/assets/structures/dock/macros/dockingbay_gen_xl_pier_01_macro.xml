@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Matthias (192.168.3.144) at 09.05.2019_13-52-34-->
+<macros>
+  <macro name="dockingbay_gen_xl_pier_01_macro" class="dockingbay">
+    <component ref="dockingbay_gen_xl_pier_01" />
+    <properties>
+      <identification name="{20104,79701}" description="{20104,79702}" />
+      <dock external="1" allowbuild="0" uselandinggear="0" />
+      <undock rotate="1" />
+      <room walkable="0" />
+      <docksize tags="dock_l dock_xl" />
+    </properties>
+  </macro>
+</macros>

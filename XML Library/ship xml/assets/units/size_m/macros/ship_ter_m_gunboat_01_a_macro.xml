@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Ketraar (192.168.3.66) on 2025-06-11 10:49:21-->
+<macros>
+  <macro name="ship_ter_m_gunboat_01_a_macro" class="ship_m">
+    <component ref="ship_ter_m_gunboat_01" />
+    <properties>
+      <identification name="{20101,61601}" basename="{20101,61601}" makerrace="terran" description="{20101,61611}" icon="ship_m_gunboat_01" />
+      <software>
+        <software ware="software_dockmk2" compatible="1" />
+        <software ware="software_flightassistmk1" default="1" />
+        <software ware="software_scannerlongrangemk1" default="1" />
+        <software ware="software_scannerlongrangemk2" compatible="1" />
+        <software ware="software_scannerobjectmk1" default="1" />
+        <software ware="software_scannerobjectmk2" compatible="1" />
+        <software ware="software_targetmk1" default="1" />
+        <software ware="software_trademk1" compatible="1" />
+      </software>
+      <jerk>
+        <forward accel="0.4" decel="0.8" ratio="3" />
+        <forward_boost accel="0.3" ratio="3" />
+        <forward_travel accel="0.3" decel="0.9" ratio="3" />
+        <strafe value="0.7" />
+        <angular value="0.5" />
+      </jerk>
+      <explosiondamage value="500" shield="2500" />
+      <storage missile="40" />
+      <hull max="13000" />
+      <secrecy level="2" />
+      <steeringcurve>
+        <point position="1.01" value="1" />
+        <point position="1.15" value="0.82" />
+        <point position="1.6" value="0.55" />
+        <point position="2" value="0.32" />
+        <point position="2.5" value="0.18" />
+        <point position="2.8" value="0.13" />
+      </steeringcurve>
+      <purpose primary="fight" />
+      <people capacity="8" />
+      <sounds>
+        <shipdetail ref="shipdetail_ship_m_03" />
+      </sounds>
+      <physics mass="34.134">
+        <inertia pitch="7.361" yaw="7.361" roll="5.889" />
+        <drag forward="9.103" reverse="36.411" horizontal="11.877" vertical="11.877" pitch="11.034" yaw="11.034" roll="11.034" />
+        <accfactors reverse="0.9" horizontal="1.25" vertical="1.25" />
+      </physics>
+      <thruster tags="medium" />
+      <ship type="gunboat" prestige="20" />
+      <sound_occlusion inside="0.4" />
+    </properties>
+    <connections>
+      <connection ref="con_cockpit">
+        <macro ref="cockpit_gen_virtual_01_macro" connection="ship" />
+      </connection>
+      <connection ref="con_dock_xs">
+        <macro ref="dock_gen_xs_ship_01_macro" connection="Connection_component" />
+      </connection>
+      <connection ref="con_shipstorage_xs_01">
+        <macro ref="shipstorage_gen_xs_01_macro" connection="object" />
+      </connection>
+      <connection ref="con_storage01">
+        <macro ref="storage_ter_m_gunboat_01_a_macro" connection="ShipConnection" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

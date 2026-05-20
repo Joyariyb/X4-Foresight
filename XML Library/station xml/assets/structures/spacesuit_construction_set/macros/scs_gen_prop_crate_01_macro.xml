@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Matthias (192.168.3.111) on 2023-09-29 10:30:42-->
+<macros>
+  <macro name="scs_gen_prop_crate_01_macro" class="object">
+    <component ref="scs_gen_prop_crate_01" />
+    <properties>
+      <identification name="{29109,1301}" />
+    </properties>
+  </macro>
+</macros>

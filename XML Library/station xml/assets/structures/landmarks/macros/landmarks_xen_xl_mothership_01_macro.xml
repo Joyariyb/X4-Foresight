@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: nick (192.168.3.54) on 2024-01-08 16:39:14-->
+<macros>
+  <macro name="landmarks_xen_xl_mothership_01_macro" class="object">
+    <component ref="landmarks_xen_xl_mothership_01" />
+    <properties>
+      <identification name="{20109,5301}" landmark="1" icon="mapob_poi" />
+      <hull invulnerable="1" />
+    </properties>
+  </macro>
+</macros>

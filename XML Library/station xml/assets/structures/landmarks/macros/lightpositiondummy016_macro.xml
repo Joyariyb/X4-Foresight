@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Markus (192.168.3.60) at 04.09.2020_11-01-12-->
+<macros>
+  <macro name="lightpositiondummy016_macro" class="destructible">
+    <component ref="positiondummy" />
+  </macro>
+</macros>

@@ -69,6 +69,144 @@ WARE_NAMES = {
 }
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  WARE VOLUMES  (m³ per unit)
+#  Sourced directly from libraries/wares.xml (<ware volume="..."> attribute).
+#  Used to convert ware amounts from station <cargo> blocks into m³ for fill %.
+#  Wares not listed here default to 1 m³/unit in station_scanner.py.
+# ─────────────────────────────────────────────────────────────────────────────
+
+WARE_VOLUME: dict[str, float] = {
+    # Solid (raw resources)
+    "ice":                      8.0,
+    "nividium":                10.0,
+    "ore":                     10.0,
+    "rawscrap":                10.0,
+    "scrapmetal":              10.0,
+    "silicon":                 10.0,
+    # Liquid (gases)
+    "helium":                   6.0,
+    "hydrogen":                 6.0,
+    "methane":                  6.0,
+    # Container — refined materials
+    "energycells":              1.0,
+    "antimattercells":         18.0,
+    "graphene":                20.0,
+    "refinedmetals":           14.0,
+    "siliconwafers":           18.0,
+    "superfluidcoolant":       16.0,
+    "water":                    6.0,
+    # Container — manufactured components
+    "advancedcomposites":      32.0,
+    "advancedelectronics":     30.0,
+    "antimatterconverters":    10.0,
+    "claytronics":             24.0,
+    "dronecomponents":         30.0,
+    "engineparts":             15.0,
+    "fieldcoils":              15.0,
+    "hullparts":               12.0,
+    "microchips":              22.0,
+    "missilecomponents":        2.0,
+    "nividiumgems":             2.0,
+    "plasmaconductors":        32.0,
+    "quantumtubes":            22.0,
+    "scanningarrays":          38.0,
+    "shieldcomponents":        10.0,
+    "smartchips":               2.0,
+    "teladianium":             16.0,
+    "turretcomponents":        20.0,
+    "weaponcomponents":        20.0,
+    # Container — food and faction goods
+    "foodrations":              1.0,
+    "majadust":                 6.0,
+    "majasnails":               6.0,
+    "meat":                     6.0,
+    "medicalsupplies":          2.0,
+    "nostropoil":               1.0,
+    "sojabeans":                5.0,
+    "sojahusk":                 1.0,
+    "spacefuel":                2.0,
+    "spaceweed":                3.0,
+    "spices":                   3.0,
+    "sunriseflowers":           5.0,
+    "swampplant":               6.0,
+    "wheat":                    4.0,
+}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  WARE TRANSPORT TYPE  (container / solid / liquid)
+#  Sourced from libraries/wares.xml <ware transport="..."> attribute.
+#  Used in station_scanner.py to attribute trade reservation amounts to the
+#  correct storage type when computing reservation-adjusted fill percentages.
+# ─────────────────────────────────────────────────────────────────────────────
+
+WARE_TRANSPORT: dict[str, str] = {
+    # Solid — raw materials loaded into solid storage bays
+    "ice":                         "solid",
+    "nividium":                    "solid",
+    "ore":                         "solid",
+    "rawscrap":                    "solid",
+    "scrapmetal":                  "solid",
+    "silicon":                     "solid",
+    # Liquid — gases stored in pressurised tanks
+    "helium":                      "liquid",
+    "hydrogen":                    "liquid",
+    "methane":                     "liquid",
+    "water":                       "liquid",
+    # Container — refined materials
+    "energycells":                 "container",
+    "antimattercells":             "container",
+    "graphene":                    "container",
+    "refinedmetals":               "container",
+    "siliconwafers":               "container",
+    "superfluidcoolant":           "container",
+    # Container — manufactured components
+    "advancedcomposites":          "container",
+    "advancedelectronics":         "container",
+    "antimatterconverters":        "container",
+    "claytronics":                 "container",
+    "computronicsubstrate":        "container",
+    "dronecomponents":             "container",
+    "engineparts":                 "container",
+    "fieldcoils":                  "container",
+    "hullparts":                   "container",
+    "metallicmicrolattice":        "container",
+    "microchips":                  "container",
+    "missilecomponents":           "container",
+    "nividiumgems":                "container",
+    "plasmaconductors":            "container",
+    "podcontrolsystems":           "container",
+    "protectivecoating":           "container",
+    "quantumtubes":                "container",
+    "redundantcoolingsystems":     "container",
+    "scanningarrays":              "container",
+    "shieldcomponents":            "container",
+    "siliconcarbidemicrolattice":  "container",
+    "smartchips":                  "container",
+    "teladianium":                 "container",
+    "turretcomponents":            "container",
+    "weaponcomponents":            "container",
+    # Container — food, consumables, faction goods
+    "foodrations":                 "container",
+    "hallucinogenics":             "container",
+    "majadust":                    "container",
+    "majasnails":                  "container",
+    "meat":                        "container",
+    "medicalsupplies":             "container",
+    "nostropoil":                  "container",
+    "sojabeans":                   "container",
+    "sojahusk":                    "container",
+    "spacefuel":                   "container",
+    "spaceweed":                   "container",
+    "spices":                      "container",
+    "stimulants":                  "container",
+    "sunriseflowers":              "container",
+    "swampplant":                  "container",
+    "wheat":                       "container",
+}
+
+
 def format_wares(overviewgraphs: str) -> str:
     """
     LEGACY FUNCTION — no longer called by the main scanner.

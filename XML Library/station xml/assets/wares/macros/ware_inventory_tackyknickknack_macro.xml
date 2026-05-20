@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Ketraar (192.168.3.55) at 28.07.2021_10-35-30-->
+<macros>
+  <macro name="ware_inventory_tackyknickknack_macro" class="object">
+    <component ref="ware_inventory_tackyknickknack" />
+  </macro>
+</macros>

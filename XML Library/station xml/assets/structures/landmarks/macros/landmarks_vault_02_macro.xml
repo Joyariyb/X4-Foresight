@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Owen (192.168.3.57) on 2023-08-25 12:42:22-->
+<macros>
+  <macro name="landmarks_vault_02_macro" class="datavault" alias="landmarks_vault_01_macro">
+    <component ref="landmarks_vault_02" />
+    <properties>
+      <identification name="{20109,8901}" datavault="1" icon="mapob_vault_closed" />
+      <hull min="100" max="1500" />
+      <effects>
+        <longrangescan ref="scfx_result_special_01" />
+      </effects>
+      <longrangescan minlevel="1" />
+    </properties>
+    <connections>
+      <connection ref="Connection_pickup">
+        <macro ref="sm_gen_wares_exploration_02_b_macro" connection="Connection01" />
+      </connection>
+      <connection ref="Connection_trigger">
+        <macro ref="interactive_repairpanel_01_macro" connection="Connection01" />
+      </connection>
+      <connection ref="Connection_trigger002">
+        <macro ref="interactive_repairpanel_01_macro" connection="Connection01" />
+      </connection>
+      <connection ref="Connection_trigger003">
+        <macro ref="interactive_repairpanel_01_macro" connection="Connection01" />
+      </connection>
+      <connection ref="Connection_trigger004">
+        <macro ref="interactive_repairpanel_01_macro" connection="Connection01" />
+      </connection>
+      <connection ref="Connection_trigger005">
+        <macro ref="interactive_repairpanel_01_macro" connection="Connection01" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

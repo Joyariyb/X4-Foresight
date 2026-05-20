@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Markus (192.168.3.78) at 09.09.2020_11-33-55-->
+<macros>
+  <macro name="explosion_pos_dummy_macro" class="destructible">
+    <component ref="positiondummy" />
+  </macro>
+</macros>

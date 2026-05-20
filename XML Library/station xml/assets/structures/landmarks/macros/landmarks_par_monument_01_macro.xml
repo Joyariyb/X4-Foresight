@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.61) at 21.03.2022_14-50-54-->
+<macros>
+  <macro name="landmarks_par_monument_01_macro" class="object">
+    <component ref="landmarks_par_monument_01" />
+    <properties>
+      <identification name="{20103,1201}" description="{20103,1202}" landmark="1" icon="mapob_poi" />
+      <hull min="100" max="10000" />
+    </properties>
+    <connections>
+      <connection ref="ConnectionFor_landmarks_par_monument_center_01_macro">
+        <macro ref="landmarks_par_monument_center_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_par_monument_clamp_01_macro">
+        <macro ref="landmarks_par_monument_clamp_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_par_monument_clamp_01_macro1">
+        <macro ref="landmarks_par_monument_clamp_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_par_monument_clamp_01_macro2">
+        <macro ref="landmarks_par_monument_clamp_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_par_monument_clamp_01_macro3">
+        <macro ref="landmarks_par_monument_clamp_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_par_monument_clamp_01_macro4">
+        <macro ref="landmarks_par_monument_clamp_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_par_monument_clamp_01_macro5">
+        <macro ref="landmarks_par_monument_clamp_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_par_monument_clamp_01_macro6">
+        <macro ref="landmarks_par_monument_clamp_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_par_monument_clamp_01_macro7">
+        <macro ref="landmarks_par_monument_clamp_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_par_monument_core_01_macro">
+        <macro ref="landmarks_par_monument_core_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_par_monument_core_02_macro">
+        <macro ref="landmarks_par_monument_core_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_par_monument_top_01_macro">
+        <macro ref="landmarks_par_monument_top_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_par_tradestation_stor_container_l_01_macro">
+        <macro ref="landmarks_par_tradestation_stor_container_l_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_par_elder_frozen_01_macro">
+        <macro ref="par_elder_frozen_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_par_elder_frozen_01_macro1">
+        <macro ref="par_elder_frozen_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_par_elder_frozen_01_macro2">
+        <macro ref="par_elder_frozen_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_par_elder_frozen_01_macro3">
+        <macro ref="par_elder_frozen_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_par_elder_frozen_01_macro4">
+        <macro ref="par_elder_frozen_01_macro" connection="position" />
+      </connection>
+      <connection ref="connection_controlroom01">
+        <macro ref="control_room_macro" connection="connection01" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

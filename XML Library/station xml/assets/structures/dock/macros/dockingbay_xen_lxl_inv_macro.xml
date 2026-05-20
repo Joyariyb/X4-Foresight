@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.81) on 2024-04-17 10:49:01-->
+<macros>
+  <macro name="dockingbay_xen_lxl_inv_macro" class="dockingbay" ref="dockingbay_gen_xl_inv_macro">
+    <component ref="dockingbay_gen_xl_inv" />
+    <properties>
+      <dock external="1" allowtrade="0" uselandinggear="0" />
+      <undock rotate="0" />
+      <room walkable="0" />
+      <docksize tags="dock_l dock_xl" />
+    </properties>
+  </macro>
+</macros>

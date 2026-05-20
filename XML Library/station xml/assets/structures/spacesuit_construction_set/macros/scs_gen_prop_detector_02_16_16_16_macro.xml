@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Matthias (192.168.3.175) on 2024-03-22 17:36:50-->
+<macros>
+  <macro name="scs_gen_prop_detector_02_16_16_16_macro" class="detector">
+    <component ref="scs_gen_prop_detector_02_16_16_16" />
+    <properties>
+      <identification name="{20109,15701}" />
+    </properties>
+  </macro>
+</macros>

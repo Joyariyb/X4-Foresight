@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: nick (192.168.3.68) on 2024-12-04 15:10:49-->
+<macros>
+  <macro name="radar_arg_dish_01_macro" class="radar">
+    <component ref="radar_arg_dish_01" />
+    <properties>
+      <identification name="{20104,150101}" shortname="{20104,150103}" description="{20104,150102}" />
+      <build>
+        <sets>
+          <set ref="factory" />
+          <set ref="headquarters_player" />
+        </sets>
+      </build>
+      <explosiondamage value="1000" shield="5000" />
+      <radar range="215000" />
+      <hull max="110000" />
+      <secrecy level="2" />
+    </properties>
+  </macro>
+</macros>

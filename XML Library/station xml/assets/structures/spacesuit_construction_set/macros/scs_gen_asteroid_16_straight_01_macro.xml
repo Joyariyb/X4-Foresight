@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: nick (192.168.3.58) on 2025-06-13 11:27:33-->
+<macros>
+  <macro name="scs_gen_asteroid_16_straight_01_macro" class="destructible">
+    <component ref="scs_gen_asteroid_16_straight_01" />
+  </macro>
+</macros>

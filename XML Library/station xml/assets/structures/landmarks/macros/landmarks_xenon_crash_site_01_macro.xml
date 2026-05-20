@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Simon (192.168.3.112) at 26.11.2014_10-19-52-->
+<macros>
+  <macro name="landmarks_xenon_crash_site_01_macro" class="object">
+    <component ref="landmarks_xenon_crash_site_01" />
+    <properties>
+      <identification name="{20103,901}" description="{20103,902}" unique="0" />
+      <hull invulnerable="1" />
+    </properties>
+    <connections>
+      <connection ref="ConnectionFor_env_ast_niv_xl_01_macro">
+        <macro ref="env_ast_niv_xl_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_debris_xl_04_macro">
+        <macro ref="env_debris_debris_xl_04_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_debris_xl_05_macro">
+        <macro ref="env_debris_debris_xl_05_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_debris_xl_06_macro">
+        <macro ref="env_debris_debris_xl_06_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_debris_xl_08_macro">
+        <macro ref="env_debris_debris_xl_08_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_teladi_xl_01_macro">
+        <macro ref="env_debris_teladi_xl_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_teladi_xl_01_macro1">
+        <macro ref="env_debris_teladi_xl_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_teladi_xl_01_macro2">
+        <macro ref="env_debris_teladi_xl_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_teladi_xl_01_macro3">
+        <macro ref="env_debris_teladi_xl_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_teladi_xl_01_macro4">
+        <macro ref="env_debris_teladi_xl_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_teladi_xl_01_macro5">
+        <macro ref="env_debris_teladi_xl_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_teladi_xl_02_macro">
+        <macro ref="env_debris_teladi_xl_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_teladi_xl_02_macro1">
+        <macro ref="env_debris_teladi_xl_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_teladi_xl_02_macro2">
+        <macro ref="env_debris_teladi_xl_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_teladi_xl_02_macro3">
+        <macro ref="env_debris_teladi_xl_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_teladi_xl_02_macro4">
+        <macro ref="env_debris_teladi_xl_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_teladi_xl_03_macro">
+        <macro ref="env_debris_teladi_xl_03_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_teladi_xl_03_macro1">
+        <macro ref="env_debris_teladi_xl_03_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_teladi_xl_03_macro2">
+        <macro ref="env_debris_teladi_xl_03_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_teladi_xl_03_macro3">
+        <macro ref="env_debris_teladi_xl_03_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_teladi_xl_03_macro4">
+        <macro ref="env_debris_teladi_xl_03_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_teladi_xl_03_macro5">
+        <macro ref="env_debris_teladi_xl_03_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_teladi_xl_04_macro">
+        <macro ref="env_debris_teladi_xl_04_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_teladi_xl_04_macro1">
+        <macro ref="env_debris_teladi_xl_04_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_teladi_xl_04_macro2">
+        <macro ref="env_debris_teladi_xl_04_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_xenon_xl_01_macro">
+        <macro ref="env_debris_xenon_xl_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_xenon_xl_02_macro">
+        <macro ref="env_debris_xenon_xl_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_xenon_xl_03_macro">
+        <macro ref="env_debris_xenon_xl_03_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_env_debris_xenon_xl_04_macro">
+        <macro ref="env_debris_xenon_xl_04_macro" connection="position" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

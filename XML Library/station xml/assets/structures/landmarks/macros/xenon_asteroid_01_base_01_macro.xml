@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Markus (192.168.3.65) on 2023-01-09 10:05:23-->
+<macros>
+  <macro name="xenon_asteroid_01_base_01_macro" class="station">
+    <component ref="xenon_asteroid_01_base_01" />
+    <properties>
+      <identification name="{20102,1431}" icon="mapob_poi" hudicon="si_poi" />
+    </properties>
+    <connections>
+      <connection ref="ConnectionFor_xenon_asteroid_01_part_01_macro">
+        <macro ref="xenon_asteroid_01_part_01_macro" connection="space" />
+      </connection>
+      <connection ref="ConnectionFor_xenon_asteroid_01_part_02_macro">
+        <macro ref="xenon_asteroid_01_part_02_macro" connection="space" />
+      </connection>
+      <connection ref="ConnectionFor_xenon_asteroid_01_part_03_macro">
+        <macro ref="xenon_asteroid_01_part_03_macro" connection="space" />
+      </connection>
+      <connection ref="ConnectionFor_xenon_asteroid_01_part_04_macro">
+        <macro ref="xenon_asteroid_01_part_04_macro" connection="space" />
+      </connection>
+      <connection ref="ConnectionFor_xenon_asteroid_philae_01_macro">
+        <macro ref="xenon_asteroid_philae_01_macro" connection="space" />
+      </connection>
+      <connection ref="connection_controlroom01">
+        <macro ref="control_room_macro" connection="connection01" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

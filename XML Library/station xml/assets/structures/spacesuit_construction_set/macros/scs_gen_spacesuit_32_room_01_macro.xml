@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported on 2025-02-28 09:48:00-->
+<macros>
+  <macro name="scs_gen_spacesuit_32_room_01_macro" class="destructible">
+    <component ref="scs_gen_spacesuit_32_room_01" />
+    <connections>
+      <connection ref="ConnectionForscs_gen_destructible_generator_01_macro">
+        <macro ref="scs_gen_destructible_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForscs_gen_destructible_generator_01_macro#001">
+        <macro ref="scs_gen_destructible_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForscs_gen_destructible_generator_01_macro#002">
+        <macro ref="scs_gen_destructible_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForscs_gen_destructible_generator_01_macro#003">
+        <macro ref="scs_gen_destructible_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForscs_gen_destructible_generator_01_macro#004">
+        <macro ref="scs_gen_destructible_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForscs_gen_destructible_generator_01_macro#005">
+        <macro ref="scs_gen_destructible_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForscs_gen_destructible_generator_01_macro#006">
+        <macro ref="scs_gen_destructible_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForscs_gen_destructible_generator_01_macro#007">
+        <macro ref="scs_gen_destructible_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForscs_gen_destructible_generator_01_macro#008">
+        <macro ref="scs_gen_destructible_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForscs_gen_spacesuit_32_roombase_01_macro">
+        <macro ref="scs_gen_spacesuit_32_roombase_01_macro" connection="position" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

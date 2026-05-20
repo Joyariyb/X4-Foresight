@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Ketraar (192.168.3.69) on 2025-04-25 16:45:38-->
+<macros>
+  <macro name="struct_arg_cross_03_macro" class="connectionmodule">
+    <component ref="struct_arg_cross_03" />
+    <properties>
+      <identification name="{20104,55601}" shortname="{20104,55603}" description="{20104,55602}" />
+      <build>
+        <sets>
+          <set ref="factory" />
+          <set ref="headquarters_player" />
+          <set ref="tradestation_argon" />
+        </sets>
+      </build>
+      <hull max="100000" />
+    </properties>
+  </macro>
+</macros>

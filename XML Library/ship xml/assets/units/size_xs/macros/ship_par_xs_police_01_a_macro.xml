@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Lino (192.168.3.54) on 2024-05-05 14:10:31-->
+<macros>
+  <macro name="ship_par_xs_police_01_a_macro" class="ship_xs">
+    <component ref="ship_par_xs_police_01_a" />
+    <properties>
+      <identification name="{20101,110601}" makerrace="paranid" description="{20101,110611}" unit="1" icon="ship_xs_policeship_01" />
+      <hull max="281" />
+      <secrecy level="2" />
+      <purpose primary="fight" />
+      <physics mass="2.872">
+        <inertia pitch="0.476" yaw="0.476" roll="0.381" />
+        <drag forward="1.574" reverse="6.298" horizontal="5.64" vertical="5.64" pitch="1.174" yaw="1.174" roll="1.174" />
+      </physics>
+      <loadouts>
+        <loadout id="default">
+          <macros>
+            <engine macro="engine_arg_xs_police_01_macro" path="../con_engine_01" />
+            <weapon macro="weapon_gen_xs_laser_01_macro" path="../connection_weapon_prim01" optional="1" />
+          </macros>
+        </loadout>
+      </loadouts>
+      <ship type="police" />
+    </properties>
+    <connections>
+      <connection ref="connection_cockpit01">
+        <macro ref="cockpit_gen_invisible_01_macro" connection="ship" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

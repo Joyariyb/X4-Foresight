@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Lennart (192.168.3.78) at 03.12.2020_16-15-56-->
+<macros>
+  <macro name="xenon_asteroid_02_part_03_macro" class="destructible">
+    <component ref="xenon_asteroid_02_part_03" />
+    <properties>
+      <hull max="10000" />
+    </properties>
+  </macro>
+</macros>

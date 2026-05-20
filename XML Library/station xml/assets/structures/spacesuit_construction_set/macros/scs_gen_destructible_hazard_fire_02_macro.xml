@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Matthias (192.168.3.111) on 2023-09-29 13:21:19-->
+<macros>
+  <macro name="scs_gen_destructible_hazard_fire_02_macro" class="destructible">
+    <component ref="scs_gen_destructible_hazard_fire_02" />
+    <properties>
+      <identification name="{20109,7901}" />
+      <hull min="1" max="20" threshold="0.9" />
+    </properties>
+  </macro>
+</macros>

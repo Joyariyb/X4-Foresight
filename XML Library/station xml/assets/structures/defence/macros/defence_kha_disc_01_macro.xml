@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.51) at 17.06.2021_17-06-53-->
+<macros>
+  <macro name="defence_kha_disc_01_macro" class="defencemodule">
+    <component ref="defence_kha_disc_01" />
+    <properties>
+      <identification name="{20102,1601}" makerrace="khaak" />
+      <explosiondamage value="1000" shield="5000" />
+      <hull max="500000" />
+      <loadouts>
+        <loadout id="default">
+          <groups>
+            <shields macro="shield_kha_m_standard_02_mk1_macro" path=".." group="group01" exact="3" />
+            <shields macro="shield_kha_m_standard_02_mk1_macro" path=".." group="group02" exact="3" />
+            <turrets macro="turret_kha_m_beam_01_mk1_macro" path=".." group="group01" exact="3" />
+            <turrets macro="turret_kha_m_beam_01_mk1_macro" path=".." group="group02" exact="3" />
+          </groups>
+        </loadout>
+      </loadouts>
+    </properties>
+  </macro>
+</macros>

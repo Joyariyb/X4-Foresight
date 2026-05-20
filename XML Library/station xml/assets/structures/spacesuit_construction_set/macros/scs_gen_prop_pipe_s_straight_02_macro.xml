@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: nick (192.168.3.66) on 2024-03-26 17:35:23-->
+<macros>
+  <macro name="scs_gen_prop_pipe_s_straight_02_macro" class="destructible">
+    <component ref="scs_gen_prop_pipe_s_straight_02" />
+  </macro>
+</macros>

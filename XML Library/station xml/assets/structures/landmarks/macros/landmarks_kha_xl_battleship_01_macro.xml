@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Ketraar (192.168.3.69) on 2023-12-12 18:44:23-->
+<macros>
+  <macro name="landmarks_kha_xl_battleship_01_macro" class="object">
+    <component ref="landmarks_kha_xl_battleship_01" />
+    <properties>
+      <identification name="{20109,5301}" landmark="1" icon="mapob_poi" />
+      <hull invulnerable="1" />
+      <map visible="0" />
+    </properties>
+  </macro>
+</macros>

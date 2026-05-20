@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.61) at 21.03.2022_12-19-30-->
+<macros>
+  <macro name="landmarks_gen_old_ringstation_macro" class="object">
+    <component ref="landmarks_gen_old_ringstation" />
+    <properties>
+      <identification name="{20103,2101}" description="{20103,2102}" landmark="1" icon="mapob_poi" />
+      <hull invulnerable="1" min="1500000" max="1500000" />
+    </properties>
+  </macro>
+</macros>

@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Alexei (192.168.3.57) at 15.11.2021_11-57-33-->
+<macros>
+  <macro name="dockarea_xen_m_station_01_macro" class="dockarea">
+    <component ref="dockarea_xen_m_station_01" />
+    <properties>
+      <identification name="{20104,71001}" description="{20104,71002}" />
+      <build>
+        <sets>
+          <set ref="defence_xenon" />
+          <set ref="factory_xenon" />
+          <set ref="shipyard_xenon" />
+        </sets>
+      </build>
+      <explosiondamage value="5000" shield="25000" />
+      <storage unit="40" />
+      <hull max="2700000" />
+      <secrecy level="3" />
+      <sounds>
+        <ambient ref="amb_open_platform" />
+      </sounds>
+      <sound_occlusion inside="0.2" outside="0.2" />
+    </properties>
+    <connections>
+      <connection ref="ConnectionFor_launchtube_xen_m_01_macro">
+        <macro ref="launchtube_xen_m_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_m_01_macro1">
+        <macro ref="launchtube_xen_m_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_m_01_macro2">
+        <macro ref="launchtube_xen_m_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_m_01_macro3">
+        <macro ref="launchtube_xen_m_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_m_01_macro4">
+        <macro ref="launchtube_xen_m_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_m_01_macro5">
+        <macro ref="launchtube_xen_m_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_s_01_macro">
+        <macro ref="launchtube_xen_s_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_s_01_macro1">
+        <macro ref="launchtube_xen_s_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_s_01_macro10">
+        <macro ref="launchtube_xen_s_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_s_01_macro11">
+        <macro ref="launchtube_xen_s_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_s_01_macro12">
+        <macro ref="launchtube_xen_s_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_s_01_macro13">
+        <macro ref="launchtube_xen_s_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_s_01_macro14">
+        <macro ref="launchtube_xen_s_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_s_01_macro15">
+        <macro ref="launchtube_xen_s_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_s_01_macro16">
+        <macro ref="launchtube_xen_s_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_s_01_macro17">
+        <macro ref="launchtube_xen_s_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_s_01_macro18">
+        <macro ref="launchtube_xen_s_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_s_01_macro19">
+        <macro ref="launchtube_xen_s_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_s_01_macro2">
+        <macro ref="launchtube_xen_s_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_s_01_macro20">
+        <macro ref="launchtube_xen_s_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_s_01_macro21">
+        <macro ref="launchtube_xen_s_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_s_01_macro22">
+        <macro ref="launchtube_xen_s_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_s_01_macro23">
+        <macro ref="launchtube_xen_s_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_s_01_macro3">
+        <macro ref="launchtube_xen_s_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_s_01_macro4">
+        <macro ref="launchtube_xen_s_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_s_01_macro5">
+        <macro ref="launchtube_xen_s_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_s_01_macro6">
+        <macro ref="launchtube_xen_s_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_s_01_macro7">
+        <macro ref="launchtube_xen_s_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_s_01_macro8">
+        <macro ref="launchtube_xen_s_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_launchtube_xen_s_01_macro9">
+        <macro ref="launchtube_xen_s_01_macro" connection="position" />
+      </connection>
+      <connection ref="con_dock_xs_01">
+        <macro ref="dock_gen_xs_ship_01_macro" connection="Connection_component" />
+      </connection>
+      <connection ref="con_dock_xs_02">
+        <macro ref="dock_gen_xs_ship_01_macro" connection="Connection_component" />
+      </connection>
+      <connection ref="con_dock_xs_03">
+        <macro ref="dock_gen_xs_ship_01_macro" connection="Connection_component" />
+      </connection>
+      <connection ref="con_dock_xs_04">
+        <macro ref="dock_gen_xs_ship_01_macro" connection="Connection_component" />
+      </connection>
+      <connection ref="con_shipstorage_m_01">
+        <macro ref="shipstorage_gen_m_01_macro" connection="object" />
+      </connection>
+      <connection ref="con_shipstorage_s_01">
+        <macro ref="shipstorage_gen_s_01_macro" connection="object" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

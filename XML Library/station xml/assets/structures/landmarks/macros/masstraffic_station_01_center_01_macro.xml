@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.62) at 24.06.2021_11-56-11-->
+<macros>
+  <macro name="masstraffic_station_01_center_01_macro" class="destructible">
+    <component ref="masstraffic_station_01_center_01" />
+    <properties>
+      <explosiondamage value="5000" shield="25000" />
+      <hull max="1000000" />
+    </properties>
+  </macro>
+</macros>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Markus (192.168.3.63) at 24.08.2020_13-18-05-->
+<macros>
+  <macro name="landmarks_par_monument_center_01_macro" class="destructible">
+    <component ref="landmarks_par_monument_center_01" />
+    <properties>
+      <identification name="{20104,30601}" description="{20104,30602}" />
+      <hull min="1000000" max="1000000" />
+      <sounds>
+        <ambient ref="monument_ambience" />
+      </sounds>
+    </properties>
+    <connections>
+      <connection ref="ConnectionPosDummy1">
+        <macro ref="positiondummy1_macro" connection="Connection01" />
+      </connection>
+      <connection ref="ConnectionPosDummy2">
+        <macro ref="positiondummy2_macro" connection="Connection01" />
+      </connection>
+      <connection ref="ConnectionPosDummy3">
+        <macro ref="positiondummy3_macro" connection="Connection01" />
+      </connection>
+      <connection ref="ConnectionPosDummy4">
+        <macro ref="positiondummy4_macro" connection="Connection01" />
+      </connection>
+      <connection ref="ConnectionPosDummy5">
+        <macro ref="positiondummy5_macro" connection="Connection01" />
+      </connection>
+      <connection ref="Connection_trigger1">
+        <macro ref="interactive_par_doorcontrol_01_macro" connection="Connection01" />
+      </connection>
+      <connection ref="Connection_trigger10">
+        <macro ref="interactive_par_doorcontrol_01_macro" connection="Connection01" />
+      </connection>
+      <connection ref="Connection_trigger2">
+        <macro ref="interactive_par_doorcontrol_01_macro" connection="Connection01" />
+      </connection>
+      <connection ref="Connection_trigger3">
+        <macro ref="interactive_par_doorcontrol_01_macro" connection="Connection01" />
+      </connection>
+      <connection ref="Connection_trigger4">
+        <macro ref="interactive_par_doorcontrol_01_macro" connection="Connection01" />
+      </connection>
+      <connection ref="Connection_trigger5">
+        <macro ref="interactive_par_doorcontrol_01_macro" connection="Connection01" />
+      </connection>
+      <connection ref="Connection_trigger9">
+        <macro ref="interactive_par_doorcontrol_01_macro" connection="Connection01" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

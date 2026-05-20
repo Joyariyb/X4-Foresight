@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Markus (192.168.3.127) at 16.09.2019_17-46-43-->
+<macros>
+  <macro name="landmarks_par_monument_expl_03_macro" class="effectobject">
+    <component ref="landmarks_par_monument_expl_03" />
+  </macro>
+</macros>

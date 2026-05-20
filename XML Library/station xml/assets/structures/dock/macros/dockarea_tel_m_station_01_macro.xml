@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Alexei (192.168.3.57) at 15.11.2021_11-57-19-->
+<macros>
+  <macro name="dockarea_tel_m_station_01_macro" class="dockarea">
+    <component ref="dockarea_arg_m_station_01" />
+    <properties>
+      <identification name="{20104,70201}" description="{20104,70202}" />
+      <build>
+        <sets>
+          <set ref="factory" />
+          <set ref="piratebase" />
+        </sets>
+      </build>
+      <explosiondamage value="1000" shield="5000" />
+      <storage unit="10" />
+      <hull max="72523" />
+      <secrecy level="3" />
+      <sounds>
+        <ambient ref="amb_open_platform" />
+      </sounds>
+      <sound_occlusion inside="0.2" outside="0.2" />
+    </properties>
+  </macro>
+</macros>

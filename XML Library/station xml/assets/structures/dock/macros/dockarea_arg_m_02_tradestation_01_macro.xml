@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Ketraar (192.168.3.68) on 2024-04-24 14:37:16-->
+<macros>
+  <macro name="dockarea_arg_m_02_tradestation_01_macro" class="dockarea">
+    <component ref="dockarea_arg_m_02_tradestation_01" />
+    <properties>
+      <identification name="{20104,73301}" shortname="{20104,73303}" description="{20104,73302}" />
+      <build>
+        <sets>
+          <set ref="factory" />
+          <set ref="headquarters_player" />
+          <set ref="tradestation_argon" />
+        </sets>
+      </build>
+      <explosiondamage value="10000" shield="50000" />
+      <storage unit="20" />
+      <hull max="1100000" />
+      <secrecy level="3" />
+      <sounds>
+        <ambient ref="dockingbay_ambient_01" />
+      </sounds>
+      <sound_occlusion inside="0.2" outside="0.2" />
+    </properties>
+    <connections>
+      <connection ref="ConnectionFor_dockingbay_arg_m_01_hightech_macro">
+        <macro ref="dockingbay_arg_m_01_hightech_macro" connection="space" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_arg_m_01_hightech_macro1">
+        <macro ref="dockingbay_arg_m_01_hightech_macro" connection="space" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_arg_m_01_hightech_macro2">
+        <macro ref="dockingbay_arg_m_01_hightech_macro" connection="space" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_arg_m_01_hightech_macro3">
+        <macro ref="dockingbay_arg_m_01_hightech_macro" connection="space" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_arg_m_01_hightech_macro4">
+        <macro ref="dockingbay_arg_m_01_hightech_macro" connection="space" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_arg_m_01_hightech_macro5">
+        <macro ref="dockingbay_arg_m_01_hightech_macro" connection="space" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_arg_m_01_hightech_macro6">
+        <macro ref="dockingbay_arg_m_01_hightech_macro" connection="space" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_arg_m_01_hightech_macro7">
+        <macro ref="dockingbay_arg_m_01_hightech_macro" connection="space" />
+      </connection>
+      <connection ref="ConnectionFor_room_arg_m_02_tradestation_01_macro">
+        <macro ref="room_arg_m_02_tradestation_01_macro" connection="space" />
+      </connection>
+      <connection ref="con_shipstorage_m_01">
+        <macro ref="shipstorage_gen_m_01_macro" connection="object" />
+      </connection>
+      <connection ref="con_shipstorage_xs_01">
+        <macro ref="shipstorage_gen_xs_01_macro" connection="object" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported on 2025-03-18 12:43:16-->
+<macros>
+  <macro name="scs_gen_spacesuit_32_room_03_macro" class="destructible">
+    <component ref="scs_gen_spacesuit_32_room_03" />
+    <connections>
+      <connection ref="ConnectionForscs_gen_destructible_generator_01_macro">
+        <macro ref="scs_gen_destructible_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForscs_gen_spacesuit_32_roombase_03_macro">
+        <macro ref="scs_gen_spacesuit_32_roombase_03_macro" connection="position" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

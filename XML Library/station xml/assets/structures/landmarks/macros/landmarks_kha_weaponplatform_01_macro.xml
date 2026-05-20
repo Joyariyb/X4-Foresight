@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Florian (192.168.3.178) on 2022-08-04 15:33:03-->
+<macros>
+  <macro name="landmarks_kha_weaponplatform_01_macro" class="station">
+    <component ref="landmarks_kha_weaponplatform_01" />
+    <properties>
+      <identification name="{20102,1601}" icon="mapob_weaponplatform" hudicon="si_weaponplatform" />
+      <build buildstorage="0" />
+      <effects>
+        <explosion ref="ship_explosion_generator_kha" />
+      </effects>
+    </properties>
+    <connections>
+      <connection ref="ConnectionFor_defence_kha_disc_01_macro">
+        <macro ref="defence_kha_disc_01_macro" connection="position" />
+      </connection>
+      <connection ref="con_controlroom">
+        <macro ref="control_room_macro" connection="connection01" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported on 2025-07-08 11:51:46-->
+<macros>
+  <macro name="pier_arg_harbor_04_macro" class="pier">
+    <component ref="pier_arg_harbor_04" />
+    <properties>
+      <identification name="{20104,74901}" shortname="{20104,74903}" makerrace="argon" description="{20104,74902}" />
+      <build>
+        <sets>
+          <set ref="factory" />
+          <set ref="factory_xenon" />
+          <set ref="headquarters_player" />
+          <set ref="shipyard_xenon" />
+          <set ref="tradestation_argon" />
+          <set ref="tradestation_teladi" />
+          <set ref="piratebase" />
+        </sets>
+      </build>
+      <explosiondamage value="1000" shield="5000" />
+      <storage unit="5" />
+      <hull max="180000" />
+    </properties>
+    <connections>
+      <connection ref="ConnectionFordockingbay_gen_xl_pier_01_macro">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

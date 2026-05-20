@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!--?xml-stylesheet href="artmacro.xsl" type="text/xsl" ? -->
+<!-- macro file may contain an arbitrary collection of macros -->
+<macros>
+  <!--macro name="lodtest_macro" class="asteroid">
+    <component ref="lod_test" />
+  </macro-->
+  <macro name="testminingnode_macro" class="miningnode">
+    <component ref="testminingnode" />
+    <properties>
+      <identification name="{20001,804}"/>
+      <hull max="500" />
+      <drop ref="asteroid_ore_mining_node" />
+    </properties>
+  </macro>
+  <macro name="standardholomap_macro">
+    <component ref="standardholomap" />
+  </macro>
+  <macro name="station_region_macro">
+    <component connection="cluster" ref="stationregion" />
+    <properties>
+      <region ref="testregion" />
+    </properties>
+  </macro>
+  <macro name="testregion_macro">
+    <component connection="cluster" ref="standardregion" />
+    <properties>
+      <region ref="p1_40km_ice_field" />
+    </properties>
+  </macro>
+  <macro name="testregion2_macro">
+    <component connection="cluster" ref="standardregion" />
+    <properties>
+      <region ref="asteroid_field_test4" />
+    </properties>
+  </macro>
+  <macro name="testregion3_macro">
+    <component connection="cluster" ref="standardregion" />
+    <properties>
+      <region ref="asteroid_ring_test" />
+    </properties>
+  </macro>
+   <macro name="p1_testregion_macro">
+    <component connection="cluster" ref="standardregion" />
+    <properties>
+      <region ref="p1_40km_testregion" />
+    </properties>
+  </macro>
+  <macro name="iceregion_macro">
+    <component connection="cluster" ref="standardregion" />
+    <properties>
+      <region ref="ice_field_s" />
+    </properties>
+  </macro>
+  <macro name="icefield_macro">
+    <component connection="cluster" ref="standardregion" />
+    <properties>
+      <region ref="nebula_region_icefield" />
+    </properties>
+  </macro>
+  <macro name="standaradcluster_macro" class="cluster">
+    <component ref="standardcluster" />
+  </macro>
+  <macro name="standardregion_macro">
+    <component connection="cluster" ref="standardregion" />
+  </macro>
+  <macro name="testgalaxy" class="galaxy">
+    <component ref="testgalaxy" />
+  </macro>
+  <macro name="testcluster" class="cluster">
+    <component ref="testcluster" />
+  </macro>
+  <macro name="testsector" class="sector">
+    <component ref="testsector" />
+  </macro>
+  <macro name="testzone" class="zone">
+    <component ref="testzone" />
+  </macro>
+  <macro name="tempzone" class="zone">
+    <properties>
+      <identification name="{20006,601}"/>
+      <boundaries priority="-1" />
+    </properties>
+    <component ref="standardzone" />
+  </macro>
+  <macro name="pathfinding_debug_gate" class="gate">
+    <component ref="pathfinding_debug_gate" />
+  </macro>
+  <macro name="boundaryexamplezone" class="zone">
+    <properties>
+      <boundaries>
+        <!-- Position and rotation define the local coordinate system in which the box goes from (0,0,0) to the vectors defined by size. -->
+        <boundary class="box">
+          <position x="-2000" y="-1000" z="-2000" />
+          <rotation yaw="45" pitch="45" roll="45" />
+          <size x="4000" y="3000" z="4000" />
+        </boundary>
+        <!-- Pretty self-explanatory... -->
+        <boundary class="sphere">
+          <position x="0" y="0" z="5000" />
+          <size r="100" />
+        </boundary>
+        <!-- Again, position and rotation define the local coordinate system. The linear size is the height of the cylinder, going in the local y-direction. -->
+        <boundary class="cylinder">
+          <position x="1000" y="0" z="-1000" />
+          <rotation yaw="0" pitch="-90" roll="0" />
+          <size r="1500" linear="15000" />
+        </boundary>
+        <!-- The 4 positions define the 4 points of the spline in the order Start, Control1, Control2, End. Size gives the radius of the tube. -->
+        <!-- The class splits the tube into a number (given by the 'parts' attribute) of cylinders. -->
+        <boundary class="splinetube" parts="20">
+          <splineposition x="0" y="-6000" z="0" />
+          <splineposition x="2000" y="-2000" z="-500" />
+          <splineposition x="2000" y="2000" z="500" />
+          <splineposition x="0" y="6000" z="0" />
+          <size r="1000" />
+        </boundary>
+      </boundaries>
+    </properties>
+    <component ref="testzone" />
+  </macro>
+  <macro name="testhighwayzone" class="highway">
+    <properties>
+      <boundaries priority="70">
+        <boundary class="splinetube" parts="20">
+          <splineposition x="25000" z="0" weight="0"/>
+          <splineposition x="25000" z="15000" weight="1" />
+          <splineposition x="15000" z="25000" weight="1" />
+          <splineposition x="0" z="25000" weight="0" />
+          <size r="1000" />
+        </boundary>
+      </boundaries>
+      <controls>
+        <linear>
+          <time min="20" max="30" />
+        </linear>
+        <angular>
+          <roll max="25" />
+        </angular>
+      </controls>
+    </properties>
+    <component ref="testzone" />
+  </macro>
+  <macro name="fogvolume_small_macro" class="fogvolume">
+    <component ref="fogpattern_v1" />
+    <!--was fog_pattern_v1-->
+    <properties>
+      <volume size="3000" scale="1.5" gridsize="2.0"/>
+    </properties>
+  </macro>
+  <macro name="fogvolume_small2_macro" class="fogvolume">
+    <component ref="fogpattern_near_v1" />
+    <!--was fog_pattern_v1-->
+    <properties>
+      <volume size="3000" scale="2.0" gridsize="2.0"/>
+    </properties>
+  </macro>
+  <macro name="viewerspace" class="zone">
+    <component ref="viewerspace" />
+  </macro>
+  <macro name="camera_anchor_scene_macro" class="scene">
+    <component ref="camera_anchor_scene" />
+  </macro>
+  <macro name="testroom" class="room">
+    <component ref="testroom" />
+  </macro>
+  <macro name="testnpc" class="npc">
+    <component ref="testnpc">
+    </component>
+  </macro>
+  <macro name="targetpoint_dummy_macro" class="targetpoint">
+    <component ref="targetpoint_dummy" />
+    <properties>
+      <identification name="{1001,2943}"/>
+    </properties>
+  </macro>
+  <macro name="testuielement" class="uielement">
+    <component ref="testuielement" />
+  </macro>
+  <macro name="testhighwayzone1" class="highway">
+    <properties>
+      <boundaries priority="70">
+        <boundary class="splinetube" parts="2000">
+          <splineposition x="3000" y="0" z="1000" weight="0" />
+          <splineposition x="33735" y="0" z="6000" weight="1" />
+          <splineposition x="349730" y="0" z="30570" weight="1" />
+          <splineposition x="698470" y="0" z="-219350" weight="1" />
+          <splineposition x="610350" y="0" z="-570500" weight="1" />
+          <splineposition x="600000" y="0" z="-600000" weight="0" />
+          <size r="100" />
+        </boundary>
+      </boundaries>
+      <controls>
+        <linear>
+          <time min="40" max="50" />
+        </linear>
+        <angular>
+          <roll max="25" />
+        </angular>
+      </controls>
+    </properties>
+    <component ref="testzone" />
+  </macro>
+  <macro name="testhighwayzone2" class="highway">
+    <properties>
+      <boundaries priority="70">
+        <boundary class="splinetube" parts="2000">
+          <splineposition x="585116" y="0" z="-616173" weight="0" />
+          <splineposition x="551670" y="0" z="-613910" weight="1" />
+          <splineposition x="247390" y="25000" z="-589260" weight="1" />
+          <splineposition x="97080" y="55000" z="-533400" weight="1" />
+          <splineposition x="-138460" y="2000" z="-525420" weight="1" />
+          <splineposition x="-173440" y="0" z="-525050" weight="0" />
+          <size r="100" />
+        </boundary>
+      </boundaries>
+      <controls>
+        <linear>
+          <time min="40" max="50" />
+        </linear>
+        <angular>
+          <roll max="25" />
+        </angular>
+      </controls>
+    </properties>
+    <component ref="testzone" />
+  </macro>
+  <macro name="testhighwayzone3" class="highway">
+    <properties>
+      <boundaries priority="70">
+        <boundary class="splinetube" parts="2000">
+          <splineposition x="-202230" y="0" z="-518790" weight="0" />
+          <splineposition x="-230400" y="0" z="-492470" weight="1" />
+          <splineposition x="-293320" y="0" z="-408140" weight="1" />
+          <splineposition x="-278710" y="0" z="-218160" weight="1" />
+          <splineposition x="-33180" y="0" z="-28410" weight="1" />
+          <splineposition x="-5881" y="-347" z="-9088" weight="0" />
+          <size r="100" />
+        </boundary>
+      </boundaries>
+      <controls>
+        <linear>
+          <time min="40" max="50" />
+        </linear>
+        <angular>
+          <roll max="25" />
+        </angular>
+      </controls>
+    </properties>
+    <component ref="testzone" />
+  </macro>
+  <macro name="stardust_macro" class="stardust">
+    <component ref="stardust" />
+  </macro>
+  <macro name="forceemitterobject_macro" class="object">
+    <component ref="forceemitterobject" />
+    <properties>
+      <purpose wrapper="true"/>
+    </properties>
+  </macro>
+</macros>

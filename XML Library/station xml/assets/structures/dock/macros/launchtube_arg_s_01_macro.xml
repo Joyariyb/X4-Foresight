@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.53) on 2024-04-18 11:29:13-->
+<macros>
+  <macro name="launchtube_arg_s_01_macro" class="dockingbay">
+    <component ref="launchtube_arg_s_01" />
+    <properties>
+      <identification name="{20104,79701}" description="{20104,79702}" />
+      <dock external="1" allow="0" allowunits="1" priority="1" uselandinggear="0" />
+      <undock speed="300" distance="600" />
+      <room walkable="0" />
+      <docksize tags="dock_s" />
+    </properties>
+  </macro>
+</macros>

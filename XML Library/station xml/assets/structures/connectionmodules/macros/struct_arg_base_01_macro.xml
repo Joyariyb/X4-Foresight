@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Ketraar (192.168.3.62) on 2023-03-10 17:55:29-->
+<macros>
+  <macro name="struct_arg_base_01_macro" class="connectionmodule">
+    <component ref="struct_arg_base_01" />
+    <properties>
+      <identification name="{20104,50101}" shortname="{20104,50103}" makerrace="argon" description="{20104,50102}" />
+      <build>
+        <sets>
+          <set ref="defence_xenon" />
+          <set ref="factory" />
+          <set ref="factory_xenon" />
+          <set ref="headquarters_player" />
+          <set ref="shipyard_xenon" />
+          <set ref="tradestation_argon" />
+          <set ref="piratebase" />
+        </sets>
+      </build>
+      <hull max="150000" />
+    </properties>
+  </macro>
+</macros>

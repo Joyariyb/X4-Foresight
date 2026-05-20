@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Florian (192.168.3.134) at 06.11.2018_13-32-53-->
+<macros>
+  <macro name="struct_tel_vertical_02_macro" class="connectionmodule">
+    <component ref="struct_tel_vertical_02" />
+    <properties>
+      <identification name="{20104,52601}" shortname="{20104,52603}" makerrace="teladi" description="{20104,52602}" />
+      <build>
+        <sets>
+          <set ref="factory" />
+          <set ref="headquarters_player" />
+          <set ref="tradestation_teladi" />
+          <set ref="piratebase" />
+        </sets>
+      </build>
+      <hull max="143000" />
+    </properties>
+  </macro>
+</macros>

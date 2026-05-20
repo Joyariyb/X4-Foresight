@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported on 2024-04-23 10:11:43-->
+<macros>
+  <macro name="landmarks_gen_spacesuit_level_01_room_03_macro" class="destructible">
+    <component ref="landmarks_gen_spacesuit_level_01_room_03" />
+    <connections>
+      <connection ref="ConnectionForscs_gen_destructible_generator_01_macro">
+        <macro ref="scs_gen_destructible_generator_01_macro" connection="position" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

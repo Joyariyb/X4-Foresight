@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported on 2024-07-05 09:28:26-->
+<macros>
+  <macro name="landmarks_gen_spacesuit_level_01_room_01_macro" class="destructible">
+    <component ref="landmarks_gen_spacesuit_level_01_room_01" />
+    <connections>
+      <connection ref="ConnectionForscs_gen_destructible_generator_01_macro#001">
+        <macro ref="scs_gen_destructible_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForscs_gen_destructible_generator_01_macro#002">
+        <macro ref="scs_gen_destructible_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForscs_gen_destructible_generator_01_macro#003">
+        <macro ref="scs_gen_destructible_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForscs_gen_destructible_generator_01_macro#004">
+        <macro ref="scs_gen_destructible_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForscs_gen_destructible_generator_01_macro#005">
+        <macro ref="scs_gen_destructible_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForscs_gen_destructible_generator_01_macro#006">
+        <macro ref="scs_gen_destructible_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForscs_gen_destructible_generator_01_macro#007">
+        <macro ref="scs_gen_destructible_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForscs_gen_destructible_generator_01_macro#008">
+        <macro ref="scs_gen_destructible_generator_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionForscs_gen_destructible_generator_01_macro#009">
+        <macro ref="scs_gen_destructible_generator_01_macro" connection="position" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

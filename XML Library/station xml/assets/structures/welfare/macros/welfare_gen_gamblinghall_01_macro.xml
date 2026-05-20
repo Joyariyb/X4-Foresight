@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.55) at 27.08.2021_12-09-16-->
+<macros>
+  <macro name="welfare_gen_gamblinghall_01_macro" class="welfaremodule">
+    <component ref="welfare_gen_gamblinghall_01" />
+    <properties>
+      <identification name="{20104,110201}" shortname="{20104,110203}" description="{20104,110202}" />
+      <build>
+        <sets>
+          <set ref="factory" />
+          <set ref="headquarters_player" />
+          <set ref="piratebase" />
+        </sets>
+      </build>
+      <explosiondamage value="1000" shield="5000" />
+      <hull max="100000" />
+      <workforce growthrate="0.2" />
+    </properties>
+  </macro>
+</macros>

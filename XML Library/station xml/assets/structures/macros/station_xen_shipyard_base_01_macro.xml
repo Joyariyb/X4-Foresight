@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Florian (192.168.3.68) at 19.02.2021_09-08-24-->
+<macros>
+  <macro name="station_xen_shipyard_base_01_macro" class="station">
+    <component ref="station_xen_shipyard_base_01" />
+    <properties>
+      <identification name="{20102,1421}" />
+      <build>
+        <sets>
+          <set ref="shipyard_xenon" />
+        </sets>
+      </build>
+      <ownership claim="1" />
+    </properties>
+    <connections>
+      <connection ref="controlroom">
+        <macro ref="control_room_macro" connection="connection01" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

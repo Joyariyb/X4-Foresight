@@ -1159,12 +1159,57 @@
       const prod = s.production
         ? s.production.split(",").map(w => `<span class="ware-tag">${w.trim()}</span>`).join("")
         : `<span style="color:var(--text-faint);font-size:11px;padding:0 2px">No production modules</span>`;
+
+      const fmtM3 = v => v == null ? '—' : v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(1)+'k' : String(Math.round(v));
+      const TYPE_COLOR  = { container: 'var(--teal)', solid: 'var(--amber)', liquid: 'var(--purple)' };
+      const TYPE_LABEL  = { container: 'Container',   solid: 'Solid',        liquid: 'Liquid'        };
+
+      // adj fields match the game's displayed fill (physical cargo ± trade reservations).
+      // Raw physical values (cargo_{t}_pct / cargo_pct) are in the JSON for independent use.
+      const hasAnyStorage = ['container','solid','liquid'].some(t => s[`cargo_${t}_adj_pct`] != null) || s.cargo_adj_pct != null;
+      let storageHtml = '';
+      if (hasAnyStorage) {
+        const typeRows = ['container','solid','liquid'].map(t => {
+          const pct = s[`cargo_${t}_adj_pct`];
+          const m3  = s[`cargo_${t}_adj_m3`];
+          const max = s[`cargo_${t}_max`];
+          if (pct == null) return '';
+          const clamped = Math.min(pct, 100);
+          const color   = pct > 90 ? 'var(--red)' : TYPE_COLOR[t];
+          return `<div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+            <span style="font-size:10px;font-family:var(--font-mono);letter-spacing:0.06em;color:${color};min-width:58px;white-space:nowrap">${TYPE_LABEL[t]}</span>
+            <div style="flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden">
+              <div style="height:100%;width:${clamped.toFixed(1)}%;background:${color};border-radius:2px"></div>
+            </div>
+            <span style="font-family:var(--font-mono);font-size:11px;color:${color};min-width:34px;text-align:right">${pct.toFixed(0)}%</span>
+            <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);white-space:nowrap">${fmtM3(m3)}/${fmtM3(max)} m³</span>
+          </div>`;
+        }).join('');
+
+        let totalRow = '';
+        if (s.cargo_adj_pct != null) {
+          const pct   = Math.min(s.cargo_adj_pct, 100);
+          const color = s.cargo_adj_pct > 90 ? 'var(--red)' : s.cargo_adj_pct > 70 ? 'var(--amber)' : 'var(--green)';
+          totalRow = `<div style="display:flex;align-items:center;gap:6px;margin-top:5px;padding-top:5px;border-top:1px dashed var(--border)">
+            <span style="font-size:10px;font-family:var(--font-mono);letter-spacing:0.08em;text-transform:uppercase;color:var(--text-faint);min-width:58px;white-space:nowrap">Total</span>
+            <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden">
+              <div style="height:100%;width:${pct.toFixed(1)}%;background:${color};border-radius:2px"></div>
+            </div>
+            <span style="font-family:var(--font-mono);font-size:11px;color:${color};min-width:34px;text-align:right">${s.cargo_adj_pct.toFixed(0)}%</span>
+            <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);white-space:nowrap">${fmtM3(s.cargo_adj_m3)}/${fmtM3(s.cargo_max)} m³</span>
+          </div>`;
+        }
+
+        storageHtml = `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">${typeRows}${totalRow}</div>`;
+      }
+
       return `<div class="panel">
         <div class="panel-head">
           <span><i class="ti ti-building-factory-2" style="font-size:14px;vertical-align:-2px;margin-right:6px"></i>${s.name.trim()} <span class="mono" style="color:var(--teal);font-size:11px">${s.code}</span></span>
           <span style="color:var(--text-dim);font-size:11px"><i class="ti ti-map-pin" style="font-size:12px;vertical-align:-2px;margin-right:3px"></i>${s.sector}</span>
         </div>
         <div class="ware-tags">${prod}</div>
+        ${storageHtml}
       </div>`;
     }).join("");
 

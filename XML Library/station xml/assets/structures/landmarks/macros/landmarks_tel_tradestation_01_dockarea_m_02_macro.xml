@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: nick (192.168.3.120) at 11.10.2018_16-28-44-->
+<macros>
+  <macro name="landmarks_tel_tradestation_01_dockarea_m_02_macro" class="dockarea">
+    <component ref="landmarks_tel_tradestation_01_dockarea_m_02" />
+    <properties>
+      <identification name="{20104,70101}" description="{20104,70102}" />
+      <explosiondamage time="20000" />
+      <storage unit="5" />
+      <hull max="200000" />
+      <secrecy level="3" />
+    </properties>
+    <connections>
+      <connection ref="ConnectionFor_dockingbay_arg_m_01_hightech_macro">
+        <macro ref="dockingbay_arg_m_01_hightech_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_arg_s_01_hightech_macro">
+        <macro ref="dockingbay_arg_s_01_hightech_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_arg_s_01_hightech_macro1">
+        <macro ref="dockingbay_arg_s_01_hightech_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_arg_s_01_hightech_macro2">
+        <macro ref="dockingbay_arg_s_01_hightech_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_arg_s_01_hightech_macro3">
+        <macro ref="dockingbay_arg_s_01_hightech_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_room_tel_tradestation_01_dockarea_m_01_macro">
+        <macro ref="room_tel_tradestation_01_dockarea_m_01_macro" connection="position" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Matthias (192.168.3.111) on 2023-09-29 14:43:01-->
+<macros>
+  <macro name="scs_gen_prop_fan_01_forceemitter_macro" class="forceemitter">
+    <component ref="scs_gen_prop_fan_01_forceemitter" />
+    <properties>
+      <force range="10" strength="0.1" />
+    </properties>
+  </macro>
+</macros>

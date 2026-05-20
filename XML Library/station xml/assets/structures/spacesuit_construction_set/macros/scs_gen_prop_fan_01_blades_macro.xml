@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: nick (192.168.3.56) on 2023-09-29 12:15:08-->
+<macros>
+  <macro name="scs_gen_prop_fan_01_blades_macro" class="object">
+    <component ref="scs_gen_prop_fan_01_blades" />
+  </macro>
+</macros>

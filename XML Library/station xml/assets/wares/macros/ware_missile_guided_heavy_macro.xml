@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: alex (192.168.3.113) at 14.09.2017_13-28-15-->
+<macros>
+  <macro name="ware_missile_guided_heavy_macro" class="object">
+    <component ref="ware_missile_guided_heavy" />
+    <properties>
+      <identification unique="0" />
+    </properties>
+  </macro>
+</macros>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.63) on 2025-06-11 14:57:49-->
+<macros>
+  <macro name="ship_gen_xs_lasertower_01_a_macro" class="ship_xs">
+    <component ref="ship_gen_xs_lasertower_01" />
+    <properties>
+      <identification name="{20201,20501}" description="{20201,20502}" deployable="1" icon="ship_xs_lasertower_01" inactiveicon="ship_xs_lasertower_01_inactive" type="lasertowers" />
+      <jpm allow="0" />
+      <explosioneffect strength="100" />
+      <radar range="5000" />
+      <hull max="1001" />
+      <secrecy level="2" />
+      <purpose primary="fight" />
+      <physics mass="3">
+        <inertia pitch="1" yaw="1" roll="0.5" />
+        <drag forward="1" reverse="1" horizontal="1" vertical="1" pitch="1" yaw="1" roll="0.5" />
+      </physics>
+      <thruster tags="small" />
+      <loadouts mobile="0">
+        <loadout id="default">
+          <macros>
+            <engine macro="engine_gen_xs_static_macro" path="../con_engine_01" />
+            <weapon macro="weapon_gen_lasertower_01_mk1_macro" path="../con_weapon_001" optional="1" />
+          </macros>
+        </loadout>
+      </loadouts>
+      <ship type="lasertower" />
+      <relation>
+        <attack>
+          <multiplier value="0.01" />
+        </attack>
+        <kill>
+          <multiplier value="0.01" />
+        </kill>
+      </relation>
+    </properties>
+    <connections>
+      <connection ref="con_cockpit">
+        <macro ref="cockpit_gen_invisible_01_macro" connection="ship" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

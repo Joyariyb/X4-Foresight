@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Florian (192.168.3.178) on 2022-08-04 15:37:24-->
+<macros>
+  <macro name="station_par_tradestation_base_01_macro" class="station">
+    <component ref="station_par_tradestation_base_01" />
+    <properties>
+      <identification name="{20102,1211}" icon="mapob_tradestation" factionhqicon="mapob_tradestation_headquarter" hudicon="si_tradestation" />
+      <build>
+        <sets>
+          <set ref="tradestation_paranid" />
+        </sets>
+      </build>
+      <workforce max="400" />
+      <ownership claim="1" />
+    </properties>
+    <connections>
+      <connection ref="controlroom">
+        <macro ref="control_room_macro" connection="Connection01" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

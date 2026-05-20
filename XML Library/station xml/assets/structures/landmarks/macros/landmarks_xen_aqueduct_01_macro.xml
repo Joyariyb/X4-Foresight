@@ -1,0 +1,1966 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.61) at 21.03.2022_12-20-02-->
+<macros>
+  <macro name="landmarks_xen_aqueduct_01_macro" class="object">
+    <component ref="landmarks_xen_aqueduct_01" />
+    <properties>
+      <identification name="{20103,601}" description="{20103,602}" landmark="1" icon="mapob_poi" />
+      <hull invulnerable="1" />
+    </properties>
+    <connections>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_01">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_011">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0110">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0111">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0112">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0113">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0114">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0115">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0116">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0117">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0118">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0119">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_012">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0120">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0121">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0122">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_013">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_014">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_015">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_016">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_017">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_018">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_019">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_02">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_021">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_022">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_023">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_024">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_025">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_026">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_03">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_031">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0310">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0311">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0312">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0313">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0314">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0315">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0316">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0317">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0318">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0319">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_032">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0320">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0321">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0322">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0323">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0324">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0325">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0326">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0327">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0328">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0329">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_033">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_0330">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_034">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_035">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_036">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_037">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_038">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_s_ice_039">
+        <macro>
+          <component ref="asteroid_xen_water_s_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_01">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_011">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0110">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0111">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0112">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0113">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0114">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0115">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0116">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0117">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0118">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0119">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_012">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0120">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0121">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0122">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0123">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0124">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0125">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0126">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0127">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0128">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0129">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_013">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0130">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0131">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0132">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0133">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0134">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0135">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0136">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0137">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0138">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0139">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_014">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0140">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0141">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0142">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0143">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0144">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0145">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0146">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0147">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0148">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0149">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_015">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0150">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0151">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0152">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0153">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0154">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0155">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0156">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0157">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0158">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0159">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_016">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0160">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0161">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0162">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0163">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0164">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0165">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0166">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0167">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0168">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0169">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_017">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0170">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0171">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0172">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0173">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0174">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0175">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_018">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_019">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_02">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_021">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0210">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0211">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0212">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0213">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0214">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0215">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0216">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0217">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0218">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0219">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_022">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0220">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0221">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0222">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0223">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0224">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0225">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0226">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0227">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0228">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0229">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_023">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0230">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0231">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0232">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0233">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0234">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0235">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0236">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0237">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0238">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0239">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_024">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0240">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0241">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0242">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0243">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0244">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0245">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0246">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0247">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0248">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0249">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_025">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0250">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0251">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0252">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0253">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0254">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_026">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_027">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_028">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_029">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_03">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_031">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0310">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0311">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0312">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0313">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0314">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0315">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0316">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0317">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0318">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0319">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_032">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0320">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0321">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0322">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0323">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0324">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0325">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0326">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0327">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0328">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0329">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_033">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0330">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0331">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0332">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0333">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0334">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0335">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0336">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0337">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0338">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0339">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_034">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0340">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0341">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0342">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0343">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0344">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0345">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0346">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0347">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0348">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0349">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_035">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0350">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0351">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0352">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0353">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0354">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0355">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0356">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0357">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0358">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0359">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_036">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0360">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0361">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0362">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0363">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0364">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0365">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0366">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0367">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0368">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0369">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_037">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0370">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0371">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0372">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0373">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0374">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0375">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0376">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0377">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0378">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0379">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_038">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0380">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0381">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0382">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0383">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0384">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0385">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0386">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_0387">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_asteroid_xen_water_xs_ice_039">
+        <macro>
+          <component ref="asteroid_xen_water_xs_ice_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_01">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_011">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0110">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0111">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0112">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0113">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0114">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0115">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0116">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0117">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0118">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0119">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_012">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0120">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0121">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0122">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0123">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0124">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0125">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0126">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0127">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0128">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0129">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_013">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0130">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0131">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0132">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0133">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0134">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0135">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0136">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0137">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0138">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0139">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_014">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0140">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0141">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0142">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0143">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0144">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_0145">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_015">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_016">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_017">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_018">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_019">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_02">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_021">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_03">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_031">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_032">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_bridge_033">
+        <macro>
+          <component ref="landmarks_xen_water_old_bridge_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_01">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_011">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_0110">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_0111">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_0112">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_0113">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_0114">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_0115">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_0116">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_0117">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_0118">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_0119">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_012">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_013">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_014">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_015">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_016">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_017">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_018">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_019">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_02">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_021">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_0210">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_022">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_023">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_024">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_025">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_026">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_027">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_028">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_029">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_03">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_031">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_0310">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_0311">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_0312">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_0313">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_032">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_033">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_034">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_035">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_036">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_037">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_038">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_connector_039">
+        <macro>
+          <component ref="landmarks_xen_water_old_connector_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_destillery_01">
+        <macro>
+          <component ref="landmarks_xen_water_old_destillery_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_destillery_02">
+        <macro>
+          <component ref="landmarks_xen_water_old_destillery_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_destillery_021">
+        <macro>
+          <component ref="landmarks_xen_water_old_destillery_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_destillery_022">
+        <macro>
+          <component ref="landmarks_xen_water_old_destillery_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_destillery_023">
+        <macro>
+          <component ref="landmarks_xen_water_old_destillery_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_destillery_024">
+        <macro>
+          <component ref="landmarks_xen_water_old_destillery_02" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_destillery_03">
+        <macro>
+          <component ref="landmarks_xen_water_old_destillery_03" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_special_01">
+        <macro>
+          <component ref="landmarks_xen_water_old_special_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_special_011">
+        <macro>
+          <component ref="landmarks_xen_water_old_special_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_special_012">
+        <macro>
+          <component ref="landmarks_xen_water_old_special_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_special_013">
+        <macro>
+          <component ref="landmarks_xen_water_old_special_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_special_014">
+        <macro>
+          <component ref="landmarks_xen_water_old_special_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="ConnectionFor_landmarks_xen_water_old_special_015">
+        <macro>
+          <component ref="landmarks_xen_water_old_special_01" connection="space" />
+        </macro>
+      </connection>
+      <connection ref="connection_controlroom01">
+        <macro ref="control_room_macro" connection="connection01" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

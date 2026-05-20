@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Florian (192.168.3.178) on 2022-08-04 15:33:55-->
+<macros>
+  <macro name="landmarks_tel_tradestation_01_macro" class="station">
+    <component ref="landmarks_tel_tradestation_01" />
+    <properties>
+      <identification name="{20102,1311}" icon="mapob_tradestation" factionhqicon="mapob_tradestation_headquarter" hudicon="si_tradestation" />
+      <build>
+        <sets>
+          <set ref="tradestation_teladi" />
+        </sets>
+      </build>
+      <workforce max="1000" />
+      <ownership claim="1" />
+    </properties>
+    <connections>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro1">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro10">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro11">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro12">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro13">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro14">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro15">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro16">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro17">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro18">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro19">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro2">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro20">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro21">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro22">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro23">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro3">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro4">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro5">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro6">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro7">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro8">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_dockingbay_gen_xl_pier_01_macro9">
+        <macro ref="dockingbay_gen_xl_pier_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_bridge_01_macro">
+        <macro ref="landmarks_tel_tradestation_01_bridge_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_bridge_01_macro1">
+        <macro ref="landmarks_tel_tradestation_01_bridge_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_bridge_01_macro2">
+        <macro ref="landmarks_tel_tradestation_01_bridge_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_bridge_01_macro3">
+        <macro ref="landmarks_tel_tradestation_01_bridge_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_centercylinder_01_macro">
+        <macro ref="landmarks_tel_tradestation_01_centercylinder_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_centercylinder_01_macro1">
+        <macro ref="landmarks_tel_tradestation_01_centercylinder_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_centercylinder_01_macro2">
+        <macro ref="landmarks_tel_tradestation_01_centercylinder_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_centercylinder_01_macro3">
+        <macro ref="landmarks_tel_tradestation_01_centercylinder_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_centercylinder_01_macro4">
+        <macro ref="landmarks_tel_tradestation_01_centercylinder_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_centercylinder_01_macro5">
+        <macro ref="landmarks_tel_tradestation_01_centercylinder_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_centerend_01_macro">
+        <macro ref="landmarks_tel_tradestation_01_centerend_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_centerfill_01_macro">
+        <macro ref="landmarks_tel_tradestation_01_centerfill_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_centerfill_01_macro1">
+        <macro ref="landmarks_tel_tradestation_01_centerfill_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_center_01_macro">
+        <macro ref="landmarks_tel_tradestation_01_center_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_column_01_macro">
+        <macro ref="landmarks_tel_tradestation_01_column_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_column_01_macro1">
+        <macro ref="landmarks_tel_tradestation_01_column_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_column_01_macro2">
+        <macro ref="landmarks_tel_tradestation_01_column_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_column_02_macro">
+        <macro ref="landmarks_tel_tradestation_01_column_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_column_02_macro1">
+        <macro ref="landmarks_tel_tradestation_01_column_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_column_02_macro10">
+        <macro ref="landmarks_tel_tradestation_01_column_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_column_02_macro11">
+        <macro ref="landmarks_tel_tradestation_01_column_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_column_02_macro2">
+        <macro ref="landmarks_tel_tradestation_01_column_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_column_02_macro3">
+        <macro ref="landmarks_tel_tradestation_01_column_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_column_02_macro4">
+        <macro ref="landmarks_tel_tradestation_01_column_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_column_02_macro5">
+        <macro ref="landmarks_tel_tradestation_01_column_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_column_02_macro6">
+        <macro ref="landmarks_tel_tradestation_01_column_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_column_02_macro7">
+        <macro ref="landmarks_tel_tradestation_01_column_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_column_02_macro8">
+        <macro ref="landmarks_tel_tradestation_01_column_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_column_02_macro9">
+        <macro ref="landmarks_tel_tradestation_01_column_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_dockarea_m_01_macro">
+        <macro ref="landmarks_tel_tradestation_01_dockarea_m_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_dockarea_m_01_macro1">
+        <macro ref="landmarks_tel_tradestation_01_dockarea_m_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_dockarea_m_01_macro2">
+        <macro ref="landmarks_tel_tradestation_01_dockarea_m_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_dockarea_m_01_macro3">
+        <macro ref="landmarks_tel_tradestation_01_dockarea_m_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_dockarea_m_01_macro4">
+        <macro ref="landmarks_tel_tradestation_01_dockarea_m_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_dockarea_m_01_macro5">
+        <macro ref="landmarks_tel_tradestation_01_dockarea_m_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_dockarea_m_01_macro6">
+        <macro ref="landmarks_tel_tradestation_01_dockarea_m_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_dockarea_m_01_macro7">
+        <macro ref="landmarks_tel_tradestation_01_dockarea_m_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_dockarea_m_01_macro8">
+        <macro ref="landmarks_tel_tradestation_01_dockarea_m_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_extension_01_macro">
+        <macro ref="landmarks_tel_tradestation_01_extension_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_radar_01_macro">
+        <macro ref="landmarks_tel_tradestation_01_radar_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_ringcenter_01_macro">
+        <macro ref="landmarks_tel_tradestation_01_ringcenter_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_ringclamp_01_macro">
+        <macro ref="landmarks_tel_tradestation_01_ringclamp_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_ringclamp_01_macro1">
+        <macro ref="landmarks_tel_tradestation_01_ringclamp_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_ringclamp_02_macro">
+        <macro ref="landmarks_tel_tradestation_01_ringclamp_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_ringclamp_02_macro1">
+        <macro ref="landmarks_tel_tradestation_01_ringclamp_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_ring_01_macro">
+        <macro ref="landmarks_tel_tradestation_01_ring_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_ring_inside_01_macro">
+        <macro ref="landmarks_tel_tradestation_01_ring_inside_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_ring_inside_01_macro1">
+        <macro ref="landmarks_tel_tradestation_01_ring_inside_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_ring_inside_01_macro2">
+        <macro ref="landmarks_tel_tradestation_01_ring_inside_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_ring_inside_02_macro">
+        <macro ref="landmarks_tel_tradestation_01_ring_inside_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_ring_inside_02_macro1">
+        <macro ref="landmarks_tel_tradestation_01_ring_inside_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_ring_inside_02_macro2">
+        <macro ref="landmarks_tel_tradestation_01_ring_inside_02_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_ring_inside_03_macro">
+        <macro ref="landmarks_tel_tradestation_01_ring_inside_03_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_ring_inside_03_macro1">
+        <macro ref="landmarks_tel_tradestation_01_ring_inside_03_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_ring_inside_03_macro2">
+        <macro ref="landmarks_tel_tradestation_01_ring_inside_03_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_ring_storage_01_macro">
+        <macro ref="landmarks_tel_tradestation_01_ring_storage_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_ring_storage_01_macro1">
+        <macro ref="landmarks_tel_tradestation_01_ring_storage_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_ring_storage_01_macro2">
+        <macro ref="landmarks_tel_tradestation_01_ring_storage_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_storage_01_macro">
+        <macro ref="landmarks_tel_tradestation_01_storage_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_storage_01_macro1">
+        <macro ref="landmarks_tel_tradestation_01_storage_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_storage_01_macro2">
+        <macro ref="landmarks_tel_tradestation_01_storage_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_storage_01_macro3">
+        <macro ref="landmarks_tel_tradestation_01_storage_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_storage_01_macro4">
+        <macro ref="landmarks_tel_tradestation_01_storage_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_storage_01_macro5">
+        <macro ref="landmarks_tel_tradestation_01_storage_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_tradelocation_01_macro">
+        <macro ref="landmarks_tel_tradestation_01_tradelocation_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_tradelocation_01_macro1">
+        <macro ref="landmarks_tel_tradestation_01_tradelocation_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_tradelocation_01_macro10">
+        <macro ref="landmarks_tel_tradestation_01_tradelocation_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_tradelocation_01_macro11">
+        <macro ref="landmarks_tel_tradestation_01_tradelocation_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_tradelocation_01_macro2">
+        <macro ref="landmarks_tel_tradestation_01_tradelocation_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_tradelocation_01_macro3">
+        <macro ref="landmarks_tel_tradestation_01_tradelocation_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_tradelocation_01_macro4">
+        <macro ref="landmarks_tel_tradestation_01_tradelocation_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_tradelocation_01_macro5">
+        <macro ref="landmarks_tel_tradestation_01_tradelocation_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_tradelocation_01_macro6">
+        <macro ref="landmarks_tel_tradestation_01_tradelocation_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_tradelocation_01_macro7">
+        <macro ref="landmarks_tel_tradestation_01_tradelocation_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_tradelocation_01_macro8">
+        <macro ref="landmarks_tel_tradestation_01_tradelocation_01_macro" connection="position" />
+      </connection>
+      <connection ref="ConnectionFor_landmarks_tel_tradestation_01_tradelocation_01_macro9">
+        <macro ref="landmarks_tel_tradestation_01_tradelocation_01_macro" connection="position" />
+      </connection>
+      <connection ref="connection_controlroom01">
+        <macro ref="control_room_macro" connection="connection01" />
+      </connection>
+    </connections>
+  </macro>
+</macros>

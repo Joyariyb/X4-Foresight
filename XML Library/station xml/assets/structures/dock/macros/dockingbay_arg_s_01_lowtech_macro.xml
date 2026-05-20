@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Matthias (192.168.3.149) at 11.09.2018_13-32-24-->
+<macros>
+  <macro name="dockingbay_arg_s_01_lowtech_macro" class="dockingbay">
+    <component ref="dockingbay_arg_s_01_lowtech" />
+    <properties>
+      <identification name="{20104,72501}" shortname="{20104,72503}" description="{20104,72502}" />
+      <translationspeed max="5" />
+      <translationacceleration max="2" />
+      <effects>
+        <cargotube attach="dock_s_cargotube_attach" detach="dock_s_cargotube_detach" />
+        <landing ref="ship_blowout_size_s">
+          <curve>
+            <point position="0" value="0" />
+            <point position="1" value="1" />
+            <point position="40" value="0" />
+          </curve>
+        </landing>
+      </effects>
+      <dock external="1" />
+      <docksize tags="dock_s" />
+    </properties>
+  </macro>
+</macros>

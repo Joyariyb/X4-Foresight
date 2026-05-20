@@ -36,6 +36,15 @@ def format_credits(amount_str: str) -> str:
     except (ValueError, TypeError):
         return f"{amount_str} Cr"
 
+
+def format_m3(value: float) -> str:
+    """Formats a cargo volume in m³ to a compact string (k / M suffix)."""
+    if value >= 1_000_000:
+        return f"{value / 1_000_000:.1f}M m³"
+    if value >= 1_000:
+        return f"{value / 1_000:.1f}k m³"
+    return f"{value:.0f} m³"
+
 # ═════════════════════════════════════════════════════════════════════════════
 #  SECTION 5 — DISPLAY
 # ═════════════════════════════════════════════════════════════════════════════
@@ -173,6 +182,31 @@ def display_results(data: dict):
                     shield_str = "None"
 
                 print(f"  {indent} Shield   : {BLUE}{shield_str}{RESET}")
+
+                # ── Storage utilisation — per type then total ─────────────────
+                # Adjusted values (adj) include trade reservations and match the
+                # game's displayed fill %. Raw physical values are stored in the
+                # JSON under cargo_{type}_pct / cargo_pct for independent access.
+                for type_label, type_key in (
+                    ("Container", "container"),
+                    ("Solid",     "solid"),
+                    ("Liquid",    "liquid"),
+                ):
+                    t_adj_m3  = s.get(f"cargo_{type_key}_adj_m3")
+                    t_max     = s.get(f"cargo_{type_key}_max")
+                    t_adj_pct = s.get(f"cargo_{type_key}_adj_pct")
+                    if t_adj_pct is not None:
+                        print(f"  {indent} {type_label:<9}: {format_m3(t_adj_m3)} / {format_m3(t_max)}  ({t_adj_pct:.0f}%)")
+                    elif t_adj_m3 is not None:
+                        print(f"  {indent} {type_label:<9}: {format_m3(t_adj_m3)}")
+
+                cargo_adj_m3  = s.get("cargo_adj_m3")
+                cargo_max     = s.get("cargo_max")
+                cargo_adj_pct = s.get("cargo_adj_pct")
+                if cargo_adj_pct is not None:
+                    print(f"  {indent} {'Storage':<9}: {format_m3(cargo_adj_m3)} / {format_m3(cargo_max)}  ({cargo_adj_pct:.0f}%) [total]")
+                elif cargo_adj_m3 is not None:
+                    print(f"  {indent} {'Storage':<9}: {format_m3(cargo_adj_m3)}")
 
                 # ── Docked ships ──────────────────────────────────────────────
                 # Ships with connection="dock" are physically present in a bay.

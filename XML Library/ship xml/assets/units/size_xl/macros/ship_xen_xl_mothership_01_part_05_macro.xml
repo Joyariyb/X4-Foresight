@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: nick (192.168.3.62) on 2023-12-04 12:53:56-->
+<macros>
+  <macro name="ship_xen_xl_mothership_01_part_05_macro" class="destructible">
+    <component ref="ship_xen_xl_mothership_01_part_05" />
+    <properties>
+      <identification name="{20109,14301}" />
+      <hull integrated="1" paint="1" />
+      <autoaim allow="0" />
+    </properties>
+  </macro>
+</macros>

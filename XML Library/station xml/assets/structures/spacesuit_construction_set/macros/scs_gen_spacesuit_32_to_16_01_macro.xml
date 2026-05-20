@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Lino (192.168.3.107) on 2023-08-31 17:05:42-->
+<macros>
+  <macro name="scs_gen_spacesuit_32_to_16_01_macro" class="destructible">
+    <component ref="scs_gen_spacesuit_32_to_16_01" />
+    <properties>
+      <identification name="{20007,2001}" />
+    </properties>
+  </macro>
+</macros>

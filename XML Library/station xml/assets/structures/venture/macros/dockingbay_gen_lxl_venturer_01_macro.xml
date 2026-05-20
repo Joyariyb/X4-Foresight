@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Michael (192.168.3.81) at 17.09.2018_10-31-24-->
+<macros>
+  <macro name="dockingbay_gen_lxl_venturer_01_macro" class="dockingbay">
+    <component ref="dockingbay_gen_lxl_venturer_01" />
+    <properties>
+      <identification name="{20104,79701}" description="{20104,79702}" />
+      <dock external="1" storage="0" allowbuild="0" allowtrade="0" ventureronly="1" uselandinggear="0" />
+      <undock rotate="0" />
+      <room walkable="0" />
+      <docksize tags="dock_l dock_xl" />
+    </properties>
+  </macro>
+</macros>

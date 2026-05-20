@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Exported by: Florian (192.168.3.134) at 06.11.2018_13-32-54-->
+<macros>
+  <macro name="struct_par_vertical_01_macro" class="connectionmodule">
+    <component ref="struct_par_vertical_01" />
+    <properties>
+      <identification name="{20104,52301}" shortname="{20104,52303}" makerrace="paranid" description="{20104,52302}" />
+      <build>
+        <sets>
+          <set ref="factory" />
+          <set ref="tradestation_paranid" />
+          <set ref="piratebase" />
+          <set ref="headquarters_player" />
+        </sets>
+      </build>
+      <hull max="79000" />
+    </properties>
+  </macro>
+</macros>
