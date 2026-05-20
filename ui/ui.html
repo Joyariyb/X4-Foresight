@@ -153,6 +153,11 @@
     .ware-tags { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 10px; }
     .ware-tag { font-size: 10px; font-family: var(--font-mono); padding: 2px 7px; border-radius: 2px; background: var(--bg-panel); border: 1px solid var(--border); color: var(--text-dim); }
 
+    /* ── STATION TAB BUTTONS ── */
+    .station-tab-btn { padding: 3px 10px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); background: transparent; border: 1px solid var(--border); border-radius: 2px; cursor: pointer; user-select: none; white-space: nowrap; transition: color 0.12s, border-color 0.12s; }
+    .station-tab-btn:hover { color: var(--text-dim); border-color: var(--text-faint); }
+    .station-tab-btn.active { color: var(--teal); border-color: var(--teal); }
+
     /* ── SORT DROPDOWN ── */
     /* Sits inline in the section header, right of the divider line */
     .sort-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); flex-shrink: 0; }
@@ -982,6 +987,41 @@
     if (row) row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 
+  // ── STATION CARD HELPERS ─────────────────────────────────────────────────
+
+  // Switches the visible tab panel within a single station card.
+  function switchStationTab(code, tab) {
+    const card = document.getElementById('station-' + code);
+    if (!card) return;
+    card.querySelectorAll('.station-tab-btn').forEach(b => b.classList.remove('active'));
+    card.querySelectorAll('.station-tab-panel').forEach(p => p.style.display = 'none');
+    const btn = card.querySelector(`.station-tab-btn[data-tab="${tab}"]`);
+    const pnl = card.querySelector(`.station-tab-panel[data-tab="${tab}"]`);
+    if (btn) btn.classList.add('active');
+    if (pnl) pnl.style.display = 'block';
+  }
+
+  // Derives a 3-letter faction tag from the station's module list.
+  // Falls back to 'GEN' when no recognised faction is found.
+  function stationFactionTag(s) {
+    const ABBR = { Argon:'ARG', Teladi:'TEL', Paranid:'PAR', Split:'ZYA', Terran:'TER', Boron:'BOR' };
+    if (s.modules && s.modules.length > 0) {
+      for (const m of s.modules) {
+        if (m.faction && ABBR[m.faction]) return ABBR[m.faction];
+      }
+      if (s.modules[0].faction) return s.modules[0].faction.slice(0, 3).toUpperCase();
+    }
+    return 'GEN';
+  }
+
+  // Derives a human-readable station type from the number of production wares.
+  function stationTypeLabel(s) {
+    const wares = s.production ? s.production.split(',').filter(w => w.trim()) : [];
+    if (wares.length === 0) return 'Defence Platform';
+    if (wares.length >= 4)  return 'Manufacturing Hub';
+    return 'Production Station';
+  }
+
   function populate(data) {
     const ships    = data.ships || {};
     const fleet    = ships.fleet_summary || {};
@@ -1156,60 +1196,171 @@
 
     // Stations
     document.getElementById("stations-grid").innerHTML = stations.map(s => {
-      const prod = s.production
-        ? s.production.split(",").map(w => `<span class="ware-tag">${w.trim()}</span>`).join("")
-        : `<span style="color:var(--text-faint);font-size:11px;padding:0 2px">No production modules</span>`;
+      const factionTag = stationFactionTag(s);
+      const typeLabel  = stationTypeLabel(s);
 
-      const fmtM3 = v => v == null ? '—' : v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(1)+'k' : String(Math.round(v));
-      const TYPE_COLOR  = { container: 'var(--teal)', solid: 'var(--amber)', liquid: 'var(--purple)' };
-      const TYPE_LABEL  = { container: 'Container',   solid: 'Solid',        liquid: 'Liquid'        };
+      // Hull health
+      const hullPct    = s.hull_pct;
+      const hullColor  = hullPct == null ? 'var(--text-faint)' : hullPct >= 95 ? 'var(--green)' : hullPct >= 50 ? 'var(--amber)' : 'var(--red)';
+      const hullPctStr = hullPct != null ? Math.round(hullPct) + '%' : '—';
+      const hullBarW   = hullPct != null ? Math.min(hullPct, 100).toFixed(1) : '0';
 
+      // Shield health — scanner doesn't capture station shields yet; shows — until added
+      const shieldPct    = s.shield_pct;
+      const shieldColor  = shieldPct == null ? 'var(--text-faint)' : shieldPct >= 80 ? '#388bfd' : shieldPct >= 50 ? 'var(--amber)' : 'var(--red)';
+      const shieldPctStr = shieldPct != null ? Math.round(shieldPct) + '%' : '—';
+      const shieldBarW   = shieldPct != null ? Math.min(shieldPct, 100).toFixed(1) : '0';
+
+      // Shield cell inner HTML — null renders a "NO SHIELDS" label centred in the bar area
+      const shieldDisplay = shieldPct == null
+        ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+             <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-faint)">Shields</span>
+           </div>
+           <div style="height:14px;background:var(--border);border-radius:2px;display:flex;align-items:center;justify-content:center">
+             <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--red)">No Shields</span>
+           </div>`
+        : `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+             <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-faint)">Shields</span>
+             <span style="font-family:var(--font-mono);font-size:11px;color:${shieldColor}">${shieldPctStr}</span>
+           </div>
+           <div style="height:3px;background:var(--border);border-radius:2px;overflow:hidden">
+             <div style="height:100%;width:${shieldBarW}%;background:${shieldColor};border-radius:2px"></div>
+           </div>`;
+
+      // Stats
+      const dockedShips  = s.docked_ships || [];
+      const shipCount    = dockedShips.length;
+      const modCount     = s.module_count != null ? s.module_count : '—';
+      const storageRaw   = s.cargo_adj_pct;
+      const storageStr   = storageRaw != null ? Math.round(storageRaw) + '%' : '—';
+      const storageColor = storageRaw != null ? (storageRaw > 90 ? 'var(--red)' : storageRaw > 70 ? 'var(--amber)' : 'var(--teal)') : 'var(--text-faint)';
+
+      // Stat cell builder — last cell omits the right border
+      const sc = (lbl, val, col = 'var(--text)', last = false) =>
+        `<div style="padding:10px 12px;text-align:center${last ? '' : ';border-right:1px solid var(--border)'}">
+           <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-faint);margin-bottom:5px">${lbl}</div>
+           <div style="font-family:var(--font-mono);font-size:20px;color:${col}">${val}</div>
+         </div>`;
+
+      // ── PRODUCTION TAB ─────────────────────────────────────────────────────
+      // Fill % and rates require scanner work — bars show placeholder until added.
+      const wares = s.production ? s.production.split(',').map(w => w.trim()).filter(Boolean) : [];
+      const prodRows = wares.length === 0
+        ? `<div style="padding:12px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No production modules</div>`
+        : wares.map(w =>
+            `<div style="display:flex;align-items:center;gap:10px;padding:5px 14px;border-bottom:1px solid var(--border)">
+               <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);min-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${w.toUpperCase()}</span>
+               <div style="flex:1;height:3px;background:var(--border);border-radius:2px"></div>
+               <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);min-width:28px;text-align:right">—</span>
+               <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);min-width:54px;text-align:right">—/hr</span>
+             </div>`).join('');
+
+      // ── DOCKED SHIPS TAB ───────────────────────────────────────────────────
+      const dockedRows = dockedShips.length === 0
+        ? `<div style="padding:12px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No docked ships</div>`
+        : dockedShips.map(ds => {
+            const cls = ds.class ? ds.class.replace('ship_', '').toUpperCase() : '?';
+            return `<div style="display:flex;align-items:center;gap:10px;padding:6px 14px;border-bottom:1px solid var(--border)">
+              <span style="font-family:var(--font-mono);color:var(--yellow);font-size:11px;min-width:64px">${ds.code}</span>
+              <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);padding:1px 5px;border:1px solid var(--border);border-radius:2px">${cls}</span>
+              <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ds.macro}</span>
+              ${ds.under_construction ? '<span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.1em;color:var(--amber)">CONSTRUCTING</span>' : ''}
+            </div>`;
+          }).join('');
+
+      // ── STORAGE TAB ────────────────────────────────────────────────────────
       // adj fields match the game's displayed fill (physical cargo ± trade reservations).
-      // Raw physical values (cargo_{t}_pct / cargo_pct) are in the JSON for independent use.
-      const hasAnyStorage = ['container','solid','liquid'].some(t => s[`cargo_${t}_adj_pct`] != null) || s.cargo_adj_pct != null;
-      let storageHtml = '';
-      if (hasAnyStorage) {
-        const typeRows = ['container','solid','liquid'].map(t => {
+      const fmtM3 = v => v == null ? '—' : v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(1)+'k' : String(Math.round(v));
+      const TYPE_COLOR = { container:'var(--teal)', solid:'var(--amber)', liquid:'var(--purple)' };
+      const TYPE_LABEL = { container:'Container',   solid:'Solid',        liquid:'Liquid'        };
+
+      const hasStorage = ['container','solid','liquid'].some(t => s[`cargo_${t}_adj_pct`] != null) || s.cargo_adj_pct != null;
+      let storageRows  = `<div style="padding:12px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No storage data</div>`;
+      if (hasStorage) {
+        const typeRowsHtml = ['container','solid','liquid'].map(t => {
           const pct = s[`cargo_${t}_adj_pct`];
           const m3  = s[`cargo_${t}_adj_m3`];
           const max = s[`cargo_${t}_max`];
           if (pct == null) return '';
-          const clamped = Math.min(pct, 100);
-          const color   = pct > 90 ? 'var(--red)' : TYPE_COLOR[t];
-          return `<div style="display:flex;align-items:center;gap:6px;margin-top:4px">
-            <span style="font-size:10px;font-family:var(--font-mono);letter-spacing:0.06em;color:${color};min-width:58px;white-space:nowrap">${TYPE_LABEL[t]}</span>
+          const col = pct > 90 ? 'var(--red)' : TYPE_COLOR[t];
+          return `<div style="display:flex;align-items:center;gap:8px;padding:5px 14px;border-bottom:1px solid var(--border)">
+            <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:${col};min-width:68px">${TYPE_LABEL[t]}</span>
             <div style="flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden">
-              <div style="height:100%;width:${clamped.toFixed(1)}%;background:${color};border-radius:2px"></div>
+              <div style="height:100%;width:${Math.min(pct,100).toFixed(1)}%;background:${col};border-radius:2px"></div>
             </div>
-            <span style="font-family:var(--font-mono);font-size:11px;color:${color};min-width:34px;text-align:right">${pct.toFixed(0)}%</span>
+            <span style="font-family:var(--font-mono);font-size:11px;color:${col};min-width:34px;text-align:right">${pct.toFixed(0)}%</span>
             <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);white-space:nowrap">${fmtM3(m3)}/${fmtM3(max)} m³</span>
           </div>`;
         }).join('');
 
         let totalRow = '';
         if (s.cargo_adj_pct != null) {
-          const pct   = Math.min(s.cargo_adj_pct, 100);
-          const color = s.cargo_adj_pct > 90 ? 'var(--red)' : s.cargo_adj_pct > 70 ? 'var(--amber)' : 'var(--green)';
-          totalRow = `<div style="display:flex;align-items:center;gap:6px;margin-top:5px;padding-top:5px;border-top:1px dashed var(--border)">
-            <span style="font-size:10px;font-family:var(--font-mono);letter-spacing:0.08em;text-transform:uppercase;color:var(--text-faint);min-width:58px;white-space:nowrap">Total</span>
+          const pct = s.cargo_adj_pct;
+          const col = pct > 90 ? 'var(--red)' : pct > 70 ? 'var(--amber)' : 'var(--green)';
+          totalRow = `<div style="display:flex;align-items:center;gap:8px;padding:6px 14px;background:var(--bg-panel)">
+            <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-faint);min-width:68px">Total</span>
             <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden">
-              <div style="height:100%;width:${pct.toFixed(1)}%;background:${color};border-radius:2px"></div>
+              <div style="height:100%;width:${Math.min(pct,100).toFixed(1)}%;background:${col};border-radius:2px"></div>
             </div>
-            <span style="font-family:var(--font-mono);font-size:11px;color:${color};min-width:34px;text-align:right">${s.cargo_adj_pct.toFixed(0)}%</span>
+            <span style="font-family:var(--font-mono);font-size:11px;color:${col};min-width:34px;text-align:right">${pct.toFixed(0)}%</span>
             <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);white-space:nowrap">${fmtM3(s.cargo_adj_m3)}/${fmtM3(s.cargo_max)} m³</span>
           </div>`;
         }
-
-        storageHtml = `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">${typeRows}${totalRow}</div>`;
+        storageRows = typeRowsHtml + totalRow;
       }
 
-      return `<div class="panel">
-        <div class="panel-head">
-          <span><i class="ti ti-building-factory-2" style="font-size:14px;vertical-align:-2px;margin-right:6px"></i>${s.name.trim()} <span class="mono" style="color:var(--teal);font-size:11px">${s.code}</span></span>
-          <span style="color:var(--text-dim);font-size:11px"><i class="ti ti-map-pin" style="font-size:12px;vertical-align:-2px;margin-right:3px"></i>${s.sector}</span>
+      return `<div class="panel" id="station-${s.code}">
+        <!-- Header: vertical faction tag + name/location/status -->
+        <div style="display:flex;min-height:52px">
+          <div style="writing-mode:vertical-lr;transform:rotate(180deg);font-family:var(--font-mono);font-size:9px;letter-spacing:0.18em;color:var(--text-faint);background:var(--bg-panel);border-right:1px solid var(--border);padding:8px 6px;display:flex;align-items:center;justify-content:center;text-transform:uppercase;flex-shrink:0">
+            ${factionTag}
+          </div>
+          <div style="flex:1;padding:8px 14px;background:var(--bg-panel)">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">
+              <div style="display:flex;align-items:baseline;gap:10px;min-width:0;overflow:hidden">
+                <span style="font-family:var(--font-mono);font-size:13px;color:var(--lime);letter-spacing:0.1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name.trim().toUpperCase()}</span>
+                <span style="font-family:var(--font-mono);color:var(--yellow);font-size:11px;white-space:nowrap">${s.code}</span>
+              </div>
+              <span style="font-family:var(--font-mono);font-size:10px;color:var(--green);letter-spacing:0.12em;white-space:nowrap;flex-shrink:0">OPERATIONAL</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+              <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);letter-spacing:0.08em">${s.sector.toUpperCase()}</span>
+              <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:0.06em">${typeLabel}</span>
+            </div>
+          </div>
         </div>
-        <div class="ware-tags">${prod}</div>
-        ${storageHtml}
+        <!-- Hull + Shields health bars -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+          <div style="padding:7px 14px;border-right:1px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+              <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-faint)">Hull</span>
+              <span style="font-family:var(--font-mono);font-size:11px;color:${hullColor}">${hullPctStr}</span>
+            </div>
+            <div style="height:3px;background:var(--border);border-radius:2px;overflow:hidden">
+              <div style="height:100%;width:${hullBarW}%;background:${hullColor};border-radius:2px"></div>
+            </div>
+          </div>
+          <div style="padding:7px 14px">
+            ${shieldDisplay}
+          </div>
+        </div>
+        <!-- Stats row: Modules | Crew | Ships | Storage -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border)">
+          ${sc('Modules', modCount)}
+          ${sc('Crew', '—', 'var(--text-faint)')}
+          ${sc('Ships', shipCount, shipCount > 0 ? 'var(--teal)' : 'var(--text-faint)')}
+          ${sc('Storage', storageStr, storageColor, true)}
+        </div>
+        <!-- Tab bar -->
+        <div style="display:flex;gap:4px;padding:6px 10px;border-bottom:1px solid var(--border);background:var(--bg-panel)">
+          <button class="station-tab-btn active" data-tab="production" onclick="switchStationTab('${s.code}','production')">Production</button>
+          <button class="station-tab-btn" data-tab="docked" onclick="switchStationTab('${s.code}','docked')">Docked${shipCount > 0 ? ' · ' + shipCount : ''}</button>
+          <button class="station-tab-btn" data-tab="storage" onclick="switchStationTab('${s.code}','storage')">Storage${storageRaw != null ? ' · ' + Math.round(storageRaw) + '%' : ''}</button>
+        </div>
+        <!-- Tab panels -->
+        <div class="station-tab-panel" data-tab="production" style="display:block">${prodRows}</div>
+        <div class="station-tab-panel" data-tab="docked"     style="display:none">${dockedRows}</div>
+        <div class="station-tab-panel" data-tab="storage"    style="display:none">${storageRows}</div>
       </div>`;
     }).join("");
 
