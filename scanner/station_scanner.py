@@ -108,6 +108,44 @@ def _count_construction_modules(station_elem: ET.Element) -> int:
     return sum(1 for _ in sequence.findall('entry'))
 
 
+def _extract_station_docked_ships(station_elem: ET.Element) -> list[dict]:
+    """
+    Returns all ships physically docked at a station.
+
+    Ships with connection="dock" are sitting in a docking bay inside the
+    station's component subtree. This distinguishes them from ships with
+    connection="space", which are defenders or visitors flying nearby.
+
+    Ships under construction at a shipyard/HQ also appear here with a
+    state="construction" attribute — they are included and tagged accordingly
+    so the caller can separate active ships from ships-being-built.
+
+    Only named ship classes (ship_s/m/l/xl) are returned. Drones are stored
+    as <unit> ammunition elements and never appear as ship components.
+    """
+    SHIP_CLASSES = {"ship_s", "ship_m", "ship_l", "ship_xl"}
+    docked = []
+
+    for child in station_elem.iter():
+        if child is station_elem:
+            continue
+        cls = child.get('class', '')
+        if cls not in SHIP_CLASSES:
+            continue
+        if child.get('connection') != 'dock':
+            continue
+
+        docked.append({
+            "code":              child.get('code', ''),
+            "macro":             child.get('macro', ''),
+            "owner":             child.get('owner', ''),
+            "class":             cls,
+            "under_construction": child.get('state') == 'construction',
+        })
+
+    return docked
+
+
 def _parse_module_info(macro: str) -> dict:
     """
     Decodes the category, designer faction, and size from a module macro string.
@@ -347,26 +385,28 @@ def scan_save(file_path: pathlib.Path, sector_names: dict) -> dict:
                         else:
                             display_name = "Unnamed Station"
 
-                        production   = parse_production_from_construction(elem)
-                        module_count = _count_construction_modules(elem)
-                        modules      = _parse_station_modules(elem)
-                        health       = _parse_station_health(modules)
+                        production    = parse_production_from_construction(elem)
+                        module_count  = _count_construction_modules(elem)
+                        modules       = _parse_station_modules(elem)
+                        health        = _parse_station_health(modules)
+                        docked_ships  = _extract_station_docked_ships(elem)
 
                         entry = {
-                            "name":         display_name,
-                            "code":         code,
-                            "class":        elem.get('class', ''),
-                            "macro":        macro,
-                            "sector":       station_sector_pending,
-                            "production":   production,
-                            "module_count": module_count,
-                            "hull_hp":      health["hull_hp"],
-                            "hull_max":     health["hull_max"],
-                            "hull_pct":     health["hull_pct"],
-                            "shield_hp":    health["shield_hp"],
-                            "shield_max":   health["shield_max"],
-                            "shield_pct":   health["shield_pct"],
-                            "modules":      modules,
+                            "name":          display_name,
+                            "code":          code,
+                            "class":         elem.get('class', ''),
+                            "macro":         macro,
+                            "sector":        station_sector_pending,
+                            "production":    production,
+                            "module_count":  module_count,
+                            "docked_ships":  docked_ships,
+                            "hull_hp":       health["hull_hp"],
+                            "hull_max":      health["hull_max"],
+                            "hull_pct":      health["hull_pct"],
+                            "shield_hp":     health["shield_hp"],
+                            "shield_max":    health["shield_max"],
+                            "shield_pct":    health["shield_pct"],
+                            "modules":       modules,
                         }
 
                         if not any(s["code"] == code for s in data["stations"]):

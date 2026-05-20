@@ -484,6 +484,7 @@
   }
 
   function hullBadge(origin) {
+    if (!origin) return '<span class="badge">—</span>';
     const hostile = HOSTILE_ORIGINS.has(origin);
     const cls = origin.toLowerCase();
     const label = hostile ? `* ${origin}` : origin;
@@ -491,6 +492,7 @@
   }
 
   function tierBadge(tier) {
+    if (!tier) return '<span class="badge">—</span>';
     const cls = tier.toLowerCase().replace(" ","");
     return `<span class="badge ${cls}">${tier}</span>`;
   }

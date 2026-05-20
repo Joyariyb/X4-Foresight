@@ -1,3 +1,7 @@
+LOOK AT MOVING JSON TO DATABASE
+=====================================
+Might be easier for AI to query
+
 STATION MODULE DATA — FUTURE FIELDS
 =====================================
 The following fields are available in station module macro XMLs and should be

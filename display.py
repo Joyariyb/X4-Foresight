@@ -174,6 +174,23 @@ def display_results(data: dict):
 
                 print(f"  {indent} Shield   : {BLUE}{shield_str}{RESET}")
 
+                # ── Docked ships ──────────────────────────────────────────────
+                # Ships with connection="dock" are physically present in a bay.
+                # We split own (player) vs visiting (NPC traders/miners) because
+                # a busy station with many visitors signals healthy trade activity,
+                # while own ships docked might mean they're waiting for orders.
+                docked = s.get("docked_ships", [])
+                if docked:
+                    own       = sum(1 for d in docked if d["owner"] == "player")
+                    building  = sum(1 for d in docked if d["under_construction"])
+                    visiting  = len(docked) - own
+                    parts = []
+                    if own - building:  parts.append(f"{own - building} own")
+                    if building:        parts.append(f"{building} building")
+                    if visiting:        parts.append(f"{visiting} visiting")
+                    detail = "  (" + "  ·  ".join(parts) + ")" if parts else ""
+                    print(f"  {indent} Docked   : {len(docked)} ships{detail}")
+
                 # Blank line between stations within a sector for breathing room,
                 # but not after the last one (the sector group already adds one).
                 if not is_last:

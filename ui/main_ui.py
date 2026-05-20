@@ -267,12 +267,26 @@ class ScanWorker(QThread):
 
             self.progress.emit("Pass 1 — player, stations…")
             game_data = scan_save(self._save_path, sector_names)
+            # Seed crew with station managers so they appear alongside ship crew.
+            game_data["crew"] = game_data.get("managers", [])
 
             self.progress.emit("Pass 2 — faction reputation…")
             game_data["reputation"] = scan_reputation(self._save_path)
 
             self.progress.emit("Pass 3 — ships…")
-            game_data["ships"] = scan_ships(self._save_path, sector_names)
+            # station_sectors gates NPC collection — without it context_sectors
+            # is empty and scan_ships returns no NPC ships at all.
+            station_sectors = {s["sector"] for s in game_data["stations"]}
+            ships_result = scan_ships(
+                self._save_path, sector_names,
+                station_sectors=station_sectors,
+            )
+            game_data["ships"] = {
+                "player_ships": ships_result["player_ships"],
+                "npc_ships":    ships_result["npc_ships"],
+            }
+            # Append ship pilots and service crew after station managers.
+            game_data["crew"] += ships_result.get("crew", [])
 
             self.progress.emit("Exporting JSON…")
             # CRITICAL: export_json writes the restructured data to x4_empire_state.json.
