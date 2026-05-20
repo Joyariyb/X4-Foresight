@@ -1,0 +1,2 @@
+- Pilots can't be sorted by skill
+- Docks don't actually have their ingame name

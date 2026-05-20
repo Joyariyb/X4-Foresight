@@ -563,12 +563,12 @@
       } else if (stars >= i - 0.5) {
         // half star: dim empty star underneath, amber star clipped to 50% on top
         html += `<span style="position:relative;display:inline-block">` +
-                `<span style="color:var(--text-faint)">★</span>` +
+                `<span style="color:var(--text-dim)">★</span>` +
                 `<span style="position:absolute;left:0;top:0;width:50%;overflow:hidden;color:var(--amber)">★</span>` +
                 `</span>`;
       } else {
         // empty star
-        html += `<span style="color:var(--text-faint)">☆</span>`;
+        html += `<span style="color:var(--text-dim)">☆</span>`;
       }
     }
     return html;
@@ -1279,10 +1279,54 @@
       const storageStr   = storageRaw != null ? Math.round(storageRaw) + '%' : '—';
       const storageColor = storageRaw != null ? (storageRaw > 90 ? 'var(--red)' : storageRaw > 70 ? 'var(--amber)' : 'var(--teal)') : 'var(--text-faint)';
 
+      // Build per-type storage breakdown for the hover tooltip.
+      // Each entry carries its own fill-level colour so the bars follow the
+      // same amber/red/teal rule as the main storage stat.
+      const storageTipColor = pct => pct > 90 ? 'var(--red)' : pct > 70 ? 'var(--amber)' : 'var(--teal)';
+      const storageTipTypes = [
+        { label: 'Container', pct: s.cargo_container_adj_pct, m3: s.cargo_container_adj_m3, max: s.cargo_container_max },
+        { label: 'Solid',     pct: s.cargo_solid_adj_pct,     m3: s.cargo_solid_adj_m3,     max: s.cargo_solid_max     },
+        { label: 'Liquid',    pct: s.cargo_liquid_adj_pct,    m3: s.cargo_liquid_adj_m3,     max: s.cargo_liquid_max    },
+      ].filter(t => t.max != null && t.max > 0);
+      // Only attach the tooltip when at least one storage type has data.
+      const storageTipAttr = storageTipTypes.length > 0
+        ? `data-storage-tip="${encodeURIComponent(JSON.stringify(storageTipTypes.map(t => ({
+            label: t.label,
+            pct:   t.pct   != null ? Math.round(t.pct)   : null,
+            m3:    t.m3    != null ? Math.round(t.m3)    : null,
+            max:   t.max,
+            color: storageTipColor(t.pct != null ? t.pct : 0),
+          }))))}"`
+        : '';
+
+      // Build grouped module breakdown for the hover tooltip.
+      // Modules are grouped by category (in display-priority order), then by
+      // display_name with duplicates counted, so "Argon Struct × 12" beats
+      // listing each one individually.
+      const MODULE_CAT_ORDER = ['Production', 'Dock Area', 'Pier', 'Storage', 'Struct'];
+      const moduleGroups = {};
+      (s.modules || []).forEach(m => {
+        const cat  = m.category || 'Other';
+        const name = m.display_name || m.macro;
+        if (!moduleGroups[cat]) moduleGroups[cat] = {};
+        moduleGroups[cat][name] = (moduleGroups[cat][name] || 0) + 1;
+      });
+      const moduleTipData = [
+        ...MODULE_CAT_ORDER.filter(c => moduleGroups[c]),
+        ...Object.keys(moduleGroups).filter(c => !MODULE_CAT_ORDER.includes(c)),
+      ].map(cat => ({
+        category: cat,
+        items: Object.entries(moduleGroups[cat]).sort((a, b) => a[0].localeCompare(b[0])),
+      }));
+      const moduleTipAttr = moduleTipData.length > 0
+        ? `data-modules-tip="${encodeURIComponent(JSON.stringify(moduleTipData))}"`
+        : '';
+
       // Stat cell builder — each cell is its own slightly lighter box.
       // Label colour follows the two-state rule via attnColor().
-      const sc = (lbl, val, col = 'var(--text)', last = false) =>
-        `<div style="padding:10px 12px;text-align:center;background:var(--bg-card);border-radius:3px">
+      // tipAttr is an optional extra attribute string e.g. 'data-storage-tip="..."'
+      const sc = (lbl, val, col = 'var(--text)', last = false, tipAttr = '') =>
+        `<div style="padding:10px 12px;text-align:center;background:var(--bg-card);border-radius:3px${tipAttr ? ';cursor:default' : ''}" ${tipAttr}>
            <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:${attnColor(col)};margin-bottom:5px">${lbl}</div>
            <div style="font-family:var(--font-mono);font-size:20px;color:${col}">${val}</div>
          </div>`;
@@ -1405,10 +1449,10 @@
         </div>
         <!-- Stats row: Modules | Crew | Ships | Storage -->
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px;background:var(--bg-panel);border-bottom:1px solid var(--border)">
-          ${sc('Modules', modCount)}
+          ${sc('Modules', modCount, 'var(--text)', false, moduleTipAttr)}
           ${sc('Crew', '—', 'var(--text-faint)')}
           ${sc('Ships', shipCount, shipCount > 0 ? 'var(--teal)' : 'var(--text-faint)')}
-          ${sc('Storage', storageStr, storageColor, true)}
+          ${sc('Storage', storageStr, storageColor, true, storageTipAttr)}
         </div>
         <!-- Tab bar -->
         <div style="display:flex;gap:4px;padding:6px 10px;border-bottom:1px solid var(--border);background:var(--bg-panel)">
@@ -1476,21 +1520,81 @@
     if (!isNaN(allIdx) && allIdx >= 0) jumpToCrew(allIdx);
   });
 
-  // Hull HP tooltip — follows cursor, only visible over bars with data-hull-tip
+  // Shared hover tooltip — used for hull bars, pilot skills, and storage breakdowns.
   (function() {
     const tip = document.getElementById('hull-tip');
+
+    function moduleTipHtml(groups) {
+      // Renders module groups as category headers followed by name × count rows.
+      return `<div style="min-width:180px;max-width:260px;padding:2px 0">` +
+        groups.map(g =>
+          `<div style="margin-bottom:8px">
+             <div style="font-size:9px;letter-spacing:0.12em;text-transform:uppercase;
+                         color:var(--text-faint);margin-bottom:4px;padding-bottom:3px;
+                         border-bottom:1px solid var(--border)">${g.category}</div>
+             ${g.items.map(([name, count]) =>
+               `<div style="display:flex;justify-content:space-between;align-items:baseline;
+                            gap:12px;padding:1px 0">
+                  <span style="color:var(--text-dim);font-size:11px;white-space:nowrap;
+                               overflow:hidden;text-overflow:ellipsis">${name}</span>
+                  <span style="color:var(--text-faint);font-size:10px;flex-shrink:0">×${count}</span>
+                </div>`
+             ).join('')}
+           </div>`
+        ).join('') +
+      `</div>`;
+    }
+
+    function storageTipHtml(types) {
+      // Renders each storage type as a label + % row followed by a fill bar.
+      const fmtM3 = v => v >= 1e6 ? (v/1e6).toFixed(2)+'M' : v >= 1e3 ? (v/1e3).toFixed(1)+'K' : v;
+      return `<div style="min-width:200px;padding:2px 0">` +
+        types.map(t => {
+          const barW  = t.pct != null ? Math.min(t.pct, 100) : 0;
+          const label = t.pct != null ? `${t.pct}%` : '—';
+          const sub   = (t.m3 != null && t.max != null)
+            ? `<span style="color:var(--text-dim);font-size:10px">${fmtM3(t.m3)} / ${fmtM3(t.max)} m³</span>`
+            : '';
+          return `<div style="margin-bottom:7px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
+              <span style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-faint)">${t.label}</span>
+              <span style="color:${t.color};margin-left:12px">${label}</span>
+            </div>
+            <div style="height:6px;background:var(--border);border-radius:2px;overflow:hidden">
+              <div style="height:100%;width:${barW}%;background:${t.color};border-radius:2px"></div>
+            </div>
+            ${sub ? `<div style="margin-top:2px;text-align:right">${sub}</div>` : ''}
+          </div>`;
+        }).join('') +
+      `</div>`;
+    }
+
     document.addEventListener('mousemove', function(e) {
-      const el = e.target.closest('[data-hull-tip],[data-pilot-skills]');
+      const el = e.target.closest('[data-hull-tip],[data-pilot-skills],[data-storage-tip],[data-modules-tip]');
       if (!el) { tip.style.display = 'none'; return; }
-      // Pilot skills tooltip: render multi-line HTML with stars per skill.
-      // Hull tip: plain text coloured to match the bar.
+
       if (el.dataset.pilotSkills) {
+        // Pilot skills: multi-line stars per skill
         tip.innerHTML = pilotTipHtml(JSON.parse(el.dataset.pilotSkills));
-        tip.style.color = '';   // let CSS --lime default show through
+        tip.style.color      = '';
+        tip.style.whiteSpace = 'nowrap';
+      } else if (el.dataset.storageTip) {
+        // Storage breakdown: one bar row per container type
+        tip.innerHTML = storageTipHtml(JSON.parse(decodeURIComponent(el.dataset.storageTip)));
+        tip.style.color      = '';
+        tip.style.whiteSpace = 'normal';
+      } else if (el.dataset.modulesTip) {
+        // Module list: grouped by category with counts
+        tip.innerHTML = moduleTipHtml(JSON.parse(decodeURIComponent(el.dataset.modulesTip)));
+        tip.style.color      = '';
+        tip.style.whiteSpace = 'normal';
       } else {
-        tip.textContent = el.dataset.hullTip;
-        tip.style.color = el.dataset.hullColor || ''; // hull bars override with health colour
+        // Hull bar: plain coloured text
+        tip.textContent      = el.dataset.hullTip;
+        tip.style.color      = el.dataset.hullColor || '';
+        tip.style.whiteSpace = 'nowrap';
       }
+
       tip.style.display = 'block';
       const x = Math.min(e.clientX + 14, window.innerWidth  - tip.offsetWidth  - 8);
       const y = Math.max(e.clientY - 32, 8);

@@ -18,20 +18,3 @@ extracted when station economy/crew features are implemented:
 These are NOT currently extracted by generate_station_stats.py. Add them to
 Pass 1 of that script when station crew/economy data is needed.
 
-
-BEHEMOTH E — HULL HP ABOVE BASE MAX
-=====================================
-The Behemoth E destroyer displays "100%  (101,857 / 102,000 HP)" rather than
-"Full" in the CLI output. This is not a bug.
-
-The ship has a hull capacity mod installed (<modification> block in the save
-file), which pushes its effective max HP above the base value stored in
-SHIP_STATS (102,000). The current HP of 101,857 therefore appears to be at
-near-full health, but the percentage is calculated against the unmodded base.
-
-Any ship showing a percentage above 100% or a raw HP higher than its SHIP_STATS
-max_hull value has a hull mod installed. The true modded max is not stored in
-the save file — it would need to be derived from the mod's multiplier, which is
-stored in the <modification><ship maxhull="..."> attribute.
-
-This is worth revisiting if we want accurate percentages for modded ships.

@@ -200,6 +200,20 @@ def _parse_station_modules(station_elem: ET.Element) -> list[dict]:
 
         info = _parse_module_info(macro)
 
+        # Build a player-readable display name from the already-decoded fields.
+        # Production modules identify themselves by what they make; all others
+        # assemble faction + category + size, omitting any parts that are None.
+        ware_id  = stats_entry.get('produces')
+        produces = WARE_NAMES.get(ware_id, ware_id.replace('_', ' ').title()) if ware_id else None
+
+        if produces:
+            display_name = f"{produces} Production"
+        else:
+            name_parts = [p for p in (info["faction"], info["category"]) if p]
+            display_name = " ".join(name_parts)
+            if info["size"]:
+                display_name += f" ({info['size']})"
+
         if is_shield:
             max_cap  = stats_entry['max_shield']
             cap_elem = comp.find('shield')
@@ -211,18 +225,19 @@ def _parse_station_modules(station_elem: ET.Element) -> list[dict]:
             else:
                 current = max_cap
             modules.append({
-                "macro":      macro,
-                "category":   info["category"],
-                "faction":    info["faction"],
-                "size":       info["size"],
-                "produces":   None,
-                "is_shield":  True,
-                "hull_hp":    None,
-                "hull_max":   None,
-                "hull_pct":   None,
-                "shield_hp":  current,
-                "shield_max": max_cap,
-                "shield_pct": (current / max_cap * 100.0) if max_cap else None,
+                "macro":        macro,
+                "display_name": display_name,
+                "category":     info["category"],
+                "faction":      info["faction"],
+                "size":         info["size"],
+                "produces":     None,
+                "is_shield":    True,
+                "hull_hp":      None,
+                "hull_max":     None,
+                "hull_pct":     None,
+                "shield_hp":    current,
+                "shield_max":   max_cap,
+                "shield_pct":   (current / max_cap * 100.0) if max_cap else None,
             })
         else:
             max_hull  = stats_entry['max_hull']
@@ -233,24 +248,23 @@ def _parse_station_modules(station_elem: ET.Element) -> list[dict]:
                 except (ValueError, TypeError):
                     current_h = max_hull
             else:
+                # No <hull> element means the module is at full health
                 current_h = max_hull
 
-            ware_id  = stats_entry.get('produces')
-            produces = WARE_NAMES.get(ware_id, ware_id.replace('_', ' ').title()) if ware_id else None
-
             modules.append({
-                "macro":      macro,
-                "category":   info["category"],
-                "faction":    info["faction"],
-                "size":       info["size"],
-                "produces":   produces,
-                "is_shield":  False,
-                "hull_hp":    current_h,
-                "hull_max":   max_hull,
-                "hull_pct":   (current_h / max_hull * 100.0) if max_hull else None,
-                "shield_hp":  None,
-                "shield_max": None,
-                "shield_pct": None,
+                "macro":        macro,
+                "display_name": display_name,
+                "category":     info["category"],
+                "faction":      info["faction"],
+                "size":         info["size"],
+                "produces":     produces,
+                "is_shield":    False,
+                "hull_hp":      current_h,
+                "hull_max":     max_hull,
+                "hull_pct":     (current_h / max_hull * 100.0) if max_hull else None,
+                "shield_hp":    None,
+                "shield_max":   None,
+                "shield_pct":   None,
             })
 
     return modules
