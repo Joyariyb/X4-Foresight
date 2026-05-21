@@ -164,7 +164,7 @@ Thin coordinator module. Re-exports the public scanner functions from their sub-
 | `scan_save` | `scanner.station_scanner` |
 | `scan_reputation` | `scanner.reputation_scanner` |
 
-`scan_ships` is imported directly from `scanner.ship_scanner` by callers — its richer signature (tier flags, `npc_only`) does not fit a simple re-export pattern.
+`scan_ships` is imported directly from `scanner.ship_scanner` by callers — its richer signature (tier flags, `npc_only`, `collect_all_npcs`) does not fit a simple re-export pattern.
 
 ---
 
@@ -661,7 +661,7 @@ Extracts ships nested inside a fully buffered carrier or large ship subtree. Doc
 
 ### 📡 Public API
 
-### `scan_ships(file_path, sector_names, station_sectors, ship_sectors, npc_only)`
+### `scan_ships(file_path, sector_names, station_sectors, ship_sectors, npc_only, collect_all_npcs)`
 
 ```python
 def scan_ships(
@@ -670,10 +670,11 @@ def scan_ships(
     station_sectors: set[str] | None = None,
     ship_sectors: set[str] | None = None,
     npc_only: bool = False,
+    collect_all_npcs: bool = False,
 ) -> dict
 ```
 
-Streams the save file and collects player and optionally NPC ship data using `iterparse()`. The union of `station_sectors` and `ship_sectors` forms `context_sectors` — NPC ships are only recorded when their resolved sector is in this set.
+Streams the save file and collects player and optionally NPC ship data using `iterparse()`. The union of `station_sectors` and `ship_sectors` forms `context_sectors` — NPC ships are usually only recorded when their resolved sector is in this set. When `collect_all_npcs=True`, slim NPC rows are collected for every sector and the caller filters them afterward.
 
 Sector and zone macro tracking run as separate state variables. Both markers are stamped onto each ship element before buffering so `_parse_sector()` can resolve location after parent elements have been cleared.
 
@@ -689,7 +690,8 @@ Player ship entries include the full set of parsed fields and crew extraction. N
 | `sector_names` | `dict` | Dictionary returned by `load_sector_names()`. |
 | `station_sectors` | `set[str] \| None` | Sector names where the player has stations; NPC ships here are included at tier 2. |
 | `ship_sectors` | `set[str] \| None` | Sector names where the player has ships; NPC ships here are included at tier 3. |
-| `npc_only` | `bool` | When true, skips buffering player ships. Used by the tier 3 CLI flow after a pre-scan has already collected player ships. |
+| `npc_only` | `bool` | When true, skips buffering player ships and returns an empty `player_ships` list. |
+| `collect_all_npcs` | `bool` | When true, records slim NPC rows from every sector so Tier 3 can do one ship stream and filter after player ship sectors are known. |
 
 **Returns** `dict` with keys:
 

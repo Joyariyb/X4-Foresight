@@ -169,8 +169,8 @@ def select_ship_tier(stations_active: bool) -> int:
     Prompts for a ship scan tier.
 
     Tier 2 needs station sector data so it is only offered when the stations
-    pass is also running. Tier 3 discovers sectors from the player ship pre-scan
-    and works independently of the stations pass.
+    pass is also running. Tier 3 discovers player ship sectors inside the ship
+    scan itself, so it works independently of the stations pass.
     """
     print()
     print("  ── SHIP SCAN TIER ─────────────────────────────────────────────────")
@@ -219,43 +219,52 @@ def _run_ships_pass(
     """
     Runs the ships pass at the requested tier.
 
-    Tier 3 uses a two-scan strategy to avoid scanning player ships twice:
-      - Pre-scan (no npc_only) finds player ships and their sectors.
-      - Main scan (npc_only=True) collects NPC ships in those sectors only.
-    The two results are stitched together before returning.
+    Tier 3 uses one scan:
+      - collect player ships normally
+      - collect slim NPC ship records for all sectors
+      - after the scan, build the player-sector set and filter NPC ships down
+
+    This is faster than the old two-scan approach because we only stream the
+    huge save file once. The tradeoff is keeping temporary slim NPC records in
+    memory until we know which sectors matter.
 
     Tiers 1 and 2 do a single scan — no pre-scan needed.
     """
     ship_sectors = None
 
     if ship_tier == 3:
-        # Pre-scan: player ships only, so we can discover which sectors they're in.
-        # npc_only is False here — we need player ships to build ship_sectors.
-        print("[Ships] Pre-scan to locate player ship sectors for tier 3...")
-        t0         = time.perf_counter()
-        pre_scan   = scan_ships(save_file, sector_names)
-        print(f"[Done] Pre-scan completed in {time.perf_counter() - t0:.2f}s")
-
-        ship_sectors = (
-            {s["sector"] for s in pre_scan["player_ships"]}
-            | (station_sectors or set())
-        )
-
-        # Main scan: NPC ships only in the combined sector set.
-        # npc_only=True skips player ship buffering since we already have them.
-        t0        = time.perf_counter()
-        main_scan = scan_ships(
-            save_file, sector_names,
+        # Tier 3 wants NPC ships in every sector where we have a player ship.
+        # We only know those sectors after player ships have been parsed.
+        #
+        # collect_all_npcs=True tells scan_ships() to keep slim records for all
+        # NPC ships during the same pass. Once the pass is finished, we can
+        # filter those NPC rows down to the sectors we actually care about.
+        t0     = time.perf_counter()
+        result = scan_ships(
+            save_file,
+            sector_names,
             station_sectors=station_sectors,
-            ship_sectors=ship_sectors,
-            npc_only=True,
+            collect_all_npcs=True,
         )
         print(f"[Done] Ships pass completed in {time.perf_counter() - t0:.2f}s")
 
+        ship_sectors = (
+            {s["sector"] for s in result["player_ships"]}
+            | (station_sectors or set())
+        )
+
+        # Keep only NPC ships in the final tier 3 context sectors.
+        # The temporary all-NPC list is intentionally slim: no crew, hull, or
+        # shield data is parsed for NPC ships, so this filter stays cheap.
+        result["npc_ships"] = [
+            s for s in result["npc_ships"]
+            if s["sector"] in ship_sectors
+        ]
+
         return {
-            "player_ships": pre_scan["player_ships"],
-            "npc_ships":    main_scan["npc_ships"],
-            "crew":         pre_scan.get("crew", []),
+            "player_ships": result["player_ships"],
+            "npc_ships":    result["npc_ships"],
+            "crew":         result.get("crew", []),
         }
 
     else:

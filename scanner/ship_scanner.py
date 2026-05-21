@@ -6,7 +6,7 @@
 #  Three scan tiers, controlled by the caller:
 #    Tier 1 — Player ships only               scan_ships(file, sector_names)
 #    Tier 2 — + NPC ships in station sectors  scan_ships(..., station_sectors={...})
-#    Tier 3 — + NPC ships in all ship sectors scan_ships(..., ship_sectors={...})
+#    Tier 3 — + NPC ships in all ship sectors scan_ships(..., collect_all_npcs=True)
 # ─────────────────────────────────────────────────────────────────────────────
 
 import re
@@ -459,6 +459,7 @@ def scan_ships(
     station_sectors: set[str] | None = None,
     ship_sectors:    set[str] | None = None,
     npc_only:        bool = False,
+    collect_all_npcs: bool = False,
 ) -> dict:
     """
     Streams through the X4 save and extracts ship data.
@@ -467,15 +468,19 @@ def scan_ships(
     RAM usage low even on 700MB+ save files. The file is never fully loaded
     into memory.
 
-    PLAYER SHIPS are collected unless npc_only=True. NPC ships are only
+    PLAYER SHIPS are collected unless npc_only=True. NPC ships are usually only
     collected for sectors in 'context_sectors', which is built from
     station_sectors and/or ship_sectors depending on the scan tier.
 
-    npc_only=True is used in the tier 3 flow where a pre-scan has already
-    collected player ships. Passing npc_only=True lets the main scan skip
-    player ship buffering entirely — we already have those results, so there
-    is no point doing the work twice. The caller is responsible for stitching
-    the pre-scan player_ships back into the final result.
+    collect_all_npcs=True is used by the tier 3 CLI scan. In that mode we do
+    not know the player ship sectors until after this pass has collected the
+    player ships, so we temporarily collect slim records for every NPC ship and
+    let the caller filter them down afterward. That avoids streaming the save
+    file a second time just to collect NPC ships.
+
+    npc_only=True is still available for callers that already have player
+    ships and only want NPC rows. In that mode, player ship buffering is
+    skipped and 'player_ships' in the returned dict will be empty.
 
     BUFFERING: When a ship element's opening tag is detected, elem.clear()
     is suppressed for all of its descendants until the closing tag arrives.
@@ -497,6 +502,8 @@ def scan_ships(
                           (used for tier 3 NPC collection, adds to station_sectors)
         npc_only        — if True, skip player ship buffering entirely;
                           player_ships in the returned dict will be empty
+        collect_all_npcs — if True, buffer and record every NPC ship, then
+                           leave sector filtering to the caller
 
     Returns a dict with keys:
         'player_ships' — list of ship dicts for all player-owned ships
@@ -560,11 +567,22 @@ def scan_ships(
             if event == 'start' and cls in SHIP_CLASSES and not inside_ship:
                 owner = elem.get('owner', '')
 
-                # When npc_only=True we already have player ships from the
-                # pre-scan, so there is no need to buffer them again.
+                # When npc_only=True, the caller only wants NPC rows.
+                # In that case, there is no need to buffer player ships.
                 is_player      = (not npc_only) and (owner == 'player')
-                # Collect NPC ships only when we have context sectors to filter by.
-                is_context_npc = (owner != 'player' and bool(context_sectors))
+                # NPC ownership is already visible on this opening tag.
+                #
+                # Normal tier 2 behaviour:
+                #   Only bother buffering NPC ships when we have context sectors
+                #   to check against later.
+                #
+                # Tier 3 one-pass behaviour:
+                #   collect_all_npcs=True means "record slim NPC rows now, then
+                #   filter after we know the player ship sectors."
+                is_context_npc = (
+                    owner != 'player'
+                    and (collect_all_npcs or bool(context_sectors))
+                )
 
                 if is_player or is_context_npc:
                     # Stamp both location markers onto the element now so
@@ -711,7 +729,7 @@ def scan_ships(
                                 _extract_docked_ships(se, sector, owner)
                             )
 
-                        elif sector in context_sectors:
+                        elif collect_all_npcs or sector in context_sectors:
                             # ── NPC ship entry (slim) ──────────────────────
                             # We only need enough data to show faction activity
                             # in the UI — who is where and doing what. Crew and

@@ -614,9 +614,9 @@ Prompted only when the ships pass runs. Not applicable to other modes.
 |---|---|---|
 | 1 | None | `station_sectors=None`, `ship_sectors=None` |
 | 2 | Sectors with player stations | `station_sectors={s["sector"] for s in game_data["stations"]}` — requires stations pass |
-| 3 | Sectors with stations or player ships | Tier 2 sectors + a pre-scan to collect player ship sectors |
+| 3 | Sectors with stations or player ships | One ship stream with `collect_all_npcs=True`, then post-filter NPC rows to station/player ship sectors |
 
-Tier 3 runs the ship scanner twice: a pre-scan collects player ships and their sectors, then the main scan uses `npc_only=True` to collect NPC ships in those sectors without re-scanning player ships. Tier 2 is only offered when the stations pass is also selected.
+Tier 3 collects player ships and slim NPC records in the same ship stream. After the stream finishes, the dispatcher builds the final sector set from player ship sectors plus station sectors, then filters NPC rows down to that set. Tier 2 is only offered when the stations pass is also selected.
 
 ---
 
