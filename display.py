@@ -1,5 +1,7 @@
 import sys
 import os
+from collections import Counter, defaultdict
+from data.factions import FACTION_NAMES as _FACTION_NAMES
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  ANSI COLOUR SUPPORT
@@ -281,7 +283,6 @@ def display_results(data: dict):
     # Pre-compute service crew and marine counts per ship code so we can
     # display them inline without re-scanning the full crew list per ship.
     crew = data.get("crew", [])
-    from collections import defaultdict
     _ship_crew: dict = defaultdict(lambda: {"service": 0, "marine": 0})
     for _c in crew:
         if _c["role"] in ("service", "marine"):
@@ -428,7 +429,6 @@ def display_results(data: dict):
 
         # Header summary includes all roles for a complete picture, even though
         # the table below only lists named crew (managers and pilots).
-        from collections import Counter
         role_counts = Counter(c["role"] for c in crew)
         summary_parts = []
         for role_key, label in (("manager","managers"), ("pilot","pilots"),
@@ -488,9 +488,6 @@ def display_results(data: dict):
     # flooding the console. The AI export (jsonexport.py) includes full
     # individual ship data for the AI to reason about in more detail.
     if npc_ships:
-        from collections import defaultdict, Counter
-        from data.factions import FACTION_NAMES as _FACTION_NAMES
-
         # Two-level grouping: sector → faction → { role: count }
         # defaultdict of defaultdict(Counter) means we never need to
         # check if a key exists before incrementing — it auto-initialises.
