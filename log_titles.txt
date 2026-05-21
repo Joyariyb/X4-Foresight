@@ -1,0 +1,409 @@
+# Unique <entry title=...> values in <log> section
+# Total distinct titles: 406
+
+[    14x]  A Return To Normal Order
+[     1x]  A wondrous opportunity
+[     1x]  ARG - Recruiting Volunteers Against the Holy Order
+[     1x]  ARG - Recruiting Volunteers Against the Xenon
+[     1x]  Access Restriction: Inner Core
+[     1x]  Access Restriction: Outer Core
+[     1x]  Active tool: Personal Blaster
+[    13x]  Agent Action completed successfully
+[     4x]  Agent Action failed
+[     2x]  All That Remains
+[     2x]  An Aggressive Suggestion
+[     8x]  An Open Request
+[     2x]  Antigone Republic - Live Stream Access
+[     2x]  Antigone Republic - Promotion Ceremony Invitation
+[     1x]  Antigone Trade Guild - Trade Guild Invitation
+[     2x]  Argon Federation - Live Stream Access
+[     2x]  Argon Federation - Promotion Ceremony Invitation
+[     1x]  Assigned Crewman Ace Samdi to Vulture Vanguard.
+[     1x]  Assigned Crewman Gogoeolos Zuzuamis Gogoeolos I to Manorina (Gas) Sentinel.
+[     1x]  Assigned Crewman Grem Disma to Mercury Sentinel.
+[     1x]  Assigned Crewman Zuzuamis Yahanis Yoganis III to Elite Vanguard.
+[     1x]  Assigned Crewman Zuzuamis Yahanis Yoganis III to PE.
+[     1x]  Assigned Individual Ace Samdi to Geometric Owl.
+[     1x]  Assigned Individual Brent Barnard to Elite Vanguard.
+[     1x]  Assigned Individual Deridos Monisessas Zuzuamis VII to Perseus Vanguard.
+[     1x]  Assigned Individual Desudras Yuyamados Yooses VI to Geometric Owl.
+[     1x]  Assigned Individual Emeel Harben to PE.
+[     1x]  Assigned Individual Ganatos Yoganis Lotunis I to Black Hole Sun V Factory in Black Hole Sun V.
+[     1x]  Assigned Individual Gobanis Gogoeolos Monisessas II to Tern Sentinel.
+[     1x]  Assigned Individual Grem Disma to Geometric Owl.
+[     1x]  Assigned Individual Hohindras Yalamandis Rudilis VII to Unknown Station in Grand Exchange I.
+[     1x]  Assigned Individual Hurilis Yusmaeos Gantelios II to Geometric Owl.
+[     1x]  Assigned Individual Katlin Fisty to PE.
+[     1x]  Assigned Individual Leann Delsen to Minotaur Raider.
+[     1x]  Assigned Individual Lidya Hang to Mercury Vanguard.
+[     1x]  Assigned Individual Manda Kierke to Elite Vanguard.
+[     1x]  Assigned Individual Pok Kult to Elite Vanguard.
+[     1x]  Assigned Individual Rena Sillarne to PE.
+[     1x]  Assigned Individual Rikerd Kevlin to Geometric Owl.
+[     1x]  Assigned Individual Rikerd Kevlin to The Void Ship Technology Factory II in The Void.
+[     1x]  Assigned Individual Rurandis Gutosos Yusmaeos II to Osprey Vanguard.
+[     1x]  Assigned Individual Sera Winger to Geometric Owl.
+[     1x]  Assigned Individual Sera Winger to PE.
+[     1x]  Assigned Individual Timanckuttall to Odysseus Vanguard.
+[     1x]  Assigned Individual Toki Raner to PE.
+[     1x]  Assigned Individual Uguras Rusiris Yagosias IX to Drill (Mineral) Vanguard.
+[     1x]  Assigned Individual Xeveer Jerigan to PE.
+[     1x]  Assigned Individual Yooses Tissmaneos Towisaris II to PE.
+[     1x]  Assigned Individual Zuzuamis Towisaris Gutosos VI to Osprey Vanguard.
+[     1x]  Assigned Individual Zuzuamis Yahanis Yoganis III to Geometric Owl.
+[     2x]  Attrition Warfare
+[     1x]  Autonomous Distress Drone (DXE-554) is under attack.
+[     6x]  Autopilot disengaged.
+[     6x]  Autopilot engaged.
+[     4x]  Away From Here
+[     4x]  Beat Back the Fanatics
+[     1x]  Cease and Desist
+[     2x]  Clear as Ice
+[     1x]  Clear the way
+[     1x]  Collaborative Expedition Notice
+[     8x]  Commission unlocked
+[     6x]  Construction Wares Needed
+[     1x]  Crane (Gas) Sentinel was forced to flee after being attacked by XEN Raiding Party M in Second Contact II Flashpoint. Your ship is at Empty Space in Black Hole Sun IV.
+[     2x]  Crane (Gas) Sentinel was forced to flee after being attacked by XEN Raiding Party PE in The Void. Your ship is at Empty Space in Second Contact II Flashpoint.
+[     1x]  Data Transfer
+[     1x]  Debit withdrawal: 524,730 Cr
+[     2x]  Deliver specialist to the front
+[     1x]  Demeter Vanguard was forced to flee after being attacked by SCA Pillager Minotaur Raider in Grand Exchange I. Your ship is at Empty Space in Grand Exchange I.
+[     2x]  Demeter Vanguard was forced to flee after being attacked by SCA Plunderer Phoenix E in Eighteen Billion. Your ship is at Empty Space in Eighteen Billion.
+[     1x]  Demeter Vanguard was forced to flee after being attacked by TEL Plunderer Phoenix E in Eighteen Billion. Your ship is at Empty Space in Eighteen Billion.
+[     1x]  Demeter Vanguard was forced to flee after being attacked by XEN Raiding Party PE in Hatikvah's Choice I. Your ship is at Empty Space in Hatikvah's Choice I.
+[     2x]  Demonstrate our Presence
+[     6x]  Deploy Static Defence
+[     2x]  Destroy Holy Order Station
+[    10x]  Discount unlocked
+[     1x]  Double Assistant
+[     1x]  Drill (Mineral) Sentinel was forced to flee after being attacked by Unknown Ship in Second Contact II Flashpoint. Your ship is at Empty Space in Black Hole Sun IV.
+[     1x]  Drill (Mineral) Sentinel was forced to flee after being attacked by XEN N in Second Contact II Flashpoint. Your ship is at Empty Space in Second Contact II Flashpoint.
+[     2x]  Economic Minefield
+[     2x]  Efficiency Deficiency
+[     2x]  Elite Vanguard (YYE-979) is under attack.
+[     1x]  Elite Vanguard was forced to flee after being attacked by XEN N in Hatikvah's Choice I. Your ship is at Empty Space in Hatikvah's Choice I.
+[     1x]  Elite Vanguard was forced to flee after being attacked by XEN Raiding Party F in Hatikvah's Choice I. Your ship is at Empty Space in Hatikvah's Choice I.
+[     1x]  Embassy
+[    51x]  Emergency alert: 
+[     2x]  Extraction Necessary
+[     2x]  Eye For An Eye
+[     2x]  Fast Flight
+[    10x]  Fatal Attraction
+[    10x]  Food Shortages
+[     6x]  Foray Into Xenon Space
+[     1x]  Forced pilot to leave ship SCA Pillager Minotaur Raider in sector Second Contact II Flashpoint.
+[     1x]  Forced pilot to leave ship XEN Mining Ship SE in sector Second Contact II Flashpoint.
+[     1x]  Forced pilot to leave ship XEN Mining Ship SE in sector The Void.
+[     1x]  Forced pilot to leave ship XEN Power Distribution Unit SE in sector The Void.
+[     1x]  Forced pilot to leave ship XEN Raiding Party B in sector The Void.
+[     2x]  Forced pilot to leave ship XEN Raiding Party F in sector The Void.
+[     5x]  Forced pilot to leave ship XEN Raiding Party PE in sector Hatikvah's Choice I.
+[     1x]  Forced pilot to leave ship XEN Raiding Party PE in sector Second Contact II Flashpoint.
+[     6x]  Forced pilot to leave ship XEN Raiding Party PE in sector The Void.
+[    11x]  Found Abandoned Ship
+[    31x]  Found Lockbox
+[     1x]  Fragile Extraction
+[     1x]  GalNet - On the Fragile Peace in Heretic's End
+[     2x]  Gathering Material
+[     6x]  Geometric Owl (KXE-808) is under attack.
+[     1x]  Geometric Owl was forced to flee after being attacked by XEN Raiding Party F in The Void. Your ship is at Empty Space in The Void.
+[     1x]  Geometric Owl was forced to flee after being attacked by XEN Raiding Party N in Faulty Logic VII. Your ship is at Empty Space in Faulty Logic I.
+[     1x]  Godrealm of the Paranid - Live Stream Access
+[     2x]  Godrealm of the Paranid - Promotion Ceremony Invitation
+[     1x]  Gravimetric Studies
+[     4x]  Hired Help
+[     2x]  How. Un. Fortunate.
+[     2x]  Hunt For Xenon Ship
+[     1x]  Hurilis Yusmaeos Gantelios II handed multiple items to you. Most valuable: Programmable Field Array
+[     8x]  Identify Profitable Regions
+[     1x]  Ides Vanguard was forced to flee after being attacked by BUC Corsair Prometheus in Pious Mists XI. Your ship is at Empty Space in Pious Mists XI.
+[     1x]  Ides Vanguard was forced to flee after being attacked by XEN PE in The Void. Your ship is at Empty Space in The Void.
+[     1x]  Ides Vanguard was forced to flee after being attacked by XEN Raiding Party M in Second Contact II Flashpoint. Your ship is at Empty Space in Second Contact II Flashpoint.
+[     1x]  Ides Vanguard was forced to flee after being attacked by XEN Raiding Party M in The Void. Your ship is at Empty Space in The Void.
+[     1x]  Ides Vanguard was forced to flee after being attacked by XEN Raiding Party PE in Second Contact II Flashpoint. Your ship is at Empty Space in Black Hole Sun IV.
+[     2x]  Ides Vanguard was forced to flee after being attacked by XEN Raiding Party PE in Second Contact II Flashpoint. Your ship is at Empty Space in Second Contact II Flashpoint.
+[     1x]  Ides Vanguard was forced to flee after being attacked by XEN Raiding Party PE in The Void. Your ship is at Empty Space in Second Contact II Flashpoint.
+[     2x]  Ides Vanguard was forced to flee after being attacked by XEN Raiding Party PE in The Void. Your ship is at Empty Space in The Void.
+[     2x]  Imperative Satellite Placement
+[     2x]  Imperative satellite placement
+[     2x]  Improve Allied Sector Defences
+[    12x]  Improve Satellite Coverage
+[     2x]  Industrial Espionage
+[    14x]  Info: gas mining stopped
+[    11x]  Info: mineral mining stopped
+[     8x]  Intercept and Destroy
+[     3x]  Into Thin Air
+[     1x]  Inventory item collected
+[     3x]  Inventory items collected
+[     4x]  Item Recovery
+[     1x]  Jump Gates to Split Space
+[     1x]  Kestrel Sentinel (TXN-247) was destroyed.
+[     1x]  Kestrel Vanguard (LBY-780) was destroyed.
+[     2x]  Kha'ak Raid Protection
+[     2x]  Laser Tower Deployment
+[     4x]  Laser Tower Placement
+[     4x]  Learning Your Lesson
+[     2x]  Long Range Scan Mode aborted.
+[     3x]  Long Range Scan Mode activated.
+[     1x]  Magnetar (Mineral) Vanguard was forced to flee after being attacked by Unknown Ship in Second Contact II Flashpoint. Your ship is at Empty Space in Black Hole Sun IV.
+[     1x]  Magnetar (Mineral) Vanguard was forced to flee after being attacked by XEN B in Second Contact II Flashpoint. Your ship is at Empty Space in Black Hole Sun IV.
+[     1x]  Magnetar (Mineral) Vanguard was forced to flee after being attacked by XEN M in Getsu Fune. Your ship is at Empty Space in Asteroid Belt.
+[     1x]  Magnetar (Mineral) Vanguard was forced to flee after being attacked by XEN M in Second Contact II Flashpoint. Your ship is at Empty Space in Second Contact II Flashpoint.
+[     1x]  Magnetar (Mineral) Vanguard was forced to flee after being attacked by XEN N in The Void. Your ship is at Empty Space in Second Contact II Flashpoint.
+[     1x]  Magnetar (Mineral) Vanguard was forced to flee after being attacked by XEN Raiding Party B in The Void. Your ship is at Empty Space in Second Contact II Flashpoint.
+[     1x]  Magnetar (Mineral) Vanguard was forced to flee after being attacked by XEN Raiding Party F in The Void. Your ship is at Empty Space in The Void.
+[     1x]  Magnetar (Mineral) Vanguard was forced to flee after being attacked by XEN Raiding Party M in Getsu Fune. Your ship is at Empty Space in Getsu Fune.
+[     1x]  Magnetar (Mineral) Vanguard was forced to flee after being attacked by XEN Raiding Party N in Second Contact II Flashpoint. Your ship is at Empty Space in Black Hole Sun IV.
+[     1x]  Magpie Sentinel was forced to flee after being attacked by TEL Plunderer Phoenix E in Eighteen Billion. Your ship is at Empty Space in Memory of Profit IX.
+[     1x]  Magpie Sentinel was forced to flee after being attacked by XEN Raiding Party N in Second Contact II Flashpoint. Your ship is at Empty Space in Black Hole Sun IV.
+[     1x]  Manorina (Gas) Sentinel was forced to flee after being attacked by XEN Raiding Party M in Second Contact II Flashpoint. Your ship is at Empty Space in Second Contact II Flashpoint.
+[     1x]  Manorina (Gas) Sentinel was forced to flee after being attacked by XEN Raiding Party PE in The Void. Your ship is at Empty Space in The Void.
+[     2x]  Manual Update Required
+[     2x]  Medical Emergency
+[     1x]  Mercury Sentinel was forced to flee after being attacked by ANT Plunderer Phoenix E in The Void. Your ship is at Empty Space in The Void.
+[     1x]  Mercury Sentinel was forced to flee after being attacked by TEL Pillager Minotaur Raider in Void of Opportunity. Your ship is at Empty Space in Void of Opportunity.
+[     1x]  Mercury Sentinel was forced to flee after being attacked by XEN N in The Void. Your ship is at Empty Space in The Void.
+[     1x]  Mercury Sentinel was forced to flee after being attacked by XEN PE in The Void. Your ship is at Empty Space in The Void.
+[     1x]  Mercury Sentinel was forced to flee after being attacked by XEN Raiding Party F in The Void. Your ship is at Empty Space in The Void.
+[     3x]  Mercury Sentinel was forced to flee after being attacked by XEN Raiding Party M in Second Contact II Flashpoint. Your ship is at Empty Space in Second Contact II Flashpoint.
+[     3x]  Mercury Sentinel was forced to flee after being attacked by XEN Raiding Party PE in Second Contact II Flashpoint. Your ship is at Empty Space in Second Contact II Flashpoint.
+[     1x]  Mercury Sentinel was forced to flee after being attacked by XEN Raiding Party PE in The Void. Your ship is at Empty Space in Second Contact II Flashpoint.
+[     1x]  Mercury Sentinel was forced to flee after being attacked by XEN Raiding Party PE in The Void. Your ship is at Empty Space in The Void.
+[     1x]  Mercury Vanguard was forced to flee after being attacked by ANT Pillager Minotaur Raider in Black Hole Sun V. Your ship is at Empty Space in Grand Exchange III.
+[     1x]  Mercury Vanguard was forced to flee after being attacked by ANT Pillager Minotaur Raider in Second Contact II Flashpoint. Your ship is at Empty Space in Second Contact II Flashpoint.
+[     1x]  Mercury Vanguard was forced to flee after being attacked by ANT Pillager Minotaur Raider in Second Contact VII. Your ship is at Empty Space in Second Contact VII.
+[     1x]  Mercury Vanguard was forced to flee after being attacked by TEL Plunderer Phoenix E in Void of Opportunity. Your ship is at Empty Space in Void of Opportunity.
+[     1x]  Mercury Vanguard was forced to flee after being attacked by XEN Branch 9 Destroyer K in Second Contact II Flashpoint. Your ship is at Empty Space in Second Contact II Flashpoint.
+[     2x]  Mine Disposal Required
+[     1x]  Minotaur Raider (LMP-564) is under attack.
+[     1x]  Minotaur Raider (LMP-564) was destroyed.
+[     2x]  Module Deepscan
+[     4x]  Module Information Required
+[     3x]  Nemesis Vanguard (HOL-309) is under attack.
+[     3x]  Nemesis Vanguard (YMC-441) is under attack.
+[   190x]  News update: 
+[     1x]  Nova Sentinel (ETL-113) was destroyed.
+[     1x]  Nova Sentinel was forced to flee after being attacked by XEN Raiding Party PE in The Void. Your ship is at Empty Space in The Void.
+[    18x]  Observation Post Required
+[     4x]  Odysseus Vanguard (SGY-077) is under attack.
+[     1x]  Odysseus Vanguard was forced to flee after being attacked by XEN B in The Void. Your ship is at Empty Space in The Void.
+[     1x]  PAR - War Against the Heretical Order
+[     1x]  PE (IKN-307) is under attack.
+[     7x]  PE (UNK-571) is under attack.
+[     1x]  PE (VRK-144) is under attack.
+[     1x]  PE (XXY-725) is under attack.
+[     1x]  PE was forced to flee after being attacked by XEN Raiding Party PE in Second Contact II Flashpoint. Your ship is at Empty Space in Second Contact II Flashpoint.
+[     8x]  Panel Hack
+[     1x]  Payment received: 1,179,381 Cr
+[     1x]  Payment received: 4,837,009 Cr
+[     2x]  Pilots Wanted
+[    35x]  Pirate Harassment
+[   282x]  Police Interdiction
+[     4x]  Preventative Measures
+[     1x]  Project Genesis: Terraforming of Sutton in the Gaian Prophecy System
+[     1x]  Project Genesis: Terraforming of Terranova in the Segaris System
+[     2x]  Promotion to: Citizen of the Republic
+[     2x]  Promotion to: Friend of the Federation
+[     2x]  Promotion to: Friend of the Republic
+[     2x]  Promotion to: Hero of the Federation
+[     2x]  Promotion to: Honorary Company Director
+[     2x]  Promotion to: Honorary Company Shareholder
+[    10x]  Prospecting
+[     9x]  Ready to trade
+[     1x]  Reclaiming What Was Lost
+[  2038x]  Reputation gained
+[    68x]  Reputation gained: +1
+[     4x]  Reputation gained: +2
+[     4x]  Reputation gained: +3
+[     1x]  Reputation gained: +4
+[     1x]  Reputation gained: +5
+[    29x]  Reputation lost
+[     5x]  Reputation lost: -1
+[     1x]  Reputation lost: -3
+[    99x]  Rewarded for station defence
+[   222x]  SCA
+[     1x]  SE was forced to flee after being attacked by SCA Minotaur Raider in Second Contact VII. Your ship is at Empty Space in Second Contact XI.
+[     1x]  SE was forced to flee after being attacked by XEN Raiding Party F in The Void. Your ship is at Empty Space in The Void.
+[     1x]  SE was forced to flee after being attacked by XEN Raiding Party M in Second Contact II Flashpoint. Your ship is at Empty Space in Second Contact II Flashpoint.
+[     3x]  SE was forced to flee after being attacked by XEN Raiding Party PE in Second Contact II Flashpoint. Your ship is at Empty Space in Second Contact II Flashpoint.
+[     1x]  SE was forced to flee after being attacked by XEN Raiding Party PE in The Void. Your ship is at Empty Space in The Void.
+[     8x]  Salvage Contract
+[     8x]  Satellite Repair
+[     2x]  Satellite Repair Work
+[     4x]  Satellites Required In Enemy Space
+[     1x]  Scan Results - VAI-284
+[     2x]  Scout Enemy Mining Regions
+[     1x]  Second Assistant
+[     2x]  Securing our Miners
+[     6x]  Seek Out High-Yield Resources
+[     2x]  Sensor Gap Needs Plugging
+[     2x]  Sensor gap needs plugging
+[     2x]  Shakedown
+[     6x]  Ship Attainment
+[     2x]  Ship Procurement
+[     1x]  Some intel on Scale Plate
+[     2x]  Station Engineers Needed
+[     5x]  Station In Need Of Supplies
+[     2x]  Station Supply
+[     1x]  Subject: Repair Request
+[     1x]  Sunder (Gas) Sentinel was forced to flee after being attacked by XEN Raiding Party M in The Void. Your ship is at Empty Space in The Void.
+[     6x]  Supply Station
+[     2x]  Teladi Company - Live Stream Access
+[     2x]  Teladi Company - Promotion Ceremony Invitation
+[     1x]  Teladi Trade Guild - Trade Guild Invitation
+[     1x]  Tern Sentinel was forced to flee after being attacked by SCA Minotaur Raider in Silent Witness I. Your ship is at Empty Space in Silent Witness I.
+[     1x]  Tern Sentinel was forced to flee after being attacked by XEN Raiding Party PE in Hatikvah's Choice I. Your ship is at Empty Space in Hatikvah's Choice I.
+[     1x]  Tern Vanguard was forced to flee after being attacked by XEN PE in Silent Witness I. Your ship is at Empty Space in Silent Witness I.
+[     1x]  Terran Pests
+[     1x]  The account for Black Hole Sun V High Tech Factory III in Black Hole Sun V has dropped to 1,038,659 Credits.
+[     1x]  The account for Black Hole Sun V High Tech Factory III in Black Hole Sun V has dropped to 1,072,039 Credits.
+[     1x]  The account for Black Hole Sun V High Tech Factory III in Black Hole Sun V has dropped to 1,216,932 Credits.
+[     1x]  The account for Black Hole Sun V High Tech Factory III in Black Hole Sun V has dropped to 1,578,616 Credits.
+[     1x]  The account for Black Hole Sun V High Tech Factory III in Black Hole Sun V has dropped to 1,771,156 Credits.
+[     1x]  The account for Black Hole Sun V High Tech Factory III in Black Hole Sun V has dropped to 1,880,117 Credits.
+[     1x]  The account for Black Hole Sun V High Tech Factory III in Black Hole Sun V has dropped to 2,064,322 Credits.
+[     1x]  The account for Black Hole Sun V High Tech Factory III in Black Hole Sun V has dropped to 2,394,447 Credits.
+[     1x]  The account for Black Hole Sun V High Tech Factory III in Black Hole Sun V has dropped to 2,571,238 Credits.
+[     1x]  The account for Black Hole Sun V High Tech Factory III in Black Hole Sun V has dropped to 2,698,598 Credits.
+[     1x]  The account for Black Hole Sun V High Tech Factory III in Black Hole Sun V has dropped to 2,913,408 Credits.
+[     1x]  The account for Black Hole Sun V High Tech Factory III in Black Hole Sun V has dropped to 3,226,643 Credits.
+[     1x]  The account for Black Hole Sun V High Tech Factory III in Black Hole Sun V has dropped to 3,381,964 Credits.
+[     1x]  The account for Black Hole Sun V High Tech Factory III in Black Hole Sun V has dropped to 3,711,844 Credits.
+[     1x]  The account for Black Hole Sun V High Tech Factory III in Black Hole Sun V has dropped to 3,895,600 Credits.
+[     1x]  The account for Black Hole Sun V High Tech Factory III in Black Hole Sun V has dropped to 774,053 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 1,535,434 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 1,559,583 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 1,589,768 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 1,661,750 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 1,721,745 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 1,726,729 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 1,748,702 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 1,749,898 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 1,806,109 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 1,834,252 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 1,902,359 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 1,904,002 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 1,944,216 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 185,827 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 2,087,788 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 2,124,777 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 2,183,656 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 2,183,802 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 2,261,046 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 2,315,359 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 2,354,909 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 2,663,273 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 2,696,346 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 2,735,516 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 22,490 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 240,399 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 3,223,538 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 3,424,664 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 3,841,236 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 3,964,371 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 30,489 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 353,143 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 4,011,026 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 4,277,577 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 4,535,258 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 424,835 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 43,941 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 433,821 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 55,058 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 701,493 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 71 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 87,213 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 9,345 Credits.
+[     1x]  The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 90,804 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 1,017,845 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 1,025,845 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 1,045,114 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 1,051,859 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 1,059,632 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 1,099,316 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 1,189,903 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 1,265,920 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 1,297,530 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 1,412,488 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 1,445 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 105,342 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 143,402 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 145,886 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 158,268 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 199,182 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 199,484 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 2,318,392 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 2,470,095 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 2,634,288 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 2,866,341 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 240,335 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 274,041 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 282,580 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 3,145 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 3,719,021 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 3,950,358 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 313,576 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 4,540,868 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 4,595 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 4,762,224 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 407,493 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 5,010,012 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 5,489,901 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 568,455 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 59,951 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 6,010,713 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 6,067,201 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 6,200 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 646,171 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 685,207 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 7,316,733 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 7,966,740 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 707,792 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 739,943 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 8,116,298 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 8,577,767 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 8,964,117 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 805,812 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 816,754 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 830,302 Credits.
+[     1x]  The account for The Void High Tech Factory II in The Void has dropped to 876,162 Credits.
+[     1x]  The account for The Void Ship Technology Factory II in The Void has dropped to 1,070,294 Credits.
+[     1x]  The account for The Void Ship Technology Factory II in The Void has dropped to 198,922 Credits.
+[     1x]  The account for The Void Ship Technology Factory II in The Void has dropped to 210,792 Credits.
+[     1x]  The account for The Void Ship Technology Factory II in The Void has dropped to 212,842 Credits.
+[     1x]  The account for The Void Ship Technology Factory II in The Void has dropped to 262,556 Credits.
+[     1x]  The account for The Void Ship Technology Factory II in The Void has dropped to 277,386 Credits.
+[     1x]  The account for The Void Ship Technology Factory II in The Void has dropped to 338,036 Credits.
+[     1x]  The account for The Void Ship Technology Factory II in The Void has dropped to 456,140 Credits.
+[     1x]  The account for The Void Ship Technology Factory II in The Void has dropped to 741 Credits.
+[     1x]  The account for The Void Ship Technology Factory II in The Void has dropped to 776,933 Credits.
+[     1x]  The account for The Void Ship Technology Factory II in The Void has dropped to 81,588 Credits.
+[     2x]  Threat Assessment
+[     1x]  Time Compression Research Component
+[     7x]  Tip
+[     1x]  Torus Aeternal
+[    12x]  Travel Mode aborted.
+[    11x]  Travel Mode activated.
+[    13x]  Travel Mode charging.
+[     3x]  Travel Mode disrupted.
+[     1x]  Unique Opportunity to help Hatikvah
+[     1x]  Veles Sentinel was forced to flee after being attacked by KHK Queen's Guard in The Void. Your ship is at Empty Space in Second Contact II Flashpoint.
+[     1x]  Veles Sentinel was forced to flee after being attacked by XEN Raiding Party B in The Void. Your ship is at Empty Space in Second Contact II Flashpoint.
+[     4x]  Vermin Outbreak
+[     1x]  Vulture Vanguard was forced to flee after being attacked by ANT Pillager Minotaur Raider in Black Hole Sun V. Your ship is at Empty Space in Black Hole Sun V.
+[     1x]  Vulture Vanguard was forced to flee after being attacked by PIO Pillager Minotaur Raider in Second Contact II Flashpoint. Your ship is at Empty Space in Black Hole Sun IV.
+[     1x]  Vulture Vanguard was forced to flee after being attacked by SCA Pillager Minotaur Raider in Second Contact VII. Your ship is at Empty Space in Second Contact XI.
+[     1x]  Vulture Vanguard was forced to flee after being attacked by SCA Pillager Minotaur Raider in Void of Opportunity. Your ship is at Empty Space in Void of Opportunity.
+[     1x]  Vulture Vanguard was forced to flee after being attacked by SCA Plunderer Phoenix E in Void of Opportunity. Your ship is at Empty Space in Void of Opportunity.
+[     1x]  Vulture Vanguard was forced to flee after being attacked by TEL Pillager Minotaur Raider in Void of Opportunity. Your ship is at Empty Space in Void of Opportunity.
+[     1x]  Vulture Vanguard was forced to flee after being attacked by XEN Branch 9 Destroyer K in Second Contact II Flashpoint. Your ship is at Empty Space in Second Contact II Flashpoint.
+[   113x]  War update: 
+[     4x]  Warning Sign
+[     5x]  We will not abide by Lawlessness
+[     7x]  Weaken Enemy Forces
+[     1x]  Xenon Fleet Elimination
+[     1x]  Xenon Tech Evaluation
+[     9x]  Xenon Threaten Food Supplies
+[     1x]  Xenon Turret Push
+[     1x]  You have entered space protected by: Argon Federation.

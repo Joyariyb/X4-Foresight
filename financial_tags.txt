@@ -1,0 +1,920 @@
+============================================================
+TAG: <account>  (total occurrences: 141)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/account
+  COUNT: 138
+  ATTRIBUTES:
+    amount (114x)  eg: "10081815", "13066417", "2274660", "5577866"
+    id (138x)  eg: "[0x10c]", "[0x10d]", "[0x10e]", "[0x10f]", "[0x110]", "[0x111]", "[0x112]", "[0x113]", "[0x115]", "[0x116]"
+    max (3x)  eg: "2209365", "2631120", "8549197"
+    min (3x)  eg: "1472910", "1754080", "5699465"
+    own (27x)  eg: "1"
+
+  PATH: savegame/universe/factions/faction/account
+  COUNT: 1
+  ATTRIBUTES:
+    amount (1x)  eg: "13066417"
+    id (1x)  eg: "[0x10c]"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/account
+  COUNT: 1
+  ATTRIBUTES:
+    amount (1x)  eg: "13066417"
+    id (1x)  eg: "[0x10c]"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/account
+  COUNT: 1
+  ATTRIBUTES:
+    id (1x)  eg: "[0x114]"
+    own (1x)  eg: "1"
+
+============================================================
+TAG: <buy>  (total occurrences: 3)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/overrides/buy
+  COUNT: 3
+  ATTRIBUTES: none
+
+============================================================
+TAG: <cargo>  (total occurrences: 5,530)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/cargo
+  COUNT: 5,418
+  ATTRIBUTES: none
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/cargo
+  COUNT: 111
+  ATTRIBUTES: none
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/cargo
+  COUNT: 1
+  ATTRIBUTES: none
+
+============================================================
+TAG: <commission>  (total occurrences: 4)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/unlocks/modifiers/modifier/commission
+  COUNT: 4
+  ATTRIBUTES: none
+
+============================================================
+TAG: <commissions>  (total occurrences: 5)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/commissions
+  COUNT: 5
+  ATTRIBUTES: none
+
+============================================================
+TAG: <discount>  (total occurrences: 4)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/unlocks/modifiers/modifier/discount
+  COUNT: 4
+  ATTRIBUTES:
+    amount (4x)  eg: "0.05", "0.15"
+    id (4x)  eg: "md_relation_discount_1", "md_relation_discount_2"
+    name (4x)  eg: "Known Associate", "Prized Investor"
+    type (4x)  eg: "discount"
+
+============================================================
+TAG: <discounts>  (total occurrences: 5)
+============================================================
+
+  PATH: savegame/universe/factions/faction/discounts
+  COUNT: 4
+  ATTRIBUTES: none
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/discounts
+  COUNT: 1
+  ATTRIBUTES: none
+
+============================================================
+TAG: <economylog>  (total occurrences: 2,170)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/economylog
+  COUNT: 2,123
+  ATTRIBUTES:
+    cargo (1,983x)  eg: "0", "111233.531", "152121.524", "154175.257", "242439.338", "242980.192", "271025.029", "657.45", "72746.659", "765.119"
+    offer (2,123x)  eg: "0", "108242.352", "154175.257", "239105.916", "242980.192", "271025.029", "657.45", "68588.768", "765.119", "8969.492"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/economylog
+  COUNT: 45
+  ATTRIBUTES:
+    cargo (45x)  eg: "0", "176192.562", "186703.51", "230933.565", "254737.193", "301378.276", "32214.045", "324810.923", "39517.008", "510.478"
+    offer (45x)  eg: "0", "176192.562", "186703.51", "230933.565", "254737.193", "301378.276", "32214.045", "324810.923", "39517.008", "510.478"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/economylog
+  COUNT: 1
+  ATTRIBUTES:
+    cargo (1x)  eg: "315050.251"
+    offer (1x)  eg: "315050.251"
+
+  PATH: savegame/economylog
+  COUNT: 1
+  ATTRIBUTES: none
+
+============================================================
+TAG: <history>  (total occurrences: 1)
+============================================================
+
+  PATH: savegame/info/patches/history
+  COUNT: 1
+  ATTRIBUTES: none
+
+============================================================
+TAG: <inventory>  (total occurrences: 446)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/inventory
+  COUNT: 446
+  ATTRIBUTES: none
+
+============================================================
+TAG: <licence>  (total occurrences: 135)
+============================================================
+
+  PATH: savegame/universe/factions/faction/licences/licence
+  COUNT: 135
+  ATTRIBUTES:
+    factions (135x)  eg: "antigone", "antigone hatikvah", "argon", "argon hatikvah", "argon ministry", "argon paranid teladi", "court freesplit", "freesplit", "ministry teladi", "terran"
+    type (135x)  eg: "capitalequipment", "capitalship", "generaluseequipment", "generaluseship", "militaryequipment", "militaryship", "station_equip_sm", "station_gen_advanced", "station_gen_basic", "station_gen_intermediate"
+
+============================================================
+TAG: <licences>  (total occurrences: 23)
+============================================================
+
+  PATH: savegame/universe/factions/faction/licences
+  COUNT: 23
+  ATTRIBUTES: none
+
+============================================================
+TAG: <nextresources>  (total occurrences: 233)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/build/nextresources
+  COUNT: 233
+  ATTRIBUTES: none
+
+============================================================
+TAG: <offer>  (total occurrences: 56)
+============================================================
+
+  PATH: savegame/missions/offer
+  COUNT: 56
+  ATTRIBUTES:
+    abortable (1x)  eg: "0"
+    actor (56x)  eg: "[0x167811]", "[0x16783f]", "[0x1a087]", "[0x1bda3]", "[0xaf99f]", "[0xafb57]", "[0xb02c1]", "[0xb055c]", "[0xb0ba9]", "[0xb12b8]"
+    caption (1x)  eg: "Numanckaret"
+    component (20x)  eg: "[0x33f9e]", "[0x34834]", "[0x3488f]", "[0x3499d]", "[0x34a01]", "[0x36877]", "[0x3748b]", "[0x37666]", "[0x38416]", "[0x385d4]"
+    description (56x)  eg: "Assigning crew and pilots to ships.", "Boarding large ships.", "Capturing small ships.", "Commanding ships using the map.", "Customising controls for different input devices.", "Deploying satellites and mines.", "Learn the basics of operating a ship.", "Learn the basics of operating the map.", "Managing active missions, briefings and objectives.", "Remote trading and finding good buy and sell offers."
+    distance (19x)  eg: "50000"
+    faction (56x)  eg: "alliance", "antigone", "argon", "civilian", "hatikvah", "player"
+    group (19x)  eg: "argon_war_holyorder", "argon_war_xenon", "story_boron"
+    icon (1x)  eg: "briefing_numanckaret_01"
+    id (56x)  eg: "768792", "768832", "768872", "768905", "768936", "769051", "769082", "769116", "769155", "769194"
+    level (56x)  eg: "easy", "hard", "medium", "trivial", "veryeasy", "veryhard"
+    name (56x)  eg: " 1) Joystick, HOTAS and Gamepad Mapping", " 2) Flight Basics", " 4) Mission Management", " 5) Item deployment", " 8) Map: Basic usage", " 9) Map: Ships and squads usage", "10) Map: Trading", "12) Crew Management", "13) Capturing Ships", "14) Boarding Ships"
+    opposingfaction (21x)  eg: "antigone", "holyorder", "khaak", "xenon"
+    reward (18x)  eg: "185550", "420600", "55120", "559390", "63220", "72360", "73580", "75240", "76420", "817990"
+    rewardtext (26x)  eg: "Attending a Jump Gate Investigation", "Basic Engine Fuel Injector", "Exceptional Weapon Chamber", "Multiple parts for equipment modifications[\012]High Energy Catalyst[\012]Tuning Software[\012]Basic Weapon Chamber", "Multiple parts for equipment modifications[\012]Tuning Software[\012]Advanced Shield Generator Coil", "Paint mod: Federation Pennon", "Paint mod: Snakebite", "Seminar for 2-Star Crew (Management)", "Seminar for 2-Star Crew (Piloting)", "Seminar for 3-Star Crew (Piloting)"
+    threadtype (18x)  eg: "sequential"
+    type (56x)  eg: "build", "destroy", "drop", "fight", "find", "intelligence", "plot", "protect", "trade", "tutorial"
+
+============================================================
+TAG: <offers>  (total occurrences: 1,770)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/trade/offers
+  COUNT: 1,764
+  ATTRIBUTES:
+    settings (29x)  eg: "buyintermediates|sellintermediates|blockoffers"
+
+  PATH: savegame/universe/jobs/job/waiting/ship/component/trade/offers
+  COUNT: 6
+  ATTRIBUTES:
+    settings (6x)  eg: "buyintermediates|sellintermediates|blockoffers"
+
+============================================================
+TAG: <prices>  (total occurrences: 4,203)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/trade/prices
+  COUNT: 4,057
+  ATTRIBUTES:
+    buildpricefactor (64x)  eg: "0.9", "0.921", "0.931", "0.942", "0.962", "0.983", "1.02", "1.07", "1.12", "1.15"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/trade/prices
+  COUNT: 143
+  ATTRIBUTES: none
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/trade/prices
+  COUNT: 2
+  ATTRIBUTES: none
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/trade/prices
+  COUNT: 1
+  ATTRIBUTES: none
+
+============================================================
+TAG: <production>  (total occurrences: 5,892)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/production
+  COUNT: 2,900
+  ATTRIBUTES:
+    cycle (2,420x)  eg: "0"
+    delay (2x)  eg: "6352.211", "86445.649"
+    end (2,884x)  eg: "326978.089", "326978.307", "327089.276", "327098.559", "327131.86", "327137.876", "327185.157", "327227.121", "327419.966", "327959.725"
+    item (2,884x)  eg: "0", "1"
+    pause (147x)  eg: "248381.472", "279223.834", "313215.353", "314185.615", "316378.858", "320336.019", "321501.211", "324896.277", "325503.897", "325962.125"
+    paused (119x)  eg: "1"
+    start (2,884x)  eg: "323595.985", "324315.985", "325298.559", "325889.276", "326159.725", "326507.121", "326699.966", "326837.876", "326885.157", "326951.86"
+    state (2,884x)  eg: "choosingitem", "producing", "waitingforresources"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/trade/offers/production
+  COUNT: 1,735
+  ATTRIBUTES: none
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/production
+  COUNT: 1,257
+  ATTRIBUTES:
+    endtime (1,257x)  eg: "324315.985", "325088.423", "327089.276", "327098.559", "327131.86", "327137.876", "327185.157", "327251.45", "327419.966", "327959.725"
+    originalproduct (849x)  eg: "advancedelectronics", "dronecomponents", "medicalsupplies", "microchips", "plasmaconductors", "quantumtubes", "smartchips", "spaceweed", "sunriseflowers", "weaponcomponents"
+
+============================================================
+TAG: <quota>  (total occurrences: 565)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/masstraffic/network/quotalists/quotalist/quotas/quota
+  COUNT: 565
+  ATTRIBUTES:
+    amount (565x)  eg: "0", "1", "10", "2", "3", "30", "4", "5", "6", "9"
+    cargo (94x)  eg: "127", "1386", "186", "222", "296", "333", "36", "400", "61", "624"
+    class (565x)  eg: "build", "deconstruct", "repair", "transport", "watchdog"
+    empty (40x)  eg: "1"
+    id (565x)  eg: "[0x10]", "[0x12]", "[0x16]", "[0x18]", "[0x1a]", "[0x1d]", "[0x20]", "[0x23]", "[0x26]", "[0xd]"
+    macro (565x)  eg: "ship_arg_xs_police_01_a_macro", "ship_gen_xs_buildingdrone_01_a_macro", "ship_gen_xs_cargodrone_empty_01_a_macro", "ship_gen_xs_repairdrone_01_a_macro", "ship_par_xs_police_01_a_macro", "ship_spl_xs_police_01_a_macro", "ship_tel_xs_police_01_a_macro", "ship_ter_xs_police_01_a_macro"
+    return (51x)  eg: "1"
+    trade (94x)  eg: "[0x4720]", "[0x4b01]", "[0x502f]", "[0x5509]", "[0x5ae8]", "[0x5ec2]", "[0x6055]", "[0x6793]", "[0x6903]", "[0x695f]"
+
+============================================================
+TAG: <quotalist>  (total occurrences: 565)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/masstraffic/network/quotalists/quotalist
+  COUNT: 565
+  ATTRIBUTES:
+    continuous (471x)  eg: "1"
+    endobject (94x)  eg: "[0x1285f]", "[0x1ca5d]", "[0x2d6e0]", "[0x2d70a]", "[0x3a036]", "[0x42ff8]", "[0x43022]", "[0x462ca]", "[0x46365]", "[0x73cb]"
+    forcedcontext (471x)  eg: "[0x4dde]", "[0x4f44]", "[0x4fb4]", "[0x5158]", "[0x51c8]", "[0x525b]", "[0x5365]", "[0x548d]", "[0x5631]", "[0x57d2]"
+    id (565x)  eg: "[0x11]", "[0x15]", "[0x17]", "[0x19]", "[0x1c]", "[0x1f]", "[0x22]", "[0x25]", "[0xc]", "[0xf]"
+    startobject (94x)  eg: "[0x12890]", "[0x1ca1c]", "[0x2d6e0]", "[0x2d70a]", "[0x3a050]", "[0x42ff8]", "[0x43022]", "[0x462ca]", "[0x46365]", "[0x73f9]"
+    starttime (173x)  eg: "159284.693", "325099.281", "325769.457", "325906.227", "326481.114", "326481.167", "326800.262", "326851.725", "326982.777", "326988.561"
+
+============================================================
+TAG: <quotalists>  (total occurrences: 1,301)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/masstraffic/network/quotalists
+  COUNT: 1,301
+  ATTRIBUTES: none
+
+============================================================
+TAG: <quotas>  (total occurrences: 565)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/masstraffic/network/quotalists/quotalist/quotas
+  COUNT: 565
+  ATTRIBUTES: none
+
+============================================================
+TAG: <resources>  (total occurrences: 330)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/buildtasks/queue/build/resources
+  COUNT: 125
+  ATTRIBUTES: none
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/build/resources
+  COUNT: 110
+  ATTRIBUTES: none
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/build/resources
+  COUNT: 95
+  ATTRIBUTES: none
+
+============================================================
+TAG: <sell>  (total occurrences: 4)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/overrides/sell
+  COUNT: 4
+  ATTRIBUTES: none
+
+============================================================
+TAG: <shortage>  (total occurrences: 950)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/production/queue/shortage
+  COUNT: 764
+  ATTRIBUTES: none
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/workforces/workforce/shortage
+  COUNT: 110
+  ATTRIBUTES: none
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/build/resources/shortage
+  COUNT: 73
+  ATTRIBUTES: none
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/production/queue/item/shortage
+  COUNT: 3
+  ATTRIBUTES: none
+
+============================================================
+TAG: <stat>  (total occurrences: 105)
+============================================================
+
+  PATH: savegame/stats/stat
+  COUNT: 103
+  ATTRIBUTES:
+    id (103x)  eg: "time_autopilot", "time_boosting", "time_local_highways", "time_mode_scan", "time_mode_scan_longrange", "time_playership", "time_seta_saved", "time_spacesuit", "time_superhighways", "time_total"
+    value (103x)  eg: "0", "14415.273", "207692.836", "326992.937", "420.035", "5082.05", "6405.233", "6861.077", "72104.724", "9338.605"
+
+  PATH: savegame/universe/component/connections/connection/component/terraforming/stats/stat
+  COUNT: 2
+  ATTRIBUTES:
+    id (2x)  eg: "population"
+    value (2x)  eg: "75000000", "90000000"
+
+============================================================
+TAG: <stats>  (total occurrences: 3)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/terraforming/stats
+  COUNT: 2
+  ATTRIBUTES: none
+
+  PATH: savegame/stats
+  COUNT: 1
+  ATTRIBUTES: none
+
+============================================================
+TAG: <supplies>  (total occurrences: 766)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/supplies
+  COUNT: 766
+  ATTRIBUTES:
+    flags (1x)  eg: "units_trade"
+
+============================================================
+TAG: <trade>  (total occurrences: 18,141)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/trade/offers/production/trade
+  COUNT: 11,546
+  ATTRIBUTES:
+    amount (11,412x)  eg: "100", "1265", "1367", "150", "180", "200", "3755", "50", "683", "986"
+    buyer (9,494x)  eg: "[0x464d]", "[0x4846]", "[0x4922]", "[0x4d7e]", "[0x4dde]", "[0x4e4f]", "[0x4f44]", "[0x4fb4]", "[0x5049]", "[0x5114]"
+    desired (9,106x)  eg: "100", "1265", "1367", "150", "180", "200", "3755", "424", "50", "986"
+    flags (11,538x)  eg: "buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady", "invertfactionrestriction", "invertfactionrestriction|skipbuyerownaccount", "supplies|invertfactionrestriction"
+    id (11,546x)  eg: "[0x459e]", "[0x459f]", "[0x45a0]", "[0x45a1]", "[0x45a2]", "[0x45a3]", "[0x45a4]", "[0x45a5]", "[0x45a6]", "[0x45a7]"
+    price (11,546x)  eg: "127381", "1445", "2450", "24555", "36660", "45620", "57260", "7768", "93500", "97438"
+    seller (2,052x)  eg: "[0x4846]", "[0x4d7e]", "[0x4dde]", "[0x4e4f]", "[0x4f44]", "[0x4fb4]", "[0x5049]", "[0x5158]", "[0x51c8]", "[0x525b]"
+    ware (11,546x)  eg: "advancedelectronics", "energycells", "majadust", "medicalsupplies", "microchips", "nostropoil", "quantumtubes", "spacefuel", "spaceweed", "stimulants"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/trade
+  COUNT: 4,215
+  ATTRIBUTES:
+    wares (54x)  eg: "advancedcomposites advancedelectronics antimatterconverters claytronics dronecomponents engineparts fieldcoils foodrations hullparts majadust medicalsupplies missilecomponents nividium scanningarrays shieldcomponents smartchips spaceweed turretcomponents water weaponcomponents", "advancedcomposites advancedelectronics antimatterconverters claytronics dronecomponents engineparts fieldcoils hullparts majadust medicalsupplies missilecomponents nividium nostropoil scanningarrays shieldcomponents smartchips spacefuel turretcomponents water weaponcomponents", "advancedcomposites advancedelectronics antimatterconverters claytronics dronecomponents engineparts fieldcoils hullparts medicalsupplies missilecomponents scanningarrays shieldcomponents smartchips sojahusk spacefuel spaceweed turretcomponents water weaponcomponents", "advancedcomposites advancedelectronics antimatterconverters claytronics dronecomponents fieldcoils helium hullparts medicalsupplies missilecomponents nividium nostropoil scanningarrays shieldcomponents smartchips sojahusk turretcomponents weaponcomponents", "advancedelectronics claytronics energycells fieldcoils graphene hullparts medicalsupplies quantumtubes shieldcomponents sojahusk superfluidcoolant turretcomponents", "advancedelectronics claytronics energycells fieldcoils graphene hullparts medicalsupplies quantumtubes shieldcomponents superfluidcoolant turretcomponents", "advancedelectronics claytronics energycells fieldcoils graphene hullparts methane shieldcomponents turretcomponents", "antimattercells energycells hydrogen nividium ore silicon", "energycells graphene helium methane microchips quantumtubes silicon siliconwafers superfluidcoolant", "majadust spacefuel spaceweed"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/orders/order/trade
+  COUNT: 1,812
+  ATTRIBUTES:
+    amount (1,809x)  eg: "1534", "180", "189", "227", "406", "5552", "60", "64", "655", "680"
+    buyer (1,252x)  eg: "[0x19844]", "[0x493e6]", "[0x4f44]", "[0x4fb4]", "[0x5244e]", "[0x5365]", "[0x574f]", "[0x57d2]", "[0x5c45]", "[0x7d55]"
+    desired (1,812x)  eg: "1534", "180", "189", "227", "406", "5552", "60", "64", "655", "680"
+    flags (1,812x)  eg: "invertfactionrestriction|fixedprice", "sellermoneyvirtual|buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady|fixedprice", "sellermoneyvirtual|buyermoneyvirtual|fixedprice", "sellermoneyvirtual|buyermoneyvirtual|invertfactionrestriction|fixedprice", "sellermoneyvirtual|buyermoneyvirtual|invertfactionrestriction|salvage|fixedprice", "sellermoneyvirtual|buyermoneyvirtual|invertfactionrestriction|skipbuyerownaccount|fixedprice", "sellermoneyvirtual|buyermoneyvirtual|supplies|invertfactionrestriction|fixedprice"
+    id (1,812x)  eg: "[0x45ad]", "[0x45ae]", "[0x45c6]", "[0x45cf]", "[0x4615]", "[0x4616]", "[0x4617]", "[0x4618]", "[0x4625]", "[0x4680]"
+    partner (1,812x)  eg: "[0x4d4c]", "[0x4d6f]", "[0x5443]", "[0x545f]", "[0x547e]", "[0x5621]", "[0x5d36]", "[0x5f2f]", "[0x6478]", "[0x6488]"
+    price (1,812x)  eg: "1432", "1555", "23605", "2402", "2403", "2553", "5755", "7159", "8411", "9844"
+    seller (560x)  eg: "[0x18eda]", "[0x19a53]", "[0x23a98]", "[0x24c14]", "[0x334a4]", "[0x48645]", "[0x48916]", "[0x4dde]", "[0x5b69]", "[0x66dc2]"
+    ware (1,812x)  eg: "energycells", "graphene", "helium", "hullparts", "nostropoil", "sunriseflowers", "superfluidcoolant", "swampplant", "water", "weaponcomponents"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/orders/order/trade
+  COUNT: 167
+  ATTRIBUTES:
+    amount (167x)  eg: "0", "1025", "144", "1579", "1580", "2792", "438", "502", "624", "840"
+    buyer (148x)  eg: "[0x49b87]", "[0x5a2e]", "[0x5e31]", "[0x678f]", "[0x6f22]", "[0x73cb]", "[0x7d55]", "[0x8630]", "[0x8efc]", "[0x98e3]"
+    desired (167x)  eg: "1025", "1183", "144", "1579", "1580", "2792", "438", "502", "624", "840"
+    escrow (46x)  eg: "10631700", "15617200", "19684200", "22200000", "2707500", "3178000", "3288900", "3732900", "9210800", "9439400"
+    flags (167x)  eg: "invertfactionrestriction|fixedprice", "sellermoneyvirtual|buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady|fixedprice|sellerwaresremoved", "sellermoneyvirtual|buyermoneyvirtual|invertfactionrestriction|fixedprice", "sellermoneyvirtual|buyermoneyvirtual|invertfactionrestriction|fixedprice|sellerwaresremoved", "sellermoneyvirtual|buyermoneyvirtual|invertfactionrestriction|purge|fixedprice|sellerwaresremoved", "sellermoneyvirtual|buyermoneyvirtual|useownaccount|fixedprice|sellerwaresremoved"
+    id (167x)  eg: "[0x4646]", "[0x467a]", "[0x46b9]", "[0x46f3]", "[0x4720]", "[0x4734]", "[0x4741]", "[0x4742]", "[0x47a9]", "[0x47d8]"
+    partner (167x)  eg: "[0x58fa]", "[0x5e21]", "[0x6737]", "[0x7286]", "[0x73f9]", "[0x752d]", "[0x7b5a]", "[0x8641]", "[0x8e99]", "[0x9740]"
+    price (167x)  eg: "13305", "2162", "4339", "4444", "5285", "5377", "5996", "65552", "7095", "7343"
+    seller (80x)  eg: "[0x10173]", "[0x12890]", "[0x58fa]", "[0x73f9]", "[0x7ec2]", "[0x8641]", "[0x8e99]", "[0x9740]", "[0x9ce9]", "[0xa1cf]"
+    transferred (24x)  eg: "1183", "1821", "2000", "2666", "420", "511", "528", "5764", "800", "91"
+    ware (167x)  eg: "antimattercells", "majasnails", "medicalsupplies", "ore", "refinedmetals", "sojabeans", "sojahusk", "stimulants", "sunriseflowers", "water"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/trade
+  COUNT: 143
+  ATTRIBUTES: none
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/masstraffic/network/quotalists/quotalist/trade
+  COUNT: 94
+  ATTRIBUTES:
+    amount (94x)  eg: "0", "1074", "1386", "2000", "2125", "2696", "3496", "36", "624", "8000"
+    buyer (94x)  eg: "[0x1285f]", "[0x1ca1c]", "[0x2d6e0]", "[0x3a036]", "[0x43022]", "[0x462ca]", "[0x571e0]", "[0x5b048]", "[0x5bccd]", "[0x73cb]"
+    desired (94x)  eg: "1074", "1186", "1386", "2125", "3496", "36", "4000", "418", "624", "8000"
+    escrow (93x)  eg: "12107700", "19684200", "20276800", "22200000", "2707500", "3178000", "41922000", "51800000", "665400", "979200"
+    flags (94x)  eg: "sellermoneyvirtual|buyermoneyvirtual|invertfactionrestriction|fixedprice|sellerwaresremoved", "sellermoneyvirtual|buyermoneyvirtual|useownaccount|fixedprice|sellerwaresremoved"
+    id (94x)  eg: "[0x4720]", "[0x4b01]", "[0x502f]", "[0x5509]", "[0x5ae8]", "[0x5ec2]", "[0x6055]", "[0x6793]", "[0x6903]", "[0x695f]"
+    partner (93x)  eg: "[0x12890]", "[0x1ca5d]", "[0x2d70a]", "[0x3a050]", "[0x43022]", "[0x46365]", "[0x5b077]", "[0x5bccd]", "[0x5e308]", "[0x73f9]"
+    price (94x)  eg: "11100", "128200", "18328", "19728", "2293", "27200", "4339", "4491", "5800", "6475"
+    seller (94x)  eg: "[0x12890]", "[0x1ca5d]", "[0x2d70a]", "[0x3a050]", "[0x42ff8]", "[0x46365]", "[0x57533]", "[0x5b077]", "[0x5bcb4]", "[0x73f9]"
+    transferred (48x)  eg: "1000", "1186", "2000", "362", "365", "400", "4000", "483", "800"
+    ware (94x)  eg: "energycells", "hullparts", "majasnails", "medicalsupplies", "nostropoil", "ore", "plasmaconductors", "quantumtubes", "silicon", "siliconwafers"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/trade/active/trade
+  COUNT: 57
+  ATTRIBUTES:
+    amount (57x)  eg: "0", "144", "21312", "2792", "507", "624", "6400", "840", "972", "9916"
+    buyer (57x)  eg: "[0x1285f]", "[0x14159]", "[0x1ca1c]", "[0x5a2e]", "[0x73cb]", "[0x8630]", "[0x8efc]", "[0x98e3]", "[0x9d0b]", "[0xf847]"
+    desired (57x)  eg: "1183", "144", "21312", "2792", "507", "624", "6400", "840", "972", "9916"
+    escrow (48x)  eg: "10631700", "15617200", "19684200", "22200000", "2707500", "3178000", "3288900", "3732900", "9210800", "9439400"
+    flags (57x)  eg: "invertfactionrestriction|fixedprice|sellerwaresremoved", "sellermoneyvirtual|buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady|fixedprice|sellerwaresremoved", "sellermoneyvirtual|buyermoneyvirtual|invertfactionrestriction|fixedprice|sellerwaresremoved", "sellermoneyvirtual|buyermoneyvirtual|useownaccount|fixedprice|sellerwaresremoved"
+    id (57x)  eg: "[0x4646]", "[0x4720]", "[0x47a9]", "[0x47d8]", "[0x4808]", "[0x4845]", "[0x49ab]", "[0x49ac]", "[0x49ad]", "[0x49ae]"
+    partner (51x)  eg: "[0x12890]", "[0x1417b]", "[0x1ca5d]", "[0x26dce]", "[0x58fa]", "[0x73f9]", "[0x8641]", "[0x8e99]", "[0x9740]", "[0x9ce9]"
+    price (52x)  eg: "11100", "13280", "20970", "2293", "3299", "4339", "4444", "4568", "5377", "65552"
+    seller (52x)  eg: "[0x12890]", "[0x1417b]", "[0x1ca5d]", "[0x26dce]", "[0x58fa]", "[0x73f9]", "[0x8641]", "[0x8e99]", "[0x9740]", "[0x9ce9]"
+    transferred (13x)  eg: "1000", "1183", "1666", "1821", "2000", "28", "362", "365", "4000", "800"
+    ware (57x)  eg: "energycells", "graphene", "majasnails", "medicalsupplies", "methane", "ore", "refinedmetals", "sojahusk", "stimulants", "water"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/events/event/trade
+  COUNT: 33
+  ATTRIBUTES:
+    amount (33x)  eg: "0", "1176", "144", "2792", "3096", "507", "60", "720", "840", "86"
+    buyer (33x)  eg: "[0x14159]", "[0x17dee]", "[0x26e15]", "[0x324d5]", "[0x35ffb]", "[0x5a2e]", "[0x8630]", "[0x8efc]", "[0x98e3]", "[0x9d0b]"
+    desired (33x)  eg: "1176", "1183", "144", "2792", "507", "511", "528", "60", "720", "840"
+    escrow (23x)  eg: "10631700", "1158900", "15617200", "1935000", "26394900", "3288900", "3732900", "4024800", "9210800", "9439400"
+    flags (33x)  eg: "sellermoneyvirtual|buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady|fixedprice|sellerwaresremoved", "sellermoneyvirtual|buyermoneyvirtual|invertfactionrestriction|fixedprice|sellerwaresremoved", "sellermoneyvirtual|buyermoneyvirtual|invertfactionrestriction|purge|fixedprice|sellerwaresremoved"
+    id (33x)  eg: "[0x4646]", "[0x47a9]", "[0x47d8]", "[0x4808]", "[0x4845]", "[0x4be1]", "[0x4e3b]", "[0x5313]", "[0x56a4]", "[0x586d]"
+    partner (33x)  eg: "[0x1417b]", "[0x17e11]", "[0x26dce]", "[0x324ed]", "[0x35f88]", "[0x58fa]", "[0x8641]", "[0x8e99]", "[0x9740]", "[0x9ce9]"
+    price (33x)  eg: "13280", "17949", "19316", "20699", "20970", "3299", "4444", "4568", "5377", "65552"
+    seller (33x)  eg: "[0x1417b]", "[0x17e11]", "[0x26dce]", "[0x324ed]", "[0x35f88]", "[0x58fa]", "[0x8641]", "[0x8e99]", "[0x9740]", "[0x9ce9]"
+    transferred (10x)  eg: "1183", "1666", "1821", "2380", "28", "511", "528", "700", "82", "91"
+    ware (33x)  eg: "foodrations", "hullparts", "ore", "quantumtubes", "refinedmetals", "silicon", "siliconwafers", "sojahusk", "stimulants", "water"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/events/event/trade
+  COUNT: 26
+  ATTRIBUTES:
+    amount (26x)  eg: "0", "1176", "144", "2792", "3096", "507", "60", "605", "720", "840"
+    buyer (26x)  eg: "[0x14159]", "[0x26e15]", "[0x35ffb]", "[0x3827d]", "[0x40b76]", "[0x5a2e]", "[0x8630]", "[0x8efc]", "[0x98e3]", "[0x9d0b]"
+    desired (26x)  eg: "1176", "1183", "144", "2792", "3096", "507", "60", "605", "720", "840"
+    escrow (22x)  eg: "10631700", "1158900", "15617200", "26394900", "3288900", "3732900", "3755500", "4024800", "9210800", "9439400"
+    flags (26x)  eg: "sellermoneyvirtual|buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady|fixedprice|sellerwaresremoved", "sellermoneyvirtual|buyermoneyvirtual|invertfactionrestriction|fixedprice|sellerwaresremoved"
+    id (26x)  eg: "[0x4646]", "[0x47a9]", "[0x47d8]", "[0x4808]", "[0x4845]", "[0x4be1]", "[0x5313]", "[0x586d]", "[0x5938]", "[0x5d18]"
+    partner (26x)  eg: "[0x1417b]", "[0x26dce]", "[0x35f88]", "[0x3827d]", "[0x40aa2]", "[0x58fa]", "[0x8641]", "[0x8e99]", "[0x9740]", "[0x9ce9]"
+    price (26x)  eg: "1300", "13280", "19316", "20970", "3299", "43628", "4444", "4568", "5377", "65552"
+    seller (26x)  eg: "[0x1417b]", "[0x26dce]", "[0x35f88]", "[0x37666]", "[0x40aa2]", "[0x58fa]", "[0x8641]", "[0x8e99]", "[0x9740]", "[0x9ce9]"
+    transferred (4x)  eg: "1183", "1666", "1821", "28"
+    ware (26x)  eg: "foodrations", "ice", "ore", "refinedmetals", "silicon", "siliconwafers", "sojahusk", "spaceweed", "stimulants", "water"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/masstraffic/network/behavior/trade
+  COUNT: 26
+  ATTRIBUTES:
+    amount (26x)  eg: "0", "1074", "1386", "2000", "2125", "2696", "3496", "418", "624", "8000"
+    buyer (26x)  eg: "[0x1285f]", "[0x1ca1c]", "[0x2d6e0]", "[0x3a036]", "[0x43022]", "[0x43499]", "[0x462ca]", "[0x5b048]", "[0x5bccd]", "[0x73cb]"
+    desired (26x)  eg: "1074", "1186", "1386", "1821", "2125", "3496", "4000", "418", "624", "8000"
+    escrow (24x)  eg: "12107700", "19684200", "20276800", "22200000", "2707500", "3178000", "41922000", "51800000", "5320900", "665400"
+    flags (26x)  eg: "sellermoneyvirtual|buyermoneyvirtual|invertfactionrestriction|fixedprice|sellerwaresremoved", "sellermoneyvirtual|buyermoneyvirtual|useownaccount|fixedprice|sellerwaresremoved"
+    id (26x)  eg: "[0x4720]", "[0x4b01]", "[0x502f]", "[0x5509]", "[0x5ae8]", "[0x5ec2]", "[0x5ef4]", "[0x6055]", "[0x6903]", "[0x695f]"
+    partner (26x)  eg: "[0x12890]", "[0x1ca5d]", "[0x2d70a]", "[0x3a050]", "[0x43022]", "[0x43499]", "[0x46365]", "[0x5b077]", "[0x5bccd]", "[0x73f9]"
+    price (26x)  eg: "11100", "128200", "18328", "19728", "2293", "4339", "4491", "5800", "6475", "8900"
+    seller (26x)  eg: "[0x12890]", "[0x1ca5d]", "[0x2d70a]", "[0x3a050]", "[0x42ff8]", "[0x4344b]", "[0x46365]", "[0x5b077]", "[0x5bcb4]", "[0x73f9]"
+    transferred (11x)  eg: "1000", "1186", "1821", "2000", "362", "365", "400", "4000", "483", "800"
+    ware (26x)  eg: "energycells", "hullparts", "majasnails", "medicalsupplies", "nostropoil", "ore", "plasmaconductors", "refinedmetals", "silicon", "siliconwafers"
+
+  PATH: savegame/universe/jobs/job/waiting/ship/component/trade
+  COUNT: 6
+  ATTRIBUTES: none
+
+  PATH: savegame/universe/component/connections/connection/component/events/event/trade
+  COUNT: 4
+  ATTRIBUTES:
+    amount (4x)  eg: "0"
+    buyer (4x)  eg: "[0x43499]", "[0x81653]", "[0x820b0]", "[0x8630]"
+    desired (4x)  eg: "1183", "1666", "1821", "28"
+    flags (4x)  eg: "sellermoneyvirtual|buyermoneyvirtual|invertfactionrestriction|fixedprice|sellerwaresremoved"
+    id (4x)  eg: "[0x47a9]", "[0x5ef4]", "[0x75ab]", "[0x75d3]"
+    partner (4x)  eg: "[0x43499]", "[0x81667]", "[0x820c0]", "[0x8641]"
+    price (4x)  eg: "3258", "5076", "5377", "8900"
+    seller (4x)  eg: "[0x4344b]", "[0x81667]", "[0x820c0]", "[0x8641]"
+    transferred (4x)  eg: "1183", "1666", "1821", "28"
+    ware (4x)  eg: "cheltmeat", "hydrogen", "refinedmetals", "water"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/events/event/trade
+  COUNT: 4
+  ATTRIBUTES:
+    amount (4x)  eg: "0"
+    buyer (4x)  eg: "[0x43499]", "[0x81653]", "[0x820b0]", "[0x8630]"
+    desired (4x)  eg: "1183", "1666", "1821", "28"
+    flags (4x)  eg: "sellermoneyvirtual|buyermoneyvirtual|invertfactionrestriction|fixedprice|sellerwaresremoved"
+    id (4x)  eg: "[0x47a9]", "[0x5ef4]", "[0x75ab]", "[0x75d3]"
+    partner (4x)  eg: "[0x43499]", "[0x81667]", "[0x820c0]", "[0x8641]"
+    price (4x)  eg: "3258", "5076", "5377", "8900"
+    seller (4x)  eg: "[0x4344b]", "[0x81667]", "[0x820c0]", "[0x8641]"
+    transferred (4x)  eg: "1183", "1666", "1821", "28"
+    ware (4x)  eg: "cheltmeat", "hydrogen", "refinedmetals", "water"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/orders/order/trade
+  COUNT: 2
+  ATTRIBUTES:
+    amount (2x)  eg: "210", "326"
+    buyer (1x)  eg: "[0x1867b]"
+    desired (2x)  eg: "210", "326"
+    flags (2x)  eg: "sellermoneyvirtual|buyermoneyvirtual|invertfactionrestriction|fixedprice"
+    id (2x)  eg: "[0x4e91]", "[0x580f]"
+    partner (2x)  eg: "[0x19790]", "[0x3aa20]"
+    price (2x)  eg: "3387", "4455"
+    seller (1x)  eg: "[0x354c6]"
+    ware (2x)  eg: "ore", "water"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/orders/order/trade
+  COUNT: 2
+  ATTRIBUTES:
+    amount (2x)  eg: "0", "86"
+    buyer (2x)  eg: "[0x39b6e]", "[0x5b048]"
+    desired (2x)  eg: "1186", "86"
+    escrow (1x)  eg: "1935000"
+    flags (2x)  eg: "sellermoneyvirtual|buyermoneyvirtual|invertfactionrestriction|fixedprice|sellerwaresremoved"
+    id (2x)  eg: "[0x5a9e]", "[0x6903]"
+    partner (2x)  eg: "[0x39b6e]", "[0x5b077]"
+    price (2x)  eg: "128200", "22500"
+    seller (2x)  eg: "[0x39b2b]", "[0x5b077]"
+    transferred (1x)  eg: "1186"
+    ware (2x)  eg: "plasmaconductors", "quantumtubes"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/trade
+  COUNT: 2
+  ATTRIBUTES: none
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/events/event/trade
+  COUNT: 1
+  ATTRIBUTES:
+    amount (1x)  eg: "86"
+    buyer (1x)  eg: "[0x39b6e]"
+    desired (1x)  eg: "86"
+    escrow (1x)  eg: "1935000"
+    flags (1x)  eg: "sellermoneyvirtual|buyermoneyvirtual|invertfactionrestriction|fixedprice|sellerwaresremoved"
+    id (1x)  eg: "[0x5a9e]"
+    partner (1x)  eg: "[0x39b6e]"
+    price (1x)  eg: "22500"
+    seller (1x)  eg: "[0x39b2b]"
+    ware (1x)  eg: "quantumtubes"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/trade
+  COUNT: 1
+  ATTRIBUTES: none
+
+============================================================
+TAG: <tradeloopcargo>  (total occurrences: 1)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/tradeloopcargo
+  COUNT: 1
+  ATTRIBUTES: none
+
+============================================================
+TAG: <traderule>  (total occurrences: 1)
+============================================================
+
+  PATH: savegame/universe/traderules/traderule
+  COUNT: 1
+  ATTRIBUTES:
+    allow (1x)  eg: "1"
+    factions (1x)  eg: "player"
+    id (1x)  eg: "1"
+    name (1x)  eg: "Trade Rule #1"
+    owner (1x)  eg: "player"
+
+============================================================
+TAG: <traderules>  (total occurrences: 4)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/traderules
+  COUNT: 3
+  ATTRIBUTES: none
+
+  PATH: savegame/universe/traderules
+  COUNT: 1
+  ATTRIBUTES: none
+
+============================================================
+TAG: <ware>  (total occurrences: 544,951)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/resourceareas/area/wares/ware
+  COUNT: 249,143
+  ATTRIBUTES:
+    ware (249,143x)  eg: "helium", "hydrogen", "ice", "methane", "nividium", "ore", "rawscrap", "silicon"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/resourceareas/area/yields/ware
+  COUNT: 249,143
+  ATTRIBUTES:
+    ware (249,143x)  eg: "helium", "hydrogen", "ice", "methane", "nividium", "ore", "rawscrap", "silicon"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/cargo/ware
+  COUNT: 17,257
+  ATTRIBUTES:
+    amount (17,165x)  eg: "1096", "1440", "2077", "2434", "2563", "2604", "370", "3938", "683", "793"
+    ware (17,257x)  eg: "advancedelectronics", "energycells", "medicalsupplies", "microchips", "nostropoil", "ore", "quantumtubes", "silicon", "sunriseflowers", "turretcomponents"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/trade/prices/reference/ware
+  COUNT: 17,144
+  ATTRIBUTES:
+    buy (17,131x)  eg: "1034", "17", "21", "2346", "26", "264", "277", "383", "576", "75"
+    price (13x)  eg: "0"
+    sell (17,131x)  eg: "0"
+    ware (17,144x)  eg: "claytronics", "energycells", "fieldcoils", "hullparts", "medicalsupplies", "microchips", "nostropoil", "quantumtubes", "shieldcomponents", "turretcomponents"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/inventory/ware
+  COUNT: 3,677
+  ATTRIBUTES:
+    amount (1,298x)  eg: "10", "2", "3", "4", "40", "5", "6", "7", "8", "9"
+    ware (3,677x)  eg: "bomb_player_limpet_emp_01_mk1", "bomb_player_limpet_mine_01_mk1", "engine_gen_spacesuit_01_mk2", "inv_agidevice_01", "inv_agidevice_02", "inv_decryptionmodule", "software_scannerobjectmk3", "weapon_gen_spacesuit_demolition_01_mk1", "weapon_gen_spacesuit_laser_01_mk1", "weapon_gen_spacesuit_repairlaser_01_mk1"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/supplies/wares/ware
+  COUNT: 1,614
+  ATTRIBUTES:
+    amount (1,431x)  eg: "10", "214", "2377", "250", "3", "480", "5", "50", "8", "90"
+    ware (1,614x)  eg: "dronecomponents", "energycells", "hullparts", "metallicmicrolattice", "missilecomponents", "ore", "silicon", "siliconcarbide", "smartchips", "weaponcomponents"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/build/nextresources/ware
+  COUNT: 972
+  ATTRIBUTES:
+    amount (972x)  eg: "123", "150", "159", "172", "204", "270", "370", "419", "66", "793"
+    ware (972x)  eg: "advancedelectronics", "claytronics", "computronicsubstrate", "energycells", "fieldcoils", "hullparts", "metallicmicrolattice", "shieldcomponents", "siliconcarbide", "turretcomponents"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/production/queue/shortage/ware
+  COUNT: 881
+  ATTRIBUTES:
+    amount (881x)  eg: "292299", "292945", "307066", "318788", "319016", "322836", "323736", "325848", "326290", "326442"
+    ware (881x)  eg: "dronecomponents", "energycells", "engineparts", "graphene", "microchips", "refinedmetals", "siliconwafers", "smartchips", "spices", "teladianium"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/wares/ware
+  COUNT: 801
+  ATTRIBUTES:
+    amount (647x)  eg: "134", "17", "222", "224", "235", "39", "500", "575", "60", "7"
+    ware (801x)  eg: "energycells", "hydrogen", "ice", "medicalsupplies", "microchips", "nostropoil", "ore", "siliconwafers", "smartchips", "sojahusk"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/workforces/workforce/insufficient/ware
+  COUNT: 757
+  ATTRIBUTES:
+    amount (757x)  eg: "294635", "326437", "326441", "326464", "326598", "326672", "326722", "326772", "326835", "326844"
+    ware (757x)  eg: "bofu", "cheltmeat", "foodrations", "medicalsupplies", "nostropoil", "scruffinfruits", "sojahusk", "terranmre", "water"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/production/queue/insufficient/ware
+  COUNT: 579
+  ATTRIBUTES:
+    amount (579x)  eg: "321970", "322534", "323048", "323816", "324188", "324300", "325536", "326448", "326890", "326898"
+    ware (579x)  eg: "energycells", "engineparts", "graphene", "metallicmicrolattice", "microchips", "ore", "refinedmetals", "silicon", "siliconwafers", "spices"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/trade/prices/reference/ware
+  COUNT: 500
+  ATTRIBUTES:
+    buy (500x)  eg: "19", "29", "31", "38", "55", "56", "57", "61", "71", "80"
+    sell (500x)  eg: "0"
+    ware (500x)  eg: "majasnails", "medicalsupplies", "nostropoil", "sojabeans", "sojahusk", "spices", "sunriseflowers", "superfluidcoolant", "swampplant", "water"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/production/queue/overflow/ware
+  COUNT: 417
+  ATTRIBUTES:
+    amount (417x)  eg: "242574", "275265", "308900", "312117", "314831", "323133", "325556", "325575", "326608", "326611"
+    ware (417x)  eg: "graphene", "majasnails", "medicalsupplies", "microchips", "quantumtubes", "siliconwafers", "sojabeans", "sojahusk", "superfluidcoolant", "teladianium"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/build/resources/shortage/ware
+  COUNT: 385
+  ATTRIBUTES:
+    amount (352x)  eg: "152585", "168814", "268350", "310310", "313766", "317636", "323646", "324972", "326852", "98466"
+    ware (385x)  eg: "advancedcomposites", "advancedelectronics", "dronecomponents", "energycells", "hullparts", "missilecomponents", "ore", "scanningarrays", "smartchips", "weaponcomponents"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/build/resources/ware
+  COUNT: 336
+  ATTRIBUTES:
+    amount (333x)  eg: "1250", "196", "22", "2287", "26", "307", "359", "625", "98", "989"
+    ware (336x)  eg: "advancedelectronics", "antimatterconverters", "claytronics", "dronecomponents", "energycells", "engineparts", "fieldcoils", "hullparts", "shieldcomponents", "turretcomponents"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/wares/ware
+  COUNT: 265
+  ATTRIBUTES:
+    amount (153x)  eg: "2", "3", "308", "3223", "4", "5", "6", "654", "729", "861"
+    ware (265x)  eg: "inv_advancedtargetingmodule", "inv_agidevice_01", "inv_agidevice_02", "inv_hallucinogenics", "inv_infusedbeverage", "inv_microbrewdrink", "inv_modulartrigger", "inv_programmablefieldarray", "inv_seminar_piloting_0", "modpart_nividiumoxide"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/overflow/ware
+  COUNT: 228
+  ATTRIBUTES:
+    amount (228x)  eg: "127", "130", "131", "133", "139", "152", "172", "54", "68", "84"
+    ware (228x)  eg: "graphene", "hullparts", "majasnails", "medicalsupplies", "microchips", "plasmaconductors", "siliconwafers", "sojahusk", "superfluidcoolant", "teladianium"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/ore/ware
+  COUNT: 201
+  ATTRIBUTES:
+    amount (201x)  eg: "1040", "1706", "28", "34", "497", "510", "535", "702", "721", "783"
+    ware (201x)  eg: "ice", "ore", "silicon"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/buildtasks/queue/build/resources/insufficient/ware
+  COUNT: 139
+  ATTRIBUTES:
+    amount (139x)  eg: "324575", "325918", "326661", "326723", "326774", "326806", "326898", "326924", "326985", "326987"
+    ware (139x)  eg: "advancedelectronics", "dronecomponents", "engineparts", "hullparts", "metallicmicrolattice", "ore", "shieldcomponents", "silicon", "smartchips", "weaponcomponents"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/workforces/workforce/shortage/ware
+  COUNT: 122
+  ATTRIBUTES:
+    amount (122x)  eg: "10734", "163503", "294635", "310140", "312643", "321460", "325585", "326131", "326663", "326978"
+    ware (122x)  eg: "bofu", "foodrations", "medicalsupplies", "nostropoil", "sojahusk", "water"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/cargo/ware
+  COUNT: 120
+  ATTRIBUTES:
+    amount (120x)  eg: "1307", "1353", "1510", "1580", "2013", "2114", "2146", "3020", "360", "438"
+    ware (120x)  eg: "antimattercells", "graphene", "methane", "nostropoil", "ore", "siliconwafers", "sojabeans", "sojahusk", "sunriseflowers", "water"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/trade/prices/override/ware
+  COUNT: 70
+  ATTRIBUTES:
+    buy (70x)  eg: "0", "10", "100", "111", "180", "225", "37", "43", "805", "90"
+    sell (70x)  eg: "0", "10", "100", "113", "146", "164", "1734", "247", "41", "710"
+    ware (70x)  eg: "advancedelectronics", "claytronics", "energycells", "fieldcoils", "graphene", "hullparts", "methane", "microchips", "shieldcomponents", "turretcomponents"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/build/resources/insufficient/ware
+  COUNT: 54
+  ATTRIBUTES:
+    amount (54x)  eg: "129793", "137163", "315909", "324748", "324898", "324956", "325421", "326023", "326481", "74843"
+    ware (54x)  eg: "advancedcomposites", "claytronics", "energycells", "hullparts", "ore", "plasmaconductors", "silicon", "siliconcarbide", "water"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/build/resources/insufficient/ware
+  COUNT: 54
+  ATTRIBUTES:
+    amount (54x)  eg: "129735", "137163", "315909", "324688", "324896", "324897", "325414", "325961", "326481", "74843"
+    ware (54x)  eg: "advancedcomposites", "claytronics", "energycells", "hullparts", "ore", "plasmaconductors", "silicon", "siliconcarbide", "water"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/traderules/wares/ware
+  COUNT: 22
+  ATTRIBUTES:
+    buy (19x)  eg: "-1", "1"
+    sell (8x)  eg: "-1"
+    ware (22x)  eg: "antimattercells", "energycells", "helium", "hydrogen", "methane", "microchips", "quantumtubes", "silicon", "siliconwafers", "superfluidcoolant"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/overrides/max/ware
+  COUNT: 13
+  ATTRIBUTES:
+    amount (12x)  eg: "12115", "12386", "12955", "20200", "24143", "4154", "46526", "5468", "882", "9034"
+    ware (13x)  eg: "energycells", "graphene", "helium", "methane", "microchips", "ore", "quantumtubes", "silicon", "siliconwafers", "superfluidcoolant"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/overrides/buy/ware
+  COUNT: 13
+  ATTRIBUTES:
+    amount (3x)  eg: "12386", "166666", "24143"
+    ware (13x)  eg: "energycells", "graphene", "helium", "hydrogen", "microchips", "quantumtubes", "refinedmetals", "silicon", "siliconwafers", "superfluidcoolant"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/ore/ware
+  COUNT: 7
+  ATTRIBUTES:
+    amount (7x)  eg: "12", "14", "19", "25", "92"
+    ware (7x)  eg: "ice", "ore"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/overrides/sell/ware
+  COUNT: 7
+  ATTRIBUTES:
+    amount (5x)  eg: "209", "2721", "444", "535", "909"
+    ware (7x)  eg: "condensate", "graphene", "hydrogen", "microchips", "quantumtubes", "refinedmetals", "siliconwafers"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/trade/prices/reference/ware
+  COUNT: 7
+  ATTRIBUTES:
+    buy (7x)  eg: "1028", "146", "182", "2040", "209", "225", "805"
+    sell (7x)  eg: "0"
+    ware (7x)  eg: "claytronics", "engineparts", "hullparts", "microchips", "plasmaconductors", "quantumtubes"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/wares/ware
+  COUNT: 7
+  ATTRIBUTES:
+    amount (5x)  eg: "2", "8"
+    ware (7x)  eg: "inv_modulartrigger", "inv_securitybypasssystem", "inv_spacedyepizza", "modpart_enginefuelinjector_t1", "modpart_nividiumoxide"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/ore/ware
+  COUNT: 4
+  ATTRIBUTES:
+    amount (4x)  eg: "20", "24", "64", "65"
+    ware (4x)  eg: "ice"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/supplies/orders/ware
+  COUNT: 3
+  ATTRIBUTES:
+    amount (2x)  eg: "10", "9"
+    ware (3x)  eg: "ship_gen_xs_cargodrone_empty_01_a", "ship_gen_xs_repairdrone_01_a"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/production/queue/item/shortage/ware
+  COUNT: 3
+  ATTRIBUTES:
+    amount (3x)  eg: "147511", "157711", "309863"
+    ware (3x)  eg: "scrapmetal"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/trade/prices/reference/ware
+  COUNT: 2
+  ATTRIBUTES:
+    buy (2x)  eg: "13", "34"
+    sell (2x)  eg: "0"
+    ware (2x)  eg: "foodrations", "water"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/production/queue/item/insufficient/ware
+  COUNT: 2
+  ATTRIBUTES:
+    amount (2x)  eg: "299078", "322601"
+    ware (2x)  eg: "scrapmetal"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/cargo/ware
+  COUNT: 1
+  ATTRIBUTES:
+    amount (1x)  eg: "210"
+    ware (1x)  eg: "ore"
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/ore/ware
+  COUNT: 1
+  ATTRIBUTES:
+    amount (1x)  eg: "31"
+    ware (1x)  eg: "ice"
+
+============================================================
+TAG: <wares>  (total occurrences: 110,969)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/resourceareas/area/wares
+  COUNT: 109,352
+  ATTRIBUTES: none
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/wares
+  COUNT: 799
+  ATTRIBUTES: none
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/supplies/wares
+  COUNT: 764
+  ATTRIBUTES: none
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/wares
+  COUNT: 47
+  ATTRIBUTES: none
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/wares
+  COUNT: 4
+  ATTRIBUTES: none
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/traderules/wares
+  COUNT: 3
+  ATTRIBUTES: none
+
+============================================================
+TAG: <workforce>  (total occurrences: 1,312)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/workforces/workforce
+  COUNT: 1,312
+  ATTRIBUTES:
+    amount (1,312x)  eg: "102", "1080", "120", "225", "227", "271", "272", "450", "47", "675"
+    race (1,312x)  eg: "argon", "boron", "paranid", "split", "teladi", "terran"
+
+============================================================
+TAG: <workforces>  (total occurrences: 1,309)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/connections/connection/component/connections/connection/component/workforces
+  COUNT: 1,309
+  ATTRIBUTES:
+    lasttime (1,309x)  eg: "326429.316", "326563.918", "326566.676", "326592.167", "326672.165", "326722.584", "326734.683", "326769.211", "326772.615", "326972.298"
+
+============================================================
+TAG: <yield>  (total occurrences: 253,028)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/resourceareas/area/yields/ware/yield
+  COUNT: 253,028
+  ATTRIBUTES:
+    name (253,028x)  eg: "high", "highplus", "low", "lowest", "lowminus", "lowplus", "medhigh", "medium", "medlow", "veryhigh"
+
+============================================================
+TAG: <yields>  (total occurrences: 109,352)
+============================================================
+
+  PATH: savegame/universe/component/connections/connection/component/connections/connection/component/resourceareas/area/yields
+  COUNT: 109,352
+  ATTRIBUTES: none
+

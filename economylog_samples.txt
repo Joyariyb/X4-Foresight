@@ -1,0 +1,545 @@
+======================================================================
+COMPONENT #1
+  id:    [0x464d]
+  macro: station_gen_factory_base_01_macro
+  class: station
+
+  ECONOMYLOG:
+    offer = 8969.492
+
+  ACCOUNT:
+    (none)
+
+  TRADE RECORDS (4):
+    amount=100  buyer=[0x464d]  desired=100  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x459e]  price=57260  ware=majadust
+    amount=150  buyer=[0x464d]  desired=150  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x459f]  price=36660  ware=spacefuel
+    amount=200  buyer=[0x464d]  desired=200  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45a0]  price=45620  ware=spaceweed
+    amount=50  buyer=[0x464d]  desired=50  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45a1]  price=93500  ware=stimulants
+
+  REFERENCE PRICES (0 wares):
+
+======================================================================
+COMPONENT #2
+  id:    [0x4846]
+  macro: station_gen_factory_base_01_macro
+  class: station
+
+  ECONOMYLOG:
+    cargo = 0
+    offer = 0
+
+  ACCOUNT:
+    (none)
+
+  TRADE RECORDS (10):
+    amount=683  flags=invertfactionrestriction  id=[0x45a2]  price=127381  seller=[0x4846]  ware=advancedelectronics
+    amount=1265  buyer=[0x4846]  desired=1265  flags=invertfactionrestriction  id=[0x45a3]  price=1445  ware=energycells
+    amount=3755  buyer=[0x4846]  desired=3755  flags=invertfactionrestriction  id=[0x45a4]  price=7768  ware=medicalsupplies
+    amount=1367  buyer=[0x4846]  desired=1367  flags=invertfactionrestriction  id=[0x45a5]  price=97438  ware=microchips
+    amount=986  buyer=[0x4846]  desired=986  flags=invertfactionrestriction  id=[0x45a6]  price=2450  ware=nostropoil
+    amount=180  buyer=[0x4846]  desired=180  flags=invertfactionrestriction  id=[0x45a7]  price=24555  ware=quantumtubes
+    amount=424  buyer=[0x4846]  desired=424  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45a8]  price=50271  ware=majadust
+    amount=474  buyer=[0x4846]  desired=474  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45a9]  price=32191  ware=spacefuel
+    amount=524  buyer=[0x4846]  desired=524  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45aa]  price=40042  ware=spaceweed
+    amount=374  buyer=[0x4846]  desired=374  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45ab]  price=82076  ware=stimulants
+
+  REFERENCE PRICES (5 wares):
+    buy=17  sell=0  ware=energycells
+    buy=1034  sell=0  ware=microchips
+    buy=26  sell=0  ware=nostropoil
+    buy=75  sell=0  ware=medicalsupplies
+    buy=277  sell=0  ware=quantumtubes
+
+======================================================================
+COMPONENT #3
+  id:    [0x4956]
+  macro: ship_tel_l_miner_solid_02_a_macro
+  class: ship_l
+
+  ECONOMYLOG:
+    cargo = 154175.257
+    offer = 154175.257
+
+  ACCOUNT:
+    (none)
+
+  TRADE RECORDS (0):
+
+  REFERENCE PRICES (0 wares):
+
+======================================================================
+COMPONENT #4
+  id:    [0x4a61]
+  macro: ship_tel_l_trans_container_03_a_macro
+  class: ship_l
+
+  ECONOMYLOG:
+    cargo = 271025.029
+    offer = 271025.029
+
+  ACCOUNT:
+    (none)
+
+  TRADE RECORDS (0):
+
+  REFERENCE PRICES (1 wares):
+    buy=15  sell=0  ware=energycells
+
+======================================================================
+COMPONENT #5
+  id:    [0x4b06]
+  macro: ship_tel_l_miner_solid_02_a_macro
+  class: ship_l
+
+  ECONOMYLOG:
+    cargo = 242980.192
+    offer = 242980.192
+
+  ACCOUNT:
+    (none)
+
+  TRADE RECORDS (0):
+
+  REFERENCE PRICES (0 wares):
+
+======================================================================
+COMPONENT #6
+  id:    [0x5443]
+  macro: ship_par_l_trans_container_03_a_macro
+  class: ship_l
+
+  ECONOMYLOG:
+    cargo = 657.45
+    offer = 657.45
+
+  ACCOUNT:
+    (none)
+
+  TRADE RECORDS (2):
+    amount=655  desired=655  flags=sellermoneyvirtual|buyermoneyvirtual|invertfactionrestriction|fixedprice  id=[0x4615]  partner=[0x5443]  price=7159  seller=[0x18eda]  ware=sunriseflowers
+    amount=655  buyer=[0x493e6]  desired=655  flags=sellermoneyvirtual|buyermoneyvirtual|invertfactionrestriction|fixedprice  id=[0x4616]  partner=[0x5443]  price=9844  ware=sunriseflowers
+
+  REFERENCE PRICES (6 wares):
+    buy=64  sell=0  ware=medicalsupplies
+    buy=42  sell=0  ware=sojabeans
+    buy=20  sell=0  ware=spices
+    buy=70  sell=0  ware=sunriseflowers
+    buy=50  sell=0  ware=majasnails
+    buy=68  sell=0  ware=swampplant
+
+======================================================================
+COMPONENT #7
+  id:    [0x4d7e]
+  macro: station_gen_factory_base_01_macro
+  class: station
+
+  ECONOMYLOG:
+    cargo = 0
+    offer = 0
+
+  ACCOUNT:
+    (none)
+
+  TRADE RECORDS (9):
+    amount=2264  buyer=[0x4d7e]  desired=2264  flags=invertfactionrestriction  id=[0x45b0]  price=1438  ware=energycells
+    amount=243  buyer=[0x4d7e]  desired=243  flags=invertfactionrestriction  id=[0x45b1]  price=6539  ware=medicalsupplies
+    amount=12  buyer=[0x4d7e]  desired=12  flags=invertfactionrestriction  id=[0x45b2]  price=2058  ware=nostropoil
+    amount=13241  flags=invertfactionrestriction  id=[0x45b3]  price=8173  seller=[0x4d7e]  ware=sunriseflowers
+    amount=1857  buyer=[0x4d7e]  desired=1857  flags=invertfactionrestriction  id=[0x45b4]  price=3553  ware=water
+    amount=130  buyer=[0x4d7e]  desired=130  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45b5]  price=37391  ware=majadust
+    amount=180  buyer=[0x4d7e]  desired=180  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45b6]  price=23955  ware=spacefuel
+    amount=230  buyer=[0x4d7e]  desired=230  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45b7]  price=29763  ware=spaceweed
+    amount=80  buyer=[0x4d7e]  desired=80  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45b8]  price=61023  ware=stimulants
+
+  REFERENCE PRICES (4 wares):
+    buy=48  sell=0  ware=water
+    buy=13  sell=0  ware=energycells
+    buy=27  sell=0  ware=nostropoil
+    buy=89  sell=0  ware=medicalsupplies
+
+======================================================================
+COMPONENT #8
+  id:    [0x4dde]
+  macro: station_gen_factory_base_01_macro
+  class: station
+
+  ECONOMYLOG:
+    cargo = 0
+    offer = 0
+
+  ACCOUNT:
+    (none)
+
+  TRADE RECORDS (7):
+    amount=369  buyer=[0x4dde]  desired=369  flags=invertfactionrestriction  id=[0x45ba]  price=5614  ware=medicalsupplies
+    amount=231  buyer=[0x4dde]  desired=231  flags=invertfactionrestriction  id=[0x45bb]  price=2528  ware=nostropoil
+    amount=1018  flags=invertfactionrestriction  id=[0x45bc]  price=35227  seller=[0x4dde]  ware=weaponcomponents
+    amount=168  buyer=[0x4dde]  desired=168  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45bd]  price=43631  ware=majadust
+    amount=218  buyer=[0x4dde]  desired=218  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45be]  price=27945  ware=spacefuel
+    amount=268  buyer=[0x4dde]  desired=268  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45bf]  price=34743  ware=spaceweed
+    amount=118  buyer=[0x4dde]  desired=118  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45c0]  price=71223  ware=stimulants
+
+  REFERENCE PRICES (5 wares):
+    buy=228  sell=0  ware=hullparts
+    buy=945  sell=0  ware=plasmaconductors
+    buy=18  sell=0  ware=energycells
+    buy=27  sell=0  ware=nostropoil
+    buy=89  sell=0  ware=medicalsupplies
+
+======================================================================
+COMPONENT #9
+  id:    [0x4e4f]
+  macro: station_gen_factory_base_01_macro
+  class: station
+
+  ECONOMYLOG:
+    cargo = 242439.338
+    offer = 239105.916
+
+  ACCOUNT:
+    (none)
+
+  TRADE RECORDS (5):
+    amount=1080  buyer=[0x4e4f]  desired=1080  flags=invertfactionrestriction  id=[0x45c1]  price=1354  ware=energycells
+    amount=338  buyer=[0x4e4f]  desired=338  flags=invertfactionrestriction  id=[0x45c2]  price=5459  ware=medicalsupplies
+    amount=54  buyer=[0x4e4f]  desired=54  flags=invertfactionrestriction  id=[0x45c3]  price=2096  ware=nostropoil
+    amount=240  buyer=[0x4e4f]  desired=240  flags=invertfactionrestriction  id=[0x45c4]  price=11247  ware=silicon
+    amount=6845  flags=invertfactionrestriction  id=[0x45c5]  price=29130  seller=[0x4e4f]  ware=siliconwafers
+
+  REFERENCE PRICES (4 wares):
+    buy=112  sell=0  ware=silicon
+    buy=15  sell=0  ware=energycells
+    buy=27  sell=0  ware=nostropoil
+    buy=81  sell=0  ware=medicalsupplies
+
+======================================================================
+COMPONENT #10
+  id:    [0x4f44]
+  macro: station_gen_factory_base_01_macro
+  class: station
+
+  ECONOMYLOG:
+    cargo = 0
+    offer = 0
+
+  ACCOUNT:
+    (none)
+
+  TRADE RECORDS (8):
+    amount=20  buyer=[0x4f44]  desired=20  flags=invertfactionrestriction  id=[0x45c7]  price=16099  ware=hullparts
+    amount=585  buyer=[0x4f44]  desired=585  flags=invertfactionrestriction  id=[0x45c8]  price=6754  ware=medicalsupplies
+    amount=0  buyer=[0x4f44]  flags=invertfactionrestriction  id=[0x45c9]  price=2029  ware=nostropoil
+    amount=1550  flags=invertfactionrestriction  id=[0x45ca]  price=30843  seller=[0x4f44]  ware=weaponcomponents
+    amount=168  buyer=[0x4f44]  desired=168  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45cb]  price=54963  ware=majadust
+    amount=218  buyer=[0x4f44]  desired=218  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45cc]  price=35191  ware=spacefuel
+    amount=268  buyer=[0x4f44]  desired=268  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45cd]  price=43787  ware=spaceweed
+    amount=118  buyer=[0x4f44]  desired=118  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45ce]  price=89746  ware=stimulants
+
+  REFERENCE PRICES (5 wares):
+    buy=204  sell=0  ware=hullparts
+    buy=18  sell=0  ware=energycells
+    buy=898  sell=0  ware=plasmaconductors
+    buy=26  sell=0  ware=nostropoil
+    buy=75  sell=0  ware=medicalsupplies
+
+======================================================================
+COMPONENT #11
+  id:    [0x4fb4]
+  macro: station_gen_factory_base_01_macro
+  class: station
+
+  ECONOMYLOG:
+    cargo = 0
+    offer = 0
+
+  ACCOUNT:
+    (none)
+
+  TRADE RECORDS (10):
+    amount=0  buyer=[0x4fb4]  flags=invertfactionrestriction  id=[0x45d0]  price=1025  ware=energycells
+    amount=21824  flags=invertfactionrestriction  id=[0x45d1]  price=6533  seller=[0x4fb4]  ware=medicalsupplies
+    amount=0  buyer=[0x4fb4]  flags=invertfactionrestriction  id=[0x45d2]  price=2028  ware=nostropoil
+    amount=2546  buyer=[0x4fb4]  desired=2546  flags=invertfactionrestriction  id=[0x45d3]  price=1892  ware=spices
+    amount=506  buyer=[0x4fb4]  desired=506  flags=invertfactionrestriction  id=[0x45d4]  price=6452  ware=sunriseflowers
+    amount=4273  buyer=[0x4fb4]  desired=4273  flags=invertfactionrestriction  id=[0x45d5]  price=5288  ware=water
+    amount=181  buyer=[0x4fb4]  desired=181  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45d6]  price=39064  ware=majadust
+    amount=231  buyer=[0x4fb4]  desired=231  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45d7]  price=25025  ware=spacefuel
+    amount=281  buyer=[0x4fb4]  desired=281  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45d8]  price=31098  ware=spaceweed
+    amount=131  buyer=[0x4fb4]  desired=131  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45d9]  price=63756  ware=stimulants
+
+  REFERENCE PRICES (5 wares):
+    buy=68  sell=0  ware=sunriseflowers
+    buy=11  sell=0  ware=energycells
+    buy=50  sell=0  ware=water
+    buy=26  sell=0  ware=nostropoil
+    buy=21  sell=0  ware=spices
+
+======================================================================
+COMPONENT #12
+  id:    [0x5049]
+  macro: station_gen_piratebase_base_01_macro
+  class: station
+
+  ECONOMYLOG:
+    cargo = 0
+    offer = 0
+
+  ACCOUNT:
+    (none)
+
+  TRADE RECORDS (8):
+    amount=13629  buyer=[0x5049]  desired=13629  flags=invertfactionrestriction  id=[0x45da]  price=20700  ware=majadust
+    amount=0  flags=invertfactionrestriction  id=[0x45db]  price=20800  seller=[0x5049]  ware=majadust
+    amount=401  buyer=[0x5049]  desired=401  flags=invertfactionrestriction  id=[0x45dc]  price=6648  ware=medicalsupplies
+    amount=864  buyer=[0x5049]  desired=864  flags=invertfactionrestriction  id=[0x45dd]  price=4500  ware=sojahusk
+    amount=40889  buyer=[0x5049]  desired=40889  flags=invertfactionrestriction  id=[0x45de]  price=13200  ware=spacefuel
+    amount=0  flags=invertfactionrestriction  id=[0x45df]  price=13300  seller=[0x5049]  ware=spacefuel
+    amount=27259  buyer=[0x5049]  desired=27259  flags=invertfactionrestriction  id=[0x45e0]  price=16500  ware=spaceweed
+    amount=0  flags=invertfactionrestriction  id=[0x45e1]  price=16600  seller=[0x5049]  ware=spaceweed
+
+  REFERENCE PRICES (2 wares):
+    buy=45  sell=0  ware=sojahusk
+    buy=80  sell=0  ware=medicalsupplies
+
+======================================================================
+COMPONENT #13
+  id:    [0x5158]
+  macro: station_gen_factory_base_01_macro
+  class: station
+
+  ECONOMYLOG:
+    cargo = 0
+    offer = 0
+
+  ACCOUNT:
+    (none)
+
+  TRADE RECORDS (10):
+    amount=420  buyer=[0x5158]  desired=420  flags=invertfactionrestriction  id=[0x45e4]  price=1371  ware=energycells
+    amount=73  buyer=[0x5158]  desired=73  flags=invertfactionrestriction  id=[0x45e5]  price=4479  ware=medicalsupplies
+    amount=63  buyer=[0x5158]  desired=63  flags=invertfactionrestriction  id=[0x45e6]  price=2111  ware=nostropoil
+    amount=0  buyer=[0x5158]  flags=invertfactionrestriction  id=[0x45e7]  price=79575  ware=plasmaconductors
+    amount=27  buyer=[0x5158]  desired=27  flags=invertfactionrestriction  id=[0x45e8]  price=23928  ware=quantumtubes
+    amount=2780  flags=invertfactionrestriction  id=[0x45e9]  price=20404  seller=[0x5158]  ware=shieldcomponents
+    amount=167  buyer=[0x5158]  desired=167  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45ea]  price=37916  ware=majadust
+    amount=217  buyer=[0x5158]  desired=217  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45eb]  price=24291  ware=spacefuel
+    amount=267  buyer=[0x5158]  desired=267  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45ec]  price=30182  ware=spaceweed
+    amount=117  buyer=[0x5158]  desired=117  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45ed]  price=61880  ware=stimulants
+
+  REFERENCE PRICES (5 wares):
+    buy=971  sell=0  ware=plasmaconductors
+    buy=281  sell=0  ware=quantumtubes
+    buy=20  sell=0  ware=energycells
+    buy=28  sell=0  ware=nostropoil
+    buy=83  sell=0  ware=medicalsupplies
+
+======================================================================
+COMPONENT #14
+  id:    [0x51c8]
+  macro: station_gen_factory_base_01_macro
+  class: station
+
+  ECONOMYLOG:
+    cargo = 0
+    offer = 0
+
+  ACCOUNT:
+    (none)
+
+  TRADE RECORDS (8):
+    amount=4669  buyer=[0x51c8]  desired=4669  flags=invertfactionrestriction  id=[0x45ee]  price=24095  ware=graphene
+    amount=1386  buyer=[0x51c8]  desired=1386  flags=invertfactionrestriction  id=[0x45ef]  price=7324  ware=medicalsupplies
+    amount=347  buyer=[0x51c8]  desired=347  flags=invertfactionrestriction  id=[0x45f0]  price=2358  ware=nostropoil
+    amount=3930  flags=invertfactionrestriction  id=[0x45f1]  price=26033  seller=[0x51c8]  ware=quantumtubes
+    amount=235  buyer=[0x51c8]  desired=235  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45f2]  price=43532  ware=majadust
+    amount=285  buyer=[0x51c8]  desired=285  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45f3]  price=27882  ware=spacefuel
+    amount=335  buyer=[0x51c8]  desired=335  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45f4]  price=34664  ware=spaceweed
+    amount=185  buyer=[0x51c8]  desired=185  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45f5]  price=71060  ware=stimulants
+
+  REFERENCE PRICES (5 wares):
+    buy=127  sell=0  ware=superfluidcoolant
+    buy=233  sell=0  ware=graphene
+    buy=17  sell=0  ware=energycells
+    buy=28  sell=0  ware=nostropoil
+    buy=76  sell=0  ware=medicalsupplies
+
+======================================================================
+COMPONENT #15
+  id:    [0x525b]
+  macro: station_gen_factory_base_01_macro
+  class: station
+
+  ECONOMYLOG:
+    cargo = 0
+    offer = 0
+
+  ACCOUNT:
+    (none)
+
+  TRADE RECORDS (10):
+    amount=492  buyer=[0x525b]  desired=492  flags=invertfactionrestriction  id=[0x45f6]  price=1382  ware=energycells
+    amount=1096  buyer=[0x525b]  desired=1096  flags=invertfactionrestriction  id=[0x45f7]  price=23661  ware=graphene
+    amount=3377  flags=invertfactionrestriction  id=[0x45f8]  price=24045  seller=[0x525b]  ware=hullparts
+    amount=314  buyer=[0x525b]  desired=314  flags=invertfactionrestriction  id=[0x45f9]  price=5117  ware=medicalsupplies
+    amount=70  buyer=[0x525b]  desired=70  flags=invertfactionrestriction  id=[0x45fa]  price=2104  ware=nostropoil
+    amount=3690  buyer=[0x525b]  desired=3690  flags=invertfactionrestriction  id=[0x45fb]  price=26482  ware=teladianium
+    amount=181  buyer=[0x525b]  desired=181  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45fc]  price=45878  ware=majadust
+    amount=231  buyer=[0x525b]  desired=231  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45fd]  price=29382  ware=spacefuel
+    amount=281  buyer=[0x525b]  desired=281  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45fe]  price=36536  ware=spaceweed
+    amount=131  buyer=[0x525b]  desired=131  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x45ff]  price=74895  ware=stimulants
+
+  REFERENCE PRICES (5 wares):
+    buy=19  sell=0  ware=energycells
+    buy=282  sell=0  ware=teladianium
+    buy=27  sell=0  ware=nostropoil
+    buy=86  sell=0  ware=medicalsupplies
+    buy=231  sell=0  ware=graphene
+
+======================================================================
+COMPONENT #16
+  id:    [0x52ad]
+  macro: station_gen_factory_base_01_macro
+  class: station
+
+  ECONOMYLOG:
+    cargo = 111233.531
+    offer = 108242.352
+
+  ACCOUNT:
+    (none)
+
+  TRADE RECORDS (6):
+    amount=1744  buyer=[0x52ad]  desired=1744  flags=invertfactionrestriction  id=[0x4600]  price=1453  ware=energycells
+    amount=206  buyer=[0x52ad]  desired=206  flags=invertfactionrestriction  id=[0x4601]  price=5698  ware=medicalsupplies
+    amount=32143  flags=invertfactionrestriction  id=[0x4602]  price=2423  seller=[0x52ad]  ware=nostropoil
+    amount=178  buyer=[0x52ad]  desired=178  flags=invertfactionrestriction  id=[0x4604]  price=1439  ware=spices
+    amount=18  buyer=[0x52ad]  desired=18  flags=invertfactionrestriction  id=[0x4605]  price=5405  ware=sunriseflowers
+    amount=386  buyer=[0x52ad]  desired=386  flags=invertfactionrestriction  id=[0x4606]  price=3955  ware=water
+
+  REFERENCE PRICES (5 wares):
+    buy=26  sell=0  ware=spices
+    buy=15  sell=0  ware=energycells
+    buy=70  sell=0  ware=sunriseflowers
+    buy=54  sell=0  ware=water
+    buy=89  sell=0  ware=medicalsupplies
+
+======================================================================
+COMPONENT #17
+  id:    [0x5365]
+  macro: station_gen_factory_base_01_macro
+  class: station
+
+  ECONOMYLOG:
+    cargo = 0
+    offer = 0
+
+  ACCOUNT:
+    (none)
+
+  TRADE RECORDS (12):
+    amount=617  flags=invertfactionrestriction  id=[0x4608]  price=100801  seller=[0x5365]  ware=dronecomponents
+    amount=158  buyer=[0x5365]  desired=158  flags=invertfactionrestriction  id=[0x4609]  price=1504  ware=energycells
+    amount=253  buyer=[0x5365]  desired=253  flags=invertfactionrestriction  id=[0x460a]  price=24116  ware=engineparts
+    amount=0  buyer=[0x5365]  flags=invertfactionrestriction  id=[0x460b]  price=16561  ware=hullparts
+    amount=1783  buyer=[0x5365]  desired=1783  flags=invertfactionrestriction  id=[0x460c]  price=6800  ware=medicalsupplies
+    amount=115  buyer=[0x5365]  desired=115  flags=invertfactionrestriction  id=[0x460d]  price=102234  ware=microchips
+    amount=182  buyer=[0x5365]  desired=182  flags=invertfactionrestriction  id=[0x460e]  price=2108  ware=nostropoil
+    amount=60  buyer=[0x5365]  desired=60  flags=invertfactionrestriction  id=[0x460f]  price=96780  ware=scanningarrays
+    amount=302  buyer=[0x5365]  desired=302  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x4610]  price=43532  ware=majadust
+    amount=352  buyer=[0x5365]  desired=352  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x4611]  price=27882  ware=spacefuel
+    ... (2 more)
+
+  REFERENCE PRICES (7 wares):
+    buy=214  sell=0  ware=hullparts
+    buy=1077  sell=0  ware=microchips
+    buy=250  sell=0  ware=engineparts
+    buy=19  sell=0  ware=energycells
+    buy=1191  sell=0  ware=scanningarrays
+    buy=25  sell=0  ware=nostropoil
+    buy=77  sell=0  ware=medicalsupplies
+
+======================================================================
+COMPONENT #18
+  id:    [0x548d]
+  macro: station_gen_factory_base_01_macro
+  class: station
+
+  ECONOMYLOG:
+    cargo = 0
+    offer = 0
+
+  ACCOUNT:
+    (none)
+
+  TRADE RECORDS (6):
+    amount=794  buyer=[0x548d]  desired=794  flags=invertfactionrestriction  id=[0x4619]  price=1039  ware=energycells
+    amount=940  buyer=[0x548d]  desired=940  flags=invertfactionrestriction  id=[0x461a]  price=6765  ware=medicalsupplies
+    amount=255  buyer=[0x548d]  desired=255  flags=invertfactionrestriction  id=[0x461b]  price=2321  ware=nostropoil
+    amount=11682  flags=invertfactionrestriction  id=[0x461c]  price=19471  seller=[0x548d]  ware=spaceweed
+    amount=837  buyer=[0x548d]  desired=837  flags=invertfactionrestriction  id=[0x461d]  price=1405  ware=spices
+    amount=1749  buyer=[0x548d]  desired=1749  flags=invertfactionrestriction  id=[0x461e]  price=5561  ware=swampplant
+
+  REFERENCE PRICES (5 wares):
+    buy=14  sell=0  ware=energycells
+    buy=24  sell=0  ware=spices
+    buy=74  sell=0  ware=swampplant
+    buy=31  sell=0  ware=nostropoil
+    buy=86  sell=0  ware=medicalsupplies
+
+======================================================================
+COMPONENT #19
+  id:    [0x5549]
+  macro: station_gen_factory_base_01_macro
+  class: station
+
+  ECONOMYLOG:
+    cargo = 72746.659
+    offer = 68588.768
+
+  ACCOUNT:
+    (none)
+
+  TRADE RECORDS (5):
+    amount=1560  buyer=[0x5549]  desired=1560  flags=invertfactionrestriction  id=[0x4620]  price=1675  ware=energycells
+    amount=117  buyer=[0x5549]  desired=117  flags=invertfactionrestriction  id=[0x4621]  price=2148  ware=nostropoil
+    amount=575  flags=invertfactionrestriction  id=[0x4622]  price=121305  seller=[0x5549]  ware=scanningarrays
+    amount=555  buyer=[0x5549]  desired=555  flags=invertfactionrestriction  id=[0x4623]  price=22288  ware=siliconwafers
+    amount=1843  buyer=[0x5549]  desired=1843  flags=invertfactionrestriction  id=[0x4624]  price=20929  ware=teladianium
+
+  REFERENCE PRICES (5 wares):
+    buy=18  sell=0  ware=energycells
+    buy=282  sell=0  ware=teladianium
+    buy=27  sell=0  ware=nostropoil
+    buy=419  sell=0  ware=siliconwafers
+    buy=80  sell=0  ware=medicalsupplies
+
+======================================================================
+COMPONENT #20
+  id:    [0x5631]
+  macro: station_gen_factory_base_01_macro
+  class: station
+
+  ECONOMYLOG:
+    cargo = 0
+    offer = 0
+
+  ACCOUNT:
+    (none)
+
+  TRADE RECORDS (9):
+    amount=3427  buyer=[0x5631]  desired=3427  flags=invertfactionrestriction  id=[0x4628]  price=1330  ware=energycells
+    amount=6900  buyer=[0x5631]  desired=6900  flags=invertfactionrestriction  id=[0x4629]  price=8227  ware=medicalsupplies
+    amount=2628  flags=invertfactionrestriction  id=[0x462a]  price=94869  seller=[0x5631]  ware=microchips
+    amount=244  buyer=[0x5631]  desired=244  flags=invertfactionrestriction  id=[0x462b]  price=2064  ware=nostropoil
+    amount=43941  buyer=[0x5631]  desired=43941  flags=invertfactionrestriction  id=[0x462c]  price=41900  ware=siliconwafers
+    amount=109  buyer=[0x5631]  desired=109  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x462d]  price=57260  ware=majadust
+    amount=675  buyer=[0x5631]  desired=675  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x462e]  price=36660  ware=spacefuel
+    amount=725  buyer=[0x5631]  desired=725  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x462f]  price=45620  ware=spaceweed
+    amount=575  buyer=[0x5631]  desired=575  flags=buyercargovirtual|buyermoneyvirtual|invertfactionrestriction|shady  id=[0x4630]  price=93500  ware=stimulants
+
+  REFERENCE PRICES (4 wares):
+    buy=14  sell=0  ware=energycells
+    buy=26  sell=0  ware=nostropoil
+    buy=79  sell=0  ware=medicalsupplies
+    buy=411  sell=0  ware=siliconwafers
+

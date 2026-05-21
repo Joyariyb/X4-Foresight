@@ -1,0 +1,298 @@
+======================================================================
+SECTION 1: savegame/economylog (full subtree)
+======================================================================
+
+  Direct children: 0
+  Attributes: (none)
+
+  (element is empty — no children or text)
+
+
+======================================================================
+SECTION 2: <log><entry> samples matching trade keywords (40 unique titles)
+======================================================================
+
+  Entry #1
+    category = missions
+    entity = Yalos Uguras Yosulis V
+    faction = {20203,601}
+    text = Mission accepted.
+    time = 55189.759
+    title = Identify Profitable Regions
+
+  Entry #2
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 64855.045
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 87,213 Credits.
+
+  Entry #3
+    component = [0x1f680]
+    interact = showonmap
+    text = Manorina (Gas) Sentinel (NJI-617) docked at TEL Advanced Electronics Factory I (CYS-158) and is ready to trade.
+    time = 65296.202
+    title = Ready to trade
+
+  Entry #4
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 65669.555
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 55,058 Credits.
+
+  Entry #5
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 66281.936
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 43,941 Credits.
+
+  Entry #6
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 67056.823
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 30,489 Credits.
+
+  Entry #7
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 67773.152
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 22,490 Credits.
+
+  Entry #8
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 68478.099
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 9,345 Credits.
+
+  Entry #9
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 69617.96
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 71 Credits.
+
+  Entry #10
+    category = missions
+    entity = Yalos Uguras Yosulis V
+    faction = {20203,601}
+    text = Mission accepted.
+    time = 82234.599
+    title = Learning Your Lesson
+
+  Entry #11
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 86406.035
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 90,804 Credits.
+
+  Entry #12
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 87069.462
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 185,827 Credits.
+
+  Entry #13
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 88350.419
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 240,399 Credits.
+
+  Entry #14
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 89065.531
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 424,835 Credits.
+
+  Entry #15
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 89821.155
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 353,143 Credits.
+
+  Entry #16
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 119630.04
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 433,821 Credits.
+
+  Entry #17
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 121241.337
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 701,493 Credits.
+
+  Entry #18
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 122715.237
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 1,535,434 Credits.
+
+  Entry #19
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 123954.761
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 1,748,702 Credits.
+
+  Entry #20
+    category = missions
+    faction = {1021,102}
+    text = You delivered terraforming data from the Torus to the Segarians and unlocked advanced terraforming projects.
+    time = 165740.74
+    title = Data Transfer
+
+  Entry #21
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 167573.668
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 2,124,777 Credits.
+
+  Entry #22
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 168255.028
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 2,183,656 Credits.
+
+  Entry #23
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 169610.203
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 2,261,046 Credits.
+
+  Entry #24
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 170643.323
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 1,589,768 Credits.
+
+  Entry #25
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 171245.05
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 1,834,252 Credits.
+
+  Entry #26
+    category = upkeep
+    component = [0x510f7]
+    interact = showonmap
+    time = 176722.024
+    title = The account for Black Hole Sun V High Tech Factory III in Black Hole Sun V has dropped to 774,053 Credits.
+
+  Entry #27
+    category = upkeep
+    component = [0x510f7]
+    interact = showonmap
+    time = 180255.446
+    title = The account for Black Hole Sun V High Tech Factory III in Black Hole Sun V has dropped to 1,038,659 Credits.
+
+  Entry #28
+    category = upkeep
+    component = [0x510f7]
+    interact = showonmap
+    time = 181298.029
+    title = The account for Black Hole Sun V High Tech Factory III in Black Hole Sun V has dropped to 1,072,039 Credits.
+
+  Entry #29
+    category = missions
+    entity = Vic Cornell
+    faction = {20203,201}
+    text = Mission accepted.
+    time = 183958.365
+    title = Construction Wares Needed
+
+  Entry #30
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 187034.625
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 1,721,745 Credits.
+
+  Entry #31
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 187678.021
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 1,559,583 Credits.
+
+  Entry #32
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 188375.078
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 1,726,729 Credits.
+
+  Entry #33
+    category = upkeep
+    component = [0x510f7]
+    interact = showonmap
+    time = 190005.282
+    title = The account for Black Hole Sun V High Tech Factory III in Black Hole Sun V has dropped to 1,216,932 Credits.
+
+  Entry #34
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 190791.999
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 1,661,750 Credits.
+
+  Entry #35
+    category = upkeep
+    component = [0x20546]
+    interact = showonmap
+    time = 192666.011
+    title = The account for Grand Exchange I Headquarters in Grand Exchange I has dropped to 1,944,216 Credits.
+
+  Entry #36
+    category = missions
+    entity = Met Samdi
+    faction = {20203,201}
+    text = Mission accepted.
+    time = 193666.885
+    title = Deliver specialist to the front
+
+  Entry #37
+    category = upkeep
+    component = [0x510f7]
+    interact = showonmap
+    time = 200119.439
+    title = The account for Black Hole Sun V High Tech Factory III in Black Hole Sun V has dropped to 1,578,616 Credits.
+
+  Entry #38
+    category = upkeep
+    component = [0x36839]
+    interact = showonmap
+    time = 202108.641
+    title = Magpie Sentinel was forced to flee after being attacked by TEL Plunderer Phoenix E in Eighteen Billion. Your ship is at Empty Space in Memory of Profit IX.
+
+  Entry #39
+    category = upkeep
+    component = [0x1ca1c]
+    interact = showonmap
+    time = 205811.01
+    title = The account for The Void Ship Technology Factory II in The Void has dropped to 1,070,294 Credits.
+
+  Entry #40
+    category = upkeep
+    component = [0x1ca1c]
+    interact = showonmap
+    time = 206563.66
+    title = The account for The Void Ship Technology Factory II in The Void has dropped to 776,933 Credits.
+
