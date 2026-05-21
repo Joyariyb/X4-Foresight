@@ -2,7 +2,7 @@ import sys
 import os
 from collections import Counter, defaultdict
 from data.factions import FACTION_NAMES as _FACTION_NAMES
-from data.production import display_name_to_id, units_per_cycle, units_per_hour
+from data.production import display_name_to_id, units_per_cycle, units_per_hour, inputs_per_cycle
 from data.sector_stats import SECTOR_SUNLIGHT
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -163,6 +163,10 @@ def display_results(data: dict):
                             per_cyc = count * units_per_cycle(ware_id, sector)
                             per_hr  = count * units_per_hour(ware_id, sector)
                             print(f"  {indent} {lbl} : {ware_display:<22} {count}x  {per_cyc:>5.0f}/cyc  ·  {per_hr:>7,.0f}/hr")
+                            inputs = inputs_per_cycle(ware_id, count)
+                            if inputs:
+                                inp_str = "  ·  ".join(f"{qty:,} {name}" for name, qty in sorted(inputs.items()))
+                                print(f"  {indent}             └─ {inp_str}")
                         else:
                             print(f"  {indent} {lbl} : {count}x {ware_display}")
                 elif s["production"]:
@@ -223,6 +227,21 @@ def display_results(data: dict):
                     print(f"  {indent} {'Storage':<9}: {format_m3(cargo_adj_m3)} / {format_m3(cargo_max)}  ({cargo_adj_pct:.0f}%) [total]")
                 elif cargo_adj_m3 is not None:
                     print(f"  {indent} {'Storage':<9}: {format_m3(cargo_adj_m3)}")
+
+                # ── Inventory ────────────────────────────────────────────────
+                inventory = s.get("inventory")
+                if inventory is None:
+                    pass  # stations pass didn't run — omit the line entirely
+                elif inventory:
+                    items    = sorted(inventory.items())
+                    row_size = 3
+                    for row_start in range(0, len(items), row_size):
+                        row     = items[row_start:row_start + row_size]
+                        lbl     = "Inventory" if row_start == 0 else "         "
+                        content = "  ·  ".join(f"{amt:,} {name}" for name, amt in row)
+                        print(f"  {indent} {lbl}: {content}")
+                else:
+                    print(f"  {indent} Inventory: —")
 
                 # ── Docked ships ──────────────────────────────────────────────
                 # Ships with connection="dock" are physically present in a bay.

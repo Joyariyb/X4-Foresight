@@ -312,8 +312,9 @@ def _parse_station_storage(station_elem: ET.Element) -> dict:
     """
     # Per-type accumulators: [current_m3, max_m3]
     acc = {"container": [0.0, 0], "solid": [0.0, 0], "liquid": [0.0, 0]}
-    total_m3  = 0.0
-    total_max = 0
+    total_m3   = 0.0
+    total_max  = 0
+    inventory: dict[str, int] = {}  # ware_id → total units across all storage modules
 
     for comp in _iter_components(station_elem):
         if comp.get('class') != 'storage':
@@ -334,7 +335,7 @@ def _parse_station_storage(station_elem: ET.Element) -> dict:
         else:
             type_key = None
 
-        # Sum current stock in m³ from the module's <cargo> block
+        # Sum current stock in m³ from the module's <cargo> block; also tally units
         current_m3 = 0.0
         cargo_elem = comp.find('cargo')
         if cargo_elem is not None:
@@ -345,6 +346,8 @@ def _parse_station_storage(station_elem: ET.Element) -> dict:
                 except (ValueError, TypeError):
                     amount = 0.0
                 current_m3 += amount * WARE_VOLUME.get(ware_id, 1.0)
+                if amount > 0:
+                    inventory[ware_id] = inventory.get(ware_id, 0) + int(amount)
 
         if type_key:
             acc[type_key][0] += current_m3
@@ -420,6 +423,11 @@ def _parse_station_storage(station_elem: ET.Element) -> dict:
         result["cargo_pct"]     = None
         result["cargo_adj_m3"]  = None
         result["cargo_adj_pct"] = None
+
+    result["inventory"] = {
+        WARE_NAMES.get(wid, wid): amt
+        for wid, amt in sorted(inventory.items())
+    }
 
     return result
 
@@ -607,6 +615,7 @@ def scan_save(file_path: pathlib.Path, sector_names: dict) -> dict:
                             "cargo_pct":               storage["cargo_pct"],
                             "cargo_adj_m3":            storage["cargo_adj_m3"],
                             "cargo_adj_pct":           storage["cargo_adj_pct"],
+                            "inventory":     storage["inventory"],
                             "modules":       modules,
                         }
 

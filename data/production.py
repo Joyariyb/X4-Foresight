@@ -40,3 +40,15 @@ def units_per_hour(ware_id: str, sector: str) -> float:
     if stats is None:
         return 0.0
     return units_per_cycle(ware_id, sector) * (3600 / stats["time"])
+
+
+def inputs_per_cycle(ware_id: str, count: int = 1) -> dict[str, int]:
+    """Returns {input_display_name: total_qty} consumed per cycle across `count` modules.
+
+    Uses the default production method. Energy cells and mineables return {}.
+    """
+    stats = PRODUCTION_STATS.get(ware_id)
+    if stats is None:
+        return {}
+    raw = stats["methods"].get("default", {})
+    return {WARE_NAMES.get(iid, iid): qty * count for iid, qty in raw.items()}

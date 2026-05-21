@@ -64,9 +64,9 @@ SCAN_MODES = [
     {
         "key":    "stations",
         "label":  "Stations only",
-        "desc":   "Player data and station health  (~5s)",
+        "desc":   "Player data, station health + inventory  (~5s, exports JSON)",
         "passes": ["stations"],
-        "export": False,
+        "export": True,
     },
     {
         "key":    "reputation",
