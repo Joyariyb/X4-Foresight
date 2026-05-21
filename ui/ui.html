@@ -455,6 +455,61 @@
   const ORDER_COLOURS = { Trading:"var(--green)", Mining:"var(--amber)", Escorting:"var(--teal)", Waiting:"var(--text-faint)" };
   const SIZE_COLOURS  = { L:"var(--amber)", M:"var(--teal)", S:"var(--text-dim)" };
 
+  // Bright accent colour for each production ware, keyed by display name.
+  // Unrecognised wares fall back to --text-dim in the renderer.
+  const WARE_COLOURS = {
+    // Raw resources
+    "Ore":                          "#cd7f32",
+    "Silicon":                      "#b0bec5",
+    "Ice":                          "#b3e5fc",
+    "Hydrogen":                     "#fff176",
+    "Helium":                       "#ce93d8",
+    "Methane":                      "#a5d6a7",
+    "Nividium":                     "#ab47bc",
+    // Refined / basic materials
+    "Refined Metals":               "#90a4ae",
+    "Silicon Wafers":               "#00bcd4",
+    "Energy Cells":                 "#fdd835",
+    "Graphene":                     "#26a69a",
+    "Superfluid Coolant":           "#4fc3f7",
+    "Antimatter Cells":             "#ef5350",
+    "Plasma Conductors":            "#7e57c2",
+    "Quantum Tubes":                "#e91e63",
+    "Microchips":                   "#43a047",
+    "Advanced Electronics":         "#2196f3",
+    "Advanced Composites":          "#8bc34a",
+    "Scanning Arrays":              "#00e5ff",
+    "Engine Parts":                 "#ff9800",
+    "Hull Parts":                   "#78909c",
+    "Smart Chips":                  "#29b6f6",
+    "Drone Components":             "#ff5722",
+    "Field Coils":                  "#5c6bc0",
+    "Maja Dust":                    "#f06292",
+    "Teladianium":                  "#ffc107",
+    "Protective Coating":           "#66bb6a",
+    "Computronic Substrate":        "#26c6da",
+    "Metallic Microlattice":        "#90caf9",
+    "Silicon Carbide Microlattice": "#ffb300",
+    "Carbon Carbide":               "#bdbdbd",
+    // Ship / station components
+    "Weapon Components":            "#f44336",
+    "Missile Components":           "#d32f2f",
+    "Shield Components":            "#3f51b5",
+    "Turret Components":            "#ff7043",
+    "Claytronics":                  "#00acc1",
+    "Antimatter Converters":        "#ec407a",
+    "Redundant Cooling Systems":    "#80cbc4",
+    "Pod Control Systems":          "#4db6ac",
+    // Food / consumables
+    "Food Rations":                 "#aed581",
+    "Medical Supplies":             "#ef9a9a",
+    "Space Weed":                   "#69f0ae",
+    "Space Fuel":                   "#ff8a65",
+    "Maja Snails":                  "#f48fb1",
+    "Stimulants":                   "#e6ee9c",
+    "Hallucinogenics":              "#b39ddb",
+  };
+
   const ROLE_ICONS = {
     "Fighter":        "ti-rocket",
     "Heavy Fighter":  "ti-rocket",
@@ -1280,24 +1335,35 @@
       const storageColor = storageRaw != null ? (storageRaw > 90 ? 'var(--red)' : storageRaw > 70 ? 'var(--amber)' : 'var(--teal)') : 'var(--text-faint)';
 
       // Build per-type storage breakdown for the hover tooltip.
-      // Each entry carries its own fill-level colour so the bars follow the
-      // same amber/red/teal rule as the main storage stat.
-      const storageTipColor = pct => pct > 90 ? 'var(--red)' : pct > 70 ? 'var(--amber)' : 'var(--teal)';
-      const storageTipTypes = [
-        { label: 'Container', pct: s.cargo_container_adj_pct, m3: s.cargo_container_adj_m3, max: s.cargo_container_max },
-        { label: 'Solid',     pct: s.cargo_solid_adj_pct,     m3: s.cargo_solid_adj_m3,     max: s.cargo_solid_max     },
-        { label: 'Liquid',    pct: s.cargo_liquid_adj_pct,    m3: s.cargo_liquid_adj_m3,     max: s.cargo_liquid_max    },
-      ].filter(t => t.max != null && t.max > 0);
+      // Fixed accent colour per storage category — matches the in-game cargo display.
+      // The Total row is computed from the combined values and always shown last.
+      const allStorageTypes = [
+        { label: 'Container', pct: s.cargo_container_adj_pct, m3: s.cargo_container_adj_m3 || 0, max: s.cargo_container_max || 0, color: 'var(--teal)'   },
+        { label: 'Solid',     pct: s.cargo_solid_adj_pct,     m3: s.cargo_solid_adj_m3     || 0, max: s.cargo_solid_max     || 0, color: 'var(--amber)'  },
+        { label: 'Liquid',    pct: s.cargo_liquid_adj_pct,    m3: s.cargo_liquid_adj_m3    || 0, max: s.cargo_liquid_max    || 0, color: 'var(--purple)' },
+      ];
+      const storageTipTypes = allStorageTypes.filter(t => t.max > 0);
+      if (storageTipTypes.length > 0) {
+        // Sum across all three types so the Total denominator includes every bay,
+        // even types that happen to be empty (max > 0 but m3 == 0).
+        const totalMax = allStorageTypes.reduce((acc, t) => acc + t.max, 0);
+        const totalM3  = allStorageTypes.reduce((acc, t) => acc + t.m3,  0);
+        storageTipTypes.push({
+          label: 'Total', color: 'var(--green)', isTotal: true,
+          pct:   totalMax > 0 ? totalM3 / totalMax * 100 : null,
+          m3:    totalM3, max: totalMax,
+        });
+      }
       // Only attach the tooltip when at least one storage type has data.
       const storageTipAttr = storageTipTypes.length > 0
         ? `data-storage-tip="${encodeURIComponent(JSON.stringify(storageTipTypes.map(t => ({
-            label: t.label,
-            pct:   t.pct   != null ? Math.round(t.pct)   : null,
-            m3:    t.m3    != null ? Math.round(t.m3)    : null,
-            max:   t.max,
-            color: storageTipColor(t.pct != null ? t.pct : 0),
-          }))))}"`
-        : '';
+            label:   t.label,
+            pct:     t.pct != null ? Math.round(t.pct) : null,
+            m3:      t.m3  != null ? Math.round(t.m3)  : null,
+            max:     t.max,
+            color:   t.color,
+            isTotal: !!t.isTotal,
+          }))))}"` : '';
 
       // Build grouped module breakdown for the hover tooltip.
       // Modules are grouped by category (in display-priority order), then by
@@ -1336,13 +1402,15 @@
       const wares = s.production ? s.production.split(',').map(w => w.trim()).filter(Boolean) : [];
       const prodRows = wares.length === 0
         ? `<div style="padding:12px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No production modules</div>`
-        : wares.map(w =>
-            `<div style="display:flex;align-items:center;gap:10px;padding:5px 14px;border-bottom:1px solid var(--border)">
-               <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim);min-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${w.toUpperCase()}</span>
-               <div style="flex:1;height:3px;background:var(--border);border-radius:2px"></div>
+        : wares.map(w => {
+            const wareCol = WARE_COLOURS[w] || 'var(--text-dim)';
+            return `<div style="display:flex;align-items:center;gap:10px;padding:5px 14px;border-bottom:1px solid var(--border)">
+               <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:${wareCol};min-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${w.toUpperCase()}</span>
+               <div style="flex:1;height:3px;background:${wareCol}30;border-radius:2px"></div>
                <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);min-width:28px;text-align:right">—</span>
                <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);min-width:54px;text-align:right">—/hr</span>
-             </div>`).join('');
+             </div>`;
+          }).join('');
 
       // ── DOCKED SHIPS TAB ───────────────────────────────────────────────────
       const dockedRows = dockedShips.length === 0
@@ -1458,12 +1526,10 @@
         <div style="display:flex;gap:4px;padding:6px 10px;border-bottom:1px solid var(--border);background:var(--bg-panel)">
           <button class="station-tab-btn active" data-tab="production" onclick="switchStationTab('${s.code}','production')">Production</button>
           <button class="station-tab-btn" data-tab="docked" onclick="switchStationTab('${s.code}','docked')">Docked${shipCount > 0 ? ' · ' + shipCount : ''}</button>
-          <button class="station-tab-btn" data-tab="storage" onclick="switchStationTab('${s.code}','storage')">Storage${storageRaw != null ? ' · ' + Math.round(storageRaw) + '%' : ''}</button>
         </div>
         <!-- Tab panels -->
         <div class="station-tab-panel" data-tab="production" style="display:block">${prodRows}</div>
         <div class="station-tab-panel" data-tab="docked"     style="display:none">${dockedRows}</div>
-        <div class="station-tab-panel" data-tab="storage"    style="display:none">${storageRows}</div>
       </div>`;
     }).join("");
 
@@ -1547,23 +1613,28 @@
 
     function storageTipHtml(types) {
       // Renders each storage type as a label + % row followed by a fill bar.
+      // Label, percentage, and m³ text all use the category's fixed accent colour.
+      // The Total row is preceded by a thin separator line.
       const fmtM3 = v => v >= 1e6 ? (v/1e6).toFixed(2)+'M' : v >= 1e3 ? (v/1e3).toFixed(1)+'K' : v;
-      return `<div style="min-width:200px;padding:2px 0">` +
+      return `<div style="min-width:220px;padding:2px 0">` +
         types.map(t => {
-          const barW  = t.pct != null ? Math.min(t.pct, 100) : 0;
-          const label = t.pct != null ? `${t.pct}%` : '—';
-          const sub   = (t.m3 != null && t.max != null)
-            ? `<span style="color:var(--text-dim);font-size:10px">${fmtM3(t.m3)} / ${fmtM3(t.max)} m³</span>`
+          const barW = t.pct != null ? Math.min(t.pct, 100) : 0;
+          const pctLabel = t.pct != null ? `${t.pct}%` : '—';
+          const sub = (t.m3 != null && t.max != null)
+            ? `<div style="margin-top:2px;text-align:right;font-size:10px;color:${t.color};opacity:0.75">${fmtM3(t.m3)} / ${fmtM3(t.max)} m³</div>`
             : '';
-          return `<div style="margin-bottom:7px">
+          const sep = t.isTotal
+            ? `<div style="border-top:1px solid var(--border);margin:5px 0 8px"></div>`
+            : '';
+          return `${sep}<div style="margin-bottom:8px">
             <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
-              <span style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-faint)">${t.label}</span>
-              <span style="color:${t.color};margin-left:12px">${label}</span>
+              <span style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:${t.color}">${t.label}</span>
+              <span style="color:${t.color};font-family:var(--font-mono);margin-left:12px">${pctLabel}</span>
             </div>
             <div style="height:6px;background:var(--border);border-radius:2px;overflow:hidden">
               <div style="height:100%;width:${barW}%;background:${t.color};border-radius:2px"></div>
             </div>
-            ${sub ? `<div style="margin-top:2px;text-align:right">${sub}</div>` : ''}
+            ${sub}
           </div>`;
         }).join('') +
       `</div>`;

@@ -1,0 +1,2026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>X4 Empire Intelligence — UI Documentation</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:         #0d1117;
+    --bg-panel:   #161b22;
+    --bg-card:    #1c2128;
+    --border:     #21262d;
+    --teal:       #2dd4bf;
+    --teal-dim:   rgba(45,212,191,0.12);
+    --amber:      #d29922;
+    --amber-dim:  rgba(210,153,34,0.12);
+    --red:        #f85149;
+    --red-dim:    rgba(248,81,73,0.10);
+    --green:      #3fb950;
+    --green-dim:  rgba(63,185,80,0.10);
+    --purple:     #a371f7;
+    --yellow:     #e3b341;
+    --lime:       #39ff14;
+    --text:       #c9d1d9;
+    --text-dim:   #8b949e;
+    --text-faint: #3fb950;
+    --font-ui:    'Barlow', sans-serif;
+    --font-mono:  'Share Tech Mono', monospace;
+    --font-cond:  'Barlow Condensed', sans-serif;
+
+    /* Doc-only */
+    --doc-accent: #2dd4bf;
+    --doc-label:  rgba(45,212,191,0.15);
+    --annotation: #e3b341;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ═══════════════════════════════════════════════
+     DOC CHROME
+  ═══════════════════════════════════════════════ */
+  .doc-header {
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    padding: 32px 48px 24px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .doc-header-inner { max-width: 1200px; margin: 0 auto; }
+  .doc-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 6px;
+  }
+  .doc-title {
+    font-family: var(--font-cond);
+    font-weight: 700;
+    font-size: 28px;
+    letter-spacing: 0.06em;
+    color: var(--lime);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .doc-subtitle {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+  }
+
+  .doc-toc {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .toc-pill {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .toc-pill:hover { color: var(--teal); border-color: var(--teal); }
+
+  .doc-body {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 48px;
+  }
+
+  /* ═══════════════════════════════════════════════
+     SECTION HEADINGS
+  ═══════════════════════════════════════════════ */
+  .section {
+    margin-bottom: 72px;
+  }
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 8px;
+  }
+  .section-title {
+    font-family: var(--font-cond);
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: 0.06em;
+    color: var(--text);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .section-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 28px;
+    max-width: 700px;
+  }
+  .section-rule {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin-bottom: 28px;
+  }
+
+  /* ═══════════════════════════════════════════════
+     ANNOTATED DIAGRAM WRAPPER
+  ═══════════════════════════════════════════════ */
+  .diagram-wrap {
+    position: relative;
+    margin-bottom: 36px;
+  }
+  /* annotation callout lines + labels are layered via absolute positioning
+     on .diagram-wrap, so it needs relative + overflow:visible */
+  .diagram-wrap > .diagram-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--annotation);
+    margin-bottom: 8px;
+  }
+
+  /* ═══════════════════════════════════════════════
+     COMPONENT CATALOGUE CARD
+  ═══════════════════════════════════════════════ */
+  .comp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+    margin-bottom: 36px;
+  }
+  .comp-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .comp-card-head {
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .comp-name {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--teal);
+  }
+  .comp-type {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    padding: 1px 6px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+  }
+  .comp-preview {
+    padding: 16px 14px;
+  }
+  .comp-desc {
+    padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* ═══════════════════════════════════════════════
+     PROP TABLE
+  ═══════════════════════════════════════════════ */
+  .prop-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-bottom: 24px;
+  }
+  .prop-table th {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    padding: 6px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-weight: 400;
+    background: var(--bg-panel);
+  }
+  .prop-table td {
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-dim);
+    vertical-align: top;
+  }
+  .prop-table tr:last-child td { border-bottom: none; }
+  .prop-table .key {
+    font-family: var(--font-mono);
+    color: var(--yellow);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .prop-table .type {
+    font-family: var(--font-mono);
+    color: var(--purple);
+    font-size: 11px;
+  }
+  .prop-table .source {
+    font-family: var(--font-mono);
+    color: var(--text-faint);
+    font-size: 10px;
+  }
+
+  /* ═══════════════════════════════════════════════
+     ACTUAL UI MOCKUPS (faithful reproductions)
+  ═══════════════════════════════════════════════ */
+
+  /* — Shared — */
+  .ui-shell { border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+  .ui-shell-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--annotation);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ui-shell-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(227,179,65,0.25);
+  }
+
+  /* TOPBAR */
+  .ui-topbar {
+    display: flex;
+    align-items: stretch;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    height: 48px;
+  }
+  .ui-logo {
+    display: flex; align-items: center; gap: 8px;
+    padding: 0 20px;
+    border-right: 1px solid var(--border);
+    font-family: var(--font-cond);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.12em;
+    color: var(--teal);
+    white-space: nowrap;
+  }
+  .ui-logo-icon { font-size: 18px; }
+  .ui-tb-field {
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 0 18px;
+    border-right: 1px solid var(--border);
+    min-width: 90px;
+  }
+  .ui-tb-lbl {
+    font-size: 9px;
+    font-family: var(--font-mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+  .ui-tb-val {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text);
+    margin-top: 1px;
+  }
+  .ui-tb-val.teal  { color: var(--teal); }
+  .ui-tb-val.amber { color: var(--amber); }
+
+  /* NAV */
+  .ui-nav {
+    display: flex;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    padding: 0 12px;
+  }
+  .ui-nav-tab {
+    padding: 0 16px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-cond);
+    font-weight: 500;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    border-bottom: 2px solid transparent;
+    position: relative;
+    top: 1px;
+  }
+  .ui-nav-tab.active { color: var(--teal); border-bottom-color: var(--teal); }
+  .ui-nav-badge {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    background: var(--teal-dim);
+    color: var(--teal);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  .ui-nav-badge.warn { background: var(--red-dim); color: var(--red); }
+
+  /* MAIN LAYOUT */
+  .ui-main { display: flex; }
+
+  /* SIDEBAR */
+  .ui-sidebar {
+    width: 190px;
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border);
+    padding: 10px 0;
+    flex-shrink: 0;
+  }
+  .ui-sb-heading {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    padding: 8px 14px 3px;
+  }
+  .ui-sb-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-family: var(--font-cond);
+    letter-spacing: 0.03em;
+    color: var(--text-dim);
+    border-left: 2px solid transparent;
+  }
+  .ui-sb-item.active {
+    background: var(--teal-dim);
+    color: var(--teal);
+    border-left-color: var(--teal);
+  }
+  .ui-sb-item.warn { color: var(--red); }
+  .ui-sb-count {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-faint);
+  }
+  .ui-sb-divider { border: none; border-top: 1px solid var(--border); margin: 6px 0; }
+
+  /* CONTENT */
+  .ui-content { flex: 1; padding: 14px; }
+
+  /* CARDS */
+  .ui-cards-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .ui-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 10px 12px;
+  }
+  .ui-card-lbl {
+    font-size: 9px;
+    font-family: var(--font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+  .ui-card-val {
+    font-family: var(--font-mono);
+    font-size: 20px;
+    color: var(--text);
+    margin-top: 4px;
+  }
+  .ui-card-val.amber { color: var(--amber); }
+  .ui-card-val.red   { color: var(--red); }
+  .ui-card-val.teal  { color: var(--teal); }
+  .ui-card-val.green { color: var(--green); }
+
+  /* TABLE */
+  .ui-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .ui-table th {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    padding: 6px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-weight: 400;
+  }
+  .ui-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+  .ui-table tr:last-child td { border-bottom: none; }
+  .ui-table tr.hover td { background: var(--bg-panel); }
+  .ui-table .mono { font-family: var(--font-mono); }
+
+  /* PANEL */
+  .ui-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .ui-panel-head {
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    padding: 7px 12px;
+    font-family: var(--font-cond);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* BADGES */
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    padding: 1px 6px;
+    border-radius: 2px;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+  .badge.allied   { background: var(--green-dim); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
+  .badge.friendly { background: var(--teal-dim);  color: var(--teal);  border: 1px solid rgba(45,212,191,0.3); }
+  .badge.neutral  { background: var(--bg-card);   color: var(--text-dim); border: 1px solid var(--border); }
+  .badge.hostile  { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(210,153,34,0.3); }
+  .badge.atwar    { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(248,81,73,0.3); }
+  .badge.xenon    { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(248,81,73,0.3); }
+  .badge.argon    { background: rgba(56,139,253,0.1); color: #388bfd; border: 1px solid rgba(56,139,253,0.25); }
+  .badge.teladi   { background: var(--green-dim); color: #70d890; border: 1px solid rgba(80,200,120,0.25); }
+  .badge.paranid  { background: rgba(163,113,247,0.1); color: var(--purple); border: 1px solid rgba(163,113,247,0.25); }
+
+  /* ALERT */
+  .ui-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    margin-bottom: 6px;
+  }
+  .ui-alert.red   { background: var(--red-dim);   border: 1px solid rgba(248,81,73,0.3);  color: var(--red); }
+  .ui-alert.amber { background: var(--amber-dim); border: 1px solid rgba(210,153,34,0.3); color: var(--amber); }
+  .ui-alert.green { background: var(--green-dim); border: 1px solid rgba(63,185,80,0.3);  color: var(--green); }
+
+  /* REP BAR */
+  .rep-bar-wrap { width: 80px; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; display: inline-block; vertical-align: middle; }
+  .rep-bar { height: 100%; border-radius: 2px; }
+
+  /* HULL BAR */
+  .hull-bar-wrap { width: 80px; height: 22px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .hull-bar { height: 100%; border-radius: 2px; }
+
+  /* FLEET SUBTABS */
+  .ui-fleet-subtabs {
+    display: flex;
+    gap: 5px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+  }
+  .ui-fleet-subtab {
+    padding: 3px 10px;
+    font-family: var(--font-cond);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    color: var(--tab-color, var(--text-dim));
+    background: var(--tab-bg, var(--bg-card));
+    border: 1px solid var(--tab-border, var(--border));
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+  .ui-fleet-subtab.active { box-shadow: 0 0 0 1px var(--tab-color, var(--teal)); }
+
+  /* STATION CARD */
+  .ui-station-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .ui-station-header {
+    display: flex;
+    min-height: 52px;
+  }
+  .ui-faction-stripe {
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    color: var(--text-faint);
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border);
+    padding: 8px 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .ui-station-meta {
+    flex: 1;
+    padding: 8px 14px;
+    background: var(--bg-panel);
+  }
+  .ui-station-name-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .ui-station-name {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--lime);
+    letter-spacing: 0.1em;
+  }
+  .ui-station-code {
+    font-family: var(--font-mono);
+    color: var(--yellow);
+    font-size: 11px;
+  }
+  .ui-station-location {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-faint);
+    letter-spacing: 0.08em;
+    margin-top: 4px;
+  }
+  .ui-station-status {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    white-space: nowrap;
+  }
+  .ui-station-bars {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .ui-station-bar-cell {
+    padding: 7px 14px;
+  }
+  .ui-station-bar-cell:first-child { border-right: 1px solid var(--border); }
+  .ui-bar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+  }
+  .ui-bar-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .ui-bar-value {
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+  .ui-bar-track {
+    height: 22px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .ui-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+  }
+  .ui-station-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    padding: 4px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+  }
+  .ui-stat-cell {
+    padding: 10px 12px;
+    text-align: center;
+    background: var(--bg-card);
+    border-radius: 3px;
+  }
+  .ui-stat-lbl {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 5px;
+  }
+  .ui-stat-val {
+    font-family: var(--font-mono);
+    font-size: 20px;
+    color: var(--text);
+  }
+  .ui-station-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-panel);
+  }
+  .ui-station-tab-btn {
+    padding: 3px 10px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    cursor: pointer;
+  }
+  .ui-station-tab-btn.active { color: var(--teal); border-color: var(--teal); }
+  .ui-station-tab-btn:not(.active) { color: var(--text-faint); }
+  .ui-station-tab-content { padding: 0; }
+  .ui-prod-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .ui-prod-ware {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    min-width: 160px;
+  }
+  .ui-prod-bar { flex: 1; height: 3px; background: var(--border); border-radius: 2px; }
+  .ui-prod-pct {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-faint);
+    min-width: 28px;
+    text-align: right;
+  }
+
+  /* CREW FILE CARD */
+  .ui-file-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .ui-file-header {
+    padding: 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-panel);
+  }
+  .ui-file-name {
+    font-family: var(--font-cond);
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--lime);
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+  .ui-file-section {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .ui-file-sec-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 6px;
+  }
+  .ui-skill-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 0;
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+  .ui-skill-name { min-width: 90px; color: var(--text-dim); text-transform: capitalize; }
+  .ui-skill-stars { letter-spacing: -1px; color: var(--amber); }
+
+  /* SORT CONTROLS */
+  .ui-sort-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 4px;
+  }
+  .ui-sort-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+  .ui-sort-indicator {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--teal);
+  }
+  .ui-sort-select {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 2px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--teal);
+  }
+
+  /* SECTION HEADER (ui mimic) */
+  .ui-sec-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .ui-sec-title {
+    font-family: var(--font-cond);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    white-space: nowrap;
+  }
+  .ui-sec-line { flex: 1; height: 1px; background: var(--border); }
+
+  /* SHIP NAME */
+  .ship-name-display {
+    font-size: 13px;
+    color: var(--teal);
+    font-family: var(--font-mono);
+    font-weight: 700;
+  }
+
+  /* ═══════════════════════════════════════════════
+     ANNOTATION SYSTEM
+  ═══════════════════════════════════════════════ */
+  .annotated {
+    position: relative;
+  }
+  .ann-tag {
+    position: absolute;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--annotation);
+    background: rgba(14,17,23,0.92);
+    border: 1px solid rgba(227,179,65,0.4);
+    padding: 2px 7px;
+    border-radius: 2px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 10;
+  }
+  /* Connector line from ann-tag to element */
+  .ann-tag::before {
+    content: '';
+    position: absolute;
+    background: rgba(227,179,65,0.35);
+  }
+
+  /* ═══════════════════════════════════════════════
+     TWO-COL LAYOUT
+  ═══════════════════════════════════════════════ */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* ═══════════════════════════════════════════════
+     DATA FLOW / LAYER DIAGRAM
+  ═══════════════════════════════════════════════ */
+  .flow-diagram {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    margin-bottom: 24px;
+    overflow-x: auto;
+  }
+  .flow-layer {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 160px;
+  }
+  .flow-layer-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    padding: 0 12px;
+    margin-bottom: 4px;
+  }
+  .flow-box {
+    margin: 0 8px;
+    padding: 8px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .flow-box.highlight {
+    border-color: var(--teal);
+    color: var(--teal);
+    background: var(--teal-dim);
+  }
+  .flow-box.warn {
+    border-color: var(--amber);
+    color: var(--amber);
+    background: var(--amber-dim);
+  }
+  .flow-arrow {
+    display: flex;
+    align-items: center;
+    padding-top: 28px;
+    color: var(--border);
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  /* ═══════════════════════════════════════════════
+     COLOUR SWATCHES
+  ═══════════════════════════════════════════════ */
+  .swatch-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .swatch {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+    width: 80px;
+  }
+  .swatch-dot { width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1); }
+  .swatch-name {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    text-align: center;
+  }
+  .swatch-val {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--text-dim);
+    text-align: center;
+  }
+
+  /* ═══════════════════════════════════════════════
+     TOOLTIP DEMO
+  ═══════════════════════════════════════════════ */
+  .tooltip-demo {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 8px 12px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--lime);
+    display: inline-block;
+  }
+
+  /* ═══════════════════════════════════════════════
+     SCROLLBAR
+  ═══════════════════════════════════════════════ */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* page breaks for print */
+  @media print {
+    .section { page-break-inside: avoid; }
+    .doc-header { position: static; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     HEADER
+════════════════════════════════════════════════════════ -->
+<div class="doc-header">
+  <div class="doc-header-inner">
+    <div class="doc-eyebrow">UI Reference · X4 Foundations</div>
+    <div class="doc-title">X4 Empire Intelligence</div>
+    <div class="doc-subtitle">PyQt6 + QtWebEngine · ui/ui.html · Complete UI Layout & Component Reference</div>
+    <nav class="doc-toc">
+      <a class="toc-pill" href="#architecture">Architecture</a>
+      <a class="toc-pill" href="#chrome">App Chrome</a>
+      <a class="toc-pill" href="#overview-tab">Overview Tab</a>
+      <a class="toc-pill" href="#fleet-tab">Fleet Tab</a>
+      <a class="toc-pill" href="#stations-tab">Stations Tab</a>
+      <a class="toc-pill" href="#crew-tab">Crew Tab</a>
+      <a class="toc-pill" href="#diplomacy-tab">Diplomacy Tab</a>
+      <a class="toc-pill" href="#alerts-tab">Alerts Tab</a>
+      <a class="toc-pill" href="#components">Component Catalogue</a>
+      <a class="toc-pill" href="#tokens">Design Tokens</a>
+      <a class="toc-pill" href="#data-shape">Data Shape</a>
+    </nav>
+  </div>
+</div>
+
+<div class="doc-body">
+
+
+<!-- ═══════════════════════════════════════════════════════
+     1. ARCHITECTURE
+════════════════════════════════════════════════════════ -->
+<div class="section" id="architecture">
+  <div class="section-label">Section 01</div>
+  <div class="section-title">Application Architecture</div>
+  <p class="section-desc">The app is a single-window PyQt6 app that hosts a QWebEngineView. A QWebChannel bridge delivers a JSON payload from the Python scanner to the HTML UI on load. No server, no network — all data flows through the bridge at startup.</p>
+  <hr class="section-rule">
+
+  <div class="flow-diagram">
+    <div class="flow-layer">
+      <div class="flow-layer-label">Save File</div>
+      <div class="flow-box">save_001.xml.gz</div>
+      <div class="flow-box">0001-l044.xml<br><span style="color:var(--text-faint);font-size:9px">sector names</span></div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-layer">
+      <div class="flow-layer-label">Scanner Passes</div>
+      <div class="flow-box highlight">Pass 1 · station_scanner<br>player, credits, stations</div>
+      <div class="flow-box highlight">Pass 2 · reputation_scanner<br>faction standings</div>
+      <div class="flow-box highlight">Pass 3 · ship_scanner<br>player + NPC ships, crew</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-layer">
+      <div class="flow-layer-label">Export</div>
+      <div class="flow-box warn">export_json()<br>x4_empire_state.json</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-layer">
+      <div class="flow-layer-label">Bridge</div>
+      <div class="flow-box">EmpireBridge<br>get_empire_data() → str</div>
+      <div class="flow-box">QWebChannel<br>qt.webChannelTransport</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-layer">
+      <div class="flow-layer-label">UI (ui.html)</div>
+      <div class="flow-box highlight">populate(data)<br>renders all tabs</div>
+      <div class="flow-box">PyQt6 QMainWindow<br>1200 × 800 min 900×600</div>
+    </div>
+  </div>
+
+  <div class="prop-table" style="margin-top:0">
+    <table class="prop-table">
+      <thead><tr><th>File</th><th>Role</th><th>Key Exports</th></tr></thead>
+      <tbody>
+        <tr><td class="key">ui/main_ui.py</td><td>Entry point, Qt app lifecycle, dialogs</td><td class="source">EmpireWindow, EmpireBridge, ScanWorker, LangSetupDialog, SaveSelectDialog</td></tr>
+        <tr><td class="key">ui/ui.html</td><td>Complete single-file UI, all tabs</td><td class="source">populate(), switchTab(), renderFleet(), showCrewFile(), …</td></tr>
+        <tr><td class="key">scanner/station_scanner.py</td><td>Pass 1 — player + stations</td><td class="source">scan_save(file, sector_names) → dict</td></tr>
+        <tr><td class="key">scanner/reputation_scanner.py</td><td>Pass 2 — faction rep</td><td class="source">scan_reputation(file) → list</td></tr>
+        <tr><td class="key">scanner/ship_scanner.py</td><td>Pass 3 — ships + crew</td><td class="source">scan_ships(file, sector_names, …) → dict</td></tr>
+        <tr><td class="key">export/jsonexport.py</td><td>Restructures + writes JSON</td><td class="source">export_json(data, output_dir)</td></tr>
+        <tr><td class="key">ui/assets/tabler-icons_min.css</td><td>Icon font (Tabler Icons 2.47)</td><td class="source">.ti.ti-*</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     2. APP CHROME
+════════════════════════════════════════════════════════ -->
+<div class="section" id="chrome">
+  <div class="section-label">Section 02</div>
+  <div class="section-title">App Chrome — Top Bar, Nav, Sidebar</div>
+  <p class="section-desc">Persistent chrome that wraps every tab. The top bar shows live player telemetry. The nav bar switches between the six main tabs. The sidebar provides secondary navigation and at-a-glance fleet/station counts.</p>
+  <hr class="section-rule">
+
+  <div class="ui-shell-label">Top Bar — #topbar</div>
+  <div class="ui-shell" style="margin-bottom:24px">
+    <div class="ui-topbar">
+      <div class="ui-logo">
+        <span class="ui-logo-icon">◎</span> X4 · EMPIRE INTELLIGENCE
+      </div>
+      <div class="ui-tb-field">
+        <div class="ui-tb-lbl">Pilot</div>
+        <div class="ui-tb-val" id="tb-pilot">Maverick</div>
+      </div>
+      <div class="ui-tb-field">
+        <div class="ui-tb-lbl">Sector</div>
+        <div class="ui-tb-val teal">Argon Prime</div>
+      </div>
+      <div class="ui-tb-field">
+        <div class="ui-tb-lbl">Credits</div>
+        <div class="ui-tb-val amber">4.2M Cr</div>
+      </div>
+      <div class="ui-tb-field">
+        <div class="ui-tb-lbl">Ships</div>
+        <div class="ui-tb-val">47</div>
+      </div>
+      <div class="ui-tb-field">
+        <div class="ui-tb-lbl">Stations</div>
+        <div class="ui-tb-val">5</div>
+      </div>
+    </div>
+  </div>
+
+  <table class="prop-table" style="margin-bottom:24px">
+    <thead><tr><th>Element ID</th><th>Populates From</th><th>Colour Rule</th></tr></thead>
+    <tbody>
+      <tr><td class="key">#tb-pilot</td><td class="source">data.player_name</td><td>—</td></tr>
+      <tr><td class="key">#tb-sector</td><td class="source">data.player_sector</td><td class="type">teal</td></tr>
+      <tr><td class="key">#tb-credits</td><td class="source">data.player_credits → fmtCredits()</td><td class="type">amber</td></tr>
+      <tr><td class="key">#tb-ships</td><td class="source">data.ships.fleet_summary.total</td><td>—</td></tr>
+      <tr><td class="key">#tb-stations</td><td class="source">data.stations.length</td><td>—</td></tr>
+    </tbody>
+  </table>
+
+  <div class="ui-shell-label">Navigation Bar — #nav</div>
+  <div class="ui-shell" style="margin-bottom:24px">
+    <div class="ui-nav">
+      <div class="ui-nav-tab active">◈ Overview</div>
+      <div class="ui-nav-tab">↑ Fleets <span class="ui-nav-badge">47</span></div>
+      <div class="ui-nav-tab">⬡ Stations</div>
+      <div class="ui-nav-tab">⊞ Crew</div>
+      <div class="ui-nav-tab">◉ Diplomacy</div>
+      <div class="ui-nav-tab">⚠ Alerts <span class="ui-nav-badge warn">2</span></div>
+    </div>
+  </div>
+
+  <div class="ui-shell-label">Sidebar — #sidebar (190 px wide, inside #main flex)</div>
+  <div class="ui-shell" style="max-width:220px; margin-bottom:24px">
+    <div class="ui-sidebar">
+      <div class="ui-sb-heading">Views</div>
+      <div class="ui-sb-item active">◈ Overview</div>
+      <div class="ui-sb-item">↑ All Ships <span class="ui-sb-count">47</span></div>
+      <hr class="ui-sb-divider">
+      <div class="ui-sb-heading">Fleet</div>
+      <div class="ui-sb-item">⚔ Military <span class="ui-sb-count">12</span></div>
+      <div class="ui-sb-item">📦 Traders <span class="ui-sb-count">18</span></div>
+      <div class="ui-sb-item">⛏ Miners <span class="ui-sb-count">11</span></div>
+      <div class="ui-sb-item warn">⚠ Hostile Hulls <span class="ui-sb-count">3</span></div>
+      <hr class="ui-sb-divider">
+      <div class="ui-sb-heading">Stations</div>
+      <div class="ui-sb-item">⬡ Argon Prime <span class="ui-sb-count">2</span></div>
+      <div class="ui-sb-item">⬡ The Void <span class="ui-sb-count">1</span></div>
+    </div>
+  </div>
+
+  <table class="prop-table">
+    <thead><tr><th>Element</th><th>Selector</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Sidebar container</td><td class="key">#sidebar</td><td class="source">190px fixed, flex-shrink:0, overflow-y:auto, inside #main flex row</td></tr>
+      <tr><td>Section heading</td><td class="key">.sb-heading</td><td class="source">Font-mono 10px, uppercase, color: --text-faint (green)</td></tr>
+      <tr><td>Nav item</td><td class="key">.sb-item</td><td class="source">2px left border on .active → --teal; .warn → --red</td></tr>
+      <tr><td>Count badge</td><td class="key">.sb-count</td><td class="source">Font-mono 10px, --text-faint; .warn items use red variant</td></tr>
+      <tr><td>Station list</td><td class="key">#sb-stations-list</td><td class="source">Built by populate() from stations grouped by sector</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     3. OVERVIEW TAB
+════════════════════════════════════════════════════════ -->
+<div class="section" id="overview-tab">
+  <div class="section-label">Section 03</div>
+  <div class="section-title">Overview Tab — #tab-overview</div>
+  <p class="section-desc">Landing tab. Five summary cards across the top, then a two-column layout with fleet role and fleet order tables side by side.</p>
+  <hr class="section-rule">
+
+  <div class="ui-shell-label">Summary Cards Row — #summary-cards</div>
+  <div class="ui-shell" style="margin-bottom:24px; padding:14px">
+    <div class="ui-cards-row">
+      <div class="ui-card">
+        <div class="ui-card-lbl">Credits</div>
+        <div class="ui-card-val amber">4.2M Cr</div>
+      </div>
+      <div class="ui-card">
+        <div class="ui-card-lbl">Total Ships</div>
+        <div class="ui-card-val">47</div>
+      </div>
+      <div class="ui-card">
+        <div class="ui-card-lbl">Stations</div>
+        <div class="ui-card-val">5</div>
+      </div>
+      <div class="ui-card">
+        <div class="ui-card-lbl">Hostile Hulls</div>
+        <div class="ui-card-val red">3</div>
+      </div>
+      <div class="ui-card">
+        <div class="ui-card-lbl">Waiting</div>
+        <div class="ui-card-val amber">6</div>
+      </div>
+    </div>
+  </div>
+
+  <table class="prop-table" style="margin-bottom:24px">
+    <thead><tr><th>Card</th><th>Value Source</th><th>Colour Condition</th></tr></thead>
+    <tbody>
+      <tr><td>Credits</td><td class="source">fmtCredits(data.player_credits) — formats to M/k suffixes</td><td class="type">amber always</td></tr>
+      <tr><td>Total Ships</td><td class="source">fleet_summary.total</td><td>—</td></tr>
+      <tr><td>Stations</td><td class="source">data.stations.length</td><td>—</td></tr>
+      <tr><td>Hostile Hulls</td><td class="source">players filtered by HOSTILE_ORIGINS set (Xenon, Yaki, Kha'ak)</td><td class="type">red if >0, green if 0</td></tr>
+      <tr><td>Waiting</td><td class="source">players filtered by order === "Waiting"</td><td class="type">amber if >0</td></tr>
+    </tbody>
+  </table>
+
+  <div class="ui-shell-label">Two-Column Overview Tables</div>
+  <div class="ui-shell" style="margin-bottom:24px; padding:14px">
+    <div class="two-col">
+      <div>
+        <div class="ui-sec-header"><div class="ui-sec-title">Fleet by Role</div><div class="ui-sec-line"></div></div>
+        <div class="ui-panel">
+          <table class="ui-table" id="role-table">
+            <thead><tr><th>Role</th><th>Count</th></tr></thead>
+            <tbody>
+              <tr><td>Fighter</td><td class="mono" style="color:var(--teal)">8</td></tr>
+              <tr><td>Freighter</td><td class="mono" style="color:var(--teal)">12</td></tr>
+              <tr><td>Miner (Solid)</td><td class="mono" style="color:var(--teal)">7</td></tr>
+              <tr><td>Destroyer</td><td class="mono" style="color:var(--teal)">4</td></tr>
+              <tr><td>Corvette</td><td class="mono" style="color:var(--teal)">3</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div class="ui-sec-header"><div class="ui-sec-title">Fleet by Order</div><div class="ui-sec-line"></div></div>
+        <div class="ui-panel">
+          <table class="ui-table" id="order-table">
+            <thead><tr><th>Order</th><th>Count</th></tr></thead>
+            <tbody>
+              <tr><td style="color:var(--green)">Trading</td><td class="mono" style="color:var(--green)">18</td></tr>
+              <tr><td style="color:var(--amber)">Mining</td><td class="mono" style="color:var(--amber)">11</td></tr>
+              <tr><td style="color:var(--amber)">Waiting</td><td class="mono" style="color:var(--amber)">6</td></tr>
+              <tr><td style="color:var(--teal)">Escorting</td><td class="mono" style="color:var(--teal)">5</td></tr>
+              <tr><td style="color:var(--text-faint)">Patrolling</td><td class="mono" style="color:var(--text-faint)">4</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     4. FLEET TAB
+════════════════════════════════════════════════════════ -->
+<div class="section" id="fleet-tab">
+  <div class="section-label">Section 04</div>
+  <div class="section-title">Fleet Tab — #tab-fleet</div>
+  <p class="section-desc">Colour-coded faction sub-tabs across the top. Player tab is static; NPC faction tabs are built dynamically from npc_ships data. Each panel has an independently-sortable ship table. Pilot names are clickable links to the Crew tab.</p>
+  <hr class="section-rule">
+
+  <div class="ui-shell-label">Faction Sub-Tab Bar — #fleet-subtabs</div>
+  <div class="ui-shell" style="margin-bottom:24px; padding:14px">
+    <div class="ui-fleet-subtabs">
+      <div class="ui-fleet-subtab active" style="--tab-color:#2dd4bf;--tab-bg:rgba(45,212,191,0.12);--tab-border:rgba(45,212,191,0.3)">
+        Player <span style="font-family:var(--font-mono);font-size:10px;opacity:0.6">47</span>
+      </div>
+      <div class="ui-fleet-subtab" style="--tab-color:#f85149;--tab-bg:rgba(248,81,73,0.10);--tab-border:rgba(248,81,73,0.3)">
+        XEN <span style="font-family:var(--font-mono);font-size:10px;opacity:0.6">23</span>
+      </div>
+      <div class="ui-fleet-subtab" style="--tab-color:#388bfd;--tab-bg:rgba(56,139,253,0.10);--tab-border:rgba(56,139,253,0.25)">
+        ARG <span style="font-family:var(--font-mono);font-size:10px;opacity:0.6">17</span>
+      </div>
+      <div class="ui-fleet-subtab" style="--tab-color:#a371f7;--tab-bg:rgba(163,113,247,0.10);--tab-border:rgba(163,113,247,0.25)">
+        PAR <span style="font-family:var(--font-mono);font-size:10px;opacity:0.6">11</span>
+      </div>
+      <div class="ui-fleet-subtab" style="--tab-color:#70d890;--tab-bg:rgba(112,216,144,0.10);--tab-border:rgba(112,216,144,0.25)">
+        TEL <span style="font-family:var(--font-mono);font-size:10px;opacity:0.6">8</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="ui-shell-label">Player Fleet Panel — #fleet-panel-player</div>
+  <div class="ui-shell" style="margin-bottom:24px; padding:14px">
+    <div class="ui-sec-header">
+      <div class="ui-sec-title">Player Fleet</div>
+      <div class="ui-sec-line"></div>
+      <div class="ui-sort-controls">
+        <span class="ui-sort-label">Sort</span>
+        <span class="ui-sort-indicator">Role ↑</span>
+        <select class="ui-sort-select">
+          <option>Change…</option>
+          <option>Role</option><option>Name</option><option>Size</option>
+          <option>Order</option><option>Sector</option><option>Hull Origin</option>
+          <option>Pilot</option><option>Health</option>
+        </select>
+      </div>
+    </div>
+    <div class="ui-panel" style="overflow:auto">
+      <table class="ui-table" id="fleet-table">
+        <thead>
+          <tr>
+            <th>Code / Name</th><th>Size</th><th>Hull Type</th><th>HP</th>
+            <th>Order</th><th>Sector</th><th>Pilot</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <span class="ship-name-display">Nova Vanguard</span>
+              <span class="mono" style="color:var(--yellow);font-size:11px;margin-left:8px">AAA-001</span>
+            </td>
+            <td class="mono" style="color:var(--text-dim)">S</td>
+            <td><span class="badge argon">Argon</span> Fighter</td>
+            <td>
+              <div class="hull-bar-wrap"><div class="hull-bar" style="width:94%;background:hsl(107,65%,50%)"></div></div>
+            </td>
+            <td style="color:var(--teal)">Escorting</td>
+            <td style="color:var(--text-dim)">Argon Prime</td>
+            <td style="color:var(--text-faint)">Capt. Reeves ★★★☆☆</td>
+          </tr>
+          <tr class="hover">
+            <td>
+              <span class="ship-name-display">Behemoth Sentinel</span>
+              <span class="mono" style="color:var(--yellow);font-size:11px;margin-left:8px">BBB-007</span>
+            </td>
+            <td class="mono" style="color:var(--amber)">L</td>
+            <td><span class="badge argon">Argon</span> Destroyer</td>
+            <td>
+              <div class="hull-bar-wrap"><div class="hull-bar" style="width:61%;background:hsl(46,65%,50%)"></div></div>
+            </td>
+            <td style="color:var(--amber)">Waiting</td>
+            <td style="color:var(--text-dim)">The Void</td>
+            <td style="color:var(--text-faint)">Sgt. Moss ★★★★☆</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="ship-name-display">Rattlesnake</span>
+              <span class="mono" style="color:var(--yellow);font-size:11px;margin-left:8px">CCC-012</span>
+            </td>
+            <td class="mono" style="color:var(--amber)">L</td>
+            <td><span class="badge xenon">* Split</span> Destroyer</td>
+            <td>
+              <div class="hull-bar-wrap"><div class="hull-bar" style="width:100%;background:hsl(120,65%,50%)"></div></div>
+            </td>
+            <td style="color:var(--green)">Trading</td>
+            <td style="color:var(--text-dim)">Grand Exchange I</td>
+            <td style="color:var(--text-faint)">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <table class="prop-table" style="margin-bottom:24px">
+    <thead><tr><th>Column</th><th>Source Field(s)</th><th>Rendering</th></tr></thead>
+    <tbody>
+      <tr><td>Code / Name</td><td class="source">ship.name (custom or type-resolved), ship.code</td><td>.ship-name (teal mono bold) + .mono yellow for code</td></tr>
+      <tr><td>Size</td><td class="source">ship.size → S / M / L / XL</td><td>SIZE_COLOURS: L=amber, M=teal, S=text-dim</td></tr>
+      <tr><td>Hull Type</td><td class="source">ship.hull_origin → hullBadge(), ship.role</td><td>.badge with faction class + Tabler icon</td></tr>
+      <tr><td>HP</td><td class="source">ship.hull_pct, ship.hull_hp, ship.max_hull</td><td>hullBar() — 80px × 22px gradient bar; hover tip shows raw HP / max</td></tr>
+      <tr><td>Order</td><td class="source">ship.order → ORDER_COLOURS, ORDER_ICONS</td><td>Tabler icon + coloured text</td></tr>
+      <tr><td>Sector</td><td class="source">ship.sector</td><td>Muted text + pin icon</td></tr>
+      <tr><td>Pilot</td><td class="source">ship.pilot.name, ship.pilot.skills.piloting</td><td>Name (clickable .crew-link if in crew data) + star rating; hover shows full skill tooltip</td></tr>
+    </tbody>
+  </table>
+
+  <div class="ui-shell-label">NPC Faction Panel (example — Xenon)</div>
+  <div class="ui-shell" style="margin-bottom:24px; padding:14px">
+    <div class="ui-sec-header">
+      <div class="ui-sec-title">Xenon Ships</div>
+      <div class="ui-sec-line"></div>
+      <div class="ui-sort-controls">
+        <span class="ui-sort-label">Sort</span>
+        <span class="ui-sort-indicator">Role ↑</span>
+        <select class="ui-sort-select"><option>Change…</option></select>
+      </div>
+    </div>
+    <div class="ui-panel" style="overflow:auto">
+      <table class="ui-table">
+        <thead>
+          <tr><th>Name / Code</th><th>Size</th><th>Hull Type</th><th>Order</th><th>Sector</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <span class="ship-name-display">K</span>
+              <span class="mono" style="color:var(--yellow);font-size:11px;margin-left:8px">XEN-441</span>
+            </td>
+            <td class="mono" style="color:var(--amber)">XL</td>
+            <td><span class="badge xenon">* Xenon</span> Destroyer</td>
+            <td style="color:var(--red)">Attacking</td>
+            <td style="color:var(--text-dim)">Hewa's Twin V</td>
+          </tr>
+          <tr class="hover">
+            <td>
+              <span class="ship-name-display">N</span>
+              <span class="mono" style="color:var(--yellow);font-size:11px;margin-left:8px">XEN-203</span>
+            </td>
+            <td class="mono" style="color:var(--text-dim)">S</td>
+            <td><span class="badge xenon">* Xenon</span> Fighter</td>
+            <td style="color:var(--red)">Attacking</td>
+            <td style="color:var(--text-dim)">Hewa's Twin V</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <p style="font-size:12px;color:var(--text-dim);margin-bottom:8px"><span style="color:var(--teal);font-family:var(--font-mono)">Note:</span> NPC panel columns omit HP and Pilot (not scanned). Faction tabs are sorted by ship count descending and colour-coded via FACTION_COLOURS map. Hostile factions (xenon, khaak) render their hull badge with an asterisk prefix.</p>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     5. STATIONS TAB
+════════════════════════════════════════════════════════ -->
+<div class="section" id="stations-tab">
+  <div class="section-label">Section 05</div>
+  <div class="section-title">Stations Tab — #tab-stations</div>
+  <p class="section-desc">Each station renders as a full-width card with a vertical faction stripe, hull/shield bars, a four-stat row, and three sub-tabs (Production, Docked, Storage). Docked ship rows are clickable — they jump to the Fleet tab and flash the ship row.</p>
+  <hr class="section-rule">
+
+  <div class="ui-shell-label">Station Card — full structure</div>
+  <div class="ui-shell" style="margin-bottom:24px">
+    <div class="ui-station-card">
+      <!-- Header -->
+      <div class="ui-station-header">
+        <div class="ui-faction-stripe">ARG</div>
+        <div class="ui-station-meta">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">
+            <div class="ui-station-name-row">
+              <span class="ui-station-name">AURORA MANUFACTURING PLANT</span>
+              <span class="ui-station-code">STN-004</span>
+            </div>
+            <span class="ui-station-status" style="color:var(--green)">OPERATIONAL</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+            <span class="ui-station-location">ARGON PRIME</span>
+            <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:0.06em">Production Station</span>
+          </div>
+        </div>
+      </div>
+      <!-- Bars -->
+      <div class="ui-station-bars">
+        <div class="ui-station-bar-cell">
+          <div class="ui-bar-header">
+            <span class="ui-bar-label" style="color:var(--text-faint)">Hull</span>
+            <span class="ui-bar-value" style="color:var(--green)">88%</span>
+          </div>
+          <div class="ui-bar-track">
+            <div class="ui-bar-fill" style="width:88%;background:hsl(97,65%,50%)"></div>
+          </div>
+        </div>
+        <div class="ui-station-bar-cell">
+          <div class="ui-bar-header">
+            <span class="ui-bar-label" style="color:var(--text-faint)">Shields</span>
+            <span class="ui-bar-value" style="color:#388bfd">100%</span>
+          </div>
+          <div class="ui-bar-track">
+            <div class="ui-bar-fill" style="width:100%;background:#388bfd"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Stats -->
+      <div class="ui-station-stats">
+        <div class="ui-stat-cell">
+          <div class="ui-stat-lbl">Modules</div>
+          <div class="ui-stat-val">34</div>
+        </div>
+        <div class="ui-stat-cell">
+          <div class="ui-stat-lbl">Crew</div>
+          <div class="ui-stat-val" style="color:var(--text-faint)">—</div>
+        </div>
+        <div class="ui-stat-cell">
+          <div class="ui-stat-lbl">Ships</div>
+          <div class="ui-stat-val" style="color:var(--teal)">7</div>
+        </div>
+        <div class="ui-stat-cell">
+          <div class="ui-stat-lbl">Storage</div>
+          <div class="ui-stat-val" style="color:var(--amber)">74%</div>
+        </div>
+      </div>
+      <!-- Tab bar -->
+      <div class="ui-station-tabs">
+        <button class="ui-station-tab-btn active">Production</button>
+        <button class="ui-station-tab-btn">Docked · 7</button>
+        <button class="ui-station-tab-btn">Storage · 74%</button>
+      </div>
+      <!-- Production tab content -->
+      <div class="ui-station-tab-content">
+        <div class="ui-prod-row">
+          <span class="ui-prod-ware">Energy Cells</span>
+          <div class="ui-prod-bar"></div>
+          <span class="ui-prod-pct">—</span>
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);min-width:54px;text-align:right">—/hr</span>
+        </div>
+        <div class="ui-prod-row">
+          <span class="ui-prod-ware">Hull Parts</span>
+          <div class="ui-prod-bar"></div>
+          <span class="ui-prod-pct">—</span>
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);min-width:54px;text-align:right">—/hr</span>
+        </div>
+        <div class="ui-prod-row" style="border-bottom:none">
+          <span class="ui-prod-ware">Refined Metals</span>
+          <div class="ui-prod-bar"></div>
+          <span class="ui-prod-pct">—</span>
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);min-width:54px;text-align:right">—/hr</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <table class="prop-table">
+    <thead><tr><th>Element</th><th>Source Data</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Faction stripe</td><td class="source">stationFactionTag(s) — derived from s.modules[].faction</td><td>Vertical rotated text, 3-char code e.g. ARG / TEL / GEN</td></tr>
+      <tr><td>Station name</td><td class="source">s.name (player-set or "Station #N" fallback)</td><td>Lime mono, uppercase, truncated on overflow</td></tr>
+      <tr><td>Status badge</td><td class="source">s.status → Operational / Under Construction / Destroyed</td><td>Green / Amber / Red respectively</td></tr>
+      <tr><td>Type label</td><td class="source">stationTypeLabel(s) — 0 wares→Defence, ≥4→Hub, else Production</td><td>Dim mono text, right-aligned in header</td></tr>
+      <tr><td>Hull bar</td><td class="source">s.hull_pct, s.hull_hp, s.hull_max</td><td>22px bar; &gt;95% green → &gt;50% amber → red; pct shown as label</td></tr>
+      <tr><td>Shield bar</td><td class="source">s.shield_pct (null → "NO SHIELDS" label in red)</td><td>Blue (#388bfd) bar; null state renders centred red text</td></tr>
+      <tr><td>Modules stat</td><td class="source">s.module_count (count of all construction sequence entries)</td><td>Hover → module breakdown tooltip by category</td></tr>
+      <tr><td>Ships stat</td><td class="source">s.docked_ships.length</td><td>Teal if &gt;0, faint if 0</td></tr>
+      <tr><td>Storage stat</td><td class="source">s.cargo_adj_pct (physical ± trade reservations)</td><td>Hover → per-type storage breakdown tooltip</td></tr>
+      <tr><td>Production tab</td><td class="source">s.production (comma-sep ware names)</td><td>Rate columns (fill %, /hr) are placeholders — not yet scanned</td></tr>
+      <tr><td>Docked tab</td><td class="source">s.docked_ships[] — code, macro, owner, under_construction</td><td>Clickable rows call jumpToShip(code, faction); CIV ships route to civilian subtab</td></tr>
+      <tr><td>Storage tab</td><td class="source">s.cargo_container/solid/liquid_adj_pct/m3/max</td><td>Per-type bars (teal/amber/purple) + total row with fill bar</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     6. CREW TAB
+════════════════════════════════════════════════════════ -->
+<div class="section" id="crew-tab">
+  <div class="section-label">Section 06</div>
+  <div class="section-title">Crew Tab — #tab-crew</div>
+  <p class="section-desc">Split layout: a scrollable roster table on the left (56% width), and a dossier file-card panel on the right. Five role sub-tabs filter the roster. Clicking a row fills the file-card panel. Pilot names in the Fleet tab link directly to this view.</p>
+  <hr class="section-rule">
+
+  <div class="ui-shell-label">Role Sub-Tab Bar — #crew-subtabs</div>
+  <div class="ui-shell" style="margin-bottom:24px; padding:14px">
+    <div class="ui-fleet-subtabs">
+      <div class="ui-fleet-subtab active" style="--tab-color:#2dd4bf;--tab-bg:rgba(45,212,191,0.12);--tab-border:rgba(45,212,191,0.3)">All <span style="font-size:10px;opacity:0.6">42</span></div>
+      <div class="ui-fleet-subtab" style="--tab-color:#a371f7;--tab-bg:rgba(163,113,247,0.12);--tab-border:rgba(163,113,247,0.3)">Managers <span style="font-size:10px;opacity:0.6">5</span></div>
+      <div class="ui-fleet-subtab" style="--tab-color:#d29922;--tab-bg:rgba(210,153,34,0.12);--tab-border:rgba(210,153,34,0.3)">Pilots <span style="font-size:10px;opacity:0.6">20</span></div>
+      <div class="ui-fleet-subtab" style="--tab-color:#3fb950;--tab-bg:rgba(63,185,80,0.12);--tab-border:rgba(63,185,80,0.3)">Service <span style="font-size:10px;opacity:0.6">12</span></div>
+      <div class="ui-fleet-subtab" style="--tab-color:#f85149;--tab-bg:rgba(248,81,73,0.10);--tab-border:rgba(248,81,73,0.3)">Marines <span style="font-size:10px;opacity:0.6">5</span></div>
+    </div>
+  </div>
+
+  <div class="two-col" style="margin-bottom:24px">
+    <div>
+      <div class="ui-shell-label">Roster Table — #crew-table (56% of crew-layout flex)</div>
+      <div class="ui-panel">
+        <table class="ui-table">
+          <thead><tr><th>Name</th><th>Role</th><th>Primary Skill</th><th>Assigned To</th><th>Sector</th></tr></thead>
+          <tbody>
+            <tr style="background:var(--teal-dim)">
+              <td>Capt. Reeves</td>
+              <td><span class="badge" style="background:rgba(210,153,34,0.15);color:#d29922;border:1px solid rgba(210,153,34,0.3)">Pilot</span></td>
+              <td style="letter-spacing:-1px;color:var(--amber)">★★★☆☆</td>
+              <td style="color:var(--text-dim)">Nova Vanguard</td>
+              <td style="color:var(--text-faint)">Argon Prime</td>
+            </tr>
+            <tr>
+              <td>Sgt. Moss</td>
+              <td><span class="badge" style="background:rgba(210,153,34,0.15);color:#d29922;border:1px solid rgba(210,153,34,0.3)">Pilot</span></td>
+              <td style="letter-spacing:-1px;color:var(--amber)">★★★★☆</td>
+              <td style="color:var(--text-dim)">Behemoth Sentinel</td>
+              <td style="color:var(--text-faint)">The Void</td>
+            </tr>
+            <tr>
+              <td>Station Mgr Vance</td>
+              <td><span class="badge" style="background:rgba(163,113,247,0.15);color:#a371f7;border:1px solid rgba(163,113,247,0.3)">Manager</span></td>
+              <td style="letter-spacing:-1px;color:var(--amber)">★★★★★</td>
+              <td style="color:var(--text-dim)">Aurora Mfg Plant</td>
+              <td style="color:var(--text-faint)">Argon Prime</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div>
+      <div class="ui-shell-label">Crew File Card — #crew-file-card (flex:1)</div>
+      <div class="ui-file-card">
+        <div class="ui-file-header">
+          <div class="ui-file-name">Capt. Reeves</div>
+          <span class="badge" style="background:rgba(210,153,34,0.15);color:#d29922;border:1px solid rgba(210,153,34,0.3)">Pilot</span>
+        </div>
+        <div class="ui-file-section">
+          <div class="ui-file-sec-label">Skills</div>
+          <div class="ui-skill-row">
+            <span class="ui-skill-name">Piloting</span>
+            <span class="ui-skill-stars">★★★☆☆</span>
+            <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint)">9 pts</span>
+          </div>
+          <div class="ui-skill-row">
+            <span class="ui-skill-name">Management</span>
+            <span class="ui-skill-stars" style="color:var(--amber)">★★☆☆☆</span>
+            <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint)">6 pts</span>
+          </div>
+          <div class="ui-skill-row">
+            <span class="ui-skill-name">Engineering</span>
+            <span class="ui-skill-stars">★☆☆☆☆</span>
+            <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint)">3 pts</span>
+          </div>
+          <div class="ui-skill-row">
+            <span class="ui-skill-name">Morale</span>
+            <span class="ui-skill-stars">★★★☆☆</span>
+            <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint)">9 pts</span>
+          </div>
+        </div>
+        <div class="ui-file-section">
+          <div class="ui-file-sec-label">Assignment</div>
+          <div style="font-family:var(--font-cond);font-weight:600;font-size:14px;color:var(--text)">
+            Nova Vanguard <span style="font-family:var(--font-mono);font-size:11px;color:var(--yellow)">[AAA-001]</span>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-faint);margin-top:4px">Argon Prime</div>
+        </div>
+        <div class="ui-file-section">
+          <div class="ui-file-sec-label">Profile</div>
+          <div style="display:flex;gap:8px;padding:2px 0">
+            <span style="min-width:72px;font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--text-faint)">Faction</span>
+            <span style="font-family:var(--font-mono);font-size:12px;color:var(--text-dim)">arg</span>
+          </div>
+          <div style="display:flex;gap:8px;padding:2px 0">
+            <span style="min-width:72px;font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--text-faint)">Gender</span>
+            <span style="font-family:var(--font-mono);font-size:12px;color:var(--text-dim)">male</span>
+          </div>
+        </div>
+        <div class="ui-file-section">
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-faint)">SEED · 8472916340</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <table class="prop-table">
+    <thead><tr><th>Element</th><th>Source Field(s)</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Role badge colour</td><td class="source">crew.role → ROLE_COLOURS</td><td>Manager=purple, Pilot=amber, Service=green, Marine=red; hex22 bg, hex44 border</td></tr>
+      <tr><td>Primary skill (roster)</td><td class="source">ROLE_PRIMARY[role] → skills[key]</td><td>Renders as star glyphs using skillStars(); pts/3 → 0–5 stars with half-star support</td></tr>
+      <tr><td>Skills panel (file card)</td><td class="source">SKILL_ORDER_BY_ROLE[role] ordering</td><td>Role-appropriate order; only skills present in data shown; pts displayed beside stars</td></tr>
+      <tr><td>Assignment</td><td class="source">crew.assigned_to, crew.assigned_code, crew.sector</td><td>Barlow Condensed bold name + yellow mono code; sector in faint mono below</td></tr>
+      <tr><td>Profile metadata</td><td class="source">crew.faction, crew.gender, crew.ethnicity, crew.variant</td><td>Parsed from character macro string in _parse_character_macro(); only shown when available</td></tr>
+      <tr><td>Seed</td><td class="source">crew.seed (from &lt;npcseed&gt; element)</td><td>Faint mono, 9px, shown when present — reserved for future name-gen</td></tr>
+      <tr><td>Empty state</td><td class="source">—</td><td>#crew-file-empty shown (flex, 160px tall, centered faint text) until first row clicked</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     7. DIPLOMACY TAB
+════════════════════════════════════════════════════════ -->
+<div class="section" id="diplomacy-tab">
+  <div class="section-label">Section 07</div>
+  <div class="section-title">Diplomacy Tab — #tab-diplomacy</div>
+  <p class="section-desc">Single table showing all faction standings. Sorted by score descending. Each row has a coloured tier badge, numeric score, a 3px progress bar, and the base/booster breakdown.</p>
+  <hr class="section-rule">
+
+  <div class="ui-shell-label">Faction Standings Table — #rep-table</div>
+  <div class="ui-shell" style="margin-bottom:24px">
+    <div class="ui-panel" style="overflow:auto">
+      <table class="ui-table">
+        <thead><tr><th>Faction</th><th>Tier</th><th>Score</th><th>Bar</th><th>Base</th><th>Booster</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>[TEL] Teladi Company</td>
+            <td><span class="badge allied">Allied</span></td>
+            <td class="mono" style="color:var(--green)">+28.50</td>
+            <td><div class="rep-bar-wrap"><div class="rep-bar" style="width:95%;background:var(--green);float:left"></div></div></td>
+            <td class="mono" style="color:var(--text-faint)">+25.10</td>
+            <td class="mono" style="color:var(--text-faint)">+3.40</td>
+          </tr>
+          <tr>
+            <td>[ARG] Argon Federation</td>
+            <td><span class="badge friendly">Friendly</span></td>
+            <td class="mono" style="color:var(--teal)">+14.20</td>
+            <td><div class="rep-bar-wrap"><div class="rep-bar" style="width:47%;background:var(--teal);float:left"></div></div></td>
+            <td class="mono" style="color:var(--text-faint)">+14.20</td>
+            <td class="mono" style="color:var(--text-faint)">—</td>
+          </tr>
+          <tr>
+            <td>[XEN] Xenon</td>
+            <td><span class="badge atwar">At War</span></td>
+            <td class="mono" style="color:var(--red)">-29.80</td>
+            <td><div class="rep-bar-wrap"><div class="rep-bar" style="width:99%;background:var(--red);float:right"></div></div></td>
+            <td class="mono" style="color:var(--text-faint)">-29.80</td>
+            <td class="mono" style="color:var(--text-faint)">—</td>
+          </tr>
+          <tr>
+            <td>[PAR] Godrealm of the Paranid</td>
+            <td><span class="badge neutral">Neutral</span></td>
+            <td class="mono" style="color:var(--text-dim)">+1.05</td>
+            <td><div class="rep-bar-wrap"><div class="rep-bar" style="width:3%;background:var(--green);float:left"></div></div></td>
+            <td class="mono" style="color:var(--text-faint)">+1.05</td>
+            <td class="mono" style="color:var(--text-faint)">—</td>
+          </tr>
+          <tr>
+            <td>[YAK] Yaki</td>
+            <td><span class="badge hostile">Hostile</span></td>
+            <td class="mono" style="color:var(--amber)">-8.20</td>
+            <td><div class="rep-bar-wrap"><div class="rep-bar" style="width:27%;background:var(--red);float:right"></div></div></td>
+            <td class="mono" style="color:var(--text-faint)">-8.20</td>
+            <td class="mono" style="color:var(--text-faint)">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <table class="prop-table">
+    <thead><tr><th>Column</th><th>Source Field</th><th>Rendering</th></tr></thead>
+    <tbody>
+      <tr><td>Faction</td><td class="source">rep.faction_name (from FACTION_NAMES lookup or fid.title())</td><td>Plain text, includes [TAG] prefix</td></tr>
+      <tr><td>Tier</td><td class="source">rep.tier → tierBadge()</td><td>.badge with tier class: allied/friendly/neutral/hostile/atwar</td></tr>
+      <tr><td>Score</td><td class="source">rep.value (scaled -30..+30 via scale_reputation())</td><td>sign() prefix (+/-), colour matches tier</td></tr>
+      <tr><td>Bar</td><td class="source">rep.value → repBar()</td><td>80px × 3px; positive → green float:left; negative → red float:right; width = abs(value)/30 × 100%</td></tr>
+      <tr><td>Base</td><td class="source">rep.base (raw_base scaled)</td><td>Faint mono</td></tr>
+      <tr><td>Booster</td><td class="source">rep.booster (raw_booster scaled, or "—" if absent)</td><td>Faint mono</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     8. ALERTS TAB
+════════════════════════════════════════════════════════ -->
+<div class="section" id="alerts-tab">
+  <div class="section-label">Section 08</div>
+  <div class="section-title">Alerts Tab — #tab-alerts</div>
+  <p class="section-desc">Generated alerts based on data analysis. The nav badge shows alert count. Alerts are coloured alert boxes with Tabler icons. A green "No alerts" box shows when everything is healthy.</p>
+  <hr class="section-rule">
+
+  <div class="ui-shell-label">Alert List — #alerts-list</div>
+  <div class="ui-shell" style="margin-bottom:24px; padding:14px">
+    <div class="ui-alert red">⚠ 3 ships with hostile-faction hulls: Xenon x2, Kha'ak x1</div>
+    <div class="ui-alert amber">⏰ 6 ships idling (Waiting order): AAA-001, BBB-007, CCC-012 (+3 more)</div>
+    <div class="ui-alert amber">⛏ 2 idle miner(s): MMM-003, MMM-009</div>
+  </div>
+  <div class="ui-shell" style="margin-bottom:24px; padding:14px">
+    <div class="ui-alert green">✓ No alerts detected.</div>
+  </div>
+
+  <table class="prop-table">
+    <thead><tr><th>Alert Condition</th><th>Class</th><th>Icon</th><th>Badge increments</th></tr></thead>
+    <tbody>
+      <tr><td>players with hull_origin in HOSTILE_ORIGINS (Xenon, Yaki, Kha'ak)</td><td class="type">red</td><td class="source">ti-alert-triangle</td><td>Yes (+1)</td></tr>
+      <tr><td>players with order === "Waiting"</td><td class="type">amber</td><td class="source">ti-clock</td><td>Yes (+1)</td></tr>
+      <tr><td>waiting.filter(s → MINER_ROLES.has(s.role))</td><td class="type">amber</td><td class="source">ti-pickaxe</td><td>No (sub-alert)</td></tr>
+      <tr><td>No alerts</td><td class="type">green</td><td class="source">ti-circle-check</td><td>—</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     9. COMPONENT CATALOGUE
+════════════════════════════════════════════════════════ -->
+<div class="section" id="components">
+  <div class="section-label">Section 09</div>
+  <div class="section-title">Component Catalogue</div>
+  <p class="section-desc">Reusable UI primitives with their CSS classes, data sources, and rendering logic.</p>
+  <hr class="section-rule">
+
+  <div class="comp-grid">
+
+    <div class="comp-card">
+      <div class="comp-card-head">
+        <span class="comp-name">Hull Bar</span>
+        <span class="comp-type">hullBar()</span>
+      </div>
+      <div class="comp-preview">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div><div class="hull-bar-wrap"><div class="hull-bar" style="width:100%;background:hsl(120,65%,50%)"></div></div> <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);margin-left:8px">Full HP</span></div>
+          <div><div class="hull-bar-wrap"><div class="hull-bar" style="width:78%;background:hsl(72,65%,50%)"></div></div> <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);margin-left:8px">78%</span></div>
+          <div><div class="hull-bar-wrap"><div class="hull-bar" style="width:42%;background:hsl(21,65%,50%)"></div></div> <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);margin-left:8px">42%</span></div>
+          <div><div class="hull-bar-wrap"><div class="hull-bar" style="width:12%;background:hsl(1,65%,50%)"></div></div> <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);margin-left:8px">12%</span></div>
+        </div>
+      </div>
+      <div class="comp-desc">80 × 22px bar. Color: hue = (pct/100)² × 120, green→red. Hover shows #hull-tip tooltip with label + HP/max. Null pct → raw HP text. >100% → blue (#388bfd).</div>
+    </div>
+
+    <div class="comp-card">
+      <div class="comp-card-head">
+        <span class="comp-name">Reputation Bar</span>
+        <span class="comp-type">repBar()</span>
+      </div>
+      <div class="comp-preview">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-family:var(--font-mono);font-size:10px;color:var(--green);min-width:40px">+28</span><div class="rep-bar-wrap"><div class="rep-bar" style="width:93%;background:var(--green);float:left"></div></div></div>
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-family:var(--font-mono);font-size:10px;color:var(--teal);min-width:40px">+12</span><div class="rep-bar-wrap"><div class="rep-bar" style="width:40%;background:var(--green);float:left"></div></div></div>
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-family:var(--font-mono);font-size:10px;color:var(--red);min-width:40px">-18</span><div class="rep-bar-wrap"><div class="rep-bar" style="width:60%;background:var(--red);float:right"></div></div></div>
+        </div>
+      </div>
+      <div class="comp-desc">80 × 3px bar. Positive = green float:left; negative = red float:right. Width = abs(value)/30 × 100%.</div>
+    </div>
+
+    <div class="comp-card">
+      <div class="comp-card-head">
+        <span class="comp-name">Faction Badges</span>
+        <span class="comp-type">hullBadge() / tierBadge()</span>
+      </div>
+      <div class="comp-preview">
+        <div style="display:flex;flex-wrap:wrap;gap:5px">
+          <span class="badge argon">Argon</span>
+          <span class="badge teladi">Teladi</span>
+          <span class="badge paranid">Paranid</span>
+          <span class="badge xenon">* Xenon</span>
+          <span class="badge allied">Allied</span>
+          <span class="badge friendly">Friendly</span>
+          <span class="badge neutral">Neutral</span>
+          <span class="badge hostile">Hostile</span>
+          <span class="badge atwar">At War</span>
+        </div>
+      </div>
+      <div class="comp-desc">10px font-mono. Hostile origins (Xenon/Yaki/Kha'ak) prefix with asterisk. Tier badges use same .badge class with tier-name CSS class.</div>
+    </div>
+
+    <div class="comp-card">
+      <div class="comp-card-head">
+        <span class="comp-name">Skill Stars</span>
+        <span class="comp-type">skillStars(pts)</span>
+      </div>
+      <div class="comp-preview">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="letter-spacing:-1px;color:var(--amber)">★★★★★</span>
+            <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint)">15 pts</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="letter-spacing:-1px;color:var(--amber)">★★★☆☆</span>
+            <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint)">9 pts</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="letter-spacing:-1px;color:var(--amber)">★☆☆☆☆</span>
+            <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint)">3 pts</span>
+          </div>
+        </div>
+      </div>
+      <div class="comp-desc">pts (0–15) → stars = round((pts/3)×2)/2. Half-stars use position:absolute clipped overlay. Hover on pilot cell shows full pilotTipHtml() multi-skill breakdown.</div>
+    </div>
+
+    <div class="comp-card">
+      <div class="comp-card-head">
+        <span class="comp-name">Alert Box</span>
+        <span class="comp-type">.ui-alert</span>
+      </div>
+      <div class="comp-preview">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="ui-alert red" style="margin-bottom:0">⚠ Hull integrity critical on 2 ships</div>
+          <div class="ui-alert amber" style="margin-bottom:0">⏰ 4 ships waiting without orders</div>
+          <div class="ui-alert green" style="margin-bottom:0">✓ No alerts detected.</div>
+        </div>
+      </div>
+      <div class="comp-desc">dim bg + border in matching colour. 12px font-mono. Icon via Tabler icon font. Three states: red (critical), amber (warning), green (healthy).</div>
+    </div>
+
+    <div class="comp-card">
+      <div class="comp-card-head">
+        <span class="comp-name">Section Header</span>
+        <span class="comp-type">.sec-header</span>
+      </div>
+      <div class="comp-preview">
+        <div class="ui-sec-header">
+          <div class="ui-sec-title">Player Fleet</div>
+          <div class="ui-sec-line"></div>
+          <span class="ui-sort-label">Sort</span>
+          <span class="ui-sort-indicator">Role ↑</span>
+        </div>
+        <div class="ui-sec-header" style="margin-top:8px">
+          <div class="ui-sec-title">Faction Standings</div>
+          <div class="ui-sec-line"></div>
+        </div>
+      </div>
+      <div class="comp-desc">flex row: title (Barlow Condensed 600 12px uppercase, --text-faint/green) + flex:1 hairline rule. Optionally followed by sort controls or other inline elements.</div>
+    </div>
+
+    <div class="comp-card">
+      <div class="comp-card-head">
+        <span class="comp-name">Hover Tooltip</span>
+        <span class="comp-type">#hull-tip (fixed overlay)</span>
+      </div>
+      <div class="comp-preview">
+        <div class="tooltip-demo">Full · 93,000 / 93,000 HP</div>
+        <div class="tooltip-demo" style="margin-top:6px;color:var(--amber)">Piloting ★★★☆☆<br>Management ★★☆☆☆</div>
+      </div>
+      <div class="comp-desc">Single fixed #hull-tip div. Reads data-hull-tip, data-pilot-skills, data-storage-tip, data-modules-tip attributes. Positioned 14px right + -32px above cursor. Three render modes: plain text (hull), multi-row stars (pilot), bar rows (storage), grouped list (modules).</div>
+    </div>
+
+    <div class="comp-card">
+      <div class="comp-card-head">
+        <span class="comp-name">Ship Name Display</span>
+        <span class="comp-type">.ship-name</span>
+      </div>
+      <div class="comp-preview">
+        <div>
+          <span class="ship-name-display">Nova Vanguard</span>
+          <span style="font-family:var(--font-mono);color:var(--yellow);font-size:11px;margin-left:8px">AAA-001</span>
+        </div>
+        <div style="margin-top:8px">
+          <span class="ship-name-display">Behemoth Sentinel</span>
+          <span style="font-family:var(--font-mono);color:var(--yellow);font-size:11px;margin-left:8px">BBB-007</span>
+        </div>
+      </div>
+      <div class="comp-desc">13px teal mono bold for ship name (player-given or resolve_ship_type() fallback). 11px yellow mono for ship code. Both in first fleet table column, stacked inline.</div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     10. DESIGN TOKENS
+════════════════════════════════════════════════════════ -->
+<div class="section" id="tokens">
+  <div class="section-label">Section 10</div>
+  <div class="section-title">Design Tokens</div>
+  <p class="section-desc">All CSS custom properties defined on :root in ui.html. Backgrounds are layered dark values; accent colours carry functional semantic meaning.</p>
+  <hr class="section-rule">
+
+  <div class="swatch-row">
+    <div class="swatch"><div class="swatch-dot" style="background:#0d1117"></div><div class="swatch-name">BG</div><div class="swatch-val">#0d1117</div></div>
+    <div class="swatch"><div class="swatch-dot" style="background:#161b22"></div><div class="swatch-name">BG Panel</div><div class="swatch-val">#161b22</div></div>
+    <div class="swatch"><div class="swatch-dot" style="background:#1c2128"></div><div class="swatch-name">BG Card</div><div class="swatch-val">#1c2128</div></div>
+    <div class="swatch"><div class="swatch-dot" style="background:#21262d"></div><div class="swatch-name">Border</div><div class="swatch-val">#21262d</div></div>
+    <div class="swatch"><div class="swatch-dot" style="background:#2dd4bf"></div><div class="swatch-name">Teal</div><div class="swatch-val">#2dd4bf</div></div>
+    <div class="swatch"><div class="swatch-dot" style="background:#d29922"></div><div class="swatch-name">Amber</div><div class="swatch-val">#d29922</div></div>
+    <div class="swatch"><div class="swatch-dot" style="background:#f85149"></div><div class="swatch-name">Red</div><div class="swatch-val">#f85149</div></div>
+    <div class="swatch"><div class="swatch-dot" style="background:#3fb950"></div><div class="swatch-name">Green</div><div class="swatch-val">#3fb950</div></div>
+    <div class="swatch"><div class="swatch-dot" style="background:#a371f7"></div><div class="swatch-name">Purple</div><div class="swatch-val">#a371f7</div></div>
+    <div class="swatch"><div class="swatch-dot" style="background:#e3b341"></div><div class="swatch-name">Yellow</div><div class="swatch-val">#e3b341</div></div>
+    <div class="swatch"><div class="swatch-dot" style="background:#39ff14"></div><div class="swatch-name">Lime</div><div class="swatch-val">#39ff14</div></div>
+    <div class="swatch"><div class="swatch-dot" style="background:#c9d1d9"></div><div class="swatch-name">Text</div><div class="swatch-val">#c9d1d9</div></div>
+    <div class="swatch"><div class="swatch-dot" style="background:#8b949e"></div><div class="swatch-name">Text Dim</div><div class="swatch-val">#8b949e</div></div>
+  </div>
+
+  <table class="prop-table">
+    <thead><tr><th>Variable</th><th>Value</th><th>Usage</th></tr></thead>
+    <tbody>
+      <tr><td class="key">--teal</td><td>#2dd4bf</td><td>Primary accent: active nav/sidebar, links, section headers, teal-class values</td></tr>
+      <tr><td class="key">--teal-dim</td><td>rgba(45,212,191,0.12)</td><td>Active item backgrounds, fleet-panel-player tab bg</td></tr>
+      <tr><td class="key">--amber</td><td>#d29922</td><td>Warnings: Credits value, L-size ships, "Waiting" orders, station storage 70–90%</td></tr>
+      <tr><td class="key">--red</td><td>#f85149</td><td>Critical: Hostile hull alert, At War tier, storage >90%, Alerts nav badge</td></tr>
+      <tr><td class="key">--green</td><td>#3fb950</td><td>Healthy: Allied tier, Trading order, 0 hostile hulls, hull >95%</td></tr>
+      <tr><td class="key">--lime</td><td>#39ff14</td><td>Station names, crew file card names (highest visual priority text)</td></tr>
+      <tr><td class="key">--yellow</td><td>#e3b341</td><td>Ship/station codes ([code] identifiers throughout)</td></tr>
+      <tr><td class="key">--purple</td><td>#a371f7</td><td>Manager role badge, Paranid faction, Liquid storage bar</td></tr>
+      <tr><td class="key">--text-faint</td><td>#3fb950</td><td>Reuses --green value: section heading labels, sidebar headings, tb-lbl fields</td></tr>
+      <tr><td class="key">--font-ui</td><td>Barlow, sans-serif</td><td>Body text, general labels</td></tr>
+      <tr><td class="key">--font-mono</td><td>Share Tech Mono</td><td>All code, values, badges, numbers, table headers</td></tr>
+      <tr><td class="key">--font-cond</td><td>Barlow Condensed</td><td>Navigation tabs, sidebar items, section titles, logo, station names</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     11. DATA SHAPE
+════════════════════════════════════════════════════════ -->
+<div class="section" id="data-shape">
+  <div class="section-label">Section 11</div>
+  <div class="section-title">JSON Data Shape</div>
+  <p class="section-desc">The complete structure of x4_empire_state.json as delivered to populate() via the EmpireBridge. Built by export_json() which restructures the raw scanner output.</p>
+  <hr class="section-rule">
+
+  <div class="two-col" style="margin-bottom:24px">
+    <div>
+      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);margin-bottom:8px">Top-Level Keys</div>
+      <table class="prop-table">
+        <thead><tr><th>Key</th><th>Type</th><th>Source</th></tr></thead>
+        <tbody>
+          <tr><td class="key">player_name</td><td class="type">str|null</td><td class="source">save &lt;player name="…"&gt;</td></tr>
+          <tr><td class="key">player_sector</td><td class="type">str|null</td><td class="source">save &lt;player location="…"&gt; → lang lookup</td></tr>
+          <tr><td class="key">player_credits</td><td class="type">str|null</td><td class="source">save &lt;account amount="…"&gt;</td></tr>
+          <tr><td class="key">stations</td><td class="type">list[dict]</td><td class="source">scan_save() pass 1</td></tr>
+          <tr><td class="key">reputation</td><td class="type">list[dict]</td><td class="source">scan_reputation() pass 2</td></tr>
+          <tr><td class="key">crew</td><td class="type">list[dict]</td><td class="source">managers + ship pilots + service/marines</td></tr>
+          <tr><td class="key">ships</td><td class="type">dict</td><td class="source">see Ships object below</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);margin-bottom:8px">ships Object</div>
+      <table class="prop-table">
+        <thead><tr><th>Key</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td class="key">player_ships</td><td class="type">list[ShipDict]</td><td class="source">Full player fleet including docked, carrier wings</td></tr>
+          <tr><td class="key">fleet_summary</td><td class="type">dict</td><td class="source">_build_fleet_summary(): total, by_role, by_size, by_order, by_sector</td></tr>
+          <tr><td class="key">npc_ships</td><td class="type">list[ShipDict]</td><td class="source">NPC ships in station/ship sectors (slim — no pilot/hull data)</td></tr>
+          <tr><td class="key">npc_summary</td><td class="type">dict</td><td class="source">_build_npc_summary(): {sector:{faction:{role:count}}}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);margin-bottom:8px">Player ShipDict Fields</div>
+  <table class="prop-table" style="margin-bottom:24px">
+    <thead><tr><th>Field</th><th>Type</th><th>Source / Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="key">code</td><td class="type">str</td><td class="source">XML component @code attribute — unique in-game identifier</td></tr>
+      <tr><td class="key">name</td><td class="type">str</td><td class="source">Player custom name → resolve_ship_type(macro) fallback; always a string</td></tr>
+      <tr><td class="key">class</td><td class="type">str</td><td class="source">ship_s / ship_m / ship_l / ship_xl</td></tr>
+      <tr><td class="key">size</td><td class="type">str</td><td class="source">S / M / L / XL via SIZE_LABELS map</td></tr>
+      <tr><td class="key">macro</td><td class="type">str</td><td class="source">Raw XML macro name e.g. ship_arg_l_destroyer_01_b_macro</td></tr>
+      <tr><td class="key">role</td><td class="type">str</td><td class="source">extract_role(macro) via ROLE_PATTERNS regex list</td></tr>
+      <tr><td class="key">hull_origin</td><td class="type">str</td><td class="source">extract_faction_from_macro() — manufacturer, not current owner</td></tr>
+      <tr><td class="key">owner</td><td class="type">str</td><td class="source">"player" always for player_ships</td></tr>
+      <tr><td class="key">sector</td><td class="type">str</td><td class="source">_parse_sector() — resolved from _sector_macro or _zone_macro stamp</td></tr>
+      <tr><td class="key">order</td><td class="type">str</td><td class="source">_parse_current_order() — started non-temp order → default order → "Idle"</td></tr>
+      <tr><td class="key">pilot</td><td class="type">dict</td><td class="source">{name:str|null, skills:{piloting:int, management:int, …}}</td></tr>
+      <tr><td class="key">software</td><td class="type">list[str]</td><td class="source">_parse_software() — ware IDs from &lt;software wares="…"&gt;</td></tr>
+      <tr><td class="key">commander</td><td class="type">str|null</td><td class="source">_parse_commander() — component ID of commanding ship/station</td></tr>
+      <tr><td class="key">hull_hp</td><td class="type">float|null</td><td class="source">_parse_hull(); null = undamaged (absent &lt;hull&gt; element)</td></tr>
+      <tr><td class="key">hull_pct</td><td class="type">float|null</td><td class="source">100.0 if hull_hp null; hull_hp/max_hull×100 if max known; else null</td></tr>
+      <tr><td class="key">max_hull</td><td class="type">int|null</td><td class="source">SHIP_STATS[macro]['max_hull']; null if macro not in table</td></tr>
+      <tr><td class="key">shield_hp</td><td class="type">float|null</td><td class="source">_parse_shield() — sum of shieldgenerator current values</td></tr>
+      <tr><td class="key">shield_max</td><td class="type">float|null</td><td class="source">Sum of STATION_STATS[shield_macro]['max_shield']</td></tr>
+      <tr><td class="key">shield_pct</td><td class="type">float|null</td><td class="source">shield_hp/shield_max×100; null if no shield generators</td></tr>
+    </tbody>
+  </table>
+
+  <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);margin-bottom:8px">Station Dict Fields (key subset)</div>
+  <table class="prop-table">
+    <thead><tr><th>Field</th><th>Type</th><th>Source / Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="key">name</td><td class="type">str</td><td class="source">@name attr → "Player HQ" if HQ macro → "Station #N" fallback</td></tr>
+      <tr><td class="key">code</td><td class="type">str</td><td class="source">@code — unique ID used as DOM ID (station-{code})</td></tr>
+      <tr><td class="key">sector</td><td class="type">str</td><td class="source">Resolved from enclosing sector macro at parse time</td></tr>
+      <tr><td class="key">status</td><td class="type">str</td><td class="source">Operational / Under Construction / Destroyed</td></tr>
+      <tr><td class="key">production</td><td class="type">str</td><td class="source">Comma-sep display names from parse_production_from_construction()</td></tr>
+      <tr><td class="key">module_count</td><td class="type">int</td><td class="source">_count_construction_modules() — all entry types in &lt;sequence&gt;</td></tr>
+      <tr><td class="key">modules</td><td class="type">list[dict]</td><td class="source">_parse_station_modules() — one dict per hull/shield module in STATION_STATS</td></tr>
+      <tr><td class="key">docked_ships</td><td class="type">list[dict]</td><td class="source">_extract_station_docked_ships() — {code, macro, owner, class, under_construction}</td></tr>
+      <tr><td class="key">hull_pct / shield_pct</td><td class="type">float|null</td><td class="source">_parse_station_health() aggregated from modules list</td></tr>
+      <tr><td class="key">cargo_*_adj_pct</td><td class="type">float|null</td><td class="source">_parse_station_storage() — physical ± trade reservations; separate container/solid/liquid</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+<!-- FOOTER -->
+<div style="border-top:1px solid var(--border);padding-top:24px;margin-top:48px;display:flex;justify-content:space-between;align-items:center">
+  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);letter-spacing:0.1em">
+    X4 EMPIRE INTELLIGENCE · UI DOCUMENTATION
+  </div>
+  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:0.08em">
+    PyQt6 + QtWebEngine · Tabler Icons 2.47 · Share Tech Mono / Barlow Condensed
+  </div>
+</div>
+
+</div><!-- .doc-body -->
+</body>
+</html>
