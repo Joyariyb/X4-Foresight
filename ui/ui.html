@@ -225,23 +225,23 @@
   <div id="topbar">
     <div class="tb-logo"><i class="ti ti-radar-2"></i> X4 · EMPIRE INTELLIGENCE</div>
     <div class="tb-field">
-      <div class="lbl">Pilot</div>
+      <div class="lbl"><i class="ti ti-user" style="font-size:10px;vertical-align:-1px"></i> Pilot</div>
       <div class="val" id="tb-pilot">—</div>
     </div>
     <div class="tb-field">
-      <div class="lbl">Sector</div>
+      <div class="lbl"><i class="ti ti-map-pin" style="font-size:10px;vertical-align:-1px"></i> Sector</div>
       <div class="val teal" id="tb-sector">—</div>
     </div>
     <div class="tb-field">
-      <div class="lbl">Credits</div>
+      <div class="lbl"><i class="ti ti-coin" style="font-size:10px;vertical-align:-1px"></i> Credits</div>
       <div class="val amber" id="tb-credits">—</div>
     </div>
     <div class="tb-field">
-      <div class="lbl">Ships</div>
+      <div class="lbl"><i class="ti ti-rocket" style="font-size:10px;vertical-align:-1px"></i> Ships</div>
       <div class="val" id="tb-ships">—</div>
     </div>
     <div class="tb-field">
-      <div class="lbl">Stations</div>
+      <div class="lbl"><i class="ti ti-building-factory-2" style="font-size:10px;vertical-align:-1px"></i> Stations</div>
       <div class="val" id="tb-stations">—</div>
     </div>
   </div>
@@ -385,27 +385,27 @@
           <div class="fleet-subtab active" data-role="all"
                style="--tab-color:#2dd4bf;--tab-bg:rgba(45,212,191,0.12);--tab-border:rgba(45,212,191,0.3)"
                onclick="switchCrewRole('all',this)">
-            All <span class="ft-count" id="crew-count-all">—</span>
+            <i class="ti ti-users" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>All <span class="ft-count" id="crew-count-all">—</span>
           </div>
           <div class="fleet-subtab" data-role="manager"
                style="--tab-color:#a371f7;--tab-bg:rgba(163,113,247,0.12);--tab-border:rgba(163,113,247,0.3)"
                onclick="switchCrewRole('manager',this)">
-            Managers <span class="ft-count" id="crew-count-manager">0</span>
+            <i class="ti ti-crown" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>Managers <span class="ft-count" id="crew-count-manager">0</span>
           </div>
           <div class="fleet-subtab" data-role="pilot"
                style="--tab-color:#d29922;--tab-bg:rgba(210,153,34,0.12);--tab-border:rgba(210,153,34,0.3)"
                onclick="switchCrewRole('pilot',this)">
-            Pilots <span class="ft-count" id="crew-count-pilot">0</span>
+            <i class="ti ti-steering-wheel" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>Pilots <span class="ft-count" id="crew-count-pilot">0</span>
           </div>
           <div class="fleet-subtab" data-role="service"
                style="--tab-color:#3fb950;--tab-bg:rgba(63,185,80,0.12);--tab-border:rgba(63,185,80,0.3)"
                onclick="switchCrewRole('service',this)">
-            Service <span class="ft-count" id="crew-count-service">0</span>
+            <i class="ti ti-tool" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>Service <span class="ft-count" id="crew-count-service">0</span>
           </div>
           <div class="fleet-subtab" data-role="marine"
                style="--tab-color:#f85149;--tab-bg:rgba(248,81,73,0.10);--tab-border:rgba(248,81,73,0.3)"
                onclick="switchCrewRole('marine',this)">
-            Marines <span class="ft-count" id="crew-count-marine">0</span>
+            <i class="ti ti-sword" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>Marines <span class="ft-count" id="crew-count-marine">0</span>
           </div>
         </div>
         <div class="crew-layout">
@@ -511,14 +511,22 @@
   };
 
   const ROLE_ICONS = {
-    "Fighter":        "ti-rocket",
-    "Heavy Fighter":  "ti-rocket",
-    "Corvette":       "ti-rocket",
-    "Destroyer":      "ti-rocket",
-    "Frigate":        "ti-rocket",
-    "Freighter":      "ti-package",
-    "Miner (Solid)":  "ti-diamond",
-    "Miner (Liquid)": "ti-droplet",
+    "Fighter":              "ti-rocket",
+    "Heavy Fighter":        "ti-rocket",
+    "Corvette":             "ti-rocket",
+    "Destroyer":            "ti-anchor",
+    "Frigate":              "ti-shield",
+    "Gunboat":              "ti-crosshair",
+    "Scout":                "ti-eye",
+    "Carrier":              "ti-drone",
+    "Freighter":            "ti-package",
+    "Transport":            "ti-package",
+    "Gas Tanker":           "ti-ripple",
+    "Miner (Solid)":        "ti-shovel",
+    "Miner (Liquid)":       "ti-droplet",
+    "Combat Supply":        "ti-box",
+    "Supply":               "ti-box",
+    "Boarding":             "ti-sword",
   };
 
   const ORDER_ICONS = {
@@ -526,6 +534,14 @@
     "Mining":    "ti-shovel",
     "Escorting": "ti-shield",
     "Waiting":   "ti-clock",
+    "Idle":      "ti-clock",
+    "Patrol":    "ti-route",
+    "Attack":    "ti-crosshair",
+    "Building":  "ti-hammer",
+    "Repair":    "ti-tool",
+    "Supply":    "ti-box",
+    "Docking":   "ti-ship",
+    "Travel":    "ti-route",
   };
 
   const CARD_ICONS = {
@@ -1391,8 +1407,9 @@
       // Stat cell builder — each cell is its own slightly lighter box.
       // Label colour follows the two-state rule via attnColor().
       // tipAttr is an optional extra attribute string e.g. 'data-storage-tip="..."'
-      const sc = (lbl, val, col = 'var(--text)', last = false, tipAttr = '') =>
+      const sc = (lbl, val, col = 'var(--text)', last = false, tipAttr = '', icon = '') =>
         `<div style="padding:10px 12px;text-align:center;background:var(--bg-card);border-radius:3px${tipAttr ? ';cursor:default' : ''}" ${tipAttr}>
+           ${icon ? `<div style="font-size:15px;color:${attnColor(col)};margin-bottom:3px"><i class="ti ${icon}"></i></div>` : ''}
            <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:${attnColor(col)};margin-bottom:5px">${lbl}</div>
            <div style="font-family:var(--font-mono);font-size:20px;color:${col}">${val}</div>
          </div>`;
@@ -1517,15 +1534,15 @@
         </div>
         <!-- Stats row: Modules | Crew | Ships | Storage -->
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px;background:var(--bg-panel);border-bottom:1px solid var(--border)">
-          ${sc('Modules', modCount, 'var(--text)', false, moduleTipAttr)}
-          ${sc('Crew', '—', 'var(--text-faint)')}
-          ${sc('Ships', shipCount, shipCount > 0 ? 'var(--teal)' : 'var(--text-faint)')}
-          ${sc('Storage', storageStr, storageColor, true, storageTipAttr)}
+          ${sc('Modules', modCount, 'var(--text)',                                      false, moduleTipAttr, 'ti-building-community')}
+          ${sc('Crew',    '—',      'var(--text-faint)',                               false, '',             'ti-users')}
+          ${sc('Ships',   shipCount, shipCount > 0 ? 'var(--teal)' : 'var(--text-faint)', false, '',          'ti-ship')}
+          ${sc('Storage', storageStr, storageColor,                                   true,  storageTipAttr, 'ti-box')}
         </div>
         <!-- Tab bar -->
         <div style="display:flex;gap:4px;padding:6px 10px;border-bottom:1px solid var(--border);background:var(--bg-panel)">
-          <button class="station-tab-btn active" data-tab="production" onclick="switchStationTab('${s.code}','production')">Production</button>
-          <button class="station-tab-btn" data-tab="docked" onclick="switchStationTab('${s.code}','docked')">Docked${shipCount > 0 ? ' · ' + shipCount : ''}</button>
+          <button class="station-tab-btn active" data-tab="production" onclick="switchStationTab('${s.code}','production')"><i class="ti ti-settings" style="font-size:11px;vertical-align:-1px;margin-right:4px"></i>Production</button>
+          <button class="station-tab-btn" data-tab="docked" onclick="switchStationTab('${s.code}','docked')"><i class="ti ti-ship" style="font-size:11px;vertical-align:-1px;margin-right:4px"></i>Docked${shipCount > 0 ? ' · ' + shipCount : ''}</button>
         </div>
         <!-- Tab panels -->
         <div class="station-tab-panel" data-tab="production" style="display:block">${prodRows}</div>
