@@ -16,16 +16,16 @@ def _iter_components(root: ET.Element):
     a ship_* class component is encountered, that ship and all its children are
     skipped entirely — their equipment belongs to them, not to the parent.
     """
-    queue = list(root)
-    while queue:
-        node = queue.pop()
+    stack = list(root)
+    while stack:
+        node = stack.pop()
         if node.tag != 'component':
-            queue.extend(node)
+            stack.extend(node)
             continue
         if node.get('class', '').startswith('ship_'):
             continue
         yield node
-        queue.extend(node)
+        stack.extend(node)
 
 
 def _parse_character_macro(macro: str) -> dict:

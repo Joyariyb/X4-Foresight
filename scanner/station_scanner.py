@@ -637,8 +637,5 @@ def scan_save(file_path: pathlib.Path, sector_names: dict) -> dict:
     except ET.XMLSyntaxError as e:
         print(f"\n[XML Error] Save file has a formatting issue: {e}")
         raise
-    except Exception as e:
-        print(f"\n[Error] Unexpected problem: {e}")
-        raise
 
     return data
