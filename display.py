@@ -2,7 +2,7 @@ import sys
 import os
 from collections import Counter, defaultdict
 from data.factions import FACTION_NAMES as _FACTION_NAMES
-from data.production import display_name_to_id, units_per_cycle, units_per_hour, inputs_per_cycle
+from data.production import display_name_to_id, units_per_cycle, units_per_hour, inputs_per_cycle, runtime_minutes
 from data.sector_stats import SECTOR_SUNLIGHT
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -44,6 +44,19 @@ def format_m3(value: float) -> str:
     if value >= 1_000:
         return f"{value / 1_000:.1f}k m³"
     return f"{value:.0f} m³"
+
+def format_runtime(mins: float | None) -> str:
+    """Formats a runtime-in-minutes value as a compact stock duration string."""
+    if mins is None:
+        return ""
+    if mins <= 0:
+        return "  ·  no stock"
+    if mins < 60:
+        return f"  ·  {mins:.0f}m stock"
+    h = int(mins // 60)
+    m = int(mins % 60)
+    return f"  ·  {h}h {m:02d}m stock"
+
 
 def display_results(data: dict):
     """
@@ -154,15 +167,17 @@ def display_results(data: dict):
                 prod_modules = [m for m in s.get("modules", [])
                                 if m.get("category") == "Production" and m.get("produces")]
                 if prod_modules:
-                    counts  = Counter(m["produces"] for m in prod_modules)
-                    sector  = s.get("sector", "")
+                    counts    = Counter(m["produces"] for m in prod_modules)
+                    sector    = s.get("sector", "")
+                    inventory = s.get("inventory") or {}
                     for idx, (ware_display, count) in enumerate(sorted(counts.items())):
                         lbl     = "Produces" if idx == 0 else "        "
                         ware_id = display_name_to_id(ware_display)
                         if ware_id:
-                            per_cyc = count * units_per_cycle(ware_id, sector)
-                            per_hr  = count * units_per_hour(ware_id, sector)
-                            print(f"  {indent} {lbl} : {ware_display:<22} {count}x  {per_cyc:>5.0f}/cyc  ·  {per_hr:>7,.0f}/hr")
+                            per_cyc  = count * units_per_cycle(ware_id, sector)
+                            per_hr   = count * units_per_hour(ware_id, sector)
+                            rt_str   = format_runtime(runtime_minutes(ware_id, count, inventory))
+                            print(f"  {indent} {lbl} : {ware_display:<22} {count}x  {per_cyc:>5.0f}/cyc  ·  {per_hr:>7,.0f}/hr{rt_str}")
                             inputs = inputs_per_cycle(ware_id, count)
                             if inputs:
                                 inp_str = "  ·  ".join(f"{qty:,} {name}" for name, qty in sorted(inputs.items()))

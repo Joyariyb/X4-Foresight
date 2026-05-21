@@ -42,6 +42,34 @@ def units_per_hour(ware_id: str, sector: str) -> float:
     return units_per_cycle(ware_id, sector) * (3600 / stats["time"])
 
 
+def runtime_minutes(ware_id: str, module_count: int, inventory: dict[str, int]) -> float | None:
+    """Returns how many minutes production can continue given current inventory.
+
+    Finds the limiting input — the one that runs out first — and converts the
+    remaining cycles to minutes using the ware's cycle time.
+
+    Returns None for wares with no inputs (e.g. energy cells, which run on sunlight).
+    Returns 0.0 if any required input has zero stock.
+    Inventory keys must be display names (e.g. 'Energy Cells'), matching what
+    _parse_station_storage stores.
+    """
+    stats = PRODUCTION_STATS.get(ware_id)
+    if stats is None:
+        return None
+
+    inputs = stats["methods"].get("default", {})
+    if not inputs:
+        return None  # no raw inputs needed
+
+    min_cycles = float("inf")
+    for input_id, qty_per_module in inputs.items():
+        total_per_cycle = qty_per_module * module_count
+        stock           = inventory.get(WARE_NAMES.get(input_id, input_id), 0)
+        min_cycles      = min(min_cycles, stock / total_per_cycle)
+
+    return min_cycles * stats["time"] / 60.0
+
+
 def inputs_per_cycle(ware_id: str, count: int = 1) -> dict[str, int]:
     """Returns {input_display_name: total_qty} consumed per cycle across `count` modules.
 
