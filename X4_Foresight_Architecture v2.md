@@ -22,16 +22,16 @@ A guide to how the system fits together: data flow, module relationships, the ce
 <a id="system-overview"></a>
 ## 🗺️ System Overview
 
-X4 Foresight has two entry points that share the same scanner pipeline:
+X4 Foresight has two entry points that share the same scanner modules:
 
-- **CLI scanner** (`x4_save_scanner.py`) — interactive console save selector, runs the full pipeline, prints a report, writes `x4_empire_state.json`.
-- **Desktop UI** (`ui/main_ui.py`) — Qt save selector dialog, runs the same pipeline in a background thread, then loads the JSON into the dashboard.
+- **CLI scanner** (`x4_save_scanner.py`) — interactive console save selector, selectable scan mode/tier, console report, and JSON export for modes that enable it.
+- **Desktop UI** (`ui/main_ui.py`) — optional language-file setup, Qt save selector dialog, fixed full scan in a background thread, then loads the exported JSON into the dashboard.
 
 ### 🔄 Central Data Pipeline
 
 ```
-*.xml.gz ──► Save selector ──► Scanner Pipeline ──► game_data dict ──┬──► Console Report (CLI)
-                                                                      └──► x4_empire_state.json ──► UI / AI Prompt
+*.xml/.xml.gz ──► Save selector ──► Scanner Pipeline ──► game_data dict ──┬──► Console Report (CLI)
+                                                                           └──► x4_empire_state.json ──► UI / AI Prompt
 ```
 
 ### ✨ Key Features
@@ -41,13 +41,14 @@ X4 Foresight has two entry points that share the same scanner pipeline:
 - **Two outputs:**
   - Console report (immediate feedback, CLI only)
   - JSON export (`x4_empire_state.json`) for UI and AI use
+- **Desktop first-run language setup** can copy `0001-l044.xml` from the Steam install or a manual browse path
 
 ---
 
 <a id="data-flow"></a>
 ## 🔄 Data Flow
 
-The full pipeline in execution order:
+The full CLI pipeline in execution order when all passes are selected:
 
 ```
 x4_save_scanner.py
@@ -61,7 +62,11 @@ x4_save_scanner.py
 │     ├── calls macro_to_sector_name()
 │     ├── calls resolve_sector_from_location()
 │     ├── calls parse_production_from_construction()
+│     ├── calls _count_construction_modules()
+│     ├── calls _parse_station_modules()
 │     ├── calls _parse_station_health()
+│     ├── calls _parse_station_storage()
+│     ├── calls _extract_station_docked_ships()
 │     └── calls _parse_manager()        scanner/crew_scanner.py
 │         returns game_data (player, stations, managers)
 │
@@ -82,8 +87,14 @@ x4_save_scanner.py
 │     ├── calls _parse_commander()
 │     ├── calls _parse_software()
 │     ├── calls _parse_hull()
-│     └── looks up SHIP_STATS           data/ship_stats.py
-│         returns { player_ships, npc_ships }
+│     ├── calls _parse_shield()
+│     ├── extracts carrier-docked ships
+│     ├── looks up SHIP_STATS           data/ship_stats.py
+│     └── looks up STATION_STATS        data/station_stats.py
+│         returns { player_ships, npc_ships, crew }
+│
+├── merge_station_docked_ships() scanner/ship_scanner.py
+│     └── adds player ships found docked at stations but missed by Pass 3
 │
 ├── display_results()            display.py
 │     └── prints console report
@@ -93,6 +104,8 @@ x4_save_scanner.py
       ├── calls _build_npc_summary()
       └── writes x4_empire_state.json
 ```
+
+The desktop UI uses the same scanner modules, but it always runs the full Pass 1 → Pass 2 → Pass 3 → merge → export path inside `ScanWorker`; it does not expose the CLI run-mode or ship-tier menus.
 
 ---
 
@@ -109,9 +122,9 @@ Three focused passes, each with a clear single responsibility, are simpler and m
 
 ### Pass 1 — Player Identity and Stations (`scan_save`)
 
-Tracks the current sector as it streams, so that any player-owned station encountered inherits the sector it's nested within. Uses a buffering technique: when a player station's opening tag is spotted, `elem.clear()` is suppressed for all descendants until the station's closing tag arrives, preserving child elements needed to parse production modules, hull/shield health, and the assigned manager.
+Tracks the current sector as it streams, so that any player-owned station encountered inherits the sector it's nested within. Uses a buffering technique: when a player station's opening tag is spotted, `elem.clear()` is suppressed for all descendants until the station's closing tag arrives, preserving child elements needed to parse production modules, module details, cargo/storage, docked ships, hull/shield health, and the assigned manager.
 
-Hull health is summed per module by matching each component's macro against `STATION_STATS` in `data/station_stats.py`. Shield health is summed from `shieldgenerator` class components. A DFS helper (`_station_components`) skips `ship_*` class subtrees to prevent docked ships from contaminating the station's health totals.
+Station modules are parsed first, then station-level hull and shield health are folded from that module list. `STATION_STATS` supplies module hull, shield capacity, production ware IDs, and storage capacity where known. Shared component traversal skips nested ship subtrees so docked ships do not contaminate station health or cargo totals. Storage is reported both as physical cargo and reservation-adjusted cargo so the UI can match the in-game fill display.
 
 ### Pass 2 — Faction Reputation (`scan_reputation`)
 
@@ -119,7 +132,7 @@ A short, focused pass that stops as soon as the player faction block is fully re
 
 ### Pass 3 — Ships (`scan_ships`)
 
-The most complex pass. Tracks zone macros to resolve ship sectors (ships are nested under zones, not sectors directly), uses the same buffering technique as Pass 1 to preserve ship child elements, and applies name resolution in priority order. For each ship, hull health is extracted from the `<hull value="..."/>` child element (absent when undamaged) and the base max hull is looked up from `SHIP_STATS` in `data/ship_stats.py` to compute a percentage. Collects NPC ships only for sectors in `context_sectors`.
+The most complex pass. Tracks both sector and zone macros so `_parse_sector()` can prefer the enclosing sector macro and fall back to zone macro parsing. It uses the same buffering technique as Pass 1 to preserve ship child elements and applies name resolution in priority order: custom name, generated lookup, macro-derived fallback. Player ships include pilot, crew, software, commander, hull, shield, and carrier-docked ship extraction. NPC ships are slim records and are collected only for sectors in `context_sectors`.
 
 ---
 
@@ -144,18 +157,59 @@ game_data = {
             "class":      str,          # XML class: "station", "factory", "headquarters", "complex"
             "macro":      str,          # Raw macro string from save XML
             "sector":     str,          # Human-readable sector name
+            "status":     str,          # "Operational" | "Under Construction" | "Destroyed"
             "production": str,          # Comma-separated ware display names, or ""
+            "module_count": int,         # Count of all planned construction sequence modules
+            "docked_ships": [
+                {
+                    "code":               str,
+                    "macro":              str,
+                    "owner":              str,
+                    "class":              str,
+                    "under_construction": bool,
+                },
+            ],
             "hull_hp":    float | None, # Current hull HP summed across all modules; None if no modules matched STATION_STATS
             "hull_max":   float | None, # Max hull HP summed across all modules; None if no modules matched
             "hull_pct":   float | None, # Hull health as a percentage (0–100); None if hull_max is None
             "shield_hp":  float | None, # Current shield HP summed across all generators; None if no generators
             "shield_max": float | None, # Max shield HP; None if no generators
             "shield_pct": float | None, # Shield health as a percentage; None if no generators
+            "cargo_container_m3":      float | None,
+            "cargo_container_max":     int | None,
+            "cargo_container_pct":     float | None,
+            "cargo_container_adj_m3":  float | None, # Physical cargo +/- trade reservations
+            "cargo_container_adj_pct": float | None,
+            "cargo_solid_m3":          float | None,
+            "cargo_solid_max":         int | None,
+            "cargo_solid_pct":         float | None,
+            "cargo_solid_adj_m3":      float | None,
+            "cargo_solid_adj_pct":     float | None,
+            "cargo_liquid_m3":         float | None,
+            "cargo_liquid_max":        int | None,
+            "cargo_liquid_pct":        float | None,
+            "cargo_liquid_adj_m3":     float | None,
+            "cargo_liquid_adj_pct":    float | None,
+            "cargo_m3":                float | None,
+            "cargo_max":               int | None,
+            "cargo_pct":               float | None,
+            "cargo_adj_m3":            float | None,
+            "cargo_adj_pct":           float | None,
             "modules": [                # One entry per matched module component
                 {
-                    "macro":    str,   # Module component macro name
-                    "hull_hp":  float, # Current hull HP for this module
-                    "hull_max": int,   # Max hull HP for this module from STATION_STATS
+                    "macro":        str,
+                    "display_name": str,
+                    "category":     str,
+                    "faction":      str | None,
+                    "size":         str | None,
+                    "produces":     str | None,
+                    "is_shield":    bool,
+                    "hull_hp":      float | None,
+                    "hull_max":     int | None,
+                    "hull_pct":     float | None,
+                    "shield_hp":    float | None,
+                    "shield_max":   int | None,
+                    "shield_pct":   float | None,
                 },
             ],
         },
@@ -183,7 +237,7 @@ game_data = {
         "player_ships": [
             {
                 "code":        str,          # Ship identifier code, e.g. "LSS-543"
-                "name":        str | None,   # Custom name, type name, or None
+                "name":        str,          # Custom name, type name, or macro-derived fallback
                 "class":       str,          # "ship_s" | "ship_m" | "ship_l" | "ship_xl"
                 "size":        str,          # "S" | "M" | "L" | "XL"
                 "macro":       str,          # Raw macro string
@@ -207,6 +261,9 @@ game_data = {
                 "hull_hp":    float | None, # Current hull HP; None means undamaged (full health)
                 "hull_pct":   float | None, # HP as % of base max (0–100+); None if max unknown
                 "max_hull":   int | None,   # Base max HP from SHIP_STATS; None if macro not found
+                "shield_hp":  float | None, # Summed installed shield HP
+                "shield_max": float | None, # Summed max shield capacity
+                "shield_pct": float | None, # Shield percentage, or None when no known shield generators
             },
             # ...
         ],
@@ -214,6 +271,7 @@ game_data = {
         "npc_ships": [
             {
                 "code":        str,
+                "name":        str,
                 "class":       str,
                 "size":        str,
                 "macro":       str,
@@ -262,6 +320,10 @@ X4 only writes `<hull value="..."/>` inside a ship's save data when the ship has
 
 `hull_pct` can exceed 100% when a hull capacity mod is installed — the mod raises the ship's effective max above the base value stored in `SHIP_STATS`, so the scanner's percentage calculation overshoots. See [Known Limitations](#known-limitations-and-gotchas) for details.
 
+Ship and station shield fields follow the same general shape: `shield_hp`, `shield_max`, and `shield_pct` are `None` when no known shield generators are found. For ships, shield capacity is summed from installed shield generator components using `STATION_STATS`.
+
+Station cargo fields come in two versions. The raw `cargo_*_m3`/`cargo_*_pct` fields reflect physical wares currently present in storage modules. The adjusted `cargo_*_adj_m3`/`cargo_*_adj_pct` fields apply trade reservations to match the game UI's displayed fill more closely.
+
 ---
 
 <a id="the-x4_empire_statejson-schema"></a>
@@ -279,10 +341,12 @@ The JSON export is a restructured version of `game_data` with two pre-computed s
 
   "reputation": [ ...same shape as game_data.reputation... ],
 
+  "crew": [ ...same shape as game_data.crew... ],
+
   "ships": {
 
     "player_ships": [ ...same shape as game_data.ships.player_ships...
-                       including hull_hp, hull_pct, max_hull ],
+                       including hull/shield fields ],
 
     "fleet_summary": {
       "total":     int,
@@ -309,7 +373,7 @@ The JSON export is a restructured version of `game_data` with two pre-computed s
 
 The `fleet_summary` and `npc_summary` blocks are pre-digested so that an AI assistant can get an immediate high-level picture without counting individual ships, and so the UI can populate summary cards without iterating the full ship list on every render.
 
-The `player_ships` list is passed through from the scanner without filtering, so all fields including `hull_hp`, `hull_pct`, and `max_hull` are present in the JSON automatically.
+The `stations`, `crew`, `player_ships`, and `npc_ships` lists are passed through from the scanner without filtering, so all parsed fields are present in the JSON automatically.
 
 ---
 
@@ -417,7 +481,7 @@ All rendering happens in a single call to `populate(data)` after the JSON is rec
 7. Renders the Fleet by Role table
 8. Renders the Fleet by Order table
 9. Renders the full fleet table (one row per player ship) via `renderFleet()`
-10. Renders the stations grid (one panel card per station)
+10. Renders the stations grid (one panel card per station) with overview, docked ships, storage, and module detail panes
 11. Renders the faction standings table
 12. Generates and renders alert messages
 13. Hides the loading spinner and shows the main shell
@@ -438,6 +502,10 @@ Three alert conditions are checked in `populate`:
 | Waiting ships | Any player ship with `order === "Waiting"` | Amber |
 | Idle miners | Intersection of waiting ships and `MINER_ROLES` | Amber |
 
+### Station Cards
+
+Station rendering uses the richer station records from Pass 1. Each station card shows status, production, hull, shields, module count, docked ship count, and reservation-adjusted storage fill. Per-station buttons switch between production, docked ships, storage, and module panels. Storage and module counts also expose hover tooltips built from `cargo_*_adj_*` and `modules` data.
+
 ### Icon and Colour Lookup Tables
 
 Rather than inline logic, the UI uses flat lookup objects and sets at the top of the script block. To add support for a new role or order, add an entry to the relevant table:
@@ -452,17 +520,20 @@ Rather than inline logic, the UI uses flat lookup objects and sets at the top of
 | `ORDER_COLOURS` | Maps order strings to CSS colour variables |
 | `SIZE_COLOURS` | Maps size strings (`S`, `M`, `L`, `XL`) to CSS colour variables |
 | `CARD_ICONS` | Maps summary card label strings to Tabler icon class names |
+| `MODULE_CAT_ORDER` | Preferred station module category ordering for module tooltips |
 
 ### Helper Functions
 
 | Function | Purpose |
 |---|---|
 | `fmtCredits(n)` | Formats a credit value as `1.2M Cr`, `430.5k Cr`, or `n Cr` |
+| `fmtM3(n)` | Formats storage volume in m³/k/millions of m³ |
 | `hullBadge(origin)` | Returns a coloured `<span class="badge">` for a hull origin faction; prefixes hostile origins with `*` |
 | `hullBar(pct, hullHp, maxHull)` | Percentage bar for hull health — red → amber → green (0–100%); blue for >100% (hull mod). Shows `current / max HP` text. Degrades gracefully when values are null. |
 | `tierBadge(tier)` | Returns a coloured `<span class="badge">` for a reputation tier |
 | `repBar(value)` | Inline reputation bar scaled to −30..+30, green for positive and red for negative |
 | `sign(n)` | Formats a float with an explicit `+` or `−` prefix |
+| `switchStationTab(code, tab)` | Switches the visible sub-panel inside a station card |
 
 ---
 
@@ -485,21 +556,28 @@ x4_save_scanner.py
 │   ├── scanner/language.py
 │   ├── scanner/crew_scanner.py
 │   ├── data/ships.py
-│   └── data/ship_stats.py
+│   ├── data/ship_stats.py
+│   └── data/station_stats.py
 ├── export/jsonexport.py
 └── display.py
     └── data/factions.py            (FACTION_NAMES for NPC display)
 
 ui/main_ui.py
-├── runs scanner pipeline (via ScanWorker background thread)
+├── offers language-file setup when 0001-l044.xml is missing
+├── runs full scanner pipeline (via ScanWorker background thread)
+├── calls merge_station_docked_ships()
 └── reads x4_empire_state.json → serves to ui/ui.html via QWebChannel
 
 generate_ship_names.py    (one-time utility)
-└── writes data/ships.py
+└── builds SHIP_NAMES mapping (verify output path before regenerating)
 
 generate_ship_stats.py    (one-time utility)
 ├── reads ship xml/**/*.xml
 └── writes data/ship_stats.py
+
+generate_station_stats.py (one-time utility)
+├── reads station xml/**/*.xml and shield xml/**/*.xml
+└── writes data/station_stats.py
 ```
 
 ### Notes
@@ -508,7 +586,7 @@ generate_ship_stats.py    (one-time utility)
 
 `scanner/language.py` is imported by `scanner/station_scanner.py`, `scanner/reputation_scanner.py`, and `scanner/ship_scanner.py`, making it the most widely shared module in the project.
 
-`scanner/crew_scanner.py` is imported by both `scanner/station_scanner.py` (for `_parse_manager`) and `scanner/ship_scanner.py` (for `_parse_pilot` and `_extract_people`).
+`scanner/crew_scanner.py` is imported by both `scanner/station_scanner.py` (for `_parse_manager` and `_iter_components`) and `scanner/ship_scanner.py` (for `_parse_pilot`, `_extract_people`, and `_iter_components`).
 
 ---
 
@@ -517,7 +595,7 @@ generate_ship_stats.py    (one-time utility)
 
 ### Run Modes
 
-Selected interactively at startup. Defined by the `SCAN_MODES` list in `x4_save_scanner.py` — each entry declares which passes run and whether to export JSON. Adding a new mode requires only a new entry in the list.
+CLI run modes are selected interactively at startup. They are defined by the `SCAN_MODES` list in `x4_save_scanner.py` — each entry declares which passes run and whether to export JSON. Adding a new mode requires only a new entry in the list. The desktop UI does not expose these modes; it always runs the full scan pipeline and writes the dashboard JSON.
 
 | Mode | Passes run | Output |
 |---|---|---|
@@ -547,15 +625,19 @@ Tier 3 runs the ship scanner twice: a pre-scan collects player ships and their s
 
 ### Configuration
 
-**Scan mode and ship tier are selected interactively — no constants to edit.** Add new modes to the `SCAN_MODES` list in `x4_save_scanner.py`; add new ship tiers by extending `select_ship_tier()` and the `_run_ships_pass()` dispatcher.
+**CLI scan mode and ship tier are selected interactively — no constants to edit.** Add new modes to the `SCAN_MODES` list in `x4_save_scanner.py`; add new ship tiers by extending `select_ship_tier()` and the `_run_ships_pass()` dispatcher. The UI scan path is fixed to the full pipeline.
 
 ### Input Data
 
-**Language file is optional but strongly recommended.** Without `0001-l044.xml`, all sector names display as raw macro IDs (e.g. `cluster_43_sector001_macro`) and ship type names fall back to hull-origin + role strings. The desktop UI can copy it automatically on first launch via its Steam auto-detect dialog; alternatively extract it manually using X Tools (free on Steam).
+**Language file is optional but strongly recommended.** Without `0001-l044.xml`, sector names display as raw macro IDs or `"Unknown Sector"` fallbacks. Ship type names still use the generated `data/ships.py` lookup and macro-derived fallback. The desktop UI can copy the language file automatically on first launch via its Steam auto-detect dialog; alternatively extract it manually using X Tools (free on Steam).
 
 **`data/ships.py` needs regeneration after DLC or game updates.** New ships added by expansions will not appear in `SHIP_NAMES` until you extract their macro XMLs and re-run `generate_ship_names.py`. Unrecognised macros fall back to hull-origin + role as the display name.
 
 **`data/ship_stats.py` also needs regeneration after DLC or game updates.** New ship macros will not have a `max_hull` entry until their XMLs are added to `ship xml/` and `generate_ship_stats.py` is re-run. Ships with no entry will show `hull_pct = None` and the UI will display raw HP only with no percentage bar.
+
+**`data/station_stats.py` drives station health, shield, production, and storage displays.** Regenerate carefully after station/module data changes. The current committed table includes cargo capacity entries used by storage parsing, so preserve that path when updating the generator.
+
+**Check `generate_ship_names.py` before regenerating names.** The live scanner imports `data/ships.py`, while the current generator script still targets `data/ship_scanner.py`.
 
 ### Data Accuracy
 
@@ -567,7 +649,7 @@ Tier 3 runs the ship scanner twice: a pre-scan collects player ships and their s
 
 **NPC ship data at tiers 2 and 3 can be slow and memory-intensive.** Large sectors with many NPC ships significantly increase scan time and peak RAM usage. Tier 1 is the default for a reason.
 
-**The UI reads the JSON at launch only.** There is no live reload or file watcher. If you re-run the scanner, you must close and reopen the UI to see updated data.
+**The UI reads JSON into the page once per window load.** There is no live reload or file watcher while the dashboard is open. On startup, the UI can run a fresh scan and then load the newly exported JSON; if the JSON changes externally while the window is open, reopen the UI to see it.
 
 ### Platform
 
