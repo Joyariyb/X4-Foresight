@@ -2,6 +2,8 @@ import sys
 import os
 from collections import Counter, defaultdict
 from data.factions import FACTION_NAMES as _FACTION_NAMES
+from data.production import display_name_to_id, units_per_cycle, units_per_hour
+from data.sector_stats import SECTOR_SUNLIGHT
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  ANSI COLOUR SUPPORT
@@ -130,7 +132,9 @@ def display_results(data: dict):
         for sector, stations in sectors_seen.items():
             # Sector header — printed once per group
             station_word = "station" if len(stations) == 1 else "stations"
-            print(f"  ┌─ SECTOR: {sector}  ({len(stations)} {station_word})")
+            sunlight     = SECTOR_SUNLIGHT.get(sector)
+            sun_str      = f"  ·  {sunlight * 100:.0f}% sun" if sunlight is not None else ""
+            print(f"  ┌─ SECTOR: {sector}  ({len(stations)} {station_word}){sun_str}")
 
             for i, s in enumerate(stations):
                 is_last   = i == len(stations) - 1
@@ -147,7 +151,21 @@ def display_results(data: dict):
                 if status != "Operational":
                     print(f"  {indent} Status   : {status}")
 
-                if s["production"]:
+                prod_modules = [m for m in s.get("modules", [])
+                                if m.get("category") == "Production" and m.get("produces")]
+                if prod_modules:
+                    counts  = Counter(m["produces"] for m in prod_modules)
+                    sector  = s.get("sector", "")
+                    for idx, (ware_display, count) in enumerate(sorted(counts.items())):
+                        lbl     = "Produces" if idx == 0 else "        "
+                        ware_id = display_name_to_id(ware_display)
+                        if ware_id:
+                            per_cyc = count * units_per_cycle(ware_id, sector)
+                            per_hr  = count * units_per_hour(ware_id, sector)
+                            print(f"  {indent} {lbl} : {ware_display:<22} {count}x  {per_cyc:>5.0f}/cyc  ·  {per_hr:>7,.0f}/hr")
+                        else:
+                            print(f"  {indent} {lbl} : {count}x {ware_display}")
+                elif s["production"]:
                     print(f"  {indent} Produces : {s['production']}")
                 else:
                     print(f"  {indent} Produces : —")
