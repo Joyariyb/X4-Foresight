@@ -11,7 +11,7 @@ A guide to how the system fits together: data flow, module relationships, the ce
 - [⚙️ The Three Passes](#the-three-passes)
 - [🧱 The `game_data` Schema](#the-game_data-schema)
 - [📋 The `x4_empire_state.json` Schema](#the-x4_empire_statejson-schema)
-- [🔗 The Python ↔ JavaScript Bridge](#the-python--javascript-bridge)
+- [🔗 The Python ↔ JavaScript Bridge](#the-python-javascript-bridge)
 - [🖥️ UI Structure and Rendering](#ui-structure-and-rendering)
 - [📦 Module Dependency Map](#module-dependency-map)
 - [🔧 Scan Tiers and Run Modes](#scan-tiers-and-run-modes)
@@ -19,6 +19,7 @@ A guide to how the system fits together: data flow, module relationships, the ce
 
 ---
 
+<a id="system-overview"></a>
 ## 🗺️ System Overview
 
 X4 Foresight has two entry points that share the same scanner pipeline:
@@ -43,6 +44,7 @@ X4 Foresight has two entry points that share the same scanner pipeline:
 
 ---
 
+<a id="data-flow"></a>
 ## 🔄 Data Flow
 
 The full pipeline in execution order:
@@ -94,6 +96,7 @@ x4_save_scanner.py
 
 ---
 
+<a id="the-three-passes"></a>
 ## ⚙️ The Three Passes
 
 The save file is streamed three times rather than once — an intentional design choice driven by memory constraints.
@@ -120,6 +123,7 @@ The most complex pass. Tracks zone macros to resolve ship sectors (ships are nes
 
 ---
 
+<a id="the-game_data-schema"></a>
 ## 🧱 The `game_data` Schema
 
 `game_data` is the central dictionary assembled in `x4_save_scanner.py` and passed to both `display_results()` and `export_json()`. It is never written to disk directly — it is the in-memory intermediate representation.
@@ -260,6 +264,7 @@ X4 only writes `<hull value="..."/>` inside a ship's save data when the ship has
 
 ---
 
+<a id="the-x4_empire_statejson-schema"></a>
 ## 📋 The `x4_empire_state.json` Schema
 
 The JSON export is a restructured version of `game_data` with two pre-computed summary dicts added. It is the only artifact that persists to disk and is consumed by both the UI and AI prompts.
@@ -308,6 +313,7 @@ The `player_ships` list is passed through from the scanner without filtering, so
 
 ---
 
+<a id="the-python-javascript-bridge"></a>
 ## 🔗 The Python ↔ JavaScript Bridge
 
 The desktop UI runs as a `QWebEngineView` inside a native Qt window. The HTML dashboard is a local file loaded from disk — it has no server, no HTTP, and no network access. Data passes from Python to JavaScript through Qt's `QWebChannel` mechanism.
@@ -375,6 +381,7 @@ If you need JavaScript to *call back into Python* (e.g. to trigger a rescan), ad
 
 ---
 
+<a id="ui-structure-and-rendering"></a>
 ## 🖥️ UI Structure and Rendering
 
 ### Layout
@@ -459,6 +466,7 @@ Rather than inline logic, the UI uses flat lookup objects and sets at the top of
 
 ---
 
+<a id="module-dependency-map"></a>
 ## 📦 Module Dependency Map
 
 ```
@@ -504,6 +512,7 @@ generate_ship_stats.py    (one-time utility)
 
 ---
 
+<a id="scan-tiers-and-run-modes"></a>
 ## 🔧 Scan Tiers and Run Modes
 
 ### Run Modes
@@ -533,6 +542,7 @@ Tier 3 runs the ship scanner twice: a pre-scan collects player ships and their s
 
 ---
 
+<a id="known-limitations-and-gotchas"></a>
 ## ⚠️ Known Limitations and Gotchas
 
 ### Configuration
