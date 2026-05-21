@@ -27,7 +27,7 @@ A desktop application for scanning *X4: Foundations* save files and generating s
 
 - **Scans Your Save File:** Extracts player identity, stations, ships, reputation, and crew data from *X4: Foundations* save files.
 - **Generates Structured JSON:** Outputs `x4_empire_state.json` for use with AI assistants or external dashboards.
-- **Configurable Modes & Tiers:** Four scan modes selected interactively at startup (`full`, `stations`, `reputation`, `ships`); set ship scan tiers (1–3) to control NPC fleet inclusion.
+- **Configurable CLI Modes & Tiers:** The CLI offers four interactive scan modes (`full`, `stations`, `reputation`, `ships`) and ship scan tiers (1–3) to control NPC fleet inclusion. The desktop UI runs a full scan and exports the dashboard JSON automatically.
 
 ---
 
@@ -48,8 +48,8 @@ A desktop application for scanning *X4: Foundations* save files and generating s
 | Section | Contents |
 |---------|----------|
 | **Player** | Name, sector, credits |
-| **Stations** | List grouped by sector with production, manager skills |
-| **Fleet** | Ships sorted by sector, hull status, captured flags, pilot sub-lines |
+| **Stations** | Flat list of station records with sector, production, health, and manager data |
+| **Fleet** | Raw player/NPC ship lists plus fleet and NPC summaries by role, size, order, sector, and faction |
 | **Reputation** | Faction standings (-30 to +30), base + booster values |
 | **Crew** | Roles (manager, pilot, service, marine) with assigned station, primary skill |
 | **NPC Fleet** | Tiers 2/3 only: sector → faction → role counts when enabled |
@@ -58,7 +58,7 @@ A desktop application for scanning *X4: Foundations* save files and generating s
 
 ## 🔧 Configuration Options
 
-Modes are selected interactively at startup — no constants to edit.
+CLI modes are selected interactively at startup — no constants to edit. The desktop UI always runs the full scan pipeline before loading the dashboard.
 
 | Mode | Passes run | Description |
 |------|-----------|-------------|
@@ -79,7 +79,7 @@ Modes are selected interactively at startup — no constants to edit.
 | File | Description |
 |------|-------------|
 | `data/ships.py` | Ship name mappings for UI display |
-| `data/ship_stats.json` | Pre-computed faction/sector baselines |
+| `data/ship_stats.py` | Pre-generated ship base hull HP lookup |
 | `x4_empire_state.json` | JSON snapshot of current empire state |
 
 ---
@@ -88,6 +88,7 @@ Modes are selected interactively at startup — no constants to edit.
 
 - Python 3.10+
 - PyQt6
+- PyQt6-WebEngine
 - PyInstaller (for frozen builds)
 - Optional: X4: Foundations save file (`save_001.xml`) and language file (`0001-l044.xml`) for full functionality
 
@@ -124,7 +125,7 @@ X4 Foresight/
 
 ## 🚀 Quick Start
 
-1. **Place your X4 save file** in the project root (`save_001.xml`). - not required if save files are in the default location
+1. **Use an X4 save file:** the CLI and UI auto-detect saves in the default Egosoft save directory. The CLI can also fall back to `save_001.xml` in the project root.
 2. **Run the scanner:**
    - CLI: `python x4_save_scanner.py`
    - GUI: Double-click `X4_Empire_Intelligence.pyw`
