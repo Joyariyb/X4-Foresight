@@ -375,6 +375,7 @@ class EmpireWindow(QMainWindow):
         self.view.page().setWebChannel(self.channel)
         self.setCentralWidget(self.view)
         self.view.setUrl(QUrl.fromLocalFile(str(HTML_PATH.resolve())))
+        self.showMaximized()
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
