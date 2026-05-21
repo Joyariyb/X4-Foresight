@@ -22,8 +22,10 @@ A complete reference for all modules, classes, and functions in the X4 Foresight
 9. [📦 data/wares.py](#9-datawarespy)
 10. [📋 data/ships.py](#10-datashipspy)
 11. [📈 data/ship_stats.py](#11-dataship_statspy)
-12. [🔧 generate_ship_stats.py](#12-generate_ship_statspy)
-13. [🗂️ Legacy/generate_ship_names.py](#13-legacygenerate_ship_namespy)
+12. [🛡️ data/station_stats.py](#12-datastation_statspy)
+13. [🔧 generate_ship_stats.py](#13-generate_ship_statspy)
+14. [🏗️ generate_station_stats.py](#14-generate_station_statspy)
+15. [🗂️ generate_ship_names.py](#15-generate_ship_namespy)
 
 ---
 
@@ -75,6 +77,16 @@ Windows double-click launcher. Equivalent to running `python ui/main_ui.py` but 
 ## 🌐 2. `scanner/language.py`
 
 Handles parsing the X4 English language file (`0001-l044.xml`) to resolve human-readable names for sectors and ships. All other modules that need sector names call into this one.
+
+---
+
+### `open_save(path)`
+
+```python
+def open_save(path: pathlib.Path)
+```
+
+Context manager that opens either `.xml` or `.xml.gz` save files in binary mode. Scanner passes use this so callers do not need separate handling for compressed and uncompressed saves.
 
 ---
 
@@ -163,6 +175,10 @@ Pass 1 scanner. Streams the save XML and extracts player identity, credits, sect
 |---|---|---|
 | `STATION_CLASSES` | `set[str]` | XML `class` attribute values that identify player-buildable structures: `"station"`, `"factory"`, `"headquarters"`, `"complex"`. |
 | `PROD_MACRO_RE` | `re.Pattern` | Pre-compiled regex matching production module macro names of the form `prod_<prefix>_<warename>_macro`. Group 1 captures the ware name. |
+| `_STATE_LABELS` | `dict[str, str]` | Maps station state attributes such as `"construction"` and `"wreck"` to display labels. Missing state means `"Operational"`. |
+| `_MODULE_CATEGORIES` | `dict[str, str]` | Decodes station module macro category prefixes into display categories. |
+| `_MODULE_FACTIONS` | `dict[str, str \| None]` | Decodes module designer/faction tokens such as `arg`, `tel`, `ter`, and `gen`. |
+| `_SIZE_TOKENS` | `set[str]` | Valid module size tokens (`s`, `m`, `l`, `xl`) used while parsing macro names. |
 
 ---
 
@@ -188,43 +204,81 @@ Each production module has an `<entry>` child whose `macro` attribute follows th
 
 ---
 
-### `_station_components(station_elem)`
+### `_count_construction_modules(station_elem)`
 
 ```python
-def _station_components(station_elem: ET.Element) -> Iterator[ET.Element]
+def _count_construction_modules(station_elem: ET.Element) -> int
 ```
 
-Generator that yields every component element within a station while skipping docked ship subtrees. Prevents hull and shield stats from ships docked at the station from polluting the station's own health totals.
-
-**Parameters**
-
-| Name | Type | Description |
-|---|---|---|
-| `station_elem` | `ET.Element` | The buffered station element. |
-
-**Yields** `ET.Element` — component elements that belong to the station structure (not to any docked ships inside it).
+Counts all entries in `<construction><sequence>`, including production, storage, dock, pier, defence, shield, habitat, and connector modules. This is the planned module count, not just the subset with known health stats.
 
 ---
 
-### `_parse_station_health(station_elem)`
+### `_extract_station_docked_ships(station_elem)`
 
 ```python
-def _parse_station_health(station_elem: ET.Element) -> dict
+def _extract_station_docked_ships(station_elem: ET.Element) -> list[dict]
 ```
 
-Extracts hull and shield health from a fully-buffered station element by walking all of its component modules.
+Returns ships physically docked inside a station subtree (`connection="dock"`), including ships under construction. These entries feed the station `docked_ships` field and are later used by `merge_station_docked_ships()` to recover player ships missed by the streaming ship pass.
 
-Hull HP is summed across every module whose macro exists in `STATION_STATS`. A missing `<hull>` child means that module is at full health. Each module is recorded individually in the returned `modules` list.
+Each returned dict contains: `code`, `macro`, `owner`, `class`, `under_construction`.
 
-Shield capacity is summed across all installed shield generator components. Missing `<shield>` means full capacity. Docked ship components are excluded via `_station_components()`.
+---
 
-**Parameters**
+### `_parse_module_info(macro)`
 
-| Name | Type | Description |
-|---|---|---|
-| `station_elem` | `ET.Element` | The buffered station element with children in memory. |
+```python
+def _parse_module_info(macro: str) -> dict
+```
 
-**Returns** `dict` with keys: `hull_hp`, `hull_max`, `hull_pct`, `shield_hp`, `shield_max`, `shield_pct`, `modules` (list of per-module dicts with `macro`, `hull_hp`, `hull_max`).
+Decodes a station module macro into `category`, `faction`, and `size` fields for UI-friendly module details.
+
+---
+
+### `_parse_station_modules(station_elem)`
+
+```python
+def _parse_station_modules(station_elem: ET.Element) -> list[dict]
+```
+
+Walks the buffered station subtree via `_iter_components()` and returns one record per structural module or shield generator found in `STATION_STATS`. Modules include display metadata plus hull or shield values, with missing `<hull>`/`<shield>` elements treated as full health.
+
+Each module dict includes: `macro`, `display_name`, `category`, `faction`, `size`, `produces`, `is_shield`, `hull_hp`, `hull_max`, `hull_pct`, `shield_hp`, `shield_max`, `shield_pct`.
+
+---
+
+### `_classify_reservation(flags)`
+
+```python
+def _classify_reservation(flags: str) -> str
+```
+
+Classifies trade reservation flags as `"buy"`, `"sell"`, or `"ignore"` so station cargo fill can match the in-game UI. Incoming reservations add adjusted fill; outgoing committed goods subtract adjusted fill; virtual sell offers are ignored.
+
+---
+
+### `_parse_station_storage(station_elem)`
+
+```python
+def _parse_station_storage(station_elem: ET.Element) -> dict
+```
+
+Computes station cargo usage from instantiated storage module cargo, converting ware amounts to cubic metres with `WARE_VOLUME`. It reports physical and reservation-adjusted fill for container, solid, liquid, and total storage. Transport type for reservation adjustment comes from `WARE_TRANSPORT`.
+
+Returned keys include `cargo_container_m3`, `cargo_container_max`, `cargo_container_pct`, `cargo_container_adj_m3`, `cargo_container_adj_pct`, equivalent solid/liquid keys, and total `cargo_m3`, `cargo_max`, `cargo_pct`, `cargo_adj_m3`, `cargo_adj_pct`.
+
+---
+
+### `_parse_station_health(modules)`
+
+```python
+def _parse_station_health(modules: list[dict]) -> dict
+```
+
+Folds the module list from `_parse_station_modules()` into station-level hull and shield totals.
+
+**Returns** `dict` with keys: `hull_hp`, `hull_max`, `hull_pct`, `shield_hp`, `shield_max`, `shield_pct`.
 
 ---
 
@@ -240,7 +294,7 @@ Streams through the X4 save XML (Pass 1) and extracts player identity, credits, 
 
 Uses `iterparse()` with `start` and `end` events to keep RAM usage low, calling `elem.clear()` after each processed element. Sector context is tracked as a running variable — whenever a `sector`-class component is seen, `current_sector` is updated, so any station encountered afterward inherits the correct location.
 
-Station buffering is used to preserve child elements in memory: when a player station's opening tag is detected, `elem.clear()` is suppressed for all descendants until the station's closing tag arrives, at which point `parse_production_from_construction()` and `_parse_station_health()` are called before clearing.
+Station buffering is used to preserve child elements in memory: when a player station's opening tag is detected, `elem.clear()` is suppressed for all descendants until the station's closing tag arrives, at which point production, module count, module details, health, storage, docked ships, and manager data are parsed before clearing.
 
 Station names are resolved in priority order: player-given name → HQ detection via macro → `nameindex` fallback → `"Unnamed Station"`.
 
@@ -253,7 +307,7 @@ Station names are resolved in priority order: player-given name → HQ detection
 
 **Returns** `dict` with keys: `player_name`, `player_credits`, `player_sector`, `stations` (list of station dicts), `reputation` (empty list, filled by Pass 2), `managers` (list of manager crew dicts).
 
-Each station dict contains: `name`, `code`, `class`, `macro`, `sector`, `production`, `hull_hp`, `hull_max`, `hull_pct`, `shield_hp`, `shield_max`, `shield_pct`, `modules`.
+Each station dict contains: `name`, `code`, `class`, `macro`, `sector`, `status`, `production`, `module_count`, `docked_ships`, hull/shield fields, cargo fields, and `modules`.
 
 ---
 
@@ -445,10 +499,10 @@ For example, `"ship_xen_m_corvette_02_a_macro"` → `"Xenon"`.
 ### `resolve_ship_type(macro)`
 
 ```python
-def resolve_ship_type(macro: str) -> str | None
+def resolve_ship_type(macro: str) -> str
 ```
 
-Looks up a ship's type display name (e.g. `"Magpie Sentinel"`) from the `SHIP_NAMES` dict in `data/ships.py` using the macro string as the key.
+Returns a ship type display name. Resolution priority is exact lookup in `SHIP_NAMES`, then a macro-derived fallback of faction, size, role, and optional variant.
 
 **Parameters**
 
@@ -456,7 +510,7 @@ Looks up a ship's type display name (e.g. `"Magpie Sentinel"`) from the `SHIP_NA
 |---|---|---|
 | `macro` | `str` | Ship macro string. |
 
-**Returns** `str` with the display name if found, or `None` if the macro is absent from the lookup (e.g. new DLC ships not yet regenerated).
+**Returns** `str` — always a non-`None` display string. Unknown or new macros fall back to a constructed name, or the raw macro if it is too short to parse.
 
 ---
 
@@ -482,19 +536,19 @@ X4 only writes a `<hull value="..."/>` child element when the ship's hull is bel
 
 ---
 
-### `_parse_sector_from_zone_macro(ship_elem, sector_names)`
+### `_parse_sector(ship_elem, sector_names)`
 
 ```python
-def _parse_sector_from_zone_macro(ship_elem: ET.Element, sector_names: dict) -> str
+def _parse_sector(ship_elem: ET.Element, sector_names: dict) -> str
 ```
 
-Resolves the sector name for a ship from its zone macro, which the main scanner stamps onto the element as a `_zone_macro` attribute before buffering begins. Strips the zone prefix to isolate the cluster/sector portion and passes it to `macro_to_sector_name()`.
+Resolves the sector name for a ship. It first checks `_sector_macro`, stamped from the enclosing sector component, which handles X4's dynamic `tempzone` elements. If that fails, it falls back to `_zone_macro`, strips the `zoneN_` prefix, and resolves the remaining sector macro.
 
 **Parameters**
 
 | Name | Type | Description |
 |---|---|---|
-| `ship_elem` | `ET.Element` | The buffered ship element with `_zone_macro` set. |
+| `ship_elem` | `ET.Element` | The buffered ship element with `_sector_macro` and/or `_zone_macro` set. |
 | `sector_names` | `dict` | Dictionary returned by `load_sector_names()`. |
 
 **Returns** `str` — resolved sector name, or `"Unknown Sector"` if the macro is absent or unrecognised.
@@ -575,9 +629,35 @@ Returns a list of software ware IDs installed on the ship, read from the `wares`
 
 ---
 
+### `_parse_shield(ship_elem)`
+
+```python
+def _parse_shield(ship_elem: ET.Element) -> dict
+```
+
+Sums installed shield generator capacity for a player ship or docked carrier child. Shield generator stats come from `STATION_STATS`; missing `<shield>` elements are treated as full capacity.
+
+**Returns** `dict` with keys: `shield_hp`, `shield_max`, `shield_pct`, all `None` when no known shield generators are present.
+
+---
+
+### `_extract_docked_ships(carrier_elem, carrier_sector, owner)`
+
+```python
+def _extract_docked_ships(
+    carrier_elem: ET.Element,
+    carrier_sector: str,
+    owner: str,
+) -> list[dict]
+```
+
+Extracts ships nested inside a fully buffered carrier or large ship subtree. Docked ships inherit the carrier sector and are returned with the same player ship shape, including pilot, software, commander, hull, and shield fields when available.
+
+---
+
 ### 📡 Public API
 
-### `scan_ships(file_path, sector_names, station_sectors, ship_sectors)`
+### `scan_ships(file_path, sector_names, station_sectors, ship_sectors, npc_only)`
 
 ```python
 def scan_ships(
@@ -585,30 +665,33 @@ def scan_ships(
     sector_names: dict,
     station_sectors: set[str] | None = None,
     ship_sectors: set[str] | None = None,
+    npc_only: bool = False,
 ) -> dict
 ```
 
 Streams the save file and collects player and optionally NPC ship data using `iterparse()`. The union of `station_sectors` and `ship_sectors` forms `context_sectors` — NPC ships are only recorded when their resolved sector is in this set.
 
-Zone macro tracking runs as a separate state variable: whenever a `zone`-class component is opened, `current_zone_macro` is updated; this value is stamped onto each ship element before buffering so `_parse_sector_from_zone_macro()` can resolve it after the zone element has been cleared.
+Sector and zone macro tracking run as separate state variables. Both markers are stamped onto each ship element before buffering so `_parse_sector()` can resolve location after parent elements have been cleared.
 
-Ship name resolution follows a three-step priority: player-given custom name → `SHIP_NAMES` lookup by macro → `None` (display falls back to the ship code in `display.py`). Language reference strings in the `name` attribute are detected via `LANG_STRING_RE` and skipped.
+Ship name resolution follows this priority: player-given custom name → `SHIP_NAMES` lookup by macro → macro-derived fallback. Language reference strings in the `name` attribute are detected via `LANG_STRING_RE` and skipped.
 
-Player ship entries include the full set of parsed fields. NPC ship entries contain a reduced set (no pilot, software, or commander).
+Player ship entries include the full set of parsed fields and crew extraction. NPC ship entries contain a reduced set (no pilot, software, commander, hull, or shield parsing).
 
 **Parameters**
 
 | Name | Type | Description |
 |---|---|---|
-| `file_path` | `pathlib.Path` | Path to the unzipped save file. |
+| `file_path` | `pathlib.Path` | Path to the save file (`.xml` or `.xml.gz`). |
 | `sector_names` | `dict` | Dictionary returned by `load_sector_names()`. |
 | `station_sectors` | `set[str] \| None` | Sector names where the player has stations; NPC ships here are included at tier 2. |
 | `ship_sectors` | `set[str] \| None` | Sector names where the player has ships; NPC ships here are included at tier 3. |
+| `npc_only` | `bool` | When true, skips buffering player ships. Used by the tier 3 CLI flow after a pre-scan has already collected player ships. |
 
 **Returns** `dict` with keys:
 
-- `player_ships` — list of dicts with keys: `code`, `name`, `class`, `size`, `macro`, `role`, `hull_origin`, `owner`, `sector`, `order`, `pilot`, `software`, `commander`, `hull_hp`, `hull_pct`, `max_hull`.
-- `npc_ships` — list of dicts with keys: `code`, `class`, `size`, `macro`, `role`, `hull_origin`, `owner`, `sector`, `order`.
+- `player_ships` — list of dicts with keys: `code`, `name`, `class`, `size`, `macro`, `role`, `hull_origin`, `owner`, `sector`, `order`, `pilot`, `software`, `commander`, `hull_hp`, `hull_pct`, `max_hull`, `shield_hp`, `shield_max`, `shield_pct`.
+- `npc_ships` — list of dicts with keys: `code`, `name`, `class`, `size`, `macro`, `role`, `hull_origin`, `owner`, `sector`, `order`.
+- `crew` — player ship pilot, service crew, and marine roster entries.
 
 **Hull health fields** (player ships only)
 
@@ -617,6 +700,19 @@ Player ship entries include the full set of parsed fields. NPC ship entries cont
 | `hull_hp` | `float \| None` | Raw current hull HP. `None` when undamaged (no `<hull>` element in save). |
 | `hull_pct` | `float \| None` | Percentage of max hull remaining. `100.0` when undamaged; `None` when max hull is unknown (ship not in `SHIP_STATS`). Can exceed 100 if a hull capacity mod is installed — see `TO BE NOTED.txt`. |
 | `max_hull` | `int \| None` | Base (unmodded) max hull HP from `SHIP_STATS`, or `None` if the macro is not in the lookup. |
+
+---
+
+### `merge_station_docked_ships(stations, player_ships)`
+
+```python
+def merge_station_docked_ships(
+    stations: list[dict],
+    player_ships: list[dict],
+) -> list[dict]
+```
+
+Adds player-owned ships found in station `docked_ships` lists but missing from the normal ship scan. This covers ships parked or under construction in station bays that are not reliably discovered by the streaming ship pass. Added entries are complete stubs with translated name, size, role, origin, sector, and `"Docked"` order; health, pilot, software, commander, and shield fields are `None` where the station scan cannot provide them.
 
 ---
 
@@ -658,7 +754,7 @@ Returns NPC ship counts grouped by sector and faction owner, useful for threat a
 
 ## 📊 5. `display.py`
 
-Formats the assembled `game_data` dictionary as a console report. Called by `x4_save_scanner.py` in both run modes.
+Formats the assembled `game_data` dictionary as a console report. Called by `x4_save_scanner.py` after whichever interactive scan mode was selected.
 
 ---
 
@@ -792,13 +888,43 @@ PyQt6 desktop UI. Presents a save selector dialog, runs the scanner pipeline in 
 
 ### 🔍 Save Discovery
 
+### `_find_steam_root()`
+
+```python
+def _find_steam_root() -> pathlib.Path | None
+```
+
+Looks up the Steam installation directory via Windows registry keys. Used only by the first-run language-file setup path.
+
+---
+
+### `find_x4_lang_file()`
+
+```python
+def find_x4_lang_file() -> pathlib.Path | None
+```
+
+Searches Steam library folders for `common/X4 Foundations/t/0001-l044.xml`. Returns the file path if found; otherwise returns `None`.
+
+---
+
+### Class: `LangSetupDialog`
+
+```python
+class LangSetupDialog(QDialog)
+```
+
+First-run dialog shown when `0001-l044.xml` is missing next to the app/exe. It can auto-detect the file through Steam, browse manually, or skip setup. Auto-detect and browse copy the selected file to `LANG_PATH`.
+
+---
+
 ### `find_saves()`
 
 ```python
 def find_saves() -> list[pathlib.Path]
 ```
 
-Discovers X4 save files from the default game directory (`~/Documents/Egosoft/X4/<id>/save/`). Returns manual saves (`save_*.xml.gz`) followed by autosaves (`autosave_*.xml.gz`), each group sorted by slot number. Returns an empty list if the directory is not found.
+Discovers X4 save files from the default game directory (`~/Documents/Egosoft/X4/<id>/save/`). Returns manual saves (`save_*.xml.gz`) followed by autosaves (`autosave_*.xml.gz`), each group sorted lexicographically by filename. Returns an empty list if the directory is not found.
 
 ---
 
@@ -831,7 +957,7 @@ Returns the `pathlib.Path` of the selected save, or `None` if no row is selected
 class ScanWorker(QThread)
 ```
 
-Background thread that runs the full scanner pipeline (`load_sector_names` → `scan_save` → `scan_reputation` → `scan_ships` → `export_json`) without blocking the Qt event loop. Emits three signals:
+Background thread that runs the full scanner pipeline (`load_sector_names` → `scan_save` → `scan_reputation` → `scan_ships` → `merge_station_docked_ships` → `export_json`) without blocking the Qt event loop. The UI does not expose CLI scan modes or ship tiers; it always runs this full pipeline. Emits three signals:
 
 | Signal | Payload | When |
 |---|---|---|
@@ -960,6 +1086,7 @@ def main()
 
 Entry point for the UI. Launch behaviour depends on whether `x4_empire_state.json` already exists:
 
+- If `0001-l044.xml` is missing, offers language-file setup before the scan/load decision. Skipping is allowed, but names may fall back to raw IDs.
 - **JSON exists** — asks the user whether to run a new scan. Choosing **No** loads the existing JSON immediately. Choosing **Yes** opens the save selector; if the user cancels, falls back to the existing JSON.
 - **No JSON** — goes straight to the save selector. If the user cancels with no data to show, exits with code 0.
 
@@ -990,7 +1117,7 @@ Returns an HTML fragment containing a gradient health bar and a numeric label be
 
 ## ⚔️ 8. `data/factions.py`
 
-Static lookup tables and scaling functions for faction data. Imported by `scanner/scanner.py`.
+Static lookup tables and scaling functions for faction data. Imported by `scanner/reputation_scanner.py`.
 
 **Module-level constants**
 
@@ -1049,13 +1176,15 @@ Returns a descriptive tier label for a scaled reputation value. Thresholds are a
 
 ## 📦 9. `data/wares.py`
 
-Static lookup table mapping production ware IDs to display names. Imported by `scanner/scanner.py`.
+Static lookup tables for ware display names, volume conversion, and transport type classification. Imported by `scanner/station_scanner.py`.
 
 **Module-level constants**
 
 | Constant | Type | Description |
 |---|---|---|
 | `WARE_NAMES` | `dict[str, str]` | Maps lowercase ware ID strings extracted from production module macros to human-readable display names, e.g. `"energycells"` → `"Energy Cells"`. Covers raw resources, refined materials, ship/station components, and food/consumables. If a ware ID is not present, callers fall back to title-casing with underscores replaced by spaces. |
+| `WARE_VOLUME` | `dict[str, float]` | Maps ware IDs to m³ per unit. Used by `_parse_station_storage()` to convert cargo amounts into storage fill volume. Unknown wares default to `1.0` m³/unit in the scanner. |
+| `WARE_TRANSPORT` | `dict[str, str]` | Maps ware IDs to storage transport type (`"container"`, `"solid"`, or `"liquid"`). Used to attribute trade reservations to the correct cargo bucket. |
 
 ---
 
@@ -1065,7 +1194,7 @@ Static lookup table mapping production ware IDs to display names. Imported by `s
 def format_wares(overviewgraphs: str) -> str
 ```
 
-**No longer called by the main scanner.** Previously converted the `overviewgraphs` station XML attribute into a readable ware list. Replaced by `parse_production_from_construction()` in `scanner.py`, which reads directly from `<construction><sequence>` entries and is more reliable. Retained for debugging reference.
+**No longer called by the main scanner.** Previously converted the `overviewgraphs` station XML attribute into a readable ware list. Replaced by `parse_production_from_construction()` in `station_scanner.py`, which reads directly from `<construction><sequence>` entries and is more reliable. Retained for debugging reference.
 
 ---
 
@@ -1077,9 +1206,9 @@ Auto-generated static lookup table mapping ship macro names to display names. No
 
 | Constant | Type | Description |
 |---|---|---|
-| `SHIP_NAMES` | `dict[str, str]` | Maps ship macro name strings to in-game display names, e.g. `"ship_tel_s_trans_container_01_b_macro"` → `"Magpie Sentinel"`. Generated by `Legacy/generate_ship_names.py`. Covers base game and all DLC factions. |
+| `SHIP_NAMES` | `dict[str, str]` | Maps ship macro name strings to in-game display names, e.g. `"ship_tel_s_trans_container_01_b_macro"` → `"Magpie Sentinel"`. Covers base game and all DLC factions. |
 
-This file is committed to the repository. It only needs to be regenerated when new ships are added by a game update or DLC. See `Legacy/generate_ship_names.py` for the generation process.
+This file is committed to the repository. It only needs to be regenerated when new ships are added by a game update or DLC. The current `generate_ship_names.py` script contains the generation logic, although its `OUTPUT_FILE` constant currently points at `data/ship_scanner.py`; verify that before regenerating `data/ships.py`.
 
 ---
 
@@ -1099,9 +1228,23 @@ This file is committed to the repository. It only needs to be regenerated when s
 
 ---
 
-## 🔧 12. `generate_ship_stats.py`
+## 🛡️ 12. `data/station_stats.py`
 
-One-time utility script that generates `data/ship_stats.py` by walking all ship macro XMLs in the `ship xml/` folder. Run from the project root after adding or updating ship XML files.
+Auto-generated static lookup table mapping station module and shield equipment macro names to static stats. Imported by `scanner/station_scanner.py` for station health/storage/module details and by `scanner/ship_scanner.py` for ship shield capacity.
+
+**Module-level constants**
+
+| Constant | Type | Description |
+|---|---|---|
+| `STATION_STATS` | `dict[str, dict]` | Maps macro names to entries containing `max_hull`, `max_shield`, `cargo_capacity`, and/or `produces`, depending on the macro type. |
+
+This file is committed to the repository. It is regenerated by `generate_station_stats.py` after extracting station module and shield XMLs. The committed table includes `cargo_capacity` entries used by station storage parsing; verify the generator before regenerating if cargo capacity must be preserved.
+
+---
+
+## 🔧 13. `generate_ship_stats.py`
+
+One-time utility script that generates `data/ship_stats.py` by walking all ship macro XMLs in the `ship xml/` folder. The current script runs procedurally at import/execution time; it does not define `extract_hull_max()` or `main()`.
 
 **Required inputs**
 
@@ -1111,48 +1254,44 @@ One-time utility script that generates `data/ship_stats.py` by walking all ship 
 
 | Constant | Type | Description |
 |---|---|---|
-| `SCRIPT_DIR` | `Path` | Project root, derived from `__file__`. |
 | `XML_DIR` | `Path` | Expected location of ship macro XMLs (`ship xml/`). |
-| `OUTPUT_FILE` | `Path` | Write target for the generated file (`data/ship_stats.py`). |
-| `SHIP_CLASSES` | `set[str]` | XML `class` attribute values that identify whole-ship macros: `"ship_s"`, `"ship_m"`, `"ship_l"`, `"ship_xl"`. Entries with other classes (drones, spacesuit frames, turret hardpoints) are skipped. |
+| `OUT_FILE` | `Path` | Write target for the generated file (`data/ship_stats.py`). |
+| `SHIP_CLASSES` | `set[str]` | XML `class` attribute values that identify whole-ship macros: `"ship_xs"`, `"ship_s"`, `"ship_m"`, `"ship_l"`, `"ship_xl"`. Entries with other classes are skipped. |
+
+**Execution flow**
+
+The script checks that `XML_DIR` exists, recursively reads all `.xml` files, extracts `<macro name="..." class="...">` and `<properties><hull max="..."/>`, stores `{"max_hull": int}`, sorts entries by macro name, then writes a Python source file containing `SHIP_STATS`.
 
 ---
 
-### `extract_hull_max(xml_path)`
+## 🏗️ 14. `generate_station_stats.py`
 
-```python
-def extract_hull_max(xml_path: pathlib.Path) -> tuple[str, int] | None
-```
+One-time utility script that generates `data/station_stats.py` from extracted station module XMLs and shield equipment XMLs.
 
-Parses a single ship macro XML file and returns the macro name and base max hull HP.
+**Required inputs**
 
-The function reads the top-level `<macro>` element for its `name` and `class` attributes. Files whose class is not in `SHIP_CLASSES` are rejected immediately. The hull value is read from `<properties><hull max="..."/>`.
+- `station xml/` — station module macro XMLs from X4's `.cat` files.
+- `shield xml/` — shield equipment macro XMLs from base game and DLC `.cat` files.
 
-**Parameters**
+**Module-level constants**
 
-| Name | Type | Description |
+| Constant | Type | Description |
 |---|---|---|
-| `xml_path` | `pathlib.Path` | Path to a single ship macro XML file. |
+| `MODULE_DIR` | `Path` | Expected location of station module XMLs (`station xml/`). |
+| `SHIELD_DIR` | `Path` | Expected location of shield XMLs (`shield xml/`). |
+| `OUT_FILE` | `Path` | Write target for `data/station_stats.py`. |
 
-**Returns** `tuple[str, int]` — `(macro_name, max_hull_int)` if extraction succeeds, or `None` if the file should be skipped (wrong class, malformed XML, missing hull element).
+**Execution flow**
 
----
-
-### `main()` *(generate_ship_stats)*
-
-```python
-def main()
-```
-
-Walks every `.xml` file in `XML_DIR`, calls `extract_hull_max()` on each, accumulates results, and writes the `data/ship_stats.py` file. Prints a summary line showing how many ships were extracted and how many were skipped.
-
-The output file is sorted alphabetically by macro name and prefixed with a header comment warning that it is auto-generated and should not be edited by hand.
+Pass 1 walks `MODULE_DIR`, reads module hull values, and captures production ware IDs when present. Pass 2 walks `SHIELD_DIR`, reads shield generator recharge capacity, and stores it as `max_shield`. The combined `STATION_STATS` dict is sorted and written as Python source. The current committed `data/station_stats.py` also contains `cargo_capacity` entries used by `_parse_station_storage()`, so preserve that path when updating the generator.
 
 ---
 
-## 🗂️ 13. `Legacy/generate_ship_names.py`
+## 🗂️ 15. `generate_ship_names.py`
 
-One-time utility script that generates `data/ships.py` from the game's extracted macro XML files and language file. Run from the project root after extracting ship macros from the game's `.cat` files using XRCatTool.
+One-time utility script that builds a ship macro-to-display-name lookup from extracted ship macro XML files and the language file. Run from the project root after extracting ship macros from the game's `.cat` files using XRCatTool.
+
+**Important current-code note:** the script's docstring and `OUTPUT_FILE` currently target `data/ship_scanner.py`, while the live scanner imports `SHIP_NAMES` from `data/ships.py`. Treat regeneration as needing a quick output-path check before use.
 
 **Required inputs**
 
@@ -1166,7 +1305,7 @@ One-time utility script that generates `data/ships.py` from the game's extracted
 | `SCRIPT_DIR` | `Path` | Project root, derived from `__file__`. |
 | `EXTRACTED_DIR` | `Path` | Expected location of extracted ship macro XMLs. |
 | `LANG_FILE` | `Path` | Expected location of the language file. |
-| `OUTPUT_FILE` | `Path` | Write target for the generated file (`data/ships.py`). |
+| `OUTPUT_FILE` | `Path` | Current write target in code: `data/ship_scanner.py`. The scanner currently imports `data/ships.py`. |
 | `BASE_REF_RE` | `re.Pattern` | Pre-compiled regex matching page 20101 language references, e.g. `{20101,22601}`. Group 1 captures the numeric ID. |
 | `VAR_REF_RE` | `re.Pattern` | Pre-compiled regex matching page 20111 variant token references, e.g. `{20111,1101}`. Group 1 captures the numeric ID. |
 | `HEADER` | `str` | File header comment block and opening of the `SHIP_NAMES` dict written to the output file. |
@@ -1252,7 +1391,7 @@ Structure A is tried first; Structure B is the fallback. Ships with neither stru
 def write_ships_py(mapping: dict, output_path: pathlib.Path)
 ```
 
-Writes the macro-to-display-name mapping to `data/ships.py` as a Python source file containing a `SHIP_NAMES` dict. Entries are sorted alphabetically by macro name. Single quotes within display names are backslash-escaped. Creates the output directory if it does not exist.
+Writes the macro-to-display-name mapping to the configured `output_path` as a Python source file containing a `SHIP_NAMES` dict. Entries are sorted alphabetically by macro name. Single quotes within display names are backslash-escaped. Creates the output directory if it does not exist.
 
 **Parameters**
 
