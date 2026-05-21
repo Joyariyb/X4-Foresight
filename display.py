@@ -25,10 +25,6 @@ _ANSI = _enable_ansi()
 BLUE  = '\033[94m' if _ANSI else ''
 RESET = '\033[0m'  if _ANSI else ''
 
-# ═════════════════════════════════════════════════════════════════════════════
-#  SECTION 2 — HELPERS
-# ═════════════════════════════════════════════════════════════════════════════
-
 def format_credits(amount_str: str) -> str:
     """Formats a raw credit integer string into a comma-separated display value."""
     try:
@@ -44,10 +40,6 @@ def format_m3(value: float) -> str:
     if value >= 1_000:
         return f"{value / 1_000:.1f}k m³"
     return f"{value:.0f} m³"
-
-# ═════════════════════════════════════════════════════════════════════════════
-#  SECTION 5 — DISPLAY
-# ═════════════════════════════════════════════════════════════════════════════
 
 def display_results(data: dict):
     """

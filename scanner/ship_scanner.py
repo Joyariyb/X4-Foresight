@@ -84,6 +84,18 @@ ORDER_LABELS = {
 from scanner.crew_scanner import LANG_STRING_RE, _parse_pilot, _extract_people, _iter_components
 from data.station_stats import STATION_STATS
 
+SHIP_CLASSES = {"ship_s", "ship_m", "ship_l", "ship_xl"}
+
+MACRO_FACTION_MAP = {
+    "arg": "Argon",      "tel": "Teladi",
+    "par": "Paranid",    "tri": "Paranid",
+    "spl": "Split",      "ter": "Terran",
+    "bor": "Boron",      "xen": "Xenon",
+    "yak": "Yaki",       "pir": "Buccaneer",
+    "kha": "Kha'ak",     "buc": "Buccaneer",
+    "atf": "Terran",     "pio": "Pioneer",
+}
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  ROLE AND FACTION EXTRACTION
@@ -115,15 +127,6 @@ def extract_faction_from_macro(macro: str) -> str:
         ship_xen_m_corvette_02_a_macro  ->  'Xenon'
         ship_arg_l_trans_container_01_b_macro  ->  'Argon'
     """
-    MACRO_FACTION_MAP = {
-        "arg": "Argon",      "tel": "Teladi",
-        "par": "Paranid",    "tri": "Paranid",
-        "spl": "Split",      "ter": "Terran",
-        "bor": "Boron",      "xen": "Xenon",
-        "yak": "Yaki",       "pir": "Buccaneer",
-        "kha": "Kha'ak",     "buc": "Buccaneer",
-        "atf": "Terran",     "pio": "Pioneer",
-    }
     parts = macro.lower().split("_")
     if len(parts) > 1:
         return MACRO_FACTION_MAP.get(parts[1], parts[1].title())
@@ -387,7 +390,6 @@ def _extract_docked_ships(
     fully buffered and extracts each nested ship as a normal entry, inheriting
     the carrier's resolved sector.
     """
-    SHIP_CLASSES = {"ship_s", "ship_m", "ship_l", "ship_xl"}
     docked = []
 
     for child in carrier_elem.iter():
@@ -518,8 +520,6 @@ def scan_ships(
         context_sectors |= station_sectors
     if ship_sectors:
         context_sectors |= ship_sectors
-
-    SHIP_CLASSES = {"ship_s", "ship_m", "ship_l", "ship_xl"}
 
     player_ships: list[dict] = []
     npc_ships:    list[dict] = []
@@ -852,7 +852,7 @@ def merge_station_docked_ships(
                 # "Docked" so they appear in the fleet tab under a sensible label.
                 "order":       "Docked",
                 "pilot":       {"name": None, "skills": []},
-                "software":    {},
+                "software":    [],
                 "commander":   None,
                 # Health data is not available from the station scanner's docked
                 # ship extraction — would require buffering the full ship subtree.

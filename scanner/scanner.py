@@ -7,6 +7,6 @@
 
 from scanner.station_scanner    import scan_save         # noqa: F401  Pass 1
 from scanner.reputation_scanner import scan_reputation   # noqa: F401  Pass 2
-# Pass 3 (scan_ships) is imported directly from scanner.ship_scanner by callers
-# since it has a richer signature (tier flags, npc_only) that doesn't fit a
+# scan_ships and merge_station_docked_ships are imported directly from
+# scanner.ship_scanner by callers — their richer signatures don't fit a
 # simple re-export pattern cleanly.

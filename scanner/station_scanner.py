@@ -11,6 +11,7 @@ from scanner.crew_scanner import _parse_manager, _iter_components
 # ─────────────────────────────────────────────────────────────────────────────
 
 STATION_CLASSES = {"station", "factory", "headquarters", "complex"}
+SHIP_CLASSES    = {"ship_s", "ship_m", "ship_l", "ship_xl"}
 
 # Production modules follow the naming pattern prod_{prefix}_WARENAME_macro.
 # Pre-compiled for performance — called on every entry in large save files.
@@ -131,7 +132,6 @@ def _extract_station_docked_ships(station_elem: ET.Element) -> list[dict]:
     Only named ship classes (ship_s/m/l/xl) are returned. Drones are stored
     as <unit> ammunition elements and never appear as ship components.
     """
-    SHIP_CLASSES = {"ship_s", "ship_m", "ship_l", "ship_xl"}
     docked = []
 
     for child in station_elem.iter():
@@ -568,10 +568,6 @@ def scan_save(file_path: pathlib.Path, sector_names: dict) -> dict:
                         storage       = _parse_station_storage(elem)
                         docked_ships  = _extract_station_docked_ships(elem)
 
-                        _STATE_LABELS = {
-                            "construction": "Under Construction",
-                            "wreck":        "Destroyed",
-                        }
                         raw_state = elem.get('state')
                         status    = _STATE_LABELS.get(raw_state, "Operational")
 
