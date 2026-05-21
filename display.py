@@ -287,6 +287,54 @@ def display_results(data: dict):
 
     print(LINE)
 
+    # ── NPC STATIONS IN PLAYER SECTORS ───────────────────────────────────────
+    npc_stations = data.get("npc_stations", [])
+    if npc_stations:
+        # Group by sector, then by faction within each sector.
+        by_sector: dict[str, list] = {}
+        for st in npc_stations:
+            by_sector.setdefault(st["sector"], []).append(st)
+
+        print(f"  NPC STATIONS IN PLAYER SECTORS  ({len(npc_stations)} found)")
+        print()
+
+        for sector in sorted(by_sector):
+            stations = sorted(by_sector[sector], key=lambda s: (s["owner"], s["name"]))
+            print(f"  ┌─ SECTOR: {sector}  ({len(stations)} stations)")
+
+            for i, st in enumerate(stations):
+                is_last   = i == len(stations) - 1
+                connector = "└──" if is_last else "├──"
+                indent    = "       " if is_last else "│      "
+
+                faction = _FACTION_NAMES.get(st["owner"], st["owner"].title())
+                print(f"  {connector} {st['name']}")
+                print(f"  {indent} Faction  : {faction}")
+
+                wares = st.get("wares", [])
+                if wares:
+                    # Wrap ware list at ~70 chars so it stays readable
+                    line    = ""
+                    lines   = []
+                    for ware in wares:
+                        chunk = (ware + ", ") if ware != wares[-1] else ware
+                        if len(line) + len(chunk) > 70 and line:
+                            lines.append(line.rstrip(", "))
+                            line = chunk
+                        else:
+                            line += chunk
+                    if line:
+                        lines.append(line.rstrip(", "))
+                    print(f"  {indent} Trades   : {lines[0]}")
+                    for extra in lines[1:]:
+                        print(f"  {indent}             {extra}")
+
+                if not is_last:
+                    print(f"  │")
+
+            print()
+
+        print(LINE)
 
     # ── REPUTATION ────────────────────────────────────────────────────────────
     # Displayed as in-game values (log10 curve, range -30 to +30).

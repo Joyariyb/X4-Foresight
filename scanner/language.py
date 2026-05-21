@@ -13,6 +13,7 @@ from lxml import etree as ET
 _SECTOR_NAME_RE = re.compile(r'\(([^)]+)\)\s*$')
 _SECTOR_MACRO_RE = re.compile(r'cluster_(\d+)_sector(\d+)_macro', re.IGNORECASE)
 _LOCATION_REF_RE = re.compile(r'\{20004,(\d+)\}')
+_TEXT_REF_RE     = re.compile(r'^\{(\d+),(\d+)\}$')
 
 
 @contextlib.contextmanager
@@ -59,6 +60,50 @@ def load_sector_names(lang_path: pathlib.Path) -> dict:
         print(f"[Warning] Failed to parse language file: {e}")
 
     return lookup
+
+
+def load_text_pages(lang_path: pathlib.Path, page_ids: set) -> dict:
+    """
+    Loads the requested pages from the language file.
+    Returns {"page:id": text} for every entry found on those pages.
+
+    Used by scanners that need to resolve {page,id} text references that
+    appear as attribute values in the save file (e.g. station type names
+    on page 20102).
+    """
+    texts = {}
+    if not lang_path.exists():
+        return texts
+    try:
+        tree      = ET.parse(lang_path)
+        root      = tree.getroot()
+        remaining = {str(p) for p in page_ids}
+        for page in root.findall('page'):
+            pid = page.get('id', '')
+            if pid not in remaining:
+                continue
+            for t in page.findall('t'):
+                tid  = t.get('id', '')
+                text = (t.text or '').strip()
+                if text:
+                    texts[f"{pid}:{tid}"] = text
+            remaining.discard(pid)
+            if not remaining:
+                break
+    except Exception as e:
+        print(f"[Warning] Failed to load language texts: {e}")
+    return texts
+
+
+def resolve_text_ref(raw: str, texts: dict) -> str:
+    """
+    Resolves a bare {page,id} language reference to its text string.
+    Returns the raw value unchanged if it is not a reference or not found.
+    """
+    m = _TEXT_REF_RE.match(raw)
+    if m:
+        return texts.get(f"{m.group(1)}:{m.group(2)}", raw)
+    return raw
 
 
 def macro_to_sector_name(macro: str, sector_names: dict) -> str:

@@ -3,7 +3,7 @@ import re
 from lxml import etree as ET
 from data.wares import WARE_NAMES, WARE_VOLUME, WARE_TRANSPORT
 from data.station_stats import STATION_STATS
-from scanner.language import macro_to_sector_name, resolve_sector_from_location, open_save
+from scanner.language import macro_to_sector_name, resolve_sector_from_location, open_save, resolve_text_ref
 from scanner.crew_scanner import _parse_manager, _iter_components
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -484,7 +484,7 @@ def _parse_station_health(modules: list[dict]) -> dict:
 #  PASS 1 — PLAYER DATA AND STATIONS
 # ─────────────────────────────────────────────────────────────────────────────
 
-def scan_save(file_path: pathlib.Path, sector_names: dict) -> dict:
+def scan_save(file_path: pathlib.Path, sector_names: dict, language_texts: dict | None = None) -> dict:
     """
     Streams the save file and extracts player identity, credits, sector location,
     and all owned stations with their production, health, and manager data.
@@ -561,7 +561,7 @@ def scan_save(file_path: pathlib.Path, sector_names: dict) -> dict:
                         nameindex = elem.get('nameindex', '')
 
                         if name_attr:
-                            display_name = name_attr
+                            display_name = resolve_text_ref(name_attr, language_texts or {})
                         elif 'headquarters' in macro.lower():
                             display_name = "Player HQ"
                         elif nameindex:

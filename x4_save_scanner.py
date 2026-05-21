@@ -34,11 +34,11 @@ ROOT = pathlib.Path(__file__).parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scanner.language           import load_sector_names
-from scanner.scanner            import scan_save, scan_reputation
-from scanner.ship_scanner       import scan_ships, merge_station_docked_ships
-from export.jsonexport          import export_json
-from display                    import display_results
+from scanner.language            import load_sector_names, load_text_pages
+from scanner.scanner             import scan_save, scan_reputation, scan_npc_stations
+from scanner.ship_scanner        import scan_ships, merge_station_docked_ships
+from export.jsonexport           import export_json
+from display                     import display_results
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  FILE PATHS
@@ -164,6 +164,23 @@ def select_mode() -> dict:
         print("  Invalid selection, try again.")
 
 
+def select_npc_stations() -> bool:
+    """Asks whether to include NPC stations in player sectors (Pass 4)."""
+    print()
+    print("  ── NPC STATIONS ───────────────────────────────────────────────────")
+    print()
+    print("  Include NPC stations in sectors where you have a player station?")
+    print("  (adds ~5-15s depending on save size)")
+    print()
+    while True:
+        choice = input("  [Y]es / [N]o: ").strip().upper()
+        if choice in ('Y', 'YES'):
+            return True
+        if choice in ('N', 'NO'):
+            return False
+        print("  Invalid selection, try again.")
+
+
 def select_ship_tier(stations_active: bool) -> int:
     """
     Prompts for a ship scan tier.
@@ -196,10 +213,22 @@ def select_ship_tier(stations_active: bool) -> int:
 #  The dispatcher below decides which ones to call — nothing runs twice.
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _run_stations_pass(save_file: pathlib.Path, sector_names: dict) -> dict:
+def _run_stations_pass(save_file: pathlib.Path, sector_names: dict, language_texts: dict) -> dict:
     t0     = time.perf_counter()
-    result = scan_save(save_file, sector_names)
+    result = scan_save(save_file, sector_names, language_texts)
     print(f"[Done] Stations pass completed in {time.perf_counter() - t0:.2f}s")
+    return result
+
+
+def _run_npc_stations_pass(
+    save_file: pathlib.Path,
+    sector_names: dict,
+    player_sectors: set,
+    language_texts: dict,
+) -> list:
+    t0     = time.perf_counter()
+    result = scan_npc_stations(save_file, sector_names, player_sectors, language_texts)
+    print(f"[Done] NPC stations pass completed in {time.perf_counter() - t0:.2f}s")
     return result
 
 
@@ -290,6 +319,10 @@ if __name__ == "__main__":
         mode = select_mode()
         passes = mode["passes"]
 
+        include_npc_stations = False
+        if "stations" in passes:
+            include_npc_stations = select_npc_stations()
+
         ship_tier = 1
         if "ships" in passes:
             ship_tier = select_ship_tier(stations_active="stations" in passes)
@@ -299,7 +332,10 @@ if __name__ == "__main__":
         # Sector names are needed by both the stations and ships passes.
         # Load once and share — no point reading the language file twice.
         t0 = time.perf_counter()
-        sector_names = load_sector_names(LANG_FILE)
+        sector_names   = load_sector_names(LANG_FILE)
+        # Page 20102 holds station type names (Equipment Dock, Trading Station, etc.)
+        # that appear as {page,id} refs in the name/basename attribute of some stations.
+        language_texts = load_text_pages(LANG_FILE, {'20102'})
         print(f"[Done] Sector names loaded in {time.perf_counter() - t0:.2f}s")
 
         # ── Build game_data incrementally from whichever passes run ───────────
@@ -310,6 +346,7 @@ if __name__ == "__main__":
             "player_credits":   None,
             "player_sector":    None,
             "stations":         [],
+            "npc_stations":     [],
             "reputation":       [],
             "ships":            {"player_ships": [], "npc_ships": []},
             "crew":               [],
@@ -321,11 +358,18 @@ if __name__ == "__main__":
 
         # ── Pass 1: stations ──────────────────────────────────────────────────
         if "stations" in passes:
-            result = _run_stations_pass(SAVE_FILE, sector_names)
+            result = _run_stations_pass(SAVE_FILE, sector_names, language_texts)
             game_data.update(result)
             # Managers from Pass 1 seed the crew list; ship crew is added below.
             game_data["crew"] = result.get("managers", [])
             game_data["stations_scanned"] = True
+
+        # ── Pass 4: NPC stations (optional, requires Pass 1) ─────────────────
+        if include_npc_stations:
+            player_sectors = {s["sector"] for s in game_data["stations"]}
+            game_data["npc_stations"] = _run_npc_stations_pass(
+                SAVE_FILE, sector_names, player_sectors, language_texts
+            )
 
         # ── Pass 2: reputation ────────────────────────────────────────────────
         if "reputation" in passes:
