@@ -276,7 +276,7 @@
         <span class="sb-count">—</span>
       </div>
       <div class="sb-item" id="sb-miners">
-        <span class="sb-item-label"><i class="ti ti-pickaxe"></i> Miners</span>
+        <span class="sb-item-label"><i class="ti ti-shovel"></i> Miners</span>
         <span class="sb-count">—</span>
       </div>
       <div class="sb-item warn" id="sb-hostile">
@@ -523,7 +523,7 @@
 
   const ORDER_ICONS = {
     "Trading":   "ti-arrows-exchange",
-    "Mining":    "ti-pickaxe",
+    "Mining":    "ti-shovel",
     "Escorting": "ti-shield",
     "Waiting":   "ti-clock",
   };
@@ -1131,7 +1131,7 @@
     // Sidebar counts
     document.getElementById("sb-military").innerHTML = `<span class="sb-item-label"><i class="ti ti-sword"></i> Military</span><span class="sb-count">${military.length}</span>`;
     document.getElementById("sb-traders").innerHTML  = `<span class="sb-item-label"><i class="ti ti-package"></i> Traders</span><span class="sb-count">${traders.length}</span>`;
-    document.getElementById("sb-miners").innerHTML   = `<span class="sb-item-label"><i class="ti ti-pickaxe"></i> Miners</span><span class="sb-count">${miners.length}</span>`;
+    document.getElementById("sb-miners").innerHTML   = `<span class="sb-item-label"><i class="ti ti-shovel"></i> Miners</span><span class="sb-count">${miners.length}</span>`;
     document.getElementById("sb-hostile").innerHTML  = `<span class="sb-item-label"><i class="ti ti-alert-triangle"></i> Hostile Hulls</span><span class="sb-count">${hostile.length}</span>`;
 
     // Sidebar stations
@@ -1566,7 +1566,7 @@
 
     const idleMiners = waiting.filter(s => MINER_ROLES.has(s.role));
     if (idleMiners.length > 0) {
-      alerts.push({ msg:`${idleMiners.length} idle miner(s): ${idleMiners.map(s=>s.code).join(", ")}`, cls:"amber", icon:"ti-pickaxe" });
+      alerts.push({ msg:`${idleMiners.length} idle miner(s): ${idleMiners.map(s=>s.code).join(", ")}`, cls:"amber", icon:"ti-shovel" });
     }
 
     alertsList.innerHTML = alerts.length === 0
@@ -1667,8 +1667,13 @@
       }
 
       tip.style.display = 'block';
-      const x = Math.min(e.clientX + 14, window.innerWidth  - tip.offsetWidth  - 8);
-      const y = Math.max(e.clientY - 32, 8);
+      // e.clientX/Y are in physical pixels; tip.style positions are in zoomed
+      // CSS pixels. Divide by zoom to convert into the correct coordinate space.
+      // window.innerWidth is also physical in QtWebEngine, so divide it too
+      // before subtracting tip.offsetWidth (which IS in CSS pixels).
+      const _z = parseFloat(document.documentElement.style.zoom) || 1;
+      const x = Math.min(e.clientX / _z + 14, window.innerWidth / _z - tip.offsetWidth - 8);
+      const y = Math.max(e.clientY / _z - 32, 8);
       tip.style.left = x + 'px';
       tip.style.top  = y + 'px';
     });
