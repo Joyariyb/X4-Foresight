@@ -63,25 +63,18 @@ def display_trade_log(data: dict):
     Prints all active TradePerform orders that involve a player-owned station
     or a player-owned ship.
 
-    Two categories of records exist:
-      - Station trades  : player station is the buyer or seller. Grouped by
-                          station code with BUYING / SELLING rows per ware.
-                          A sub-line lists the ship codes currently servicing
-                          each ware at that station.
-      - Ship trades     : player ship is the transport, but neither station is
-                          player-owned (the ship is running an NPC-to-NPC route).
-                          Shown in a separate section grouped by ship code.
-
-    Prices are in Cr as recorded in the save file — no scaling needed.
-    Station counterparties are resolved via id_to_code; unresolved IDs are
-    displayed as raw hex (run the NPC station scan to resolve more of them).
+    Two sections:
+      - Station trades: grouped by station code. One column-header block is
+        printed once, then each station gets a separator line with its totals
+        followed by aligned BUYING / SELLING data rows. A ↳ line beneath each
+        ware row lists the ships currently transporting that ware.
+      - NPC-to-NPC routes: player ship is the transport but neither station is
+        player-owned. Shown as a flat table sorted by ship name.
     """
     LINE   = "─" * 68
     trades = data.get("trades", [])
 
-    # Build ship code → display label from the player fleet.
-    # Format: "Ship Name [CODE]" when the ship has a type/custom name,
-    # just "CODE" as a fallback (NPC ships or ships the fleet scan missed).
+    # Build ship code → display label ("Ship Name [CODE]") from the player fleet.
     ship_labels: dict[str, str] = {}
     for s in data.get("ships", {}).get("player_ships", []):
         code = s.get("code", "")
@@ -90,7 +83,7 @@ def display_trade_log(data: dict):
             ship_labels[code] = f"{name} [{code}]" if name else code
 
     print(LINE)
-    print(f"  ACTIVE TRADE ORDERS  ({len(trades)} orders touching player stations/ships)")
+    print("  ACTIVE TRADE ORDERS")
     print()
 
     if not trades:
@@ -100,135 +93,100 @@ def display_trade_log(data: dict):
             print("    No active trade orders found at player stations or ships.")
         return
 
-    # Split into station-touched trades and pure ship-transport trades.
-    # A trade is "station" when the player station is buyer/seller;
-    # "ship" when a player ship is the transport between two NPC stations.
     station_trades = [t for t in trades if not t.get("player_is_ship")]
     ship_trades    = [t for t in trades if t.get("player_is_ship")]
 
-    # ── Overall totals ────────────────────────────────────────────────────────
+    # ── Summary line ──────────────────────────────────────────────────────────
     inbound_cr  = sum(t["total_cr"] for t in station_trades if t["player_is_buyer"])
     outbound_cr = sum(t["total_cr"] for t in station_trades if t["player_is_seller"])
     ship_cr     = sum(t["total_cr"] for t in ship_trades)
-    print(f"  Inbound value : {inbound_cr:>18,.0f} Cr  (goods arriving at player stations)")
-    print(f"  Outbound value: {outbound_cr:>18,.0f} Cr  (goods departing player stations)")
-    if ship_cr:
-        print(f"  Ship trades   : {ship_cr:>18,.0f} Cr  (player ships — NPC-to-NPC routes)")
+    n           = len(trades)
+    parts       = [f"{n} {'order' if n == 1 else 'orders'}"]
+    if inbound_cr:  parts.append(f"Inbound: {inbound_cr:,.0f} Cr")
+    if outbound_cr: parts.append(f"Outbound: {outbound_cr:,.0f} Cr")
+    if ship_cr:     parts.append(f"Ship routes: {ship_cr:,.0f} Cr")
+    print(f"  {'  ·  '.join(parts)}")
     print()
 
     # ── Per-station breakdown ─────────────────────────────────────────────────
-    # Aggregate: station code → ware → [orders, units, total_cr, set(ship_codes)]
-    # The ship set lets us show which ships are currently servicing each ware
-    # at a given station — useful for knowing which ships are in transit.
-    station_buys:  dict[str, dict] = {}
-    station_sells: dict[str, dict] = {}
+    # Aggregate: station_code → ware → [order_count, units, total_cr, ship_set]
+    if station_trades:
+        station_buys:  dict[str, dict] = {}
+        station_sells: dict[str, dict] = {}
 
-    for t in station_trades:
-        ware = t["ware_name"]
-        ship = t.get("ship_code", "")
+        for t in station_trades:
+            ware = t["ware_name"]
+            ship = t.get("ship_code", "")
+            if t["player_is_buyer"]:
+                d = station_buys.setdefault(t["buyer_code"], {})
+                r = d.setdefault(ware, [0, 0, 0.0, set()])
+                r[0] += 1;  r[1] += t["amount"];  r[2] += t["total_cr"]
+                if ship: r[3].add(ship)
+            if t["player_is_seller"]:
+                d = station_sells.setdefault(t["seller_code"], {})
+                r = d.setdefault(ware, [0, 0, 0.0, set()])
+                r[0] += 1;  r[1] += t["amount"];  r[2] += t["total_cr"]
+                if ship: r[3].add(ship)
 
-        if t["player_is_buyer"]:
-            code = t["buyer_code"]
-            station_buys.setdefault(code, {})
-            if ware not in station_buys[code]:
-                station_buys[code][ware] = [0, 0, 0.0, set()]
-            station_buys[code][ware][0] += 1
-            station_buys[code][ware][1] += t["amount"]
-            station_buys[code][ware][2] += t["total_cr"]
-            if ship:
-                station_buys[code][ware][3].add(ship)
+        wc = max((len(t["ware_name"]) for t in station_trades), default=14)
+        wc = max(14, min(28, wc + 1))
 
-        if t["player_is_seller"]:
-            code = t["seller_code"]
-            station_sells.setdefault(code, {})
-            if ware not in station_sells[code]:
-                station_sells[code][ware] = [0, 0, 0.0, set()]
-            station_sells[code][ware][0] += 1
-            station_sells[code][ware][1] += t["amount"]
-            station_sells[code][ware][2] += t["total_cr"]
-            if ship:
-                station_sells[code][ware][3].add(ship)
+        # Column headers printed once above all station blocks.
+        print(f"  {'Dir':<7}  {'Ware':<{wc}}  {'Orders':>6}  {'Units':>9}  {'Avg Cr/unit':>11}  {'Total Cr':>14}")
+        print(f"  {'─'*7}  {'─'*wc}  {'─'*6}  {'─'*9}  {'─'*11}  {'─'*14}")
 
-    # Ware column width — cap so long names don't push columns off screen
-    ware_col = max((len(t["ware_name"]) for t in trades), default=12)
-    ware_col = max(12, min(26, ware_col + 1))
+        for code in sorted(set(station_buys) | set(station_sells)):
+            buys  = station_buys.get(code,  {})
+            sells = station_sells.get(code, {})
+            buy_total  = sum(v[2] for v in buys.values())
+            sell_total = sum(v[2] for v in sells.values())
 
-    for code in sorted(set(station_buys) | set(station_sells)):
-        buys  = station_buys.get(code,  {})
-        sells = station_sells.get(code, {})
+            # Station separator — code + per-station totals on one line.
+            print(f"  ── {code}  ·  In: {buy_total:,.0f} Cr  ·  Out: {sell_total:,.0f} Cr")
 
-        n_orders   = sum(v[0] for v in buys.values()) + sum(v[0] for v in sells.values())
-        buy_total  = sum(v[2] for v in buys.values())
-        sell_total = sum(v[2] for v in sells.values())
-
-        ord_word = 'order' if n_orders == 1 else 'orders'
-        print(f"  ┌─ {code}  ({n_orders} {ord_word}  ·  "
-              f"In: {buy_total:,.0f} Cr  ·  Out: {sell_total:,.0f} Cr)")
-
-        rows = []
-        for ware, (n, units, total, ships) in sorted(buys.items()):
-            rows.append(("BUYING ", ware, n, units, total, ships))
-        for ware, (n, units, total, ships) in sorted(sells.items()):
-            rows.append(("SELLING", ware, n, units, total, ships))
-
-        for i, (direction, ware, n, units, total, ships) in enumerate(rows):
-            is_last   = i == len(rows) - 1
-            connector = "└──" if is_last else "├──"
-            # sub_indent aligns the ship sub-line with the row text above it.
-            # When this is the last row the tree uses spaces (no │), otherwise │.
-            sub_indent = "       " if is_last else "│      "
-            avg_price  = total / units if units else 0
-            print(
-                f"  {connector} {direction}  {ware:<{ware_col}}  "
-                f"{n:>3} {'order ' if n == 1 else 'orders'}  {units:>8,} units  "
-                f"avg {avg_price:>8,.0f} Cr  ·  {total:>14,.0f} Cr total"
+            rows = (
+                [("BUYING ", w, *v) for w, v in sorted(buys.items())] +
+                [("SELLING", w, *v) for w, v in sorted(sells.items())]
             )
-            # Ship sub-line — which ships are currently carrying this ware.
-            # ship_labels resolves each code to "Name [CODE]" when the ship
-            # is in the player fleet; falls back to the raw code otherwise.
-            if ships:
-                ship_strs = " · ".join(
-                    ship_labels.get(sc, sc) for sc in sorted(ships)
-                )
-                print(f"  {sub_indent}  ↳ Ships: {ship_strs}")
+            for direction, ware, n, units, total, ships in rows:
+                avg = total / units if units else 0
+                print(f"  {direction:<7}  {ware:<{wc}}  {n:>6}  {units:>9,}  {avg:>11,.0f}  {total:>14,.0f}")
+                if ships:
+                    # ↳ line indented to align with the start of the Ware column.
+                    # Indent = 2 (margin) + 7 (dir) + 2 (gap) = 11 spaces.
+                    ship_strs = "  ·  ".join(ship_labels.get(sc, sc) for sc in sorted(ships))
+                    print(f"           ↳ {ship_strs}")
 
-        print()
+            print()
 
-    # ── Ship-only trades (player ship, NPC-to-NPC routes) ────────────────────
-    # These are trades where a player ship is executing the order but neither
-    # station is player-owned (e.g. autotrader running between NPC stations).
-    # Each ship has at most one active TradePerform order, so a flat table is
-    # more readable than a tree-per-ship. The destination (buyer) is always set;
-    # the seller may be absent if the ship has already left the pickup station.
+    # ── Player ships — NPC-to-NPC routes ─────────────────────────────────────
+    # Player ship is the transport; neither station is player-owned.
+    # Flat table sorted by ship name — each ship has at most one active order.
     if ship_trades:
-        ship_total_cr = sum(t["total_cr"] for t in ship_trades)
-        n_st          = len(ship_trades)
-        print(f"  PLAYER SHIPS — NPC-to-NPC ROUTES  "
-              f"({n_st} {'order' if n_st == 1 else 'orders'}  ·  {ship_total_cr:,.0f} Cr)")
+        n_st = len(ship_trades)
+        print(f"  PLAYER SHIPS — NPC-to-NPC ROUTES  ·  "
+              f"{n_st} {'order' if n_st == 1 else 'orders'}  ·  {ship_cr:,.0f} Cr")
         print()
 
-        # Dynamic column widths so ship names and ware names don't overflow.
-        sc_col = max(
-            (len(ship_labels.get(t.get("ship_code", ""), t.get("ship_code", "")))
-             for t in ship_trades),
+        sc = max(
+            (len(ship_labels.get(t.get("ship_code", ""), t.get("ship_code", ""))) for t in ship_trades),
             default=20,
         )
-        sc_col   = max(20, min(44, sc_col + 1))
-        wc_col   = max((len(t["ware_name"]) for t in ship_trades), default=12)
-        wc_col   = max(12, min(20, wc_col + 1))
+        sc = max(20, min(44, sc + 1))
+        wc = max((len(t["ware_name"]) for t in ship_trades), default=12)
+        wc = max(12, min(20, wc + 1))
 
-        print(f"  {'Ship':<{sc_col}}  {'Ware':<{wc_col}}  {'Units':>8}  {'Cr/unit':>9}  {'Total Cr':>14}  Destination")
-        print(f"  {'─' * sc_col}  {'─' * wc_col}  {'─' * 8}  {'─' * 9}  {'─' * 14}  {'─' * 22}")
+        print(f"  {'Ship':<{sc}}  {'Ware':<{wc}}  {'Units':>9}  {'Cr/unit':>9}  {'Total Cr':>14}  Destination")
+        print(f"  {'─'*sc}  {'─'*wc}  {'─'*9}  {'─'*9}  {'─'*14}  {'─'*20}")
 
         for t in sorted(ship_trades, key=lambda x: ship_labels.get(x.get("ship_code", ""), x.get("ship_code", ""))):
             code  = t.get("ship_code", "")
             label = ship_labels.get(code, code)
-            dest  = t.get("buyer_code") or "?"   # destination always present in TradePerform
+            dest  = t.get("buyer_code") or "?"
             print(
-                f"  {label:<{sc_col}}  {t['ware_name']:<{wc_col}}  "
-                f"{t['amount']:>8,}  {t['price_cr']:>9,.0f}  {t['total_cr']:>14,.0f}  → {dest}"
+                f"  {label:<{sc}}  {t['ware_name']:<{wc}}  "
+                f"{t['amount']:>9,}  {t['price_cr']:>9,.0f}  {t['total_cr']:>14,.0f}  → {dest}"
             )
-
         print()
 
 
@@ -236,19 +194,15 @@ def display_trade_history(data: dict):
     """
     Prints a summary of completed trade history from the economylog.
 
-    Aggregates completed transactions by station and ware so the output stays
-    readable even when thousands of individual log entries are present.
-    Each station shows BOUGHT / SOLD rows with trade count, total units,
-    average price, and total Cr value.
-
-    Time coverage is shown as the age of the oldest log entry, giving a rough
-    sense of how far back the economylog reaches (X4 caps the log length).
+    Aggregates by station + direction + ware — individual log entries can number
+    in the thousands, so per-entry detail would be unreadable. Uses the same
+    table layout as display_trade_log for visual consistency.
     """
     LINE    = "─" * 68
     history = data.get("trade_history", [])
 
     print(LINE)
-    print(f"  COMPLETED TRADE HISTORY  ({len(history)} log entries)")
+    print("  COMPLETED TRADE HISTORY")
     print()
 
     if not history:
@@ -259,75 +213,59 @@ def display_trade_history(data: dict):
             print("    (X4 8.0 may store an empty global log — entries appear per station.)")
         return
 
-    # ── Overall totals ────────────────────────────────────────────────────────
+    # ── Summary line ──────────────────────────────────────────────────────────
     bought_cr = sum(t["total_cr"] for t in history if t["player_is_buyer"])
     sold_cr   = sum(t["total_cr"] for t in history if t["player_is_seller"])
     oldest_s  = max((t["time_ago_s"] for t in history), default=0)
+    age_str   = f"{oldest_s / 3600:.1f}h" if oldest_s >= 3600 else f"{oldest_s / 60:.0f}m"
+    n         = len(history)
 
-    # Convert seconds to a readable duration (hours or minutes).
-    if oldest_s >= 3600:
-        age_str = f"{oldest_s / 3600:.1f}h"
-    else:
-        age_str = f"{oldest_s / 60:.0f}m"
-
-    print(f"  Purchased     : {bought_cr:>18,.0f} Cr")
-    print(f"  Sold          : {sold_cr:>18,.0f} Cr")
-    print(f"  Log covers    : last ~{age_str} of in-game time")
+    print(f"  {n:,} {'entry' if n == 1 else 'entries'}  ·  "
+          f"Purchased: {bought_cr:,.0f} Cr  ·  Sold: {sold_cr:,.0f} Cr  ·  "
+          f"Log covers last ~{age_str}")
     print()
 
     # ── Aggregate by station + direction + ware ───────────────────────────────
-    # Structure: station_code → {"BOUGHT": {ware: [count, units, total_cr]},
-    #                             "SOLD":   {ware: [count, units, total_cr]}}
     from collections import defaultdict
-    agg: dict = defaultdict(lambda: {"BOUGHT": defaultdict(lambda: [0, 0, 0.0]),
-                                     "SOLD":   defaultdict(lambda: [0, 0, 0.0])})
-
+    agg: dict = defaultdict(lambda: {
+        "BOUGHT": defaultdict(lambda: [0, 0, 0.0]),
+        "SOLD":   defaultdict(lambda: [0, 0, 0.0]),
+    })
     for t in history:
         ware = t["ware_name"]
         if t["player_is_buyer"]:
-            row = agg[t["buyer_code"]]["BOUGHT"][ware]
-            row[0] += 1
-            row[1] += t["amount"]
-            row[2] += t["total_cr"]
+            r = agg[t["buyer_code"]]["BOUGHT"][ware]
+            r[0] += 1;  r[1] += t["amount"];  r[2] += t["total_cr"]
         if t["player_is_seller"]:
-            row = agg[t["seller_code"]]["SOLD"][ware]
-            row[0] += 1
-            row[1] += t["amount"]
-            row[2] += t["total_cr"]
+            r = agg[t["seller_code"]]["SOLD"][ware]
+            r[0] += 1;  r[1] += t["amount"];  r[2] += t["total_cr"]
 
-    ware_col = max(
+    wc = max(
         (len(w) for station in agg.values() for side in station.values() for w in side),
-        default=12,
+        default=14,
     )
-    ware_col = max(12, min(28, ware_col + 1))
+    wc = max(14, min(28, wc + 1))
+
+    # Column headers printed once above all station blocks.
+    print(f"  {'Dir':<6}  {'Ware':<{wc}}  {'Trades':>6}  {'Units':>9}  {'Avg Cr/unit':>11}  {'Total Cr':>14}")
+    print(f"  {'─'*6}  {'─'*wc}  {'─'*6}  {'─'*9}  {'─'*11}  {'─'*14}")
 
     for code in sorted(agg):
         bought = agg[code]["BOUGHT"]
         sold   = agg[code]["SOLD"]
-
-        n_trades   = sum(v[0] for v in bought.values()) + sum(v[0] for v in sold.values())
         buy_total  = sum(v[2] for v in bought.values())
         sell_total = sum(v[2] for v in sold.values())
 
-        trade_word = 'trade' if n_trades == 1 else 'trades'
-        print(f"  ┌─ {code}  ({n_trades} {trade_word}  ·  "
-              f"Purchased: {buy_total:,.0f} Cr  ·  Sold: {sell_total:,.0f} Cr)")
+        # Station separator — code + per-station purchase/sale totals.
+        print(f"  ── {code}  ·  Purchased: {buy_total:,.0f} Cr  ·  Sold: {sell_total:,.0f} Cr")
 
-        rows = []
-        for ware, (n, units, total) in sorted(bought.items()):
-            rows.append(("BOUGHT", ware, n, units, total))
-        for ware, (n, units, total) in sorted(sold.items()):
-            rows.append(("SOLD  ", ware, n, units, total))
-
-        for i, (direction, ware, n, units, total) in enumerate(rows):
-            connector = "└──" if i == len(rows) - 1 else "├──"
-            avg_price = total / units if units else 0
-            trade_word_row = 'trade ' if n == 1 else 'trades'
-            print(
-                f"  {connector} {direction}  {ware:<{ware_col}}  "
-                f"{n:>4} {trade_word_row}  {units:>10,} units  "
-                f"avg {avg_price:>8,.0f} Cr  ·  {total:>14,.0f} Cr total"
-            )
+        rows = (
+            [("BOUGHT", w, *v) for w, v in sorted(bought.items())] +
+            [("SOLD",   w, *v) for w, v in sorted(sold.items())]
+        )
+        for direction, ware, n, units, total in rows:
+            avg = total / units if units else 0
+            print(f"  {direction:<6}  {ware:<{wc}}  {n:>6}  {units:>9,}  {avg:>11,.0f}  {total:>14,.0f}")
 
         print()
 
