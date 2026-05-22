@@ -204,33 +204,54 @@ def resolve_ship_type(macro: str) -> str:
 #  children still in memory) and extract one specific piece of data from it.
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _parse_sector(ship_elem: ET.Element, sector_names: dict) -> str:
+def _parse_sector(
+    ship_elem:            ET.Element,
+    sector_names:         dict,
+    sector_macro_to_name: dict | None = None,
+) -> str:
     """
     Resolves the sector name for a ship.
 
-    Two sources are tried in priority order:
+    Three sources are tried in priority order:
 
-    1. '_sector_macro' — the macro of the enclosing sector element, stamped
-       directly onto the ship before buffering. This handles ships inside
-       dynamic 'tempzone' elements, which are unnamed zones X4 creates at
-       runtime and don't encode the sector in their macro string.
+    1. Direct dict lookup via '_sector_macro' — when the caller supplies
+       sector_macro_to_name (built during Pass 1), the sector macro is looked
+       up directly without any regex. This is the fast, authoritative path and
+       handles all sector types including DLC sectors whose macros don't follow
+       the standard cluster_N_sectorN pattern.
 
-    2. '_zone_macro' — the enclosing zone's macro, which follows the pattern
-       zone{N}_{sector_macro} and lets us extract the sector by stripping the
-       prefix. Used as a fallback for ships whose parent zone is a named zone.
+    2. Regex fallback via '_sector_macro' — used when sector_macro_to_name is
+       absent (ships-only scan mode where Pass 1 never ran). Parses the cluster
+       and sector numbers from the macro string and derives the language key.
+       Works for all standard macros; may fail for DLC sectors.
+
+    3. Zone macro fallback via '_zone_macro' — for named zones whose macro
+       encodes the parent sector (pattern: zone{N}_{sector_macro}). The regex
+       strips the prefix and then applies priority 1 or 2 on the extracted
+       sector macro. Less reliable than the sector macro sources above.
     """
-    # Priority 1: resolve from the parent sector macro directly.
     sector_macro = ship_elem.get('_sector_macro', '')
     if sector_macro:
+        # Priority 1: direct lookup — O(1), no regex, handles all macro formats.
+        if sector_macro_to_name is not None:
+            name = sector_macro_to_name.get(sector_macro)
+            if name:
+                return name
+        # Priority 2: regex-based derivation from the macro string.
         result = macro_to_sector_name(sector_macro, sector_names)
         if result:
             return result
 
-    # Priority 2: fall back to extracting sector from the zone macro.
+    # Priority 3: extract a sector macro embedded in the zone macro string.
     zone_macro = ship_elem.get('_zone_macro', '')
     m = re.match(r'zone\d+_(cluster_.+)', zone_macro, re.IGNORECASE)
     if m:
-        result = macro_to_sector_name(m.group(1), sector_names)
+        embedded = m.group(1)
+        if sector_macro_to_name is not None:
+            name = sector_macro_to_name.get(embedded)
+            if name:
+                return name
+        result = macro_to_sector_name(embedded, sector_names)
         if result:
             return result
 
@@ -456,12 +477,13 @@ def _extract_docked_ships(
 # ─────────────────────────────────────────────────────────────────────────────
 
 def scan_ships(
-    file_path: pathlib.Path,
-    sector_names: dict,
-    station_sectors: set[str] | None = None,
-    ship_sectors:    set[str] | None = None,
-    npc_only:        bool = False,
-    collect_all_npcs: bool = False,
+    file_path:            pathlib.Path,
+    sector_names:         dict,
+    station_sectors:      set[str] | None = None,
+    ship_sectors:         set[str] | None = None,
+    npc_only:             bool = False,
+    collect_all_npcs:     bool = False,
+    sector_macro_to_name: dict | None = None,
 ) -> dict:
     """
     Streams through the X4 save and extracts ship data.
@@ -496,16 +518,21 @@ def scan_ships(
     _parse_sector() can resolve the sector later.
 
     Parameters:
-        file_path       — path to the save file (.xml or .xml.gz)
-        sector_names    — dict from load_sector_names(), maps lang IDs to names
-        station_sectors — set of sector names where the player has stations
-                          (used for tier 2 NPC collection)
-        ship_sectors    — set of sector names where the player has ships
-                          (used for tier 3 NPC collection, adds to station_sectors)
-        npc_only        — if True, skip player ship buffering entirely;
-                          player_ships in the returned dict will be empty
-        collect_all_npcs — if True, buffer and record every NPC ship, then
-                           leave sector filtering to the caller
+        file_path            — path to the save file (.xml or .xml.gz)
+        sector_names         — dict from load_sector_names(), maps lang IDs to names
+        station_sectors      — set of sector names where the player has stations
+                               (used for tier 2 NPC collection)
+        ship_sectors         — set of sector names where the player has ships
+                               (used for tier 3 NPC collection, adds to station_sectors)
+        npc_only             — if True, skip player ship buffering entirely;
+                               player_ships in the returned dict will be empty
+        collect_all_npcs     — if True, buffer and record every NPC ship, then
+                               leave sector filtering to the caller
+        sector_macro_to_name — optional dict mapping sector macro strings to resolved
+                               display names, built during Pass 1. When present,
+                               _parse_sector() does a direct O(1) lookup instead of
+                               running the regex derivation. Pass None (default) when
+                               running in ships-only mode — the regex fallback is used.
 
     Returns a dict with keys:
         'player_ships' — list of ship dicts for all player-owned ships
@@ -619,7 +646,7 @@ def scan_ships(
                         # These are cheap lookups needed by both player and
                         # NPC ship entries, so we always compute them up front
                         # rather than duplicating the calls in each branch below.
-                        sector = _parse_sector(se, sector_names)
+                        sector = _parse_sector(se, sector_names, sector_macro_to_name)
                         role   = extract_role(macro)
                         size   = SIZE_LABELS.get(cls, cls)
                         hull   = extract_faction_from_macro(macro)

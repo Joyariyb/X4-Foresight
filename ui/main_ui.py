@@ -268,6 +268,9 @@ class ScanWorker(QThread):
 
             self.progress.emit("Pass 1 — player, stations…")
             game_data = scan_save(self._save_path, sector_names, language_texts)
+            # Extract the sector map before seeding game_data — it's internal
+            # plumbing for Pass 3 and should not end up in the exported JSON.
+            sector_macro_to_name = game_data.pop("sector_macro_to_name", {})
             # Seed crew with station managers so they appear alongside ship crew.
             game_data["crew"] = game_data.get("managers", [])
 
@@ -281,6 +284,7 @@ class ScanWorker(QThread):
             ships_result = scan_ships(
                 self._save_path, sector_names,
                 station_sectors=station_sectors,
+                sector_macro_to_name=sector_macro_to_name,
             )
 
             # Fill in any player ships that sat in a station bay and were missed

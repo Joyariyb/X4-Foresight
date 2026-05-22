@@ -294,10 +294,11 @@ def _run_reputation_pass(save_file: pathlib.Path) -> list:
 
 
 def _run_ships_pass(
-    save_file:    pathlib.Path,
-    sector_names: dict,
-    ship_tier:    int,
-    station_sectors: set | None,
+    save_file:            pathlib.Path,
+    sector_names:         dict,
+    ship_tier:            int,
+    station_sectors:      set | None,
+    sector_macro_to_name: dict | None = None,
 ) -> dict:
     """
     Runs the ships pass at the requested tier.
@@ -328,6 +329,7 @@ def _run_ships_pass(
             sector_names,
             station_sectors=station_sectors,
             collect_all_npcs=True,
+            sector_macro_to_name=sector_macro_to_name,
         )
         print(f"[Done] Ships pass completed in {time.perf_counter() - t0:.2f}s")
 
@@ -356,6 +358,7 @@ def _run_ships_pass(
         result = scan_ships(
             save_file, sector_names,
             station_sectors=station_sectors,
+            sector_macro_to_name=sector_macro_to_name,
         )
         print(f"[Done] Ships pass completed in {time.perf_counter() - t0:.2f}s")
         return result
@@ -416,6 +419,13 @@ if __name__ == "__main__":
         # ── Build game_data incrementally from whichever passes run ───────────
         # Initialise with empty stubs so display_results() always gets a complete
         # dict regardless of which passes were skipped.
+        #
+        # sector_macro_to_name is an internal lookup (sector macro → display name)
+        # built as a free side effect of Pass 1. It is passed to Pass 3 so ships
+        # can resolve their sector by direct dict lookup instead of regex parsing.
+        # It is never merged into game_data and never exported.
+        sector_macro_to_name: dict = {}
+
         game_data: dict = {
             "player_name":      None,
             "player_credits":   None,
@@ -443,6 +453,9 @@ if __name__ == "__main__":
                 SAVE_FILE, sector_names, language_texts,
                 collect_npc_stations=include_npc_stations,
             )
+            # Pop the sector map before the general update — it's internal
+            # plumbing for Pass 3 and should not land in game_data or the export.
+            sector_macro_to_name = result.pop("sector_macro_to_name", {})
             game_data.update(result)
             # Managers from Pass 1 seed the crew list; ship crew is added below.
             game_data["crew"] = result.get("managers", [])
@@ -471,7 +484,8 @@ if __name__ == "__main__":
                 if "stations" in passes else None
             )
             ships_result = _run_ships_pass(
-                SAVE_FILE, sector_names, ship_tier, station_sectors
+                SAVE_FILE, sector_names, ship_tier, station_sectors,
+                sector_macro_to_name=sector_macro_to_name,
             )
             # If the stations pass also ran, plug any station-docked player ships
             # that the ship scanner missed back into player_ships now — before

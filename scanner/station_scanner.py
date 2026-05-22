@@ -557,6 +557,12 @@ def scan_save(
     station_elem_pending   = None
     station_sector_pending = None
 
+    # Authoritative sector macro → resolved name map built as a side effect of
+    # streaming the file. Returned to the caller so Pass 3 (ship_scanner) can do
+    # a direct dict lookup instead of re-deriving the name from the macro string.
+    # Populated once per unique sector seen; cost is one dict write per sector.
+    sector_macro_to_name: dict[str, str] = {}
+
     # ── NPC station tracking ──────────────────────────────────────────────────
     # Only active when collect_npc_stations=True. We buffer each NPC station
     # element (same pattern as player stations) but collect its data from start
@@ -608,6 +614,9 @@ def scan_save(
                         resolved = macro_to_sector_name(macro, sector_names)
                         if resolved:
                             current_sector = resolved
+                            # Cache the resolved name so Pass 3 can look it up
+                            # directly by macro key without repeating the regex.
+                            sector_macro_to_name[macro] = resolved
 
                     if (elem.get('owner') == 'player' and
                             comp_class in STATION_CLASSES and
@@ -822,5 +831,9 @@ def scan_save(
         data["npc_stations_raw"] = npc_stations_raw
         print(f"[Scanning] Pass 1+4 — collected {len(npc_stations_raw)} NPC station(s) "
               f"(sector filter runs after pass completes).")
+
+    # Always return the sector map — the caller pops it before merging the rest
+    # of the result into game_data, keeping game_data free of internal helpers.
+    data["sector_macro_to_name"] = sector_macro_to_name
 
     return data
