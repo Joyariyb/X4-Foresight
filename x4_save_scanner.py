@@ -11,6 +11,7 @@ runs them in a single file read (Pass 1+3) instead of two separate reads.
   Pass 1+3 — Combined  : Passes 1 and 3 in a single file read (used by full/trade modes)
   Pass 5   — Trades    : active TradePerform orders at player stations/ships
   Pass 6   — History   : completed economylog trade entries at player stations
+  Pass 5+6 — Combined  : Passes 5 and 6 in a single file read (used by full/trade modes)
 
 Output: console report via display.py, and optionally x4_empire_state.json for AI use.
 
@@ -41,7 +42,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scanner.language            import load_sector_names, load_text_pages
-from scanner.scanner             import scan_save, scan_reputation, scan_trade_orders, scan_trade_history, scan_save_and_ships
+from scanner.scanner             import scan_save, scan_reputation, scan_trade_orders, scan_trade_history, scan_save_and_ships, scan_trade_log_and_history
 from scanner.ship_scanner        import scan_ships, merge_station_docked_ships
 from export.jsonexport           import export_json
 from display                     import display_results
@@ -271,6 +272,26 @@ def select_ship_tier(stations_active: bool) -> int:
 #  Each function runs exactly one scanner pass and returns its raw output.
 #  The dispatcher below decides which ones to call — nothing runs twice.
 # ─────────────────────────────────────────────────────────────────────────────
+
+def _run_trade_combined_pass(
+    save_file:          pathlib.Path,
+    player_station_ids: set,
+    id_to_code:         dict,
+    player_ship_ids:    set,
+) -> dict:
+    """
+    Runs Pass 5 (active TradePerform orders) and Pass 6 (completed economylog
+    entries) in a single file read.
+
+    Returns a dict with keys "trades" and "trade_history".
+    """
+    t0     = time.perf_counter()
+    result = scan_trade_log_and_history(
+        save_file, player_station_ids, id_to_code, player_ship_ids
+    )
+    print(f"[Done] Trade log + history pass completed in {time.perf_counter() - t0:.2f}s")
+    return result
+
 
 def _run_trade_history_pass(
     save_file:          pathlib.Path,
@@ -625,43 +646,49 @@ if __name__ == "__main__":
             game_data["reputation"] = _run_reputation_pass(SAVE_FILE)
             game_data["reputation_scanned"] = True
 
-        # ── Pass 5: active trades (optional, requires Pass 1) ────────────────
-        # Finds all TradePerform orders in the save where a player station is
-        # the buyer or seller, OR a player ship is the executing transport.
-        # Station IDs come from Pass 1; ship IDs from Pass 3 (empty set if
-        # the ships pass was skipped — ship-transport filtering is disabled).
+        # ── Passes 5 + 6: trade data (optional, requires Pass 1) ─────────────
+        # Build the three filter sets that both trade passes need.
+        # These are constructed once and shared regardless of whether we
+        # run one pass or two.
         if include_trade_log:
+            # Hex object IDs of every player-owned station — used to match the
+            # buyer= / seller= attributes on TradePerform and economylog entries.
             player_station_ids = {
                 st["object_id"]
                 for st in game_data["stations"]
                 if st.get("object_id")
             }
-            # Ship IDs are only available when Pass 3 ran. An empty set is safe —
-            # scan_trade_orders treats it as "no ship filter" and falls back to
-            # station-only filtering.
+            # Ship IDs are only available when Pass 3 (or 1+3) ran.
+            # An empty set is safe — the scanners treat it as "no ship filter".
             player_ship_ids = {
                 sh["object_id"]
                 for sh in game_data["ships"].get("player_ships", [])
                 if sh.get("object_id")
             }
-            # Resolution map: player + NPC station hex IDs → display codes.
-            # Ship IDs are not in this map — raw hex shows for unresolved ships,
-            # but the ship's own code attribute is captured directly during scanning.
+            # Hex ID → display code for resolving buyer/seller codes in the
+            # trade display. Includes both player stations and NPC stations so
+            # counterparty names resolve cleanly.
             id_to_code = {
                 st["object_id"]: st["code"]
                 for st in game_data["stations"] + game_data["npc_stations"]
                 if st.get("object_id") and st.get("code")
             }
-            game_data["trades"]         = _run_trade_pass(SAVE_FILE, player_station_ids, id_to_code, player_ship_ids)
-            game_data["trades_scanned"] = True
 
-        # ── Pass 6: completed trade history (optional, requires Pass 1) ──────
-        # Reads economylog entries — past transactions where a player station
-        # was buyer or seller. Runs as a separate file scan after the active
-        # trade pass so both sets of data can be displayed together.
-        if include_trade_history:
-            game_data["trade_history"]         = _run_trade_history_pass(SAVE_FILE, player_station_ids, id_to_code)
-            game_data["trade_history_scanned"] = True
+            if include_trade_history:
+                # Both active orders and completed history requested — one read.
+                trade_result = _run_trade_combined_pass(
+                    SAVE_FILE, player_station_ids, id_to_code, player_ship_ids
+                )
+                game_data["trades"]                = trade_result["trades"]
+                game_data["trades_scanned"]        = True
+                game_data["trade_history"]         = trade_result["trade_history"]
+                game_data["trade_history_scanned"] = True
+            else:
+                # Active orders only — single pass, no history.
+                game_data["trades"]         = _run_trade_pass(
+                    SAVE_FILE, player_station_ids, id_to_code, player_ship_ids
+                )
+                game_data["trades_scanned"] = True
 
         display_results(game_data)
 

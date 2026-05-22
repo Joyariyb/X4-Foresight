@@ -132,8 +132,8 @@ def display_trade_log(data: dict):
         wc = max(14, min(28, wc + 1))
 
         # Column headers printed once above all station blocks.
-        print(f"  {'Dir':<7}  {'Ware':<{wc}}  {'Orders':>6}  {'Units':>9}  {'Avg Cr/unit':>11}  {'Total Cr':>14}")
-        print(f"  {'─'*7}  {'─'*wc}  {'─'*6}  {'─'*9}  {'─'*11}  {'─'*14}")
+        print(f"  {'':3}  {'Ware':<{wc}}  {'Orders':>6}  {'Units':>9}  {'Avg Cr/unit':>11}  {'Total Cr':>14}")
+        print(f"  {'─'*3}  {'─'*wc}  {'─'*6}  {'─'*9}  {'─'*11}  {'─'*14}")
 
         for code in sorted(set(station_buys) | set(station_sells)):
             buys  = station_buys.get(code,  {})
@@ -145,17 +145,17 @@ def display_trade_log(data: dict):
             print(f"  ── {code}  ·  In: {buy_total:,.0f} Cr  ·  Out: {sell_total:,.0f} Cr")
 
             rows = (
-                [("BUYING ", w, *v) for w, v in sorted(buys.items())] +
-                [("SELLING", w, *v) for w, v in sorted(sells.items())]
+                [("In",  w, *v) for w, v in sorted(buys.items())] +
+                [("Out", w, *v) for w, v in sorted(sells.items())]
             )
             for direction, ware, n, units, total, ships in rows:
                 avg = total / units if units else 0
-                print(f"  {direction:<7}  {ware:<{wc}}  {n:>6}  {units:>9,}  {avg:>11,.0f}  {total:>14,.0f}")
+                print(f"  {direction:<3}  {ware:<{wc}}  {n:>6}  {units:>9,}  {avg:>11,.0f}  {total:>14,.0f}")
                 if ships:
                     # ↳ line indented to align with the start of the Ware column.
-                    # Indent = 2 (margin) + 7 (dir) + 2 (gap) = 11 spaces.
+                    # Indent = 2 (margin) + 3 (dir) + 2 (gap) = 7 spaces.
                     ship_strs = "  ·  ".join(ship_labels.get(sc, sc) for sc in sorted(ships))
-                    print(f"           ↳ {ship_strs}")
+                    print(f"       ↳ {ship_strs}")
 
             print()
 
@@ -228,16 +228,16 @@ def display_trade_history(data: dict):
     # ── Aggregate by station + direction + ware ───────────────────────────────
     from collections import defaultdict
     agg: dict = defaultdict(lambda: {
-        "BOUGHT": defaultdict(lambda: [0, 0, 0.0]),
-        "SOLD":   defaultdict(lambda: [0, 0, 0.0]),
+        "In":  defaultdict(lambda: [0, 0, 0.0]),
+        "Out": defaultdict(lambda: [0, 0, 0.0]),
     })
     for t in history:
         ware = t["ware_name"]
         if t["player_is_buyer"]:
-            r = agg[t["buyer_code"]]["BOUGHT"][ware]
+            r = agg[t["buyer_code"]]["In"][ware]
             r[0] += 1;  r[1] += t["amount"];  r[2] += t["total_cr"]
         if t["player_is_seller"]:
-            r = agg[t["seller_code"]]["SOLD"][ware]
+            r = agg[t["seller_code"]]["Out"][ware]
             r[0] += 1;  r[1] += t["amount"];  r[2] += t["total_cr"]
 
     wc = max(
@@ -247,25 +247,25 @@ def display_trade_history(data: dict):
     wc = max(14, min(28, wc + 1))
 
     # Column headers printed once above all station blocks.
-    print(f"  {'Dir':<6}  {'Ware':<{wc}}  {'Trades':>6}  {'Units':>9}  {'Avg Cr/unit':>11}  {'Total Cr':>14}")
-    print(f"  {'─'*6}  {'─'*wc}  {'─'*6}  {'─'*9}  {'─'*11}  {'─'*14}")
+    print(f"  {'':3}  {'Ware':<{wc}}  {'Trades':>6}  {'Units':>9}  {'Avg Cr/unit':>11}  {'Total Cr':>14}")
+    print(f"  {'─'*3}  {'─'*wc}  {'─'*6}  {'─'*9}  {'─'*11}  {'─'*14}")
 
     for code in sorted(agg):
-        bought = agg[code]["BOUGHT"]
-        sold   = agg[code]["SOLD"]
-        buy_total  = sum(v[2] for v in bought.values())
-        sell_total = sum(v[2] for v in sold.values())
+        inbound  = agg[code]["In"]
+        outbound = agg[code]["Out"]
+        buy_total  = sum(v[2] for v in inbound.values())
+        sell_total = sum(v[2] for v in outbound.values())
 
         # Station separator — code + per-station purchase/sale totals.
         print(f"  ── {code}  ·  Purchased: {buy_total:,.0f} Cr  ·  Sold: {sell_total:,.0f} Cr")
 
         rows = (
-            [("BOUGHT", w, *v) for w, v in sorted(bought.items())] +
-            [("SOLD",   w, *v) for w, v in sorted(sold.items())]
+            [("In",  w, *v) for w, v in sorted(inbound.items())] +
+            [("Out", w, *v) for w, v in sorted(outbound.items())]
         )
         for direction, ware, n, units, total in rows:
             avg = total / units if units else 0
-            print(f"  {direction:<6}  {ware:<{wc}}  {n:>6}  {units:>9,}  {avg:>11,.0f}  {total:>14,.0f}")
+            print(f"  {direction:<3}  {ware:<{wc}}  {n:>6}  {units:>9,}  {avg:>11,.0f}  {total:>14,.0f}")
 
         print()
 
