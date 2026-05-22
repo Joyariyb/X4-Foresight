@@ -52,8 +52,8 @@ else:
     HTML_PATH = pathlib.Path(__file__).parent / "ui.html"
 
 from scanner.language import load_sector_names, load_text_pages, open_save  # noqa: E402
-from scanner.scanner import scan_reputation, scan_save_and_ships           # noqa: E402
-from scanner.ship_scanner import merge_station_docked_ships                # noqa: E402
+from scanner.scanner import scan_reputation, scan_save_and_ships, scan_trade_log_and_history  # noqa: E402
+from scanner.ship_scanner import merge_station_docked_ships                                  # noqa: E402
 from export.jsonexport import export_json                                  # noqa: E402
 
 JSON_PATH = ROOT / "x4_empire_state.json"
@@ -267,14 +267,15 @@ class ScanWorker(QThread):
             language_texts = load_text_pages(LANG_PATH, {'20102', '20215', '20201'})
 
             # ── Combined Pass 1+3 ─────────────────────────────────────────────
-            # One file read covers both stations (player identity, station health,
-            # cargo, production) and ships (fleet, crew, hull/shield health).
-            # Tier 2 gives NPC ships in station sectors — equivalent to the
-            # previous two-pass approach that used station_sectors as a filter.
-            self.progress.emit("Pass 1+3 — player, stations, ships…")
+            # One file read covers player identity, stations (health, cargo,
+            # production), NPC stations, and the full ship fleet.
+            # Matches the CLI full scan: tier 1 (all player ships) and
+            # collect_npc_stations=True (needed to resolve trade counterparties).
+            self.progress.emit("Pass 1+3 — player, stations, NPC stations, ships…")
             combined = scan_save_and_ships(
                 self._save_path, sector_names, language_texts,
-                ship_tier=2,   # NPC ships in sectors where the player has a station
+                collect_npc_stations=True,
+                ship_tier=1,
             )
 
             # Extract ship keys before the generic dict becomes game_data — ships
@@ -285,11 +286,20 @@ class ScanWorker(QThread):
             combined.pop("sector_macro_to_name", {})   # internal plumbing, not exported
 
             # combined now contains: player_name, player_credits, player_sector,
-            # stations, managers, reputation — all valid game_data keys.
+            # stations, managers, reputation, npc_stations_raw.
             game_data = combined
             # Seed crew with station managers; ship crew is appended below so
             # managers always appear first in the crew list.
             game_data["crew"] = game_data.get("managers", [])
+
+            # Filter NPC stations to sectors where the player has a station.
+            # The combined scanner collects all NPC stations unfiltered; we apply
+            # the sector filter here now that player station sectors are known.
+            player_sectors = {s["sector"] for s in game_data["stations"]}
+            npc_raw = game_data.pop("npc_stations_raw", [])
+            game_data["npc_stations"] = [
+                st for st in npc_raw if st["sector"] in player_sectors
+            ]
 
             # ── Pass 2 — reputation ───────────────────────────────────────────
             self.progress.emit("Pass 2 — faction reputation…")
@@ -309,6 +319,33 @@ class ScanWorker(QThread):
             }
             # Append ship pilots and service crew after station managers.
             game_data["crew"] += ship_crew
+
+            # ── Combined Pass 5+6 — active trades + trade history ─────────────
+            # Build the filter sets from the now-complete station and ship data.
+            self.progress.emit("Pass 5+6 — active trades and trade history…")
+            player_station_ids = {
+                st["object_id"]
+                for st in game_data["stations"]
+                if st.get("object_id")
+            }
+            player_ship_ids = {
+                sh["object_id"]
+                for sh in game_data["ships"].get("player_ships", [])
+                if sh.get("object_id")
+            }
+            # Resolution map includes NPC stations so counterparty codes resolve.
+            id_to_code = {
+                st["object_id"]: st["code"]
+                for st in game_data["stations"] + game_data["npc_stations"]
+                if st.get("object_id") and st.get("code")
+            }
+            trade_result = scan_trade_log_and_history(
+                self._save_path, player_station_ids, id_to_code, player_ship_ids
+            )
+            game_data["trades"]                = trade_result["trades"]
+            game_data["trades_scanned"]        = True
+            game_data["trade_history"]         = trade_result["trade_history"]
+            game_data["trade_history_scanned"] = True
 
             self.progress.emit("Exporting JSON…")
             # CRITICAL: export_json writes the restructured data to x4_empire_state.json.
