@@ -4,7 +4,7 @@ from lxml import etree as ET
 
 from data.factions import FACTION_NAMES
 from data.wares import WARE_NAMES
-from scanner.language import macro_to_sector_name, open_save, resolve_text_ref
+from scanner.language import factory_name_from_ware, macro_to_sector_name, open_save, resolve_text_ref
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  CONSTANTS
@@ -39,11 +39,6 @@ def _to_roman(n: int) -> str:
         return _ROMAN[n]
     return str(n)
 
-
-def _factory_name(ware_id: str) -> str:
-    """Maps a ware ID to a '{WareName} Factory' display string."""
-    display = WARE_NAMES.get(ware_id.lower(), ware_id.replace('_', ' ').title())
-    return f"{display} Factory"
 
 
 def _build_display_name(raw_name: str, nameindex: str, code: str, owner: str) -> str:
@@ -86,6 +81,7 @@ def scan_npc_stations(
     sector_names: dict,
     player_sectors: set,
     language_texts: dict | None = None,
+    factory_names: dict | None = None,
 ) -> list[dict]:
     """
     Streams the save file and returns all NPC stations located in sectors
@@ -194,7 +190,7 @@ def scan_npc_stations(
                         if tag == 'production':
                             product = elem.get('originalproduct', '')
                             if product:
-                                pending['name'] = _factory_name(product)
+                                pending['name'] = factory_name_from_ware(product, factory_names)
                                 seeking_name = False
 
                         elif tag == 'component' and elem.get('class') == 'production':
@@ -202,7 +198,7 @@ def scan_npc_stations(
                             parts  = macro.split('_')
                             # macro format: prod_{faction}_{ware}_{variant}_macro
                             ware_id = parts[2] if len(parts) >= 4 else ''
-                            pending['name']  = _factory_name(ware_id) if ware_id else macro
+                            pending['name']  = factory_name_from_ware(ware_id, factory_names) if ware_id else macro
                             pending['macro'] = macro
                             seeking_name = False
 

@@ -1,9 +1,9 @@
 import pathlib
 import re
 from lxml import etree as ET
-from data.wares import WARE_NAMES, WARE_VOLUME, WARE_TRANSPORT
+from data.wares import WARE_NAMES, WARE_VOLUME, WARE_TRANSPORT, WARE_GROUPS, WARE_GROUP_PRIORITY
 from data.station_stats import STATION_STATS
-from scanner.language import macro_to_sector_name, resolve_sector_from_location, open_save, resolve_text_ref
+from scanner.language import macro_to_sector_name, nameindex_to_roman, resolve_sector_from_location, open_save, resolve_text_ref
 from scanner.crew_scanner import _parse_manager, _iter_components
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -484,7 +484,7 @@ def _parse_station_health(modules: list[dict]) -> dict:
 #  PASS 1 — PLAYER DATA AND STATIONS
 # ─────────────────────────────────────────────────────────────────────────────
 
-def scan_save(file_path: pathlib.Path, sector_names: dict, language_texts: dict | None = None) -> dict:
+def scan_save(file_path: pathlib.Path, sector_names: dict, language_texts: dict | None = None, factory_names: dict | None = None) -> dict:
     """
     Streams the save file and extracts player identity, credits, sector location,
     and all owned stations with their production, health, and manager data.
@@ -557,17 +557,69 @@ def scan_save(file_path: pathlib.Path, sector_names: dict, language_texts: dict 
                     if elem is station_elem_pending:
                         macro     = elem.get('macro', '')
                         code      = elem.get('code', '')
-                        name_attr = elem.get('name')
-                        nameindex = elem.get('nameindex', '')
+                        name_attr = elem.get('name', '')      # player-typed literal
+                        basename  = elem.get('basename', '')  # game-generated {page,id} ref
+                        nameindex = elem.get('nameindex', '') # integer → roman numeral
+                        texts     = language_texts or {}
 
                         if name_attr:
-                            display_name = resolve_text_ref(name_attr, language_texts or {})
-                        elif 'headquarters' in macro.lower():
-                            display_name = "Player HQ"
-                        elif nameindex:
-                            display_name = f"Station #{nameindex}"
+                            # Path A: player-named station — use verbatim.
+                            # No sector prefix, no roman numeral: nameindex tracks duplicate
+                            # auto-names, not player-typed names.
+                            display_name = name_attr
                         else:
-                            display_name = "Unnamed Station"
+                            # Auto-named — try paths in order until one yields a name.
+                            display_name = ''
+
+                            # Path B: basename is a {page,id} language reference that resolves
+                            # to the station type (e.g. a defence module type name on page 20102).
+                            if basename:
+                                resolved = resolve_text_ref(basename, texts)
+                                if resolved and not resolved.startswith('{'):
+                                    display_name = resolved
+
+                            # Path C: priority-based group selection from live production modules.
+                            # Walk all <component class="production"> subtrees and look up each
+                            # module's ware group via WARE_GROUPS. The highest-priority group
+                            # (lowest WARE_GROUP_PRIORITY rank) determines the station type name.
+                            # This mirrors X4's own auto-naming: a station with hullparts (hightech,
+                            # priority 1) and energycells (energy, priority 10) → "High Tech Factory".
+                            if not display_name:
+                                best_priority = None
+                                winning_gid   = None
+                                for comp in elem.iter('component'):
+                                    if comp.get('class') != 'production':
+                                        continue
+                                    m = PROD_MACRO_RE.match(comp.get('macro', ''))
+                                    if not m:
+                                        continue
+                                    ware_id = m.group(1).lower()
+                                    gid     = WARE_GROUPS.get(ware_id)
+                                    if gid is None:
+                                        continue
+                                    prio = WARE_GROUP_PRIORITY.get(gid, 999)
+                                    if best_priority is None or prio < best_priority:
+                                        best_priority = prio
+                                        winning_gid   = gid
+                                if winning_gid is not None:
+                                    display_name = texts.get(f"20215:{winning_gid + 3}", '')
+
+                            # Fallback for stations with no resolvable type name
+                            if not display_name:
+                                if 'headquarters' in macro.lower():
+                                    display_name = "Headquarters"
+                                else:
+                                    display_name = "Unnamed Station"
+
+                            # Append roman numeral then prepend the sector name to match X4's
+                            # in-game auto-name format: "{sector} {type} {roman numeral}".
+                            # e.g. "The Void High Tech Factory II", "Grand Exchange I Headquarters"
+                            if display_name not in ("Unnamed Station",):
+                                roman = nameindex_to_roman(nameindex) if nameindex else ''
+                                if roman:
+                                    display_name = f"{display_name} {roman}"
+                                if station_sector_pending:
+                                    display_name = f"{station_sector_pending} {display_name}"
 
                         production    = parse_production_from_construction(elem)
                         module_count  = _count_construction_modules(elem)

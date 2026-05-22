@@ -207,6 +207,115 @@ WARE_TRANSPORT: dict[str, str] = {
 }
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  WARE GROUPS  (ware_id → page 20215 base textId)
+#  Maps each production ware to its X4 group for auto-naming unnamed stations.
+#  The factory display name lives at textId+3 on page 20215 — the same +3 offset
+#  X4 uses throughout its language file for "category name → factory name".
+#
+#  Example: hullparts → 501 (hightech group) → textId 504 → "High Tech Factory"
+#
+#  Groups and ware assignments are sourced directly from libraries/wares.xml
+#  (the `group` attribute on each <ware> element). Only wares that have a
+#  factoryname reference in wares.xml (i.e. buildable in a player station) are
+#  listed here; items without one (DLC-only, software, etc.) are omitted.
+# ─────────────────────────────────────────────────────────────────────────────
+
+WARE_GROUPS: dict[str, int] = {
+    # Agricultural Goods (101 → "Agricultural Goods Factory")
+    "majasnails":               101,
+    "meat":                     101,
+    "sojabeans":                101,
+    "spices":                   101,
+    "sunriseflowers":           101,
+    "swampplant":               101,
+    "wheat":                    101,
+    # Energy (201 → "Energy Complex")
+    "energycells":              201,
+    # Food (301 → "Farm")
+    "foodrations":              301,
+    "nostropoil":               301,
+    "sojahusk":                 301,
+    # Gases (401 → "Gas Refinery")
+    "helium":                   401,
+    "hydrogen":                 401,
+    "methane":                  401,
+    # High Tech Goods (501 → "High Tech Factory")
+    # Source: wares.xml group="hightech"
+    "advancedcomposites":       501,
+    "engineparts":              501,
+    "hullparts":                501,
+    "microchips":               501,
+    "plasmaconductors":         501,
+    "quantumtubes":             501,
+    "scanningarrays":           501,
+    # Ice (601 → "Ice Refinery")
+    "ice":                      601,
+    # Minerals (701 → "Mineral Refinery")
+    "nividium":                 701,
+    "ore":                      701,
+    "silicon":                  701,
+    # Pharmaceutical Goods (801 → "Pharmaceutical Goods Factory")
+    "majadust":                 801,
+    "medicalsupplies":          801,
+    "spacefuel":                801,
+    "spaceweed":                801,
+    # Refined Goods (901 → "Refined Goods Complex")
+    # Source: wares.xml group="refined"
+    "antimattercells":          901,
+    "graphene":                 901,
+    "refinedmetals":            901,
+    "scrapmetal":               901,
+    "siliconwafers":            901,
+    "superfluidcoolant":        901,
+    "teladianium":              901,
+    # Ship Technology (1001 → "Ship Technology Factory")
+    # Source: wares.xml group="shiptech" — includes weapon/shield/turret/missile
+    # components because X4 groups all combat equipment under "shiptech".
+    "advancedelectronics":     1001,
+    "antimatterconverters":    1001,
+    "claytronics":             1001,
+    "dronecomponents":         1001,
+    "fieldcoils":              1001,
+    "missilecomponents":       1001,
+    "shieldcomponents":        1001,
+    "smartchips":              1001,
+    "turretcomponents":        1001,
+    "weaponcomponents":        1001,
+    # Water (1201 → "Water Refinery")
+    "water":                   1201,
+}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  WARE GROUP PRIORITY  (page 20215 base textId → priority rank)
+#  When a station produces wares from multiple groups, the group with the
+#  lowest priority number wins and names the station.
+#
+#  This mirrors X4's own auto-naming behaviour: a station producing both
+#  hullparts (hightech, priority 1) and energycells (energy, priority 10)
+#  is called "High Tech Factory", not "Energy Complex".
+#
+#  The ordering is: advanced manufactured goods beat raw/bulk goods.
+#  Exact inter-group ordering below "hightech" is based on X4 gameplay logic
+#  (more processed / higher value = higher priority).
+# ─────────────────────────────────────────────────────────────────────────────
+
+WARE_GROUP_PRIORITY: dict[int, int] = {
+    501:  1,   # High Tech Goods      → "High Tech Factory"
+    1001: 2,   # Ship Technology      → "Ship Technology Factory"
+    901:  3,   # Refined Goods        → "Refined Goods Complex"
+    701:  4,   # Minerals             → "Mineral Refinery"
+    401:  5,   # Gases                → "Gas Refinery"
+    801:  6,   # Pharmaceutical Goods → "Pharmaceutical Goods Factory"
+    101:  7,   # Agricultural Goods   → "Agricultural Goods Factory"
+    301:  8,   # Food                 → "Farm"
+    601:  9,   # Ice                  → "Ice Refinery"
+    201: 10,   # Energy               → "Energy Complex"
+    1201: 11,  # Water                → "Water Refinery"
+}
+
+
 def format_wares(overviewgraphs: str) -> str:
     """
     LEGACY FUNCTION — no longer called by the main scanner.
