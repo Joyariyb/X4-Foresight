@@ -159,6 +159,66 @@
     .station-tab-btn.active { color: var(--teal); border-color: var(--teal); }
     .docked-ship-row:hover { background: var(--bg-panel); }
 
+    /* ── THREE-POSITION STATION SLIDER ─────────────────────────────────────── */
+    /* The track is a recessed dark channel (inset shadows make it look carved   */
+    /* into the surface). The thumb is a raised teal pill (drop shadow beneath   */
+    /* + bright gradient + inner top-edge highlight). The 2px gap between the    */
+    /* thumb and the channel walls is what makes it read as physically 3D.       */
+    .tri-track {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      position: relative;
+      /* Dark carved-in channel — inset shadows push it visually below the card */
+      background: rgba(4,12,20,0.88);
+      border: 1px solid rgba(0,0,0,0.70);
+      border-radius: 20px;
+      overflow: hidden;     /* Clips thumb corners cleanly to the pill */
+      user-select: none;
+      box-shadow:
+        inset 0 2px 7px rgba(0,0,0,0.70),
+        inset 0 1px 3px rgba(0,0,0,0.50),
+        0 1px 0 rgba(255,255,255,0.07);   /* faint outer bottom-edge highlight */
+    }
+    .tri-thumb {
+      /* Raised pill — 2px inset from channel walls for the physical gap effect */
+      position: absolute;
+      top: 2px; left: 2px;
+      width: calc(33.333% - 4px);   /* each third minus the 2px gap on each side */
+      height: calc(100% - 4px);
+      /* Top-to-bottom gradient: bright highlight at top, deeper teal at bottom */
+      background: linear-gradient(170deg,
+        rgba(85,245,215,0.97) 0%,
+        rgba(46,202,178,0.93) 42%,
+        rgba(29,170,150,0.91) 100%);
+      border-radius: 16px;
+      transition: left 0.22s cubic-bezier(0.4,0,0.2,1);
+      pointer-events: none;
+      box-shadow:
+        0 3px 9px rgba(0,0,0,0.70),       /* drop shadow — lifts thumb off track */
+        0 1px 3px rgba(0,0,0,0.50),
+        inset 0 1px 0 rgba(255,255,255,0.42),  /* bright specular top edge      */
+        inset 0 -1px 0 rgba(0,0,0,0.24);       /* dark bottom edge under-shadow */
+    }
+    /* Each position shifts the thumb exactly one column-width right.            */
+    /* The +2px offset keeps the 2px left-gap consistent across all positions.  */
+    .tri-track[data-pos="1"] .tri-thumb { left: calc(33.333% + 2px); }
+    .tri-track[data-pos="2"] .tri-thumb { left: calc(66.666% + 2px); }
+    .tri-opt {
+      position: relative;
+      z-index: 1;           /* Sit above the thumb so clicks register on labels */
+      padding: 5px 0;
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(45,212,191,0.40);
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    /* Dark text on the bright teal thumb; subtle emboss via text-shadow.       */
+    .tri-opt.active { color: #051210; font-weight: 700; text-shadow: 0 1px 0 rgba(255,255,255,0.22); }
+
     /* ── SORT DROPDOWN ── */
     /* Sits inline in the section header, right of the divider line */
     .sort-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); flex-shrink: 0; }
@@ -1073,6 +1133,18 @@
     if (pnl) pnl.style.display = 'block';
   }
 
+  // Moves the three-position slider thumb to pos (0=Left, 1=Mid, 2=Right) for
+  // the given station card. Thumb position is driven purely by a data-pos CSS
+  // attribute on the track element — no inline style writes on the thumb needed.
+  function setStationSlider(code, pos) {
+    const track = document.getElementById('tri-' + code);
+    if (!track) return;
+    track.dataset.pos = pos;
+    track.querySelectorAll('.tri-opt').forEach((o, i) => {
+      o.classList.toggle('active', i === pos);
+    });
+  }
+
   // Derives a 3-letter faction tag from the station's module list.
   // Falls back to 'GEN' when no recognised faction is found.
   function stationFactionTag(s) {
@@ -1511,7 +1583,16 @@
               </div>
               <span style="font-family:var(--font-mono);font-size:10px;color:${statusColor};letter-spacing:0.12em;white-space:nowrap;flex-shrink:0">${statusLabel}</span>
             </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+            <!-- Slider: centred between the name/status row and sector/type row -->
+            <div style="display:flex;justify-content:center;margin-top:7px;margin-bottom:1px">
+              <div class="tri-track" id="tri-${s.code}" data-pos="1" style="width:180px">
+                <div class="tri-thumb"></div>
+                <span class="tri-opt"        onclick="setStationSlider('${s.code}',0)">Left</span>
+                <span class="tri-opt active" onclick="setStationSlider('${s.code}',1)">Mid</span>
+                <span class="tri-opt"        onclick="setStationSlider('${s.code}',2)">Right</span>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px">
               <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);letter-spacing:0.08em">${s.sector.toUpperCase()}</span>
               <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:0.06em">${typeLabel}</span>
             </div>
