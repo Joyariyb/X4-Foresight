@@ -1,9 +1,9 @@
 import pathlib
 import re
 from lxml import etree as ET
-from data.wares import WARE_NAMES, WARE_VOLUME, WARE_TRANSPORT, WARE_GROUPS, WARE_GROUP_PRIORITY
+from data.wares import WARE_NAMES, WARE_VOLUME, WARE_TRANSPORT
 from data.station_stats import STATION_STATS
-from scanner.language import macro_to_sector_name, nameindex_to_roman, resolve_sector_from_location, open_save, resolve_text_ref
+from scanner.language import macro_to_sector_name, nameindex_to_roman, resolve_sector_from_location, resolve_station_type, open_save, resolve_text_ref
 from scanner.crew_scanner import _parse_manager, _iter_components
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -578,31 +578,17 @@ def scan_save(file_path: pathlib.Path, sector_names: dict, language_texts: dict 
                                 if resolved and not resolved.startswith('{'):
                                     display_name = resolved
 
-                            # Path C: priority-based group selection from live production modules.
-                            # Walk all <component class="production"> subtrees and look up each
-                            # module's ware group via WARE_GROUPS. The highest-priority group
-                            # (lowest WARE_GROUP_PRIORITY rank) determines the station type name.
-                            # This mirrors X4's own auto-naming: a station with hullparts (hightech,
-                            # priority 1) and energycells (energy, priority 10) → "High Tech Factory".
+                            # Path C: priority-based factory type resolution.
+                            # Collect all production module macros from the fully-buffered
+                            # station subtree and delegate to resolve_station_type() which
+                            # picks the highest-priority ware group across all modules.
                             if not display_name:
-                                best_priority = None
-                                winning_gid   = None
-                                for comp in elem.iter('component'):
-                                    if comp.get('class') != 'production':
-                                        continue
-                                    m = PROD_MACRO_RE.match(comp.get('macro', ''))
-                                    if not m:
-                                        continue
-                                    ware_id = m.group(1).lower()
-                                    gid     = WARE_GROUPS.get(ware_id)
-                                    if gid is None:
-                                        continue
-                                    prio = WARE_GROUP_PRIORITY.get(gid, 999)
-                                    if best_priority is None or prio < best_priority:
-                                        best_priority = prio
-                                        winning_gid   = gid
-                                if winning_gid is not None:
-                                    display_name = texts.get(f"20215:{winning_gid + 3}", '')
+                                prod_macros  = [
+                                    comp.get('macro', '')
+                                    for comp in elem.iter('component')
+                                    if comp.get('class') == 'production'
+                                ]
+                                display_name = resolve_station_type(prod_macros, texts)
 
                             # Fallback for stations with no resolvable type name
                             if not display_name:

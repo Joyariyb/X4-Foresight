@@ -4,7 +4,7 @@ from lxml import etree as ET
 
 from data.factions import FACTION_NAMES
 from data.wares import WARE_NAMES
-from scanner.language import factory_name_from_ware, macro_to_sector_name, open_save, resolve_text_ref
+from scanner.language import macro_to_sector_name, open_save, resolve_station_type, resolve_text_ref
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  CONSTANTS
@@ -87,15 +87,11 @@ def scan_npc_stations(
     Streams the save file and returns all NPC stations located in sectors
     where the player also has a station.
 
-    Name resolution uses three paths in order (matching X4PlayerShipTradeAnalyzer):
-      A. 'name' attribute on the component element
-      B. 'basename' attribute as fallback
-      C. Deferred: read into production children to find the factory ware type
-
-    For Path C, the parser keeps a 'seeking_name' flag and watches for:
-      - <production originalproduct="food"> → "Food Factory"
-      - <component class="production" macro="prod_gen_food_01_macro"> → same
-    The macro token at index [2] is the ware ID: prod_{faction}_{ware}_{variant}_macro.
+    Name resolution uses two paths:
+      A. 'name' or 'basename' attribute on the component element (resolved via language file).
+      B. Priority-based group selection: all <component class="production"> macros are
+         collected during streaming; resolve_station_type() picks the highest-priority
+         ware group at station close and returns the matching factory type from page 20215.
 
     Traded wares are captured from the <trade wares="..."> attribute, which
     lists all ware IDs the station deals in as a space-separated string.
@@ -119,7 +115,6 @@ def scan_npc_stations(
     npc_station_depth  = None   # XML depth where the active NPC station opened
     player_station_depth = None # XML depth of the player station we're skipping over
     pending: dict | None = None # partial data for the NPC station being captured
-    seeking_name       = False  # True when we still need a name from production children
 
     print(f"[Scanning] Pass 4 — NPC stations in {len(player_sectors)} player sector(s)...")
 
@@ -174,33 +169,24 @@ def scan_npc_stations(
                             macro     = elem.get('macro', '')
 
                             pending = {
-                                'owner':     owner,
-                                'code':      code,
-                                'nameindex': nameindex,
-                                'sector':    current_sector,
-                                'name':      raw_name,
-                                'macro':     macro,
-                                'wares':     [],
+                                'owner':      owner,
+                                'code':       code,
+                                'nameindex':  nameindex,
+                                'sector':     current_sector,
+                                'name':       raw_name,
+                                'macro':      macro,
+                                'prod_macros': [],  # collected for resolve_station_type()
+                                'wares':      [],
                             }
                             npc_station_depth = depth
-                            seeking_name = not bool(raw_name)
 
-                    # Inside NPC station — resolve name from production children (Path C).
-                    if npc_station_depth is not None and seeking_name:
-                        if tag == 'production':
-                            product = elem.get('originalproduct', '')
-                            if product:
-                                pending['name'] = factory_name_from_ware(product, factory_names)
-                                seeking_name = False
-
-                        elif tag == 'component' and elem.get('class') == 'production':
-                            macro  = elem.get('macro', '')
-                            parts  = macro.split('_')
-                            # macro format: prod_{faction}_{ware}_{variant}_macro
-                            ware_id = parts[2] if len(parts) >= 4 else ''
-                            pending['name']  = factory_name_from_ware(ware_id, factory_names) if ware_id else macro
-                            pending['macro'] = macro
-                            seeking_name = False
+                    # Inside NPC station — collect production module macros.
+                    # All modules are gathered so resolve_station_type() can pick the
+                    # highest-priority ware group across the whole station at close time,
+                    # rather than stopping at the first module found.
+                    if npc_station_depth is not None:
+                        if tag == 'component' and elem.get('class') == 'production':
+                            pending['prod_macros'].append(elem.get('macro', ''))
 
                     # Inside NPC station — capture the station's traded ware list.
                     # The <trade wares="..."> element is a direct child of the station.
@@ -220,8 +206,14 @@ def scan_npc_stations(
 
                     elif npc_station_depth is not None and depth == npc_station_depth:
                         if pending is not None:
+                            # Path A resolved a name from name/basename attributes.
+                            # Path B: if that was empty, infer the factory type from
+                            # the collected production module macros.
+                            type_name = pending['name'] or resolve_station_type(
+                                pending['prod_macros'], texts
+                            )
                             display = _build_display_name(
-                                pending['name'],
+                                type_name,
                                 pending['nameindex'],
                                 pending['code'],
                                 pending['owner'],
@@ -240,7 +232,6 @@ def scan_npc_stations(
                             })
                         npc_station_depth = None
                         pending           = None
-                        seeking_name      = False
 
                     # Always clear elements on end — we read all needed data from
                     # start events (attributes), so there is nothing left to keep.

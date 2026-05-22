@@ -8,7 +8,7 @@ import pathlib
 import re
 
 from lxml import etree as ET
-from data.wares import WARE_NAMES
+from data.wares import WARE_NAMES, WARE_GROUPS, WARE_GROUP_PRIORITY
 
 # Pre-compiled so these don't recompile on every call inside the iterparse loops.
 _SECTOR_NAME_RE = re.compile(r'\(([^)]+)\)\s*$')
@@ -152,6 +152,43 @@ def factory_name_from_ware(ware_id: str, factory_names: dict | None = None) -> s
             return name
     display = WARE_NAMES.get(ware_id.lower(), ware_id.replace('_', ' ').title())
     return f"{display} Factory"
+
+
+# Matches the production module macro naming pattern prod_{faction}_{ware}_macro.
+# The non-greedy faction token handles multi-part factions (e.g. prod_gen_hullparts_macro).
+_PROD_MACRO_RE = re.compile(r'^prod_(?:\w+?)_(\w+)_macro$', re.IGNORECASE)
+
+
+def resolve_station_type(prod_macros: list[str], texts: dict) -> str:
+    """
+    Returns the factory type name for a station given its production module macros.
+
+    Collects the ware group for every production module, then picks the
+    highest-priority group (lowest WARE_GROUP_PRIORITY rank) to name the station.
+    The name is pulled from page 20215 of the language file at textId = groupId + 3.
+
+    Returns an empty string if none of the macros map to a known ware group.
+
+    Example: macros with hullparts (hightech, priority 1) and energycells
+    (energy, priority 10) → "High Tech Factory".
+    """
+    best_priority = None
+    winning_gid   = None
+    for macro in prod_macros:
+        m = _PROD_MACRO_RE.match(macro)
+        if not m:
+            continue
+        ware_id = m.group(1).lower()
+        gid     = WARE_GROUPS.get(ware_id)
+        if gid is None:
+            continue
+        prio = WARE_GROUP_PRIORITY.get(gid, 999)
+        if best_priority is None or prio < best_priority:
+            best_priority = prio
+            winning_gid   = gid
+    if winning_gid is not None:
+        return texts.get(f"20215:{winning_gid + 3}", '')
+    return ''
 
 
 _ROMAN = [
