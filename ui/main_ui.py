@@ -52,9 +52,9 @@ else:
     HTML_PATH = pathlib.Path(__file__).parent / "ui.html"
 
 from scanner.language import load_sector_names, load_text_pages, open_save  # noqa: E402
-from scanner.scanner import scan_save, scan_reputation      # noqa: E402
-from scanner.ship_scanner import scan_ships, merge_station_docked_ships  # noqa: E402
-from export.jsonexport import export_json                   # noqa: E402
+from scanner.scanner import scan_reputation, scan_save_and_ships           # noqa: E402
+from scanner.ship_scanner import merge_station_docked_ships                # noqa: E402
+from export.jsonexport import export_json                                  # noqa: E402
 
 JSON_PATH = ROOT / "x4_empire_state.json"
 LANG_PATH = ROOT / "0001-l044.xml"
@@ -266,46 +266,54 @@ class ScanWorker(QThread):
             sector_names   = load_sector_names(LANG_PATH)
             language_texts = load_text_pages(LANG_PATH, {'20102', '20215', '20201'})
 
-            self.progress.emit("Pass 1 — player, stations…")
-            game_data = scan_save(self._save_path, sector_names, language_texts)
-            # Extract the sector map before seeding game_data — it's internal
-            # plumbing for Pass 3 and should not end up in the exported JSON.
-            sector_macro_to_name = game_data.pop("sector_macro_to_name", {})
-            # Seed crew with station managers so they appear alongside ship crew.
+            # ── Combined Pass 1+3 ─────────────────────────────────────────────
+            # One file read covers both stations (player identity, station health,
+            # cargo, production) and ships (fleet, crew, hull/shield health).
+            # Tier 2 gives NPC ships in station sectors — equivalent to the
+            # previous two-pass approach that used station_sectors as a filter.
+            self.progress.emit("Pass 1+3 — player, stations, ships…")
+            combined = scan_save_and_ships(
+                self._save_path, sector_names, language_texts,
+                ship_tier=2,   # NPC ships in sectors where the player has a station
+            )
+
+            # Extract ship keys before the generic dict becomes game_data — ships
+            # are nested under game_data["ships"], not at the top level.
+            player_ships = combined.pop("player_ships", [])
+            npc_ships    = combined.pop("npc_ships", [])
+            ship_crew    = combined.pop("crew", [])
+            combined.pop("sector_macro_to_name", {})   # internal plumbing, not exported
+
+            # combined now contains: player_name, player_credits, player_sector,
+            # stations, managers, reputation — all valid game_data keys.
+            game_data = combined
+            # Seed crew with station managers; ship crew is appended below so
+            # managers always appear first in the crew list.
             game_data["crew"] = game_data.get("managers", [])
 
+            # ── Pass 2 — reputation ───────────────────────────────────────────
             self.progress.emit("Pass 2 — faction reputation…")
             game_data["reputation"] = scan_reputation(self._save_path)
 
-            self.progress.emit("Pass 3 — ships…")
-            # station_sectors gates NPC collection — without it context_sectors
-            # is empty and scan_ships returns no NPC ships at all.
-            station_sectors = {s["sector"] for s in game_data["stations"]}
-            ships_result = scan_ships(
-                self._save_path, sector_names,
-                station_sectors=station_sectors,
-                sector_macro_to_name=sector_macro_to_name,
-            )
-
-            # Fill in any player ships that sat in a station bay and were missed
-            # by the ship scanner's iterparse pass. This runs before export so
-            # the JSON always contains a complete fleet list.
-            merge_station_docked_ships(
-                game_data["stations"],
-                ships_result["player_ships"],
-            )
+            # ── Finalise ship data ────────────────────────────────────────────
+            # Ships docked inside station bays were invisible to the combined
+            # scanner's iterparse loop (inside_station blocks their detection).
+            # _extract_station_docked_ships() captured them in each station's
+            # docked_ships list; merge_station_docked_ships() promotes any that
+            # are missing from player_ships into the fleet with correct metadata.
+            merge_station_docked_ships(game_data["stations"], player_ships)
 
             game_data["ships"] = {
-                "player_ships": ships_result["player_ships"],
-                "npc_ships":    ships_result["npc_ships"],
+                "player_ships": player_ships,
+                "npc_ships":    npc_ships,
             }
             # Append ship pilots and service crew after station managers.
-            game_data["crew"] += ships_result.get("crew", [])
+            game_data["crew"] += ship_crew
 
             self.progress.emit("Exporting JSON…")
             # CRITICAL: export_json writes the restructured data to x4_empire_state.json.
             # We read that file back in the main thread rather than passing game_data through
-            # signals — this ensures UI always gets properly formatted data.
+            # signals — this ensures the UI always gets the properly formatted export shape.
             export_json(game_data, output_dir=ROOT)
 
             self.finished.emit()

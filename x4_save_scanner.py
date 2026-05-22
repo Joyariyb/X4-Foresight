@@ -1,24 +1,30 @@
 """
-X4 FOUNDATIONS — SAVE FILE SCANNER  v4.2
+X4 FOUNDATIONS — SAVE FILE SCANNER  v4.3
 ==========================================
-Reads an unzipped X4 save file and extracts empire data across up to three passes:
+Reads an X4 save file and extracts empire data. Passes are numbered by their
+historical order; when both stations and ships are requested the combined scanner
+runs them in a single file read (Pass 1+3) instead of two separate reads.
 
-  Pass 1 — Stations  : player identity, credits, owned stations + health
-  Pass 2 — Reputation: faction standing breakdown (log10-scaled to in-game values)
-  Pass 3 — Ships     : player fleet and optionally NPC ships in sectors of interest
+  Pass 1   — Stations  : player identity, credits, owned stations + health
+  Pass 2   — Reputation: faction standing breakdown (log10-scaled to in-game values)
+  Pass 3   — Ships     : player fleet and optionally NPC ships in sectors of interest
+  Pass 1+3 — Combined  : Passes 1 and 3 in a single file read (used by full/trade modes)
+  Pass 5   — Trades    : active TradePerform orders at player stations/ships
+  Pass 6   — History   : completed economylog trade entries at player stations
 
 Output: console report via display.py, and optionally x4_empire_state.json for AI use.
 
-SHIP SCAN TIERS (Pass 3 only):
+SHIP SCAN TIERS (Pass 3 / Pass 1+3):
   1 — Player ships only                           (fastest)
   2 — + NPC ships in sectors where you have stations
   3 — + NPC ships in all sectors where you have ships
 
 RUN MODES — selected interactively at startup:
-  Full        — all three passes + JSON export
+  Full        — all passes + JSON export  (uses combined Pass 1+3)
   Stations    — Pass 1 only (~5s, use when iterating on station display)
   Reputation  — Pass 2 only (fast, reads one block of the save)
   Ships       — Pass 3 only (no station or reputation data)
+  Trade log   — Passes 1+3+5+6, active and historical trade data
 """
 
 import pathlib
@@ -35,7 +41,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scanner.language            import load_sector_names, load_text_pages
-from scanner.scanner             import scan_save, scan_reputation, scan_trade_orders, scan_trade_history
+from scanner.scanner             import scan_save, scan_reputation, scan_trade_orders, scan_trade_history, scan_save_and_ships
 from scanner.ship_scanner        import scan_ships, merge_station_docked_ships
 from export.jsonexport           import export_json
 from display                     import display_results
@@ -302,6 +308,31 @@ def _run_trade_pass(
     return result
 
 
+def _run_combined_pass(
+    save_file:            pathlib.Path,
+    sector_names:         dict,
+    language_texts:       dict,
+    collect_npc_stations: bool = False,
+    ship_tier:            int  = 1,
+) -> dict:
+    """
+    Runs Pass 1 (stations) and Pass 3 (ships) in a single file read.
+
+    This is faster than calling _run_stations_pass() + _run_ships_pass()
+    separately because the 700MB+ compressed save is only decompressed and
+    streamed once. The returned dict contains all keys from both passes;
+    the dispatcher extracts ship keys before calling game_data.update().
+    """
+    t0     = time.perf_counter()
+    result = scan_save_and_ships(
+        save_file, sector_names, language_texts,
+        collect_npc_stations=collect_npc_stations,
+        ship_tier=ship_tier,
+    )
+    print(f"[Done] Combined station+ships pass completed in {time.perf_counter() - t0:.2f}s")
+    return result
+
+
 def _run_stations_pass(
     save_file: pathlib.Path,
     sector_names: dict,
@@ -488,25 +519,45 @@ if __name__ == "__main__":
             "trade_history_scanned": False,
         }
 
-        # ── Pass 1 (+4): stations ─────────────────────────────────────────────
-        # When include_npc_stations=True, NPC station data is collected in the
-        # same file read and returned as "npc_stations_raw". We filter that list
-        # to player sectors here — a cheap in-memory operation — rather than
-        # opening the file a second time.
-        if "stations" in passes:
-            result = _run_stations_pass(
+        # ── Pass 1+3 (combined) or individual passes ──────────────────────────
+        # When both stations and ships are needed, use the combined scanner —
+        # one file read instead of two. When only one is needed, fall through
+        # to the individual runners below.
+        if "stations" in passes and "ships" in passes:
+            combined = _run_combined_pass(
                 SAVE_FILE, sector_names, language_texts,
                 collect_npc_stations=include_npc_stations,
+                ship_tier=ship_tier,
             )
-            # Pop the sector map before the general update — it's internal
-            # plumbing for Pass 3 and should not land in game_data or the export.
-            sector_macro_to_name = result.pop("sector_macro_to_name", {})
-            game_data.update(result)
-            # Managers from Pass 1 seed the crew list; ship crew is added below.
-            game_data["crew"] = result.get("managers", [])
+            # Extract ship keys before the generic update so they don't land
+            # at the top level of game_data (ships live under game_data["ships"]).
+            sector_macro_to_name = combined.pop("sector_macro_to_name", {})
+            player_ships         = combined.pop("player_ships", [])
+            npc_ships            = combined.pop("npc_ships", [])
+            ship_crew            = combined.pop("crew", [])
+
+            # Remaining keys: player_name, player_credits, player_sector,
+            # stations, managers, reputation — all safe to update into game_data.
+            game_data.update(combined)
+            # Seed crew with station managers; ship crew is appended below.
+            game_data["crew"] = combined.get("managers", [])
+
+            # Plug in any player ships that were docked inside station bays and
+            # missed by the iterparse loop (inside_station blocks their detection).
+            merge_station_docked_ships(game_data["stations"], player_ships)
+
+            game_data["ships"] = {
+                "player_ships": player_ships,
+                "npc_ships":    npc_ships,
+            }
+            # Append ship crew after managers so managers appear first in the list.
+            game_data["crew"] += ship_crew
             game_data["stations_scanned"] = True
+            game_data["ships_scanned"]    = True
 
             if include_npc_stations:
+                # NPC stations were collected unfiltered — apply the player-sector
+                # filter now that we know which sectors the player owns stations in.
                 player_sectors = {s["sector"] for s in game_data["stations"]}
                 npc_raw        = game_data.pop("npc_stations_raw", [])
                 game_data["npc_stations"] = [
@@ -515,39 +566,64 @@ if __name__ == "__main__":
                 print(f"[Done] NPC stations — {len(game_data['npc_stations'])} in player "
                       f"sectors (filtered from {len(npc_raw)} total).")
 
+        else:
+            # ── Pass 1 (+4): stations only ────────────────────────────────────
+            # Runs when the mode includes stations but not ships (e.g. "Stations
+            # only" mode). When both are needed the combined path above is used.
+            if "stations" in passes:
+                result = _run_stations_pass(
+                    SAVE_FILE, sector_names, language_texts,
+                    collect_npc_stations=include_npc_stations,
+                )
+                # Pop the sector map before the general update — internal plumbing
+                # for Pass 3 that should not land in game_data or the export.
+                sector_macro_to_name = result.pop("sector_macro_to_name", {})
+                game_data.update(result)
+                # Managers from Pass 1 seed the crew list; ship crew added below.
+                game_data["crew"] = result.get("managers", [])
+                game_data["stations_scanned"] = True
+
+                if include_npc_stations:
+                    player_sectors = {s["sector"] for s in game_data["stations"]}
+                    npc_raw        = game_data.pop("npc_stations_raw", [])
+                    game_data["npc_stations"] = [
+                        st for st in npc_raw if st["sector"] in player_sectors
+                    ]
+                    print(f"[Done] NPC stations — {len(game_data['npc_stations'])} in player "
+                          f"sectors (filtered from {len(npc_raw)} total).")
+
+            # ── Pass 3: ships only ────────────────────────────────────────────
+            # Runs when the mode includes ships but not stations (e.g. "Ships
+            # only" mode). When both are needed the combined path above is used.
+            if "ships" in passes:
+                # Station sectors are only available if Pass 1 also ran.
+                # If stations was skipped, pass None — ships pass treats that as
+                # tier 1 (player ships only, no NPC collection by sector filter).
+                station_sectors = (
+                    {s["sector"] for s in game_data["stations"]}
+                    if "stations" in passes else None
+                )
+                ships_result = _run_ships_pass(
+                    SAVE_FILE, sector_names, ship_tier, station_sectors,
+                    sector_macro_to_name=sector_macro_to_name,
+                )
+                if "stations" in passes:
+                    merge_station_docked_ships(
+                        game_data["stations"],
+                        ships_result["player_ships"],
+                    )
+
+                game_data["ships"] = {
+                    "player_ships": ships_result["player_ships"],
+                    "npc_ships":    ships_result["npc_ships"],
+                }
+                game_data["crew"] += ships_result.get("crew", [])
+                game_data["ships_scanned"] = True
+
         # ── Pass 2: reputation ────────────────────────────────────────────────
         if "reputation" in passes:
             game_data["reputation"] = _run_reputation_pass(SAVE_FILE)
             game_data["reputation_scanned"] = True
-
-        # ── Pass 3: ships ─────────────────────────────────────────────────────
-        if "ships" in passes:
-            # Station sectors are only available if Pass 1 ran — otherwise None
-            # and the ships pass will treat it as tier 1 regardless.
-            station_sectors = (
-                {s["sector"] for s in game_data["stations"]}
-                if "stations" in passes else None
-            )
-            ships_result = _run_ships_pass(
-                SAVE_FILE, sector_names, ship_tier, station_sectors,
-                sector_macro_to_name=sector_macro_to_name,
-            )
-            # If the stations pass also ran, plug any station-docked player ships
-            # that the ship scanner missed back into player_ships now — before
-            # the JSON export — so they appear in the fleet with translated names.
-            if "stations" in passes:
-                merge_station_docked_ships(
-                    game_data["stations"],
-                    ships_result["player_ships"],
-                )
-
-            game_data["ships"] = {
-                "player_ships": ships_result["player_ships"],
-                "npc_ships":    ships_result["npc_ships"],
-            }
-            # Append ship crew after station managers so managers appear first.
-            game_data["crew"] += ships_result.get("crew", [])
-            game_data["ships_scanned"] = True
 
         # ── Pass 5: active trades (optional, requires Pass 1) ────────────────
         # Finds all TradePerform orders in the save where a player station is
