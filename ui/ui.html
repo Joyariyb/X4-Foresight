@@ -206,11 +206,11 @@
     .tri-opt {
       position: relative;
       z-index: 1;           /* Sit above the thumb so clicks register on labels */
-      padding: 5px 0;
+      padding: 7px 6px;
       text-align: center;
       font-family: var(--font-mono);
-      font-size: 10px;
-      letter-spacing: 0.1em;
+      font-size: 11px;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
       color: rgba(45,212,191,0.40);
       cursor: pointer;
@@ -1631,11 +1631,11 @@
                          transform="rotate(-45 90 50)"/>
               </svg>
 
-              <div class="tri-track" id="tri-${s.code}" data-pos="1"
-                   style="width:180px;position:relative;z-index:1">
+              <div class="tri-track" id="tri-${s.code}" data-pos="0"
+                   style="width:252px;position:relative;z-index:1">
                 <div class="tri-thumb"></div>
-                <span class="tri-opt"        onclick="setStationSlider('${s.code}',0)">Left</span>
-                <span class="tri-opt active" onclick="setStationSlider('${s.code}',1)">Mid</span>
+                <span class="tri-opt active" onclick="setStationSlider('${s.code}',0)">Overview</span>
+                <span class="tri-opt"        onclick="setStationSlider('${s.code}',1)">Economy</span>
                 <span class="tri-opt"        onclick="setStationSlider('${s.code}',2)">Right</span>
               </div>
             </div>
