@@ -60,63 +60,94 @@ def format_runtime(mins: float | None) -> str:
 
 def display_trade_log(data: dict):
     """
-    Prints all active TradePerform orders that involve a player-owned station.
+    Prints all active TradePerform orders that involve a player-owned station
+    or a player-owned ship.
 
-    Each record is a contracted trade deal currently being executed by a ship
-    in transit. The player station appears as either the buyer (goods inbound)
-    or the seller (goods outbound). Trades are grouped by player station and
-    split into INBOUND (buying) and OUTBOUND (selling) sections.
+    Two categories of records exist:
+      - Station trades  : player station is the buyer or seller. Grouped by
+                          station code with BUYING / SELLING rows per ware.
+                          A sub-line lists the ship codes currently servicing
+                          each ware at that station.
+      - Ship trades     : player ship is the transport, but neither station is
+                          player-owned (the ship is running an NPC-to-NPC route).
+                          Shown in a separate section grouped by ship code.
 
     Prices are in Cr as recorded in the save file — no scaling needed.
-    The counterparty shown is the other station in the deal; if the NPC station
-    scan was not run, unresolved hex IDs are displayed verbatim.
+    Station counterparties are resolved via id_to_code; unresolved IDs are
+    displayed as raw hex (run the NPC station scan to resolve more of them).
     """
     LINE   = "─" * 68
     trades = data.get("trades", [])
 
+    # Build ship code → display label from the player fleet.
+    # Format: "Ship Name [CODE]" when the ship has a type/custom name,
+    # just "CODE" as a fallback (NPC ships or ships the fleet scan missed).
+    ship_labels: dict[str, str] = {}
+    for s in data.get("ships", {}).get("player_ships", []):
+        code = s.get("code", "")
+        name = s.get("name")
+        if code:
+            ship_labels[code] = f"{name} [{code}]" if name else code
+
     print(LINE)
-    print(f"  ACTIVE TRADE ORDERS  ({len(trades)} orders touching player stations)")
+    print(f"  ACTIVE TRADE ORDERS  ({len(trades)} orders touching player stations/ships)")
     print()
 
     if not trades:
         if not data.get("trades_scanned"):
             print("    Trade scan not selected.")
         else:
-            print("    No active trade orders found at player stations.")
+            print("    No active trade orders found at player stations or ships.")
         return
 
+    # Split into station-touched trades and pure ship-transport trades.
+    # A trade is "station" when the player station is buyer/seller;
+    # "ship" when a player ship is the transport between two NPC stations.
+    station_trades = [t for t in trades if not t.get("player_is_ship")]
+    ship_trades    = [t for t in trades if t.get("player_is_ship")]
+
     # ── Overall totals ────────────────────────────────────────────────────────
-    inbound_cr  = sum(t["total_cr"] for t in trades if t["player_is_buyer"])
-    outbound_cr = sum(t["total_cr"] for t in trades if t["player_is_seller"])
-    print(f"  Inbound value : {inbound_cr:>18,.0f} Cr  (goods arriving)")
-    print(f"  Outbound value: {outbound_cr:>18,.0f} Cr  (goods departing)")
+    inbound_cr  = sum(t["total_cr"] for t in station_trades if t["player_is_buyer"])
+    outbound_cr = sum(t["total_cr"] for t in station_trades if t["player_is_seller"])
+    ship_cr     = sum(t["total_cr"] for t in ship_trades)
+    print(f"  Inbound value : {inbound_cr:>18,.0f} Cr  (goods arriving at player stations)")
+    print(f"  Outbound value: {outbound_cr:>18,.0f} Cr  (goods departing player stations)")
+    if ship_cr:
+        print(f"  Ship trades   : {ship_cr:>18,.0f} Cr  (player ships — NPC-to-NPC routes)")
     print()
 
     # ── Per-station breakdown ─────────────────────────────────────────────────
-    # Aggregate into station → { 'buys': {ware: [orders, units, total_cr]},
-    #                             'sells': {ware: [orders, units, total_cr]} }
+    # Aggregate: station code → ware → [orders, units, total_cr, set(ship_codes)]
+    # The ship set lets us show which ships are currently servicing each ware
+    # at a given station — useful for knowing which ships are in transit.
     station_buys:  dict[str, dict] = {}
     station_sells: dict[str, dict] = {}
 
-    for t in trades:
+    for t in station_trades:
         ware = t["ware_name"]
+        ship = t.get("ship_code", "")
+
         if t["player_is_buyer"]:
             code = t["buyer_code"]
             station_buys.setdefault(code, {})
             if ware not in station_buys[code]:
-                station_buys[code][ware] = [0, 0, 0.0]   # orders, units, total_cr
+                station_buys[code][ware] = [0, 0, 0.0, set()]
             station_buys[code][ware][0] += 1
             station_buys[code][ware][1] += t["amount"]
             station_buys[code][ware][2] += t["total_cr"]
+            if ship:
+                station_buys[code][ware][3].add(ship)
 
         if t["player_is_seller"]:
             code = t["seller_code"]
             station_sells.setdefault(code, {})
             if ware not in station_sells[code]:
-                station_sells[code][ware] = [0, 0, 0.0]
+                station_sells[code][ware] = [0, 0, 0.0, set()]
             station_sells[code][ware][0] += 1
             station_sells[code][ware][1] += t["amount"]
             station_sells[code][ware][2] += t["total_cr"]
+            if ship:
+                station_sells[code][ware][3].add(ship)
 
     # Ware column width — cap so long names don't push columns off screen
     ware_col = max((len(t["ware_name"]) for t in trades), default=12)
@@ -134,21 +165,85 @@ def display_trade_log(data: dict):
               f"In: {buy_total:,.0f} Cr  ·  Out: {sell_total:,.0f} Cr)")
 
         rows = []
-        for ware, (n, units, total) in sorted(buys.items()):
-            rows.append(("BUYING ", ware, n, units, total))
-        for ware, (n, units, total) in sorted(sells.items()):
-            rows.append(("SELLING", ware, n, units, total))
+        for ware, (n, units, total, ships) in sorted(buys.items()):
+            rows.append(("BUYING ", ware, n, units, total, ships))
+        for ware, (n, units, total, ships) in sorted(sells.items()):
+            rows.append(("SELLING", ware, n, units, total, ships))
 
-        for i, (direction, ware, n, units, total) in enumerate(rows):
-            connector = "└──" if i == len(rows) - 1 else "├──"
-            avg_price = total / units if units else 0
+        for i, (direction, ware, n, units, total, ships) in enumerate(rows):
+            is_last   = i == len(rows) - 1
+            connector = "└──" if is_last else "├──"
+            # sub_indent aligns the ship sub-line with the row text above it.
+            # When this is the last row the tree uses spaces (no │), otherwise │.
+            sub_indent = "       " if is_last else "│      "
+            avg_price  = total / units if units else 0
             print(
                 f"  {connector} {direction}  {ware:<{ware_col}}  "
                 f"{n:>3} orders  {units:>8,} units  "
                 f"avg {avg_price:>8,.0f} Cr  ·  {total:>14,.0f} Cr total"
             )
+            # Ship sub-line — which ships are currently carrying this ware.
+            # ship_labels resolves each code to "Name [CODE]" when the ship
+            # is in the player fleet; falls back to the raw code otherwise.
+            if ships:
+                ship_strs = " · ".join(
+                    ship_labels.get(sc, sc) for sc in sorted(ships)
+                )
+                print(f"  {sub_indent}  ↳ Ships: {ship_strs}")
 
         print()
+
+    # ── Ship-only trades (player ship, NPC-to-NPC routes) ────────────────────
+    # These are trades where a player ship is executing the order but neither
+    # station is player-owned. Grouped by ship code, then ware.
+    if ship_trades:
+        ship_data: dict[str, dict] = {}   # ship_code → { ware: [orders, units, total_cr] }
+
+        for t in ship_trades:
+            code = t.get("ship_code") or t.get("ship_id", "Unknown")
+            ware = t["ware_name"]
+            ship_data.setdefault(code, {})
+            if ware not in ship_data[code]:
+                ship_data[code][ware] = [0, 0, 0.0, set()]   # orders, units, total_cr, routes
+            ship_data[code][ware][0] += 1
+            ship_data[code][ware][1] += t["amount"]
+            ship_data[code][ware][2] += t["total_cr"]
+            # Track each (origin, destination) pair so we can show the route.
+            # seller = station goods are collected from; buyer = station they're delivered to.
+            ship_data[code][ware][3].add((
+                t.get("seller_code", "?"),
+                t.get("buyer_code",  "?"),
+            ))
+
+        ship_total_cr = sum(t["total_cr"] for t in ship_trades)
+        print(f"  PLAYER SHIPS — NPC-to-NPC ROUTES  "
+              f"({len(ship_trades)} orders  ·  {ship_total_cr:,.0f} Cr)")
+        print()
+
+        for code in sorted(ship_data):
+            wares    = ship_data[code]
+            n_orders = sum(v[0] for v in wares.values())
+            total_cr = sum(v[2] for v in wares.values())
+            label    = ship_labels.get(code, code)
+            print(f"  ┌─ {label}  ({n_orders} orders  ·  {total_cr:,.0f} Cr)")
+
+            ware_rows = sorted(wares.items())
+            for i, (ware, (n, units, total, routes)) in enumerate(ware_rows):
+                is_last    = i == len(ware_rows) - 1
+                connector  = "└──" if is_last else "├──"
+                sub_indent = "       " if is_last else "│      "
+                avg_price  = total / units if units else 0
+                print(
+                    f"  {connector} {ware:<{ware_col}}  "
+                    f"{n:>3} orders  {units:>8,} units  "
+                    f"avg {avg_price:>8,.0f} Cr  ·  {total:>14,.0f} Cr total"
+                )
+                # Origin → destination route for each unique (seller, buyer) pair.
+                # seller is where goods are picked up; buyer is where they're delivered.
+                for seller, buyer in sorted(routes):
+                    print(f"  {sub_indent}  ↳ {seller}  →  {buyer}")
+
+            print()
 
 
 def display_results(data: dict):

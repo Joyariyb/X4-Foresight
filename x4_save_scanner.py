@@ -57,9 +57,15 @@ SCAN_MODES = [
     {
         "key":    "full",
         "label":  "Full scan",
-        "desc":   "All passes — stations, reputation, ships + JSON export",
+        "desc":   "All passes — stations, NPC stations, reputation, ships, trades + JSON export",
         "passes": ["stations", "reputation", "ships"],
         "export": True,
+        # These bypass the interactive sub-prompts so the full scan runs
+        # without stopping to ask questions. Other modes leave them absent,
+        # which triggers the prompts as normal.
+        "npc_stations": True,   # Pass 4 — resolves NPC counterparty codes in trade display
+        "trade_log":    True,   # Pass 5 — active TradePerform orders
+        "ship_tier":    1,      # Tier 1 captures all player ships (sufficient for trade filter)
     },
     {
         "key":    "stations",
@@ -233,16 +239,19 @@ def _run_trade_pass(
     save_file:          pathlib.Path,
     player_station_ids: set,
     id_to_code:         dict,
+    player_ship_ids:    set,
 ) -> list:
     """
     Runs the active trade order scan (Pass 5).
 
-    player_station_ids — hex object IDs of player-owned stations. Only trades
-                         where a player station is buyer or seller are returned.
+    player_station_ids — hex object IDs of player-owned stations.
+    player_ship_ids    — hex object IDs of player-owned ships. May be empty if
+                         the ships pass was not run; in that case the ship-transport
+                         filter is skipped and only station-based trades are returned.
     id_to_code         — combined player + NPC station map for display resolution.
     """
     t0     = time.perf_counter()
-    result = scan_trade_orders(save_file, player_station_ids, id_to_code)
+    result = scan_trade_orders(save_file, player_station_ids, id_to_code, player_ship_ids)
     print(f"[Done] Active trades pass completed in {time.perf_counter() - t0:.2f}s")
     return result
 
@@ -353,19 +362,33 @@ if __name__ == "__main__":
         mode = select_mode()
         passes = mode["passes"]
 
+        # Sub-options: use mode-level overrides when present (e.g. full scan),
+        # otherwise fall through to the interactive prompts so the user can
+        # choose per-run for modes that don't pre-set these values.
         include_npc_stations = False
         if "stations" in passes:
-            include_npc_stations = select_npc_stations()
+            if "npc_stations" in mode:
+                include_npc_stations = mode["npc_stations"]
+            else:
+                include_npc_stations = select_npc_stations()
 
         include_trade_log = False
         if "stations" in passes:
-            include_trade_log = select_trade_log()
+            if "trade_log" in mode:
+                include_trade_log = mode["trade_log"]
+            else:
+                include_trade_log = select_trade_log()
 
         ship_tier = 1
         if "ships" in passes:
-            ship_tier = select_ship_tier(stations_active="stations" in passes)
+            if "ship_tier" in mode:
+                ship_tier = mode["ship_tier"]
+            else:
+                ship_tier = select_ship_tier(stations_active="stations" in passes)
 
         print()
+
+        t_total = time.perf_counter()   # overall pipeline timer — printed after all passes complete
 
         # Sector names are needed by both the stations and ships passes.
         # Load once and share — no point reading the language file twice.
@@ -449,29 +472,44 @@ if __name__ == "__main__":
 
         # ── Pass 5: active trades (optional, requires Pass 1) ────────────────
         # Finds all TradePerform orders in the save where a player station is
-        # the buyer or seller. Does not require the ships pass — station IDs
-        # are sufficient to filter the relevant orders.
+        # the buyer or seller, OR a player ship is the executing transport.
+        # Station IDs come from Pass 1; ship IDs from Pass 3 (empty set if
+        # the ships pass was skipped — ship-transport filtering is disabled).
         if include_trade_log:
             player_station_ids = {
                 st["object_id"]
                 for st in game_data["stations"]
                 if st.get("object_id")
             }
+            # Ship IDs are only available when Pass 3 ran. An empty set is safe —
+            # scan_trade_orders treats it as "no ship filter" and falls back to
+            # station-only filtering.
+            player_ship_ids = {
+                sh["object_id"]
+                for sh in game_data["ships"].get("player_ships", [])
+                if sh.get("object_id")
+            }
             # Resolution map: player + NPC station hex IDs → display codes.
-            # Ships are not included — unresolved ship IDs show as raw hex,
-            # which is acceptable since the ship is just the transport.
+            # Ship IDs are not in this map — raw hex shows for unresolved ships,
+            # but the ship's own code attribute is captured directly during scanning.
             id_to_code = {
                 st["object_id"]: st["code"]
                 for st in game_data["stations"] + game_data["npc_stations"]
                 if st.get("object_id") and st.get("code")
             }
-            game_data["trades"]         = _run_trade_pass(SAVE_FILE, player_station_ids, id_to_code)
+            game_data["trades"]         = _run_trade_pass(SAVE_FILE, player_station_ids, id_to_code, player_ship_ids)
             game_data["trades_scanned"] = True
 
         display_results(game_data)
 
         if mode["export"]:
             export_json(game_data, output_dir=SCRIPT_DIR)
+
+        elapsed = time.perf_counter() - t_total
+        mins    = int(elapsed // 60)
+        secs    = elapsed % 60
+        time_str = f"{mins}m {secs:.1f}s" if mins else f"{secs:.1f}s"
+        print(f"\n  Total scan time: {time_str}")
 
     except Exception as e:
         print(f"\n[FATAL ERROR] {e}")
