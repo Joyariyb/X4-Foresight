@@ -81,7 +81,6 @@ def scan_npc_stations(
     sector_names: dict,
     player_sectors: set,
     language_texts: dict | None = None,
-    factory_names: dict | None = None,
 ) -> list[dict]:
     """
     Streams the save file and returns all NPC stations located in sectors

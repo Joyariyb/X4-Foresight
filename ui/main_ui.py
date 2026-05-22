@@ -51,7 +51,7 @@ else:
         sys.path.insert(0, str(ROOT))
     HTML_PATH = pathlib.Path(__file__).parent / "ui.html"
 
-from scanner.language import load_sector_names, load_text_pages, load_factory_names, open_save  # noqa: E402
+from scanner.language import load_sector_names, load_text_pages, open_save  # noqa: E402
 from scanner.scanner import scan_save, scan_reputation      # noqa: E402
 from scanner.ship_scanner import scan_ships, merge_station_docked_ships  # noqa: E402
 from export.jsonexport import export_json                   # noqa: E402
@@ -265,10 +265,9 @@ class ScanWorker(QThread):
             self.progress.emit("Loading sector names…")
             sector_names   = load_sector_names(LANG_PATH)
             language_texts = load_text_pages(LANG_PATH, {'20102', '20215'})
-            factory_names  = load_factory_names(LANG_PATH)
 
             self.progress.emit("Pass 1 — player, stations…")
-            game_data = scan_save(self._save_path, sector_names, language_texts, factory_names)
+            game_data = scan_save(self._save_path, sector_names, language_texts)
             # Seed crew with station managers so they appear alongside ship crew.
             game_data["crew"] = game_data.get("managers", [])
 

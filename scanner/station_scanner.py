@@ -484,7 +484,7 @@ def _parse_station_health(modules: list[dict]) -> dict:
 #  PASS 1 — PLAYER DATA AND STATIONS
 # ─────────────────────────────────────────────────────────────────────────────
 
-def scan_save(file_path: pathlib.Path, sector_names: dict, language_texts: dict | None = None, factory_names: dict | None = None) -> dict:
+def scan_save(file_path: pathlib.Path, sector_names: dict, language_texts: dict | None = None) -> dict:
     """
     Streams the save file and extracts player identity, credits, sector location,
     and all owned stations with their production, health, and manager data.

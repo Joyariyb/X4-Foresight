@@ -97,63 +97,6 @@ def load_text_pages(lang_path: pathlib.Path, page_ids: set) -> dict:
     return texts
 
 
-def load_factory_names(lang_path: pathlib.Path) -> dict:
-    """
-    Builds a {ware_id: factory_name} dict from page 20201 of the language file.
-
-    X4 stores ware text in groups: textId = display name, textId+3 = factory name.
-    This mirrors the X4PlayerShipTradeAnalyzer approach (wares.xml name ref + 3).
-    Factory names are often not "[ware] Factory" — e.g. Energy Cells → Solar Power
-    Plant, Graphene → Graphene Refinery, Ore → Ore Mine.
-    """
-    factory_names: dict[str, str] = {}
-    if not lang_path.exists():
-        return factory_names
-    try:
-        tree = ET.parse(lang_path)
-        root = tree.getroot()
-
-        page_texts: dict[int, str] = {}
-        for page in root.findall('page'):
-            if page.get('id') == '20201':
-                for t in page.findall('t'):
-                    tid  = int(t.get('id', 0))
-                    text = (t.text or '').strip()
-                    if text:
-                        page_texts[tid] = text
-                break
-
-        # Reverse lookup: display name → textId (skip entries with refs or annotations)
-        display_to_tid: dict[str, int] = {
-            text: tid
-            for tid, text in page_texts.items()
-            if '{' not in text and '(' not in text
-        }
-
-        for ware_id, display_name in WARE_NAMES.items():
-            tid = display_to_tid.get(display_name)
-            if tid is not None:
-                factory = page_texts.get(tid + 3, '')
-                if factory and '{' not in factory and '(' not in factory:
-                    factory_names[ware_id] = factory
-
-    except Exception as e:
-        print(f"[Warning] Failed to load factory names: {e}")
-    return factory_names
-
-
-def factory_name_from_ware(ware_id: str, factory_names: dict | None = None) -> str:
-    """
-    Returns the factory display name for a ware ID.
-    Uses the language-file lookup when available; falls back to appending ' Factory'.
-    """
-    if factory_names:
-        name = factory_names.get(ware_id.lower())
-        if name:
-            return name
-    display = WARE_NAMES.get(ware_id.lower(), ware_id.replace('_', ' ').title())
-    return f"{display} Factory"
-
 
 # Matches the production module macro naming pattern prod_{faction}_{ware}_macro.
 # The non-greedy faction token handles multi-part factions (e.g. prod_gen_hullparts_macro).

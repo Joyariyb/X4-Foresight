@@ -314,20 +314,3 @@ WARE_GROUP_PRIORITY: dict[int, int] = {
     201: 10,   # Energy               → "Energy Complex"
     1201: 11,  # Water                → "Water Refinery"
 }
-
-
-def format_wares(overviewgraphs: str) -> str:
-    """
-    LEGACY FUNCTION — no longer called by the main scanner.
-    Previously converted the 'overviewgraphs' attribute from the station XML
-    into a readable list, but that data was unreliable (it reflected UI display
-    hints, not actual production modules). Production is now parsed directly
-    from <construction><sequence> entries in scanner.py.
-
-    Kept here in case it's useful for debugging or future reference.
-    """
-    if not overviewgraphs:
-        return ""
-    wares = overviewgraphs.strip().split()
-    display = [WARE_NAMES.get(w.lower(), w.replace('_', ' ').title()) for w in wares]
-    return ", ".join(display)

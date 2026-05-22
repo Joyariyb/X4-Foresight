@@ -34,7 +34,7 @@ ROOT = pathlib.Path(__file__).parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scanner.language            import load_sector_names, load_text_pages, load_factory_names
+from scanner.language            import load_sector_names, load_text_pages
 from scanner.scanner             import scan_save, scan_reputation, scan_npc_stations
 from scanner.ship_scanner        import scan_ships, merge_station_docked_ships
 from export.jsonexport           import export_json
@@ -213,9 +213,9 @@ def select_ship_tier(stations_active: bool) -> int:
 #  The dispatcher below decides which ones to call — nothing runs twice.
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _run_stations_pass(save_file: pathlib.Path, sector_names: dict, language_texts: dict, factory_names: dict) -> dict:
+def _run_stations_pass(save_file: pathlib.Path, sector_names: dict, language_texts: dict) -> dict:
     t0     = time.perf_counter()
-    result = scan_save(save_file, sector_names, language_texts, factory_names)
+    result = scan_save(save_file, sector_names, language_texts)
     print(f"[Done] Stations pass completed in {time.perf_counter() - t0:.2f}s")
     return result
 
@@ -225,10 +225,9 @@ def _run_npc_stations_pass(
     sector_names: dict,
     player_sectors: set,
     language_texts: dict,
-    factory_names: dict,
 ) -> list:
     t0     = time.perf_counter()
-    result = scan_npc_stations(save_file, sector_names, player_sectors, language_texts, factory_names)
+    result = scan_npc_stations(save_file, sector_names, player_sectors, language_texts)
     print(f"[Done] NPC stations pass completed in {time.perf_counter() - t0:.2f}s")
     return result
 
@@ -335,9 +334,8 @@ if __name__ == "__main__":
         t0 = time.perf_counter()
         sector_names   = load_sector_names(LANG_FILE)
         # Page 20102: station type names ({page,id} refs in name/basename attributes).
-        # Page 20201: ware texts; factory_names uses textId+3 offset to get factory names.
+        # Page 20215: ware group factory names for multi-product station naming.
         language_texts = load_text_pages(LANG_FILE, {'20102', '20215'})
-        factory_names  = load_factory_names(LANG_FILE)
         print(f"[Done] Sector names loaded in {time.perf_counter() - t0:.2f}s")
 
         # ── Build game_data incrementally from whichever passes run ───────────
@@ -360,7 +358,7 @@ if __name__ == "__main__":
 
         # ── Pass 1: stations ──────────────────────────────────────────────────
         if "stations" in passes:
-            result = _run_stations_pass(SAVE_FILE, sector_names, language_texts, factory_names)
+            result = _run_stations_pass(SAVE_FILE, sector_names, language_texts)
             game_data.update(result)
             # Managers from Pass 1 seed the crew list; ship crew is added below.
             game_data["crew"] = result.get("managers", [])
@@ -370,7 +368,7 @@ if __name__ == "__main__":
         if include_npc_stations:
             player_sectors = {s["sector"] for s in game_data["stations"]}
             game_data["npc_stations"] = _run_npc_stations_pass(
-                SAVE_FILE, sector_names, player_sectors, language_texts, factory_names
+                SAVE_FILE, sector_names, player_sectors, language_texts
             )
 
         # ── Pass 2: reputation ────────────────────────────────────────────────
