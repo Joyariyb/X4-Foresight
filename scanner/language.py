@@ -8,6 +8,7 @@ import pathlib
 import re
 
 from lxml import etree as ET
+from data.station_names import WARE_FACTORY_NAMES
 from data.wares import WARE_NAMES, WARE_GROUPS, WARE_GROUP_PRIORITY
 
 # Pre-compiled so these don't recompile on every call inside the iterparse loops.
@@ -163,23 +164,47 @@ def resolve_station_type(prod_macros: list[str], texts: dict) -> str:
     """
     Returns the factory type name for a station given its production module macros.
 
-    Collects the ware group for every production module, then picks the
-    highest-priority group (lowest WARE_GROUP_PRIORITY rank) to name the station.
-    The name is pulled from page 20215 of the language file at textId = groupId + 3.
+    Applies X4's single/multi-product naming rule:
 
-    Returns an empty string if none of the macros map to a known ware group.
+      • 1 unique ware type produced → individual factory name from page 20201
+        (e.g. microchips-only → "Microchip Factory", energycells-only → "Solar
+        Power Plant").  These come from WARE_FACTORY_NAMES in data/station_names.py,
+        which was generated directly from wares.xml factoryname attributes.
 
-    Example: macros with hullparts (hightech, priority 1) and energycells
-    (energy, priority 10) → "High Tech Factory".
+      • 2+ unique ware types → category factory name from page 20215, chosen by
+        the highest-priority ware group (lowest WARE_GROUP_PRIORITY rank).
+        (e.g. wheat + meat → "Agricultural Goods Factory").
+
+    Multiple modules producing the SAME ware (e.g. three microchip lines) still
+    count as a single unique ware type — only the set of distinct ware IDs matters.
+
+    Returns an empty string if none of the macros map to a known ware.
     """
-    best_priority = None
-    winning_gid   = None
+    # Collect distinct ware IDs found in the production module list.
+    # Duplicates (same ware, multiple modules) are collapsed by the set.
+    unique_wares: set[str] = set()
     for macro in prod_macros:
         m = _PROD_MACRO_RE.match(macro)
         if not m:
             continue
-        ware_id = m.group(1).lower()
-        gid     = WARE_GROUPS.get(ware_id)
+        unique_wares.add(m.group(1).lower())
+
+    if not unique_wares:
+        return ''
+
+    # ── Single unique ware → individual factory name ───────────────────────────
+    if len(unique_wares) == 1:
+        ware_id = next(iter(unique_wares))
+        entry   = WARE_FACTORY_NAMES.get(ware_id)
+        if entry:
+            return entry.name
+        # Unknown ware (DLC content, modded ware) — fall through to group logic.
+
+    # ── Multiple unique wares → highest-priority group factory name ────────────
+    best_priority = None
+    winning_gid   = None
+    for ware_id in unique_wares:
+        gid  = WARE_GROUPS.get(ware_id)
         if gid is None:
             continue
         prio = WARE_GROUP_PRIORITY.get(gid, 999)
