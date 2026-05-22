@@ -269,13 +269,13 @@ class ScanWorker(QThread):
             # ── Combined Pass 1+3 ─────────────────────────────────────────────
             # One file read covers player identity, stations (health, cargo,
             # production), NPC stations, and the full ship fleet.
-            # Matches the CLI full scan: tier 1 (all player ships) and
-            # collect_npc_stations=True (needed to resolve trade counterparties).
+            # Tier 2: player ships + NPC ships in sectors where the player has
+            # a station. collect_npc_stations=True resolves trade counterparties.
             self.progress.emit("Pass 1+3 — player, stations, NPC stations, ships…")
             combined = scan_save_and_ships(
                 self._save_path, sector_names, language_texts,
                 collect_npc_stations=True,
-                ship_tier=1,
+                ship_tier=2,
             )
 
             # Extract ship keys before the generic dict becomes game_data — ships

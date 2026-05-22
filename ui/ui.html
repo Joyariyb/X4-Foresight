@@ -1583,9 +1583,92 @@
               </div>
               <span style="font-family:var(--font-mono);font-size:10px;color:${statusColor};letter-spacing:0.12em;white-space:nowrap;flex-shrink:0">${statusLabel}</span>
             </div>
-            <!-- Slider: centred between the name/status row and sector/type row -->
-            <div style="display:flex;justify-content:center;margin-top:7px;margin-bottom:1px">
-              <div class="tri-track" id="tri-${s.code}" data-pos="1" style="width:180px">
+            <!-- Two ring planes at ±45° form a cross over the planet.
+                 Technique: clip-path lives on a <g> with NO transform, so the
+                 horizontal cut (y<50 = back, y>50 = front) is always in SVG
+                 root/screen space regardless of each ring's own rotation.
+                 objectBoundingBox gradients (x1=0→x2=1) use the element's
+                 screen-space bounding box, so tips fade to transparent for
+                 both ring planes automatically with one gradient definition. -->
+            <!-- Container is 50px tall for layout. The SVG is 100px tall and
+                 centred vertically (top:50% + translateY(-50%)), so 25px of
+                 planet/rings bleeds above and below. A vertical mask-image on
+                 the SVG fades those bleed zones to transparent so there is no
+                 hard clip edge — the rings dissolve naturally into the card. -->
+            <div style="display:flex;justify-content:center;align-items:center;margin-top:7px;margin-bottom:1px;position:relative;height:50px">
+              <svg width="180" height="100" viewBox="0 0 180 100"
+                   style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;
+                          -webkit-mask-image:linear-gradient(to bottom,transparent 0%,black 30%,black 70%,transparent 100%);
+                                  mask-image:linear-gradient(to bottom,transparent 0%,black 30%,black 70%,transparent 100%)"
+                   xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <radialGradient id="pg-${s.code}" cx="36%" cy="30%" r="62%">
+                    <stop offset="0%"   stop-color="#6ef0d8" stop-opacity="0.90"/>
+                    <stop offset="28%"  stop-color="#1e9a84" stop-opacity="0.88"/>
+                    <stop offset="65%"  stop-color="#0b3d35" stop-opacity="0.93"/>
+                    <stop offset="100%" stop-color="#041a16" stop-opacity="0.97"/>
+                  </radialGradient>
+                  <linearGradient id="rg-${s.code}" x1="0" y1="0.5" x2="1" y2="0.5">
+                    <stop offset="0%"   stop-color="#2dd4bf" stop-opacity="0.00"/>
+                    <stop offset="22%"  stop-color="#2dd4bf" stop-opacity="0.55"/>
+                    <stop offset="50%"  stop-color="#2dd4bf" stop-opacity="0.67"/>
+                    <stop offset="78%"  stop-color="#2dd4bf" stop-opacity="0.55"/>
+                    <stop offset="100%" stop-color="#2dd4bf" stop-opacity="0.00"/>
+                  </linearGradient>
+                  <linearGradient id="ri-${s.code}" x1="0" y1="0.5" x2="1" y2="0.5">
+                    <stop offset="0%"   stop-color="#f59e0b" stop-opacity="0.00"/>
+                    <stop offset="22%"  stop-color="#f59e0b" stop-opacity="0.50"/>
+                    <stop offset="50%"  stop-color="#f59e0b" stop-opacity="0.62"/>
+                    <stop offset="78%"  stop-color="#f59e0b" stop-opacity="0.50"/>
+                    <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.00"/>
+                  </linearGradient>
+                  <clipPath id="ru-${s.code}">
+                    <rect x="0" y="0"  width="180" height="50"/>
+                  </clipPath>
+                  <clipPath id="rl-${s.code}">
+                    <rect x="0" y="50" width="180" height="50"/>
+                  </clipPath>
+                </defs>
+
+                <g clip-path="url(#ru-${s.code})">
+                  <ellipse cx="90" cy="50" rx="60" ry="9" fill="none"
+                           stroke="url(#rg-${s.code})" stroke-width="3"
+                           transform="rotate(45 90 50)"/>
+                  <ellipse cx="90" cy="50" rx="46" ry="7" fill="none"
+                           stroke="url(#ri-${s.code})" stroke-width="5.5"
+                           transform="rotate(45 90 50)"/>
+                  <ellipse cx="90" cy="50" rx="60" ry="9" fill="none"
+                           stroke="url(#rg-${s.code})" stroke-width="3"
+                           transform="rotate(-45 90 50)"/>
+                  <ellipse cx="90" cy="50" rx="46" ry="7" fill="none"
+                           stroke="url(#ri-${s.code})" stroke-width="5.5"
+                           transform="rotate(-45 90 50)"/>
+                </g>
+
+                <circle cx="90" cy="50" r="27" fill="url(#pg-${s.code})"/>
+                <ellipse cx="81" cy="40" rx="9" ry="6" fill="white" opacity="0.11"
+                         transform="rotate(-25 81 40)"/>
+                <circle cx="90" cy="50" r="27" fill="none"
+                        stroke="#2dd4bf" stroke-width="1.5" stroke-opacity="0.20"/>
+
+                <g clip-path="url(#rl-${s.code})">
+                  <ellipse cx="90" cy="50" rx="60" ry="9" fill="none"
+                           stroke="url(#rg-${s.code})" stroke-width="3"
+                           transform="rotate(45 90 50)"/>
+                  <ellipse cx="90" cy="50" rx="46" ry="7" fill="none"
+                           stroke="url(#ri-${s.code})" stroke-width="5.5"
+                           transform="rotate(45 90 50)"/>
+                  <ellipse cx="90" cy="50" rx="60" ry="9" fill="none"
+                           stroke="url(#rg-${s.code})" stroke-width="3"
+                           transform="rotate(-45 90 50)"/>
+                  <ellipse cx="90" cy="50" rx="46" ry="7" fill="none"
+                           stroke="url(#ri-${s.code})" stroke-width="5.5"
+                           transform="rotate(-45 90 50)"/>
+                </g>
+              </svg>
+
+              <div class="tri-track" id="tri-${s.code}" data-pos="1"
+                   style="width:180px;position:relative;z-index:1">
                 <div class="tri-thumb"></div>
                 <span class="tri-opt"        onclick="setStationSlider('${s.code}',0)">Left</span>
                 <span class="tri-opt active" onclick="setStationSlider('${s.code}',1)">Mid</span>

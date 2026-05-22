@@ -73,7 +73,7 @@ SCAN_MODES = [
         "npc_stations":  True,  # Pass 4 — resolves NPC counterparty codes in trade display
         "trade_log":     True,  # Pass 5 — active TradePerform orders
         "trade_history": True,  # Pass 6 — completed economylog entries
-        "ship_tier":     1,     # Tier 1 captures all player ships (sufficient for trade filter)
+        "ship_tier":     2,     # Tier 2 — player ships + NPC ships in sectors with player stations
     },
     {
         "key":    "stations",
