@@ -232,6 +232,106 @@ def display_trade_log(data: dict):
         print()
 
 
+def display_trade_history(data: dict):
+    """
+    Prints a summary of completed trade history from the economylog.
+
+    Aggregates completed transactions by station and ware so the output stays
+    readable even when thousands of individual log entries are present.
+    Each station shows BOUGHT / SOLD rows with trade count, total units,
+    average price, and total Cr value.
+
+    Time coverage is shown as the age of the oldest log entry, giving a rough
+    sense of how far back the economylog reaches (X4 caps the log length).
+    """
+    LINE    = "─" * 68
+    history = data.get("trade_history", [])
+
+    print(LINE)
+    print(f"  COMPLETED TRADE HISTORY  ({len(history)} log entries)")
+    print()
+
+    if not history:
+        if not data.get("trade_history_scanned"):
+            print("    Trade history scan not selected.")
+        else:
+            print("    No completed trade entries found in economylog.")
+            print("    (X4 8.0 may store an empty global log — entries appear per station.)")
+        return
+
+    # ── Overall totals ────────────────────────────────────────────────────────
+    bought_cr = sum(t["total_cr"] for t in history if t["player_is_buyer"])
+    sold_cr   = sum(t["total_cr"] for t in history if t["player_is_seller"])
+    oldest_s  = max((t["time_ago_s"] for t in history), default=0)
+
+    # Convert seconds to a readable duration (hours or minutes).
+    if oldest_s >= 3600:
+        age_str = f"{oldest_s / 3600:.1f}h"
+    else:
+        age_str = f"{oldest_s / 60:.0f}m"
+
+    print(f"  Purchased     : {bought_cr:>18,.0f} Cr")
+    print(f"  Sold          : {sold_cr:>18,.0f} Cr")
+    print(f"  Log covers    : last ~{age_str} of in-game time")
+    print()
+
+    # ── Aggregate by station + direction + ware ───────────────────────────────
+    # Structure: station_code → {"BOUGHT": {ware: [count, units, total_cr]},
+    #                             "SOLD":   {ware: [count, units, total_cr]}}
+    from collections import defaultdict
+    agg: dict = defaultdict(lambda: {"BOUGHT": defaultdict(lambda: [0, 0, 0.0]),
+                                     "SOLD":   defaultdict(lambda: [0, 0, 0.0])})
+
+    for t in history:
+        ware = t["ware_name"]
+        if t["player_is_buyer"]:
+            row = agg[t["buyer_code"]]["BOUGHT"][ware]
+            row[0] += 1
+            row[1] += t["amount"]
+            row[2] += t["total_cr"]
+        if t["player_is_seller"]:
+            row = agg[t["seller_code"]]["SOLD"][ware]
+            row[0] += 1
+            row[1] += t["amount"]
+            row[2] += t["total_cr"]
+
+    ware_col = max(
+        (len(w) for station in agg.values() for side in station.values() for w in side),
+        default=12,
+    )
+    ware_col = max(12, min(28, ware_col + 1))
+
+    for code in sorted(agg):
+        bought = agg[code]["BOUGHT"]
+        sold   = agg[code]["SOLD"]
+
+        n_trades   = sum(v[0] for v in bought.values()) + sum(v[0] for v in sold.values())
+        buy_total  = sum(v[2] for v in bought.values())
+        sell_total = sum(v[2] for v in sold.values())
+
+        trade_word = 'trade' if n_trades == 1 else 'trades'
+        print(f"  ┌─ {code}  ({n_trades} {trade_word}  ·  "
+              f"Purchased: {buy_total:,.0f} Cr  ·  Sold: {sell_total:,.0f} Cr)")
+
+        rows = []
+        for ware, (n, units, total) in sorted(bought.items()):
+            rows.append(("BOUGHT", ware, n, units, total))
+        for ware, (n, units, total) in sorted(sold.items()):
+            rows.append(("SOLD  ", ware, n, units, total))
+
+        for i, (direction, ware, n, units, total) in enumerate(rows):
+            connector = "└──" if i == len(rows) - 1 else "├──"
+            avg_price = total / units if units else 0
+            trade_word_row = 'trade ' if n == 1 else 'trades'
+            print(
+                f"  {connector} {direction}  {ware:<{ware_col}}  "
+                f"{n:>4} {trade_word_row}  {units:>10,} units  "
+                f"avg {avg_price:>8,.0f} Cr  ·  {total:>14,.0f} Cr total"
+            )
+
+        print()
+
+
 def display_results(data: dict):
     """
     Prints the extracted intelligence data to console in a readable, formatted report.
@@ -798,5 +898,6 @@ def display_results(data: dict):
         print()
 
     display_trade_log(data)
+    display_trade_history(data)
 
     print(f"\n{SEP}")

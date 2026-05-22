@@ -31,8 +31,8 @@ from scanner.language import open_save
 #  transporting ship's ID and code are available when we hit a <trade> element.
 #  The stack correctly handles docked ships nested inside carriers.
 #
-#  Price in TradePerform orders is already in Cr (not the x100 cents encoding
-#  used by the older economylog format).
+#  Price in TradePerform orders is stored in cents (integer), same as the
+#  economylog format. Divide by 100 to get display Cr (e.g. 16000 → 160.00 Cr).
 
 
 def scan_trade_orders(
@@ -134,7 +134,9 @@ def scan_trade_orders(
 
                             try:
                                 amount   = int(float(elem.get('amount', 0)))
-                                price_cr = float(elem.get('price', 0))   # already in Cr
+                                # Price is stored in cents (integer). Divide by 100 to get Cr.
+                                # e.g. the game stores 16000 for what displays as 160.00 Cr.
+                                price_cr = float(elem.get('price', 0)) / 100
                             except (ValueError, TypeError):
                                 continue
 

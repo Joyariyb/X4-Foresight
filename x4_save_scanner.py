@@ -35,7 +35,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scanner.language            import load_sector_names, load_text_pages
-from scanner.scanner             import scan_save, scan_reputation, scan_trade_orders
+from scanner.scanner             import scan_save, scan_reputation, scan_trade_orders, scan_trade_history
 from scanner.ship_scanner        import scan_ships, merge_station_docked_ships
 from export.jsonexport           import export_json
 from display                     import display_results
@@ -63,9 +63,10 @@ SCAN_MODES = [
         # These bypass the interactive sub-prompts so the full scan runs
         # without stopping to ask questions. Other modes leave them absent,
         # which triggers the prompts as normal.
-        "npc_stations": True,   # Pass 4 — resolves NPC counterparty codes in trade display
-        "trade_log":    True,   # Pass 5 — active TradePerform orders
-        "ship_tier":    1,      # Tier 1 captures all player ships (sufficient for trade filter)
+        "npc_stations":  True,  # Pass 4 — resolves NPC counterparty codes in trade display
+        "trade_log":     True,  # Pass 5 — active TradePerform orders
+        "trade_history": True,  # Pass 6 — completed economylog entries
+        "ship_tier":     1,     # Tier 1 captures all player ships (sufficient for trade filter)
     },
     {
         "key":    "stations",
@@ -97,9 +98,10 @@ SCAN_MODES = [
         # Stations pass provides player station IDs; ships pass provides player ship IDs.
         # NPC stations resolves counterparty codes in the trade display.
         # Reputation is intentionally excluded — not relevant to trade data.
-        "npc_stations": True,
-        "trade_log":    True,
-        "ship_tier":    1,
+        "npc_stations":  True,
+        "trade_log":     True,
+        "trade_history": True,
+        "ship_tier":     1,
     },
 ]
 
@@ -201,11 +203,27 @@ def select_npc_stations() -> bool:
 
 
 def select_trade_log() -> bool:
-    """Asks whether to scan the economylog for completed player trade transactions."""
+    """Asks whether to scan for active TradePerform orders at player stations/ships."""
     print()
     print("  ── TRADE LOG ──────────────────────────────────────────────────────")
     print()
-    print("  Include completed trade log? (reads economylog — usually fast)")
+    print("  Include active trade orders? (ships currently transporting goods)")
+    print()
+    while True:
+        choice = input("  [Y]es / [N]o: ").strip().upper()
+        if choice in ('Y', 'YES'):
+            return True
+        if choice in ('N', 'NO'):
+            return False
+        print("  Invalid selection, try again.")
+
+
+def select_trade_history() -> bool:
+    """Asks whether to scan the economylog for completed trade history."""
+    print()
+    print("  ── TRADE HISTORY ──────────────────────────────────────────────────")
+    print()
+    print("  Include completed trade history? (economylog — past transactions)")
     print()
     while True:
         choice = input("  [Y]es / [N]o: ").strip().upper()
@@ -247,6 +265,21 @@ def select_ship_tier(stations_active: bool) -> int:
 #  Each function runs exactly one scanner pass and returns its raw output.
 #  The dispatcher below decides which ones to call — nothing runs twice.
 # ─────────────────────────────────────────────────────────────────────────────
+
+def _run_trade_history_pass(
+    save_file:          pathlib.Path,
+    player_station_ids: set,
+    id_to_code:         dict,
+) -> list:
+    """
+    Runs the completed trade history scan (Pass 6).
+    Only needs player station IDs — ships are not buyers/sellers in completed logs.
+    """
+    t0     = time.perf_counter()
+    result = scan_trade_history(save_file, player_station_ids, id_to_code)
+    print(f"[Done] Trade history pass completed in {time.perf_counter() - t0:.2f}s")
+    return result
+
 
 def _run_trade_pass(
     save_file:          pathlib.Path,
@@ -393,6 +426,16 @@ if __name__ == "__main__":
             else:
                 include_trade_log = select_trade_log()
 
+        # Historical trade log is only offered when the active trade log is enabled —
+        # both need player station IDs from the stations pass, so the dependency
+        # is the same. The prompt is skipped if the mode pre-sets the value.
+        include_trade_history = False
+        if include_trade_log:
+            if "trade_history" in mode:
+                include_trade_history = mode["trade_history"]
+            else:
+                include_trade_history = select_trade_history()
+
         ship_tier = 1
         if "ships" in passes:
             if "ship_tier" in mode:
@@ -436,11 +479,13 @@ if __name__ == "__main__":
             "ships":            {"player_ships": [], "npc_ships": []},
             "crew":               [],
             "managers":           [],
-            "trades":             [],   # populated by the trade scanner pass (not yet implemented)
-            "stations_scanned":   False,
-            "reputation_scanned": False,
-            "ships_scanned":      False,
-            "trades_scanned":     False,
+            "trades":                [],
+            "trade_history":         [],
+            "stations_scanned":      False,
+            "reputation_scanned":    False,
+            "ships_scanned":         False,
+            "trades_scanned":        False,
+            "trade_history_scanned": False,
         }
 
         # ── Pass 1 (+4): stations ─────────────────────────────────────────────
@@ -533,6 +578,14 @@ if __name__ == "__main__":
             }
             game_data["trades"]         = _run_trade_pass(SAVE_FILE, player_station_ids, id_to_code, player_ship_ids)
             game_data["trades_scanned"] = True
+
+        # ── Pass 6: completed trade history (optional, requires Pass 1) ──────
+        # Reads economylog entries — past transactions where a player station
+        # was buyer or seller. Runs as a separate file scan after the active
+        # trade pass so both sets of data can be displayed together.
+        if include_trade_history:
+            game_data["trade_history"]         = _run_trade_history_pass(SAVE_FILE, player_station_ids, id_to_code)
+            game_data["trade_history_scanned"] = True
 
         display_results(game_data)
 
