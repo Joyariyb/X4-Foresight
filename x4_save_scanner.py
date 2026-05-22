@@ -88,6 +88,19 @@ SCAN_MODES = [
         "passes": ["ships"],
         "export": False,
     },
+    {
+        "key":    "trade",
+        "label":  "Trade log only",
+        "desc":   "Active trade orders at player stations and ships (no reputation or JSON)",
+        "passes": ["stations", "ships"],
+        "export": False,
+        # Stations pass provides player station IDs; ships pass provides player ship IDs.
+        # NPC stations resolves counterparty codes in the trade display.
+        # Reputation is intentionally excluded — not relevant to trade data.
+        "npc_stations": True,
+        "trade_log":    True,
+        "ship_tier":    1,
+    },
 ]
 
 # ─────────────────────────────────────────────────────────────────────────────
