@@ -164,12 +164,14 @@ def scan_npc_stations(
                                 texts,
                             )
                             code      = elem.get('code', '')
+                            object_id = elem.get('id', '')   # hex ref e.g. "[0x4f44]" — used in trade buyer/seller attrs
                             nameindex = elem.get('nameindex', '0')
                             macro     = elem.get('macro', '')
 
                             pending = {
                                 'owner':      owner,
                                 'code':       code,
+                                'object_id':  object_id,
                                 'nameindex':  nameindex,
                                 'sector':     current_sector,
                                 'name':       raw_name,
@@ -222,12 +224,13 @@ def scan_npc_stations(
                                 for w in pending['wares']
                             )
                             result.append({
-                                'name':   display,
-                                'owner':  pending['owner'],
-                                'sector': pending['sector'],
-                                'code':   pending['code'],
-                                'macro':  pending['macro'],
-                                'wares':  wares_display,
+                                'name':      display,
+                                'owner':     pending['owner'],
+                                'sector':    pending['sector'],
+                                'code':      pending['code'],
+                                'object_id': pending['object_id'],
+                                'macro':     pending['macro'],
+                                'wares':     wares_display,
                             })
                         npc_station_depth = None
                         pending           = None

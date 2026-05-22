@@ -557,6 +557,7 @@ def scan_save(file_path: pathlib.Path, sector_names: dict, language_texts: dict 
                     if elem is station_elem_pending:
                         macro     = elem.get('macro', '')
                         code      = elem.get('code', '')
+                        object_id = elem.get('id', '')        # hex ref e.g. "[0x4f44]" — used in trade buyer/seller attrs
                         name_attr = elem.get('name', '')      # player-typed literal
                         basename  = elem.get('basename', '')  # game-generated {page,id} ref
                         nameindex = elem.get('nameindex', '') # integer → roman numeral
@@ -620,6 +621,7 @@ def scan_save(file_path: pathlib.Path, sector_names: dict, language_texts: dict 
                         entry = {
                             "name":          display_name,
                             "code":          code,
+                            "object_id":     object_id,   # internal hex ref e.g. "[0x4f44]" — links to TradePerform buyer/seller attrs
                             "class":         elem.get('class', ''),
                             "macro":         macro,
                             "sector":        station_sector_pending,

@@ -58,6 +58,99 @@ def format_runtime(mins: float | None) -> str:
     return f"  ·  {h}h {m:02d}m stock"
 
 
+def display_trade_log(data: dict):
+    """
+    Prints all active TradePerform orders that involve a player-owned station.
+
+    Each record is a contracted trade deal currently being executed by a ship
+    in transit. The player station appears as either the buyer (goods inbound)
+    or the seller (goods outbound). Trades are grouped by player station and
+    split into INBOUND (buying) and OUTBOUND (selling) sections.
+
+    Prices are in Cr as recorded in the save file — no scaling needed.
+    The counterparty shown is the other station in the deal; if the NPC station
+    scan was not run, unresolved hex IDs are displayed verbatim.
+    """
+    LINE   = "─" * 68
+    trades = data.get("trades", [])
+
+    print(LINE)
+    print(f"  ACTIVE TRADE ORDERS  ({len(trades)} orders touching player stations)")
+    print()
+
+    if not trades:
+        if not data.get("trades_scanned"):
+            print("    Trade scan not selected.")
+        else:
+            print("    No active trade orders found at player stations.")
+        return
+
+    # ── Overall totals ────────────────────────────────────────────────────────
+    inbound_cr  = sum(t["total_cr"] for t in trades if t["player_is_buyer"])
+    outbound_cr = sum(t["total_cr"] for t in trades if t["player_is_seller"])
+    print(f"  Inbound value : {inbound_cr:>18,.0f} Cr  (goods arriving)")
+    print(f"  Outbound value: {outbound_cr:>18,.0f} Cr  (goods departing)")
+    print()
+
+    # ── Per-station breakdown ─────────────────────────────────────────────────
+    # Aggregate into station → { 'buys': {ware: [orders, units, total_cr]},
+    #                             'sells': {ware: [orders, units, total_cr]} }
+    station_buys:  dict[str, dict] = {}
+    station_sells: dict[str, dict] = {}
+
+    for t in trades:
+        ware = t["ware_name"]
+        if t["player_is_buyer"]:
+            code = t["buyer_code"]
+            station_buys.setdefault(code, {})
+            if ware not in station_buys[code]:
+                station_buys[code][ware] = [0, 0, 0.0]   # orders, units, total_cr
+            station_buys[code][ware][0] += 1
+            station_buys[code][ware][1] += t["amount"]
+            station_buys[code][ware][2] += t["total_cr"]
+
+        if t["player_is_seller"]:
+            code = t["seller_code"]
+            station_sells.setdefault(code, {})
+            if ware not in station_sells[code]:
+                station_sells[code][ware] = [0, 0, 0.0]
+            station_sells[code][ware][0] += 1
+            station_sells[code][ware][1] += t["amount"]
+            station_sells[code][ware][2] += t["total_cr"]
+
+    # Ware column width — cap so long names don't push columns off screen
+    ware_col = max((len(t["ware_name"]) for t in trades), default=12)
+    ware_col = max(12, min(26, ware_col + 1))
+
+    for code in sorted(set(station_buys) | set(station_sells)):
+        buys  = station_buys.get(code,  {})
+        sells = station_sells.get(code, {})
+
+        n_orders   = sum(v[0] for v in buys.values()) + sum(v[0] for v in sells.values())
+        buy_total  = sum(v[2] for v in buys.values())
+        sell_total = sum(v[2] for v in sells.values())
+
+        print(f"  ┌─ {code}  ({n_orders} orders  ·  "
+              f"In: {buy_total:,.0f} Cr  ·  Out: {sell_total:,.0f} Cr)")
+
+        rows = []
+        for ware, (n, units, total) in sorted(buys.items()):
+            rows.append(("BUYING ", ware, n, units, total))
+        for ware, (n, units, total) in sorted(sells.items()):
+            rows.append(("SELLING", ware, n, units, total))
+
+        for i, (direction, ware, n, units, total) in enumerate(rows):
+            connector = "└──" if i == len(rows) - 1 else "├──"
+            avg_price = total / units if units else 0
+            print(
+                f"  {connector} {direction}  {ware:<{ware_col}}  "
+                f"{n:>3} orders  {units:>8,} units  "
+                f"avg {avg_price:>8,.0f} Cr  ·  {total:>14,.0f} Cr total"
+            )
+
+        print()
+
+
 def display_results(data: dict):
     """
     Prints the extracted intelligence data to console in a readable, formatted report.
@@ -622,5 +715,7 @@ def display_results(data: dict):
                 print(f"  {connector} {faction_name:<36}  {total:>5}  {role_summary}")
 
         print()
+
+    display_trade_log(data)
 
     print(f"\n{SEP}")

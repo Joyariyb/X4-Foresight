@@ -701,6 +701,7 @@ def scan_ships(
 
                             player_ships.append({
                                 "code":        code,
+                                "object_id":   se.get('id', ''),  # hex ref e.g. "[0x4d4c]" — used as buyer/seller in economylog trade entries
                                 "name":        name,
                                 "class":       cls,
                                 "size":        size,

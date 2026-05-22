@@ -35,7 +35,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scanner.language            import load_sector_names, load_text_pages
-from scanner.scanner             import scan_save, scan_reputation, scan_npc_stations
+from scanner.scanner             import scan_save, scan_reputation, scan_npc_stations, scan_trade_orders
 from scanner.ship_scanner        import scan_ships, merge_station_docked_ships
 from export.jsonexport           import export_json
 from display                     import display_results
@@ -181,6 +181,22 @@ def select_npc_stations() -> bool:
         print("  Invalid selection, try again.")
 
 
+def select_trade_log() -> bool:
+    """Asks whether to scan the economylog for completed player trade transactions."""
+    print()
+    print("  ── TRADE LOG ──────────────────────────────────────────────────────")
+    print()
+    print("  Include completed trade log? (reads economylog — usually fast)")
+    print()
+    while True:
+        choice = input("  [Y]es / [N]o: ").strip().upper()
+        if choice in ('Y', 'YES'):
+            return True
+        if choice in ('N', 'NO'):
+            return False
+        print("  Invalid selection, try again.")
+
+
 def select_ship_tier(stations_active: bool) -> int:
     """
     Prompts for a ship scan tier.
@@ -212,6 +228,24 @@ def select_ship_tier(stations_active: bool) -> int:
 #  Each function runs exactly one scanner pass and returns its raw output.
 #  The dispatcher below decides which ones to call — nothing runs twice.
 # ─────────────────────────────────────────────────────────────────────────────
+
+def _run_trade_pass(
+    save_file:          pathlib.Path,
+    player_station_ids: set,
+    id_to_code:         dict,
+) -> list:
+    """
+    Runs the active trade order scan (Pass 5).
+
+    player_station_ids — hex object IDs of player-owned stations. Only trades
+                         where a player station is buyer or seller are returned.
+    id_to_code         — combined player + NPC station map for display resolution.
+    """
+    t0     = time.perf_counter()
+    result = scan_trade_orders(save_file, player_station_ids, id_to_code)
+    print(f"[Done] Active trades pass completed in {time.perf_counter() - t0:.2f}s")
+    return result
+
 
 def _run_stations_pass(save_file: pathlib.Path, sector_names: dict, language_texts: dict) -> dict:
     t0     = time.perf_counter()
@@ -323,6 +357,10 @@ if __name__ == "__main__":
         if "stations" in passes:
             include_npc_stations = select_npc_stations()
 
+        include_trade_log = False
+        if "stations" in passes:
+            include_trade_log = select_trade_log()
+
         ship_tier = 1
         if "ships" in passes:
             ship_tier = select_ship_tier(stations_active="stations" in passes)
@@ -354,9 +392,11 @@ if __name__ == "__main__":
             "ships":            {"player_ships": [], "npc_ships": []},
             "crew":               [],
             "managers":           [],
+            "trades":             [],   # populated by the trade scanner pass (not yet implemented)
             "stations_scanned":   False,
             "reputation_scanned": False,
             "ships_scanned":      False,
+            "trades_scanned":     False,
         }
 
         # ── Pass 1: stations ──────────────────────────────────────────────────
@@ -406,6 +446,27 @@ if __name__ == "__main__":
             # Append ship crew after station managers so managers appear first.
             game_data["crew"] += ships_result.get("crew", [])
             game_data["ships_scanned"] = True
+
+        # ── Pass 5: active trades (optional, requires Pass 1) ────────────────
+        # Finds all TradePerform orders in the save where a player station is
+        # the buyer or seller. Does not require the ships pass — station IDs
+        # are sufficient to filter the relevant orders.
+        if include_trade_log:
+            player_station_ids = {
+                st["object_id"]
+                for st in game_data["stations"]
+                if st.get("object_id")
+            }
+            # Resolution map: player + NPC station hex IDs → display codes.
+            # Ships are not included — unresolved ship IDs show as raw hex,
+            # which is acceptable since the ship is just the transport.
+            id_to_code = {
+                st["object_id"]: st["code"]
+                for st in game_data["stations"] + game_data["npc_stations"]
+                if st.get("object_id") and st.get("code")
+            }
+            game_data["trades"]         = _run_trade_pass(SAVE_FILE, player_station_ids, id_to_code)
+            game_data["trades_scanned"] = True
 
         display_results(game_data)
 
