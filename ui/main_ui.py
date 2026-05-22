@@ -264,7 +264,7 @@ class ScanWorker(QThread):
         try:
             self.progress.emit("Loading sector names…")
             sector_names   = load_sector_names(LANG_PATH)
-            language_texts = load_text_pages(LANG_PATH, {'20102', '20215'})
+            language_texts = load_text_pages(LANG_PATH, {'20102', '20215', '20201'})
 
             self.progress.emit("Pass 1 — player, stations…")
             game_data = scan_save(self._save_path, sector_names, language_texts)

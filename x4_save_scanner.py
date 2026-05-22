@@ -335,7 +335,10 @@ if __name__ == "__main__":
         sector_names   = load_sector_names(LANG_FILE)
         # Page 20102: station type names ({page,id} refs in name/basename attributes).
         # Page 20215: ware group factory names for multi-product station naming.
-        language_texts = load_text_pages(LANG_FILE, {'20102', '20215'})
+        # Page 20201: individual ware texts — resolves any {20201,N} refs found in
+        #             save file attributes (station names, trade data, etc.) directly,
+        #             without needing to go through the hardcoded WARE_FACTORY_NAMES lookup.
+        language_texts = load_text_pages(LANG_FILE, {'20102', '20215', '20201'})
         print(f"[Done] Sector names loaded in {time.perf_counter() - t0:.2f}s")
 
         # ── Build game_data incrementally from whichever passes run ───────────

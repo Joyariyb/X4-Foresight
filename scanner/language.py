@@ -9,7 +9,7 @@ import re
 
 from lxml import etree as ET
 from data.station_names import WARE_FACTORY_NAMES
-from data.wares import WARE_NAMES, WARE_GROUPS, WARE_GROUP_PRIORITY
+from data.wares import WARE_GROUPS, WARE_GROUP_PRIORITY
 
 # Pre-compiled so these don't recompile on every call inside the iterparse loops.
 _SECTOR_NAME_RE = re.compile(r'\(([^)]+)\)\s*$')
