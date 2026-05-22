@@ -35,7 +35,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scanner.language            import load_sector_names, load_text_pages
-from scanner.scanner             import scan_save, scan_reputation, scan_npc_stations, scan_trade_orders
+from scanner.scanner             import scan_save, scan_reputation, scan_trade_orders
 from scanner.ship_scanner        import scan_ships, merge_station_docked_ships
 from export.jsonexport           import export_json
 from display                     import display_results
@@ -269,22 +269,20 @@ def _run_trade_pass(
     return result
 
 
-def _run_stations_pass(save_file: pathlib.Path, sector_names: dict, language_texts: dict) -> dict:
-    t0     = time.perf_counter()
-    result = scan_save(save_file, sector_names, language_texts)
-    print(f"[Done] Stations pass completed in {time.perf_counter() - t0:.2f}s")
-    return result
-
-
-def _run_npc_stations_pass(
+def _run_stations_pass(
     save_file: pathlib.Path,
     sector_names: dict,
-    player_sectors: set,
     language_texts: dict,
-) -> list:
+    collect_npc_stations: bool = False,
+) -> dict:
+    """
+    Runs Pass 1 (player stations). When collect_npc_stations=True, NPC station
+    data is gathered in the same file read and returned under "npc_stations_raw".
+    The caller filters that list to player sectors after the pass completes.
+    """
     t0     = time.perf_counter()
-    result = scan_npc_stations(save_file, sector_names, player_sectors, language_texts)
-    print(f"[Done] NPC stations pass completed in {time.perf_counter() - t0:.2f}s")
+    result = scan_save(save_file, sector_names, language_texts, collect_npc_stations)
+    print(f"[Done] Stations pass completed in {time.perf_counter() - t0:.2f}s")
     return result
 
 
@@ -435,20 +433,29 @@ if __name__ == "__main__":
             "trades_scanned":     False,
         }
 
-        # ── Pass 1: stations ──────────────────────────────────────────────────
+        # ── Pass 1 (+4): stations ─────────────────────────────────────────────
+        # When include_npc_stations=True, NPC station data is collected in the
+        # same file read and returned as "npc_stations_raw". We filter that list
+        # to player sectors here — a cheap in-memory operation — rather than
+        # opening the file a second time.
         if "stations" in passes:
-            result = _run_stations_pass(SAVE_FILE, sector_names, language_texts)
+            result = _run_stations_pass(
+                SAVE_FILE, sector_names, language_texts,
+                collect_npc_stations=include_npc_stations,
+            )
             game_data.update(result)
             # Managers from Pass 1 seed the crew list; ship crew is added below.
             game_data["crew"] = result.get("managers", [])
             game_data["stations_scanned"] = True
 
-        # ── Pass 4: NPC stations (optional, requires Pass 1) ─────────────────
-        if include_npc_stations:
-            player_sectors = {s["sector"] for s in game_data["stations"]}
-            game_data["npc_stations"] = _run_npc_stations_pass(
-                SAVE_FILE, sector_names, player_sectors, language_texts
-            )
+            if include_npc_stations:
+                player_sectors = {s["sector"] for s in game_data["stations"]}
+                npc_raw        = game_data.pop("npc_stations_raw", [])
+                game_data["npc_stations"] = [
+                    st for st in npc_raw if st["sector"] in player_sectors
+                ]
+                print(f"[Done] NPC stations — {len(game_data['npc_stations'])} in player "
+                      f"sectors (filtered from {len(npc_raw)} total).")
 
         # ── Pass 2: reputation ────────────────────────────────────────────────
         if "reputation" in passes:

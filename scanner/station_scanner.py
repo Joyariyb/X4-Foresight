@@ -1,6 +1,7 @@
 import pathlib
 import re
 from lxml import etree as ET
+from data.factions import FACTION_NAMES
 from data.wares import WARE_NAMES, WARE_VOLUME, WARE_TRANSPORT
 from data.station_stats import STATION_STATS
 from scanner.language import macro_to_sector_name, nameindex_to_roman, resolve_sector_from_location, resolve_station_type, open_save, resolve_text_ref
@@ -24,6 +25,44 @@ _STATE_LABELS = {
     "construction": "Under Construction",
     "wreck":        "Destroyed",
 }
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  NPC STATION NAME HELPERS
+#  Used when collect_npc_stations=True — NPC station data is collected in the
+#  same streaming pass as player stations so the file is only read once.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Maps faction IDs to the bracketed short code from FACTION_NAMES, e.g. "argon" → "ARG".
+# Used to prefix NPC station display names in the same format X4's UI uses.
+_FACTION_SHORT_RE = re.compile(r'\[(\w+)\]')
+FACTION_SHORT: dict[str, str] = {}
+for _fid, _fdisplay in FACTION_NAMES.items():
+    _m = _FACTION_SHORT_RE.match(_fdisplay)
+    if _m:
+        FACTION_SHORT[_fid] = _m.group(1)
+
+
+def _build_npc_display_name(raw_name: str, nameindex: str, code: str, owner: str) -> str:
+    """
+    Assembles the display name for an NPC station in X4's format:
+      "{FactionAbbr} {TypeName} {RomanNumeral} ({StationCode})"
+    e.g. "TEL Advanced Electronics Factory I (CYS-158)".
+    """
+    parts = []
+    short = FACTION_SHORT.get(owner.lower(), '')
+    if short:
+        parts.append(short)
+    if raw_name:
+        parts.append(raw_name)
+    if nameindex:
+        roman = nameindex_to_roman(nameindex)
+        if roman:
+            parts.append(roman)
+    display = " ".join(parts)
+    if code:
+        display += f" ({code})"
+    return display
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  MODULE INFO TABLES
@@ -484,10 +523,20 @@ def _parse_station_health(modules: list[dict]) -> dict:
 #  PASS 1 — PLAYER DATA AND STATIONS
 # ─────────────────────────────────────────────────────────────────────────────
 
-def scan_save(file_path: pathlib.Path, sector_names: dict, language_texts: dict | None = None) -> dict:
+def scan_save(
+    file_path: pathlib.Path,
+    sector_names: dict,
+    language_texts: dict | None = None,
+    collect_npc_stations: bool = False,
+) -> dict:
     """
     Streams the save file and extracts player identity, credits, sector location,
     and all owned stations with their production, health, and manager data.
+
+    When collect_npc_stations=True, NPC station data is also collected in the
+    same streaming pass — avoiding a separate second read of the file. The result
+    dict will contain "npc_stations_raw": a list of all NPC stations found,
+    unfiltered by sector. The caller is responsible for filtering to player sectors.
 
     Uses iterparse() for memory efficiency on 700MB+ save files. Station elements
     are buffered in memory only long enough to extract their full subtree, then
@@ -505,10 +554,24 @@ def scan_save(file_path: pathlib.Path, sector_names: dict, language_texts: dict 
     in_player_faction    = False
     current_sector       = "Unknown Sector"
     inside_station       = False
-    station_elem_pending = None
+    station_elem_pending   = None
     station_sector_pending = None
 
-    print(f"[Scanning] Pass 1 — player identity, credits, stations...")
+    # ── NPC station tracking ──────────────────────────────────────────────────
+    # Only active when collect_npc_stations=True. We buffer each NPC station
+    # element (same pattern as player stations) but collect its data from start
+    # events rather than walking the subtree at close — production macros and
+    # traded wares are the only fields needed, and both are available on start.
+    # Player sectors aren't known until this pass finishes, so the sector filter
+    # runs in the caller after scan_save() returns.
+    npc_station_elem_pending:   ET.Element | None = None
+    npc_station_sector_pending: str               = ""
+    npc_prod_macros:            list[str]         = []
+    npc_wares:                  list[str]         = []
+    npc_stations_raw:           list[dict]        = []
+
+    npc_str = " + NPC stations" if collect_npc_stations else ""
+    print(f"[Scanning] Pass 1 — player identity, credits, stations{npc_str}...")
 
     try:
         with open_save(file_path) as f:
@@ -548,10 +611,36 @@ def scan_save(file_path: pathlib.Path, sector_names: dict, language_texts: dict 
 
                     if (elem.get('owner') == 'player' and
                             comp_class in STATION_CLASSES and
-                            not inside_station):
+                            not inside_station and
+                            npc_station_elem_pending is None):
                         inside_station         = True
                         station_elem_pending   = elem
                         station_sector_pending = current_sector
+
+                    # NPC station detection — only when requested and not already
+                    # inside a player or NPC station (they never nest in practice).
+                    elif (
+                        collect_npc_stations
+                        and not inside_station
+                        and npc_station_elem_pending is None
+                        and comp_class in STATION_CLASSES
+                        and elem.get('owner', '') not in ('', 'player')
+                    ):
+                        npc_station_elem_pending   = elem
+                        npc_station_sector_pending = current_sector
+                        npc_prod_macros            = []
+                        npc_wares                  = []
+
+                # ── NPC station data collection ───────────────────────────────
+                # Collect from start events so child elements can be cleared
+                # normally as their end events fire — no subtree buffering needed.
+                if npc_station_elem_pending is not None:
+                    if tag == 'component' and elem.get('class') == 'production':
+                        npc_prod_macros.append(elem.get('macro', ''))
+                    elif tag == 'trade' and not npc_wares and elem.get('wares'):
+                        # Only the first <trade wares="..."> element is the
+                        # station-level ware list; inner <trade> elements differ.
+                        npc_wares = elem.get('wares', '').split()
 
                 if event == 'end' and tag == 'component' and inside_station:
                     if elem is station_elem_pending:
@@ -680,11 +769,58 @@ def scan_save(file_path: pathlib.Path, sector_names: dict, language_texts: dict 
                         elem.clear()
                         continue
 
+                # ── NPC station close ─────────────────────────────────────────
+                # Catches the buffered NPC station element when its end event fires.
+                # Child elements were already cleared as they streamed through
+                # (the general elem.clear() below handled them), so only the
+                # station element's own attributes remain — exactly what we need.
+                if (event == 'end' and tag == 'component'
+                        and npc_station_elem_pending is not None
+                        and elem is npc_station_elem_pending):
+                    texts    = language_texts or {}
+                    owner    = elem.get('owner', '')
+                    code     = elem.get('code', '')
+                    raw_name = resolve_text_ref(
+                        elem.get('name', '') or elem.get('basename', ''),
+                        texts,
+                    )
+                    type_name = raw_name or resolve_station_type(npc_prod_macros, texts)
+                    display   = _build_npc_display_name(
+                        type_name,
+                        elem.get('nameindex', '0'),
+                        code,
+                        owner,
+                    )
+                    wares_display = sorted(
+                        WARE_NAMES.get(w, w.replace('_', ' ').title())
+                        for w in npc_wares
+                    )
+                    npc_stations_raw.append({
+                        'name':      display,
+                        'owner':     owner,
+                        'sector':    npc_station_sector_pending,
+                        'code':      code,
+                        'object_id': elem.get('id', ''),
+                        'macro':     elem.get('macro', ''),
+                        'wares':     wares_display,
+                    })
+                    npc_station_elem_pending   = None
+                    npc_station_sector_pending = ""
+                    npc_prod_macros            = []
+                    npc_wares                  = []
+                    elem.clear()
+                    continue
+
                 if event == 'end' and not inside_station:
                     elem.clear()
 
     except ET.XMLSyntaxError as e:
         print(f"\n[XML Error] Save file has a formatting issue: {e}")
         raise
+
+    if collect_npc_stations:
+        data["npc_stations_raw"] = npc_stations_raw
+        print(f"[Scanning] Pass 1+4 — collected {len(npc_stations_raw)} NPC station(s) "
+              f"(sector filter runs after pass completes).")
 
     return data

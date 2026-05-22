@@ -161,7 +161,8 @@ def display_trade_log(data: dict):
         buy_total  = sum(v[2] for v in buys.values())
         sell_total = sum(v[2] for v in sells.values())
 
-        print(f"  ┌─ {code}  ({n_orders} orders  ·  "
+        ord_word = 'order' if n_orders == 1 else 'orders'
+        print(f"  ┌─ {code}  ({n_orders} {ord_word}  ·  "
               f"In: {buy_total:,.0f} Cr  ·  Out: {sell_total:,.0f} Cr)")
 
         rows = []
@@ -179,7 +180,7 @@ def display_trade_log(data: dict):
             avg_price  = total / units if units else 0
             print(
                 f"  {connector} {direction}  {ware:<{ware_col}}  "
-                f"{n:>3} orders  {units:>8,} units  "
+                f"{n:>3} {'order ' if n == 1 else 'orders'}  {units:>8,} units  "
                 f"avg {avg_price:>8,.0f} Cr  ·  {total:>14,.0f} Cr total"
             )
             # Ship sub-line — which ships are currently carrying this ware.
@@ -195,55 +196,40 @@ def display_trade_log(data: dict):
 
     # ── Ship-only trades (player ship, NPC-to-NPC routes) ────────────────────
     # These are trades where a player ship is executing the order but neither
-    # station is player-owned. Grouped by ship code, then ware.
+    # station is player-owned (e.g. autotrader running between NPC stations).
+    # Each ship has at most one active TradePerform order, so a flat table is
+    # more readable than a tree-per-ship. The destination (buyer) is always set;
+    # the seller may be absent if the ship has already left the pickup station.
     if ship_trades:
-        ship_data: dict[str, dict] = {}   # ship_code → { ware: [orders, units, total_cr] }
-
-        for t in ship_trades:
-            code = t.get("ship_code") or t.get("ship_id", "Unknown")
-            ware = t["ware_name"]
-            ship_data.setdefault(code, {})
-            if ware not in ship_data[code]:
-                ship_data[code][ware] = [0, 0, 0.0, set()]   # orders, units, total_cr, routes
-            ship_data[code][ware][0] += 1
-            ship_data[code][ware][1] += t["amount"]
-            ship_data[code][ware][2] += t["total_cr"]
-            # Track each (origin, destination) pair so we can show the route.
-            # seller = station goods are collected from; buyer = station they're delivered to.
-            ship_data[code][ware][3].add((
-                t.get("seller_code", "?"),
-                t.get("buyer_code",  "?"),
-            ))
-
         ship_total_cr = sum(t["total_cr"] for t in ship_trades)
+        n_st          = len(ship_trades)
         print(f"  PLAYER SHIPS — NPC-to-NPC ROUTES  "
-              f"({len(ship_trades)} orders  ·  {ship_total_cr:,.0f} Cr)")
+              f"({n_st} {'order' if n_st == 1 else 'orders'}  ·  {ship_total_cr:,.0f} Cr)")
         print()
 
-        for code in sorted(ship_data):
-            wares    = ship_data[code]
-            n_orders = sum(v[0] for v in wares.values())
-            total_cr = sum(v[2] for v in wares.values())
-            label    = ship_labels.get(code, code)
-            print(f"  ┌─ {label}  ({n_orders} orders  ·  {total_cr:,.0f} Cr)")
+        # Dynamic column widths so ship names and ware names don't overflow.
+        sc_col = max(
+            (len(ship_labels.get(t.get("ship_code", ""), t.get("ship_code", "")))
+             for t in ship_trades),
+            default=20,
+        )
+        sc_col   = max(20, min(44, sc_col + 1))
+        wc_col   = max((len(t["ware_name"]) for t in ship_trades), default=12)
+        wc_col   = max(12, min(20, wc_col + 1))
 
-            ware_rows = sorted(wares.items())
-            for i, (ware, (n, units, total, routes)) in enumerate(ware_rows):
-                is_last    = i == len(ware_rows) - 1
-                connector  = "└──" if is_last else "├──"
-                sub_indent = "       " if is_last else "│      "
-                avg_price  = total / units if units else 0
-                print(
-                    f"  {connector} {ware:<{ware_col}}  "
-                    f"{n:>3} orders  {units:>8,} units  "
-                    f"avg {avg_price:>8,.0f} Cr  ·  {total:>14,.0f} Cr total"
-                )
-                # Origin → destination route for each unique (seller, buyer) pair.
-                # seller is where goods are picked up; buyer is where they're delivered.
-                for seller, buyer in sorted(routes):
-                    print(f"  {sub_indent}  ↳ {seller}  →  {buyer}")
+        print(f"  {'Ship':<{sc_col}}  {'Ware':<{wc_col}}  {'Units':>8}  {'Cr/unit':>9}  {'Total Cr':>14}  Destination")
+        print(f"  {'─' * sc_col}  {'─' * wc_col}  {'─' * 8}  {'─' * 9}  {'─' * 14}  {'─' * 22}")
 
-            print()
+        for t in sorted(ship_trades, key=lambda x: ship_labels.get(x.get("ship_code", ""), x.get("ship_code", ""))):
+            code  = t.get("ship_code", "")
+            label = ship_labels.get(code, code)
+            dest  = t.get("buyer_code") or "?"   # destination always present in TradePerform
+            print(
+                f"  {label:<{sc_col}}  {t['ware_name']:<{wc_col}}  "
+                f"{t['amount']:>8,}  {t['price_cr']:>9,.0f}  {t['total_cr']:>14,.0f}  → {dest}"
+            )
+
+        print()
 
 
 def display_results(data: dict):
