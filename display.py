@@ -227,6 +227,15 @@ def display_trade_history(data: dict):
 
     # ── Aggregate by station + direction + ware ───────────────────────────────
     from collections import defaultdict
+
+    # Build code → name lookup from player stations so we can display
+    # "Station TV [SIZ-939]" instead of just "SIZ-939" in section headers.
+    code_to_name: dict[str, str] = {
+        s["code"]: s["name"]
+        for s in data.get("stations", [])
+        if s.get("code") and s.get("name")
+    }
+
     agg: dict = defaultdict(lambda: {
         "In":  defaultdict(lambda: [0, 0, 0.0]),
         "Out": defaultdict(lambda: [0, 0, 0.0]),
@@ -256,8 +265,10 @@ def display_trade_history(data: dict):
         buy_total  = sum(v[2] for v in inbound.values())
         sell_total = sum(v[2] for v in outbound.values())
 
-        # Station separator — code + per-station purchase/sale totals.
-        print(f"  ── {code}  ·  Purchased: {buy_total:,.0f} Cr  ·  Sold: {sell_total:,.0f} Cr")
+        # Station separator — name (if known) + code + per-station totals.
+        name = code_to_name.get(code)
+        label = f"{name}  [{code}]" if name else code
+        print(f"  ── {label}  ·  Purchased: {buy_total:,.0f} Cr  ·  Sold: {sell_total:,.0f} Cr")
 
         rows = (
             [("In",  w, *v) for w, v in sorted(inbound.items())] +
@@ -266,6 +277,49 @@ def display_trade_history(data: dict):
         for direction, ware, n, units, total in rows:
             avg = total / units if units else 0
             print(f"  {direction:<3}  {ware:<{wc}}  {n:>6}  {units:>9,}  {avg:>11,.0f}  {total:>14,.0f}")
+
+        print()
+
+    # ── Individual trade log ──────────────────────────────────────────────────
+    # One row per completed log entry where the player is buyer or seller.
+    # Sorted most-recent-first (time_ago_s = 0 means it just happened).
+    player_entries = sorted(
+        (t for t in history if t["player_is_buyer"] or t["player_is_seller"]),
+        key=lambda t: t["time_ago_s"],
+    )
+
+    if player_entries:
+        def _age(s: float) -> str:
+            """Format a seconds-ago value as a compact human-readable string."""
+            if s < 60:
+                return f"{int(s)}s"
+            if s < 3600:
+                return f"{int(s // 60)}m"
+            h = int(s // 3600)
+            m = int((s % 3600) // 60)
+            return f"{h}h {m:02d}m"
+
+        # Column widths
+        tc = 8    # time
+        sc = 11   # station code
+        cc = 11   # counterparty code
+
+        print(f"  {'Time':<{tc}}  {'Station':<{sc}}  {'Dir'}  "
+              f"{'Ware':<{wc}}  {'Units':>9}  {'Cr/unit':>9}  {'Total Cr':>12}  {'Counterparty':<{cc}}")
+        print(f"  {'─'*tc}  {'─'*sc}  {'─'*3}  "
+              f"{'─'*wc}  {'─'*9}  {'─'*9}  {'─'*12}  {'─'*cc}")
+
+        for t in player_entries:
+            age        = _age(t["time_ago_s"])
+            direction  = "In " if t["player_is_buyer"] else "Out"
+            # Player station is buyer → station = buyer_code, counterparty = seller
+            # Player station is seller → station = seller_code, counterparty = buyer
+            station    = t["buyer_code"]  if t["player_is_buyer"]  else t["seller_code"]
+            counterpty = t["seller_code"] if t["player_is_buyer"]  else t["buyer_code"]
+
+            print(f"  {age:<{tc}}  {station:<{sc}}  {direction}  "
+                  f"{t['ware_name']:<{wc}}  {t['amount']:>9,}  {t['price_cr']:>9,.2f}  "
+                  f"{t['total_cr']:>12,.0f}  {counterpty:<{cc}}")
 
         print()
 
