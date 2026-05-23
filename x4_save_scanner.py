@@ -665,14 +665,28 @@ if __name__ == "__main__":
                 for sh in game_data["ships"].get("player_ships", [])
                 if sh.get("object_id")
             }
-            # Hex ID → display code for resolving buyer/seller codes in the
-            # trade display. Includes both player stations and NPC stations so
-            # counterparty names resolve cleanly.
+            # Hex ID → display label for resolving buyer/seller in the trade
+            # display. Includes player stations, NPC stations, player ships,
+            # and NPC ships (scanned at tier 2+, i.e. ships in player-station
+            # sectors). NPC ships outside those sectors are never scanned so
+            # they'll still fall back to "NPC Ship" in the display.
+            # Ships use "Name [CODE]" format (e.g. "Veles Sentinel [TDD-486]")
+            # to match how ships appear elsewhere in the report.
             id_to_code = {
                 st["object_id"]: st["code"]
                 for st in game_data["stations"] + game_data["npc_stations"]
                 if st.get("object_id") and st.get("code")
             }
+            id_to_code.update({
+                sh["object_id"]: f"{sh['name']} [{sh['code']}]"
+                for sh in game_data["ships"].get("player_ships", [])
+                if sh.get("object_id") and sh.get("name") and sh.get("code")
+            })
+            id_to_code.update({
+                sh["object_id"]: f"{sh['name']} [{sh['code']}]"
+                for sh in game_data["ships"].get("npc_ships", [])
+                if sh.get("object_id") and sh.get("name") and sh.get("code")
+            })
 
             if include_trade_history:
                 # Both active orders and completed history requested — one read.

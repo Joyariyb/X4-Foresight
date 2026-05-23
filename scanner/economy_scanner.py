@@ -95,8 +95,20 @@ def scan_trade_history(
                     # completed transaction. Only process entries where a player
                     # station is buyer or seller — NPC-only trades are skipped.
                     elif in_trade_entries and tag == 'log' and elem.get('type') == 'trade':
-                        buyer_id  = elem.get('buyer',  '')
-                        seller_id = elem.get('seller', '')
+                        # Normalise IDs to [0xN] bracketed-hex format.
+                        # X4 usually writes "[0x1234]" but occasionally writes
+                        # a plain decimal integer — convert those so id_to_code
+                        # lookups work consistently.
+                        def _norm(raw: str) -> str:
+                            if not raw or raw.startswith('['):
+                                return raw
+                            try:
+                                return f'[{hex(int(raw))}]'
+                            except ValueError:
+                                return raw
+
+                        buyer_id  = _norm(elem.get('buyer',  ''))
+                        seller_id = _norm(elem.get('seller', ''))
 
                         buyer_is_player  = buyer_id  in player_station_ids
                         seller_is_player = seller_id in player_station_ids
@@ -121,8 +133,8 @@ def scan_trade_history(
                         result.append({
                             'buyer_id':        buyer_id,
                             'seller_id':       seller_id,
-                            'buyer_code':      id_to_code.get(buyer_id,  buyer_id)  if buyer_id  else '—',
-                            'seller_code':     id_to_code.get(seller_id, seller_id) if seller_id else '—',
+                            'buyer_code':      id_to_code.get(buyer_id,  'NPC Ship') if buyer_id  else '—',
+                            'seller_code':     id_to_code.get(seller_id, 'NPC Ship') if seller_id else '—',
                             'ware':            ware_id,
                             'ware_name':       ware_name,
                             'amount':          amount,
