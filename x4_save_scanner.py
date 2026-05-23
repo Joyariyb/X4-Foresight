@@ -682,11 +682,26 @@ if __name__ == "__main__":
                 for sh in game_data["ships"].get("player_ships", [])
                 if sh.get("object_id") and sh.get("name") and sh.get("code")
             })
-            id_to_code.update({
-                sh["object_id"]: f"{sh['name']} [{sh['code']}]"
-                for sh in game_data["ships"].get("npc_ships", [])
-                if sh.get("object_id") and sh.get("name") and sh.get("code")
-            })
+            # NPC ships: try to annotate the label with their commanding station.
+            # Trade ships assigned to a station carry a commander ID (e.g. [0x1234])
+            # that points to their home station. If it's already in id_to_code
+            # (all player and NPC stations were added above) we append it as
+            # "Ship Name [CODE] (for STATION)" so the counterparty column is
+            # informative. Free traders and unresolved commanders show without it.
+            for sh in game_data["ships"].get("npc_ships", []):
+                if not (sh.get("object_id") and sh.get("name") and sh.get("code")):
+                    continue
+                label    = f"{sh['name']} [{sh['code']}]"
+                cmdr_id  = sh.get("commander")
+                if cmdr_id:
+                    station_label = id_to_code.get(cmdr_id)
+                    if station_label:
+                        label += f" (for {station_label})"
+                    else:
+                        # Commander exists but isn't a known station — print the
+                        # raw ID so we can see what format it arrives in.
+                        label += f" (for {cmdr_id})"
+                id_to_code[sh["object_id"]] = label
 
             if include_trade_history:
                 # Both active orders and completed history requested — one read.

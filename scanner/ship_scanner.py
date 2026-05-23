@@ -763,8 +763,18 @@ def scan_ships(
                             # in the UI — who is where and doing what. Crew and
                             # hull health are omitted because we don't own these
                             # ships and the extra parsing wouldn't be used.
+                            #
+                            # Commander: trade ships assigned to a station carry
+                            # a <connection connection="commander"> that points
+                            # to their controlling station. We extract it here so
+                            # the trade history display can show which station an
+                            # NPC ship is trading on behalf of. Free traders and
+                            # ships on manual orders may return None.
+                            cmdr = _parse_commander(se)
+
                             npc_ships.append({
                                 "code":        code,
+                                "object_id":   se.get('id', ''),  # hex ref e.g. "[0x1f673]"
                                 "name":        name,
                                 "class":       cls,
                                 "size":        size,
@@ -774,6 +784,7 @@ def scan_ships(
                                 "owner":       owner,
                                 "sector":      sector,
                                 "order":       order,
+                                "commander":   cmdr,      # raw ID of the commanding station (or None)
                             })
 
                         # Reset buffering state and free the element's memory.
