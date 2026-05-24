@@ -31,6 +31,36 @@ from data.wares import WARE_NAMES
 from scanner.language import open_save
 
 # ─────────────────────────────────────────────────────────────────────────────
+#  HELPERS
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Station component classes — mirrors station_scanner.STATION_CLASSES.
+# Economy log <entries type="trade"> blocks appear inside station subtrees;
+# detecting which NPC station we're inside lets us annotate every log entry
+# with the counterparty station ID directly (no ship → homebase chain needed).
+_STATION_CLASSES = {"station", "factory", "headquarters", "complex"}
+
+
+def _norm(raw: str) -> str:
+    """
+    Normalise a component ID to bracketed-hex format "[0xNN]".
+
+    X4 economy log attributes use two ID formats:
+      "[0x1234]" — bracketed hex (most entries)
+      "853"      — plain decimal (occasional entries)
+
+    Both refer to the same component-ID space. Normalising to "[0xNN]" makes
+    lookups against homebase_index and player_station_ids consistent regardless
+    of which format the save file happens to use for a particular entry.
+    """
+    if not raw or raw.startswith('['):
+        return raw
+    try:
+        return f'[{hex(int(raw))}]'
+    except ValueError:
+        return raw
+
+# ─────────────────────────────────────────────────────────────────────────────
 #  COMBINED SCANNER
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -86,6 +116,21 @@ def scan_trade_log_and_history(
     game_time_found: bool       = False
     in_trade_entries: bool      = False   # True while inside <entries type="trade">
 
+    # ── NPC station context for economy log (Pass 6) ───────────────────────────
+    # X4 records each completed trade in the economy log of BOTH the buyer and
+    # the seller station. When we are inside an NPC station's <component> subtree
+    # we can read the counterparty station's object_id directly from the XML
+    # rather than going through the fragile ship → homebase chain.
+    #
+    # in_npc_station — True while streaming through an NPC station's subtree.
+    # npc_station_id — the NPC station's object_id (set when in_npc_station=True).
+    # npc_depth      — element nesting depth from the station's own opening tag.
+    #                  Decrements on every end event; reaches 0 when the station's
+    #                  own closing tag arrives, signalling we have left the subtree.
+    in_npc_station: bool = False
+    npc_station_id: str  = ''
+    npc_depth:      int  = 0
+
     print(
         f"[Scanning] Trade log + history — scanning TradePerform orders and "
         f"economylog entries ({len(player_station_ids)} player station(s), "
@@ -100,6 +145,17 @@ def scan_trade_log_and_history(
                 tag = elem.tag
 
                 if event == 'start':
+
+                    # ── NPC station depth tracking (Pass 6) ───────────────────
+                    # Increment depth for EVERY element while inside an NPC
+                    # station subtree. This is the broadest possible counter —
+                    # any start event inside the station adds 1 regardless of
+                    # tag, so the corresponding end event always subtracts 1 and
+                    # the depth reaches exactly 0 when the station's own closing
+                    # tag fires. (The station's opening tag contributes the
+                    # initial depth=1 in the NPC-station-detection block below.)
+                    if in_npc_station:
+                        npc_depth += 1
 
                     # ── Game time capture (Pass 6) ────────────────────────────
                     # <game time="..."> appears near the top of every save.
@@ -122,6 +178,21 @@ def scan_trade_log_and_history(
                                 elem.get('id',   ''),
                                 elem.get('code', ''),
                             ))
+
+                    # ── NPC station entry detection (Pass 6) ──────────────────
+                    # When we enter a station-class component owned by a non-
+                    # player faction, record it as the current economy log owner.
+                    # Stations do not nest inside each other in X4, so we only
+                    # enter this branch when not already tracking an NPC station.
+                    # The initial depth is set to 1 here (the station's own
+                    # opening tag); every subsequent element increments it above.
+                    if tag == 'component' and not in_npc_station:
+                        comp_cls = elem.get('class', '')
+                        owner    = elem.get('owner', '')
+                        if comp_cls in _STATION_CLASSES and owner and owner != 'player':
+                            in_npc_station = True
+                            npc_station_id = elem.get('id', '')
+                            npc_depth      = 1   # station's own opening tag
 
                     # ── TradePerform order detection (Pass 5) ─────────────────
                     if not in_trade_order:
@@ -186,8 +257,14 @@ def scan_trade_log_and_history(
                     # completed transaction. The 'v' attribute is the volume
                     # (units traded); 'price' is stored in cents (÷ 100 → Cr).
                     elif in_trade_entries and tag == 'log' and elem.get('type') == 'trade':
-                        buyer_id  = elem.get('buyer',  '')
-                        seller_id = elem.get('seller', '')
+                        # Normalise to "[0xNN]" bracketed-hex format.
+                        # X4 economy log attributes use two formats: "[0x1234]"
+                        # and plain decimal (e.g. "853"). _norm() makes both
+                        # consistent so player_station_ids lookups and the
+                        # homebase_index fallback work regardless of which format
+                        # this particular log entry happens to use.
+                        buyer_id  = _norm(elem.get('buyer',  ''))
+                        seller_id = _norm(elem.get('seller', ''))
 
                         buyer_is_player  = buyer_id  in player_station_ids
                         seller_is_player = seller_id in player_station_ids
@@ -218,6 +295,19 @@ def scan_trade_log_and_history(
                                     'time_ago_s':      max(0.0, game_time - entry_time),
                                     'player_is_buyer':  buyer_is_player,
                                     'player_is_seller': seller_is_player,
+                                    # Direct NPC station reference — set when this
+                                    # log entry appears inside an NPC station's
+                                    # subtree. That station IS the counterparty.
+                                    # Empty string when inside a player station's
+                                    # log or in a global entries block.
+                                    'counterparty_station_id': npc_station_id,
+                                    # Internal deduplication key — the same trade
+                                    # is logged by both the buyer and seller station,
+                                    # so we may see it twice. Popped before returning.
+                                    '_dup_key': (
+                                        buyer_id, seller_id,
+                                        ware_id,  elem.get('time', ''),
+                                    ),
                                 })
 
                 elif event == 'end':
@@ -240,11 +330,40 @@ def scan_trade_log_and_history(
                     if tag == 'entries' and in_trade_entries:
                         in_trade_entries = False
 
+                    # ── NPC station depth tracking (Pass 6) ───────────────────
+                    # Decrement for EVERY end event while inside the NPC station.
+                    # When depth reaches 0 the station's own closing tag has just
+                    # been processed — we've left the subtree and must reset.
+                    if in_npc_station:
+                        npc_depth -= 1
+                        if npc_depth == 0:
+                            in_npc_station = False
+                            npc_station_id = ''
+
                     elem.clear()
 
     except ET.XMLSyntaxError as e:
         print(f"\n[XML Error] Save file has a formatting issue: {e}")
         raise
+
+    # ── Deduplicate trade history ──────────────────────────────────────────────
+    # X4 records each completed trade in the economy log of both the buying and
+    # the selling station, so the same transaction appears twice in the save file.
+    # We keep only one copy per trade. When two copies of the same entry exist,
+    # we prefer the one with counterparty_station_id set (from the NPC station's
+    # log), because that gives us the resolved counterparty for free. The _dup_key
+    # tuple (buyer, seller, ware, raw-time-string) uniquely identifies each trade.
+    seen_trades: dict = {}   # _dup_key → entry dict
+    for entry in history_trades:
+        key      = entry.pop('_dup_key')   # remove internal field before storing
+        existing = seen_trades.get(key)
+        if existing is None:
+            seen_trades[key] = entry
+        elif (not existing.get('counterparty_station_id')
+              and entry.get('counterparty_station_id')):
+            # Replace the earlier copy with the more informative NPC-station copy.
+            seen_trades[key] = entry
+    history_trades = list(seen_trades.values())
 
     # ── Sort active trades (mirrors scan_trade_orders output order) ────────────
     active_trades.sort(key=lambda t: (

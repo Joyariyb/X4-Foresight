@@ -300,26 +300,56 @@ def display_trade_history(data: dict):
             return f"{h}h {m:02d}m"
 
         # Column widths
-        tc = 8    # time
-        sc = 11   # station code
-        cc = 11   # counterparty code
+        tc = 8    # time-ago
+        sc = 11   # player station code
+
+        # Build a set of player ship object IDs so we can detect when the trade
+        # counterparty is one of the player's own ships (e.g. a trader delivering
+        # goods) rather than an NPC vessel. We mark those rows with ★.
+        player_ship_ids: set[str] = {
+            sh["object_id"]
+            for sh in data.get("ships", {}).get("player_ships", [])
+            if sh.get("object_id")
+        }
+
+        def _cp_label(t: dict) -> str:
+            """
+            Return the counterparty display label for one trade entry.
+
+            The counterparty is whichever side the player is NOT on.
+            If that ID belongs to one of the player's own ships, prefix with ★
+            so player-owned traders are immediately distinguishable from NPC ships.
+            """
+            if t["player_is_buyer"]:
+                raw_id = t["seller_id"]
+                code   = t["seller_code"]
+            else:
+                raw_id = t["buyer_id"]
+                code   = t["buyer_code"]
+            # ★ = player ship; these are our own traders, not NPC activity.
+            if raw_id and raw_id in player_ship_ids:
+                return f"★ {code}"
+            return code
+
+        # Pre-compute labels so we can size the column width before printing.
+        cp_labels = [_cp_label(t) for t in player_entries]
+        cc = max((len(v) for v in cp_labels), default=11)
+        cc = max(11, min(40, cc + 1))
 
         print(f"  {'Time':<{tc}}  {'Station':<{sc}}  {'Dir'}  "
               f"{'Ware':<{wc}}  {'Units':>9}  {'Cr/unit':>9}  {'Total Cr':>12}  {'Counterparty':<{cc}}")
         print(f"  {'─'*tc}  {'─'*sc}  {'─'*3}  "
               f"{'─'*wc}  {'─'*9}  {'─'*9}  {'─'*12}  {'─'*cc}")
 
-        for t in player_entries:
-            age        = _age(t["time_ago_s"])
-            direction  = "In " if t["player_is_buyer"] else "Out"
-            # Player station is buyer → station = buyer_code, counterparty = seller
-            # Player station is seller → station = seller_code, counterparty = buyer
-            station    = t["buyer_code"]  if t["player_is_buyer"]  else t["seller_code"]
-            counterpty = t["seller_code"] if t["player_is_buyer"]  else t["buyer_code"]
+        for t, cp in zip(player_entries, cp_labels):
+            age       = _age(t["time_ago_s"])
+            direction = "In " if t["player_is_buyer"] else "Out"
+            # Player station code: buyer when we purchased, seller when we sold.
+            station   = t["buyer_code"] if t["player_is_buyer"] else t["seller_code"]
 
             print(f"  {age:<{tc}}  {station:<{sc}}  {direction}  "
                   f"{t['ware_name']:<{wc}}  {t['amount']:>9,}  {t['price_cr']:>9,.2f}  "
-                  f"{t['total_cr']:>12,.0f}  {counterpty:<{cc}}")
+                  f"{t['total_cr']:>12,.0f}  {cp:<{cc}}")
 
         print()
 

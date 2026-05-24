@@ -432,9 +432,13 @@ def _run_ships_pass(
         ]
 
         return {
-            "player_ships": result["player_ships"],
-            "npc_ships":    result["npc_ships"],
-            "crew":         result.get("crew", []),
+            "player_ships":   result["player_ships"],
+            "npc_ships":      result["npc_ships"],
+            "crew":           result.get("crew", []),
+            # Pass homebase_index through so the trade log dispatcher can use it
+            # for counterparty station resolution. It covers ALL NPC ships seen
+            # in the pass, regardless of which ones survived the tier 3 filter.
+            "homebase_index": result.get("homebase_index", {}),
         }
 
     else:
@@ -520,6 +524,16 @@ if __name__ == "__main__":
         # can resolve their sector by direct dict lookup instead of regex parsing.
         # It is never merged into game_data and never exported.
         sector_macro_to_name: dict = {}
+        # Populated by the combined or ships pass; used for trade history
+        # counterparty station resolution after trade scanning completes.
+        homebase_index: dict = {}
+        # Maps NPC station object_id → display name for ALL stations in the file
+        # (not filtered to player sectors). Built from npc_stations_raw before the
+        # sector filter is applied, so counterparty homebases outside player sectors
+        # can still be resolved. Without this, most lookups return None because
+        # trade ships fly in from stations in neighboring sectors the player may not
+        # have any presence in.
+        npc_station_by_id: dict = {}
 
         game_data: dict = {
             "player_name":      None,
@@ -556,6 +570,10 @@ if __name__ == "__main__":
             player_ships         = combined.pop("player_ships", [])
             npc_ships            = combined.pop("npc_ships", [])
             ship_crew            = combined.pop("crew", [])
+            # homebase_index maps NPC ship object IDs to their homebase station
+            # object IDs. Covers ALL NPC ships regardless of tier filtering, so
+            # trade counterparties that left player sectors are still resolvable.
+            homebase_index       = combined.pop("homebase_index", {})
 
             # Remaining keys: player_name, player_credits, player_sector,
             # stations, managers, reputation — all safe to update into game_data.
@@ -581,11 +599,21 @@ if __name__ == "__main__":
                 # filter now that we know which sectors the player owns stations in.
                 player_sectors = {s["sector"] for s in game_data["stations"]}
                 npc_raw        = game_data.pop("npc_stations_raw", [])
+                # Build the GLOBAL station lookup BEFORE filtering to player sectors.
+                # Trade counterparty ships can be assigned to stations anywhere in the
+                # galaxy, not just in sectors where the player has a presence — if we
+                # only used the player-sector subset we'd miss most homebase lookups.
+                npc_station_by_id = {
+                    st["object_id"]: st["name"]
+                    for st in npc_raw
+                    if st.get("object_id") and st.get("name")
+                }
                 game_data["npc_stations"] = [
                     st for st in npc_raw if st["sector"] in player_sectors
                 ]
                 print(f"[Done] NPC stations — {len(game_data['npc_stations'])} in player "
-                      f"sectors (filtered from {len(npc_raw)} total).")
+                      f"sectors (filtered from {len(npc_raw)} total). "
+                      f"Global station index: {len(npc_station_by_id)}.")
 
         else:
             # ── Pass 1 (+4): stations only ────────────────────────────────────
@@ -607,11 +635,17 @@ if __name__ == "__main__":
                 if include_npc_stations:
                     player_sectors = {s["sector"] for s in game_data["stations"]}
                     npc_raw        = game_data.pop("npc_stations_raw", [])
+                    npc_station_by_id = {
+                        st["object_id"]: st["name"]
+                        for st in npc_raw
+                        if st.get("object_id") and st.get("name")
+                    }
                     game_data["npc_stations"] = [
                         st for st in npc_raw if st["sector"] in player_sectors
                     ]
                     print(f"[Done] NPC stations — {len(game_data['npc_stations'])} in player "
-                          f"sectors (filtered from {len(npc_raw)} total).")
+                          f"sectors (filtered from {len(npc_raw)} total). "
+                          f"Global station index: {len(npc_station_by_id)}.")
 
             # ── Pass 3: ships only ────────────────────────────────────────────
             # Runs when the mode includes ships but not stations (e.g. "Ships
@@ -640,6 +674,8 @@ if __name__ == "__main__":
                 }
                 game_data["crew"] += ships_result.get("crew", [])
                 game_data["ships_scanned"] = True
+                # Capture homebase_index for trade history counterparty resolution.
+                homebase_index = ships_result.get("homebase_index", {})
 
         # ── Pass 2: reputation ────────────────────────────────────────────────
         if "reputation" in passes:
@@ -682,25 +718,21 @@ if __name__ == "__main__":
                 for sh in game_data["ships"].get("player_ships", [])
                 if sh.get("object_id") and sh.get("name") and sh.get("code")
             })
-            # NPC ships: try to annotate the label with their commanding station.
-            # Trade ships assigned to a station carry a commander ID (e.g. [0x1234])
-            # that points to their home station. If it's already in id_to_code
-            # (all player and NPC stations were added above) we append it as
-            # "Ship Name [CODE] (for STATION)" so the counterparty column is
-            # informative. Free traders and unresolved commanders show without it.
+            # NPC ships: annotate the label with their homebase station when known.
+            # Trade ships (TradeRoutine / Middleman orders) store their assigned
+            # station as a component reference in the default order params. If the
+            # homebase station ID is already in id_to_code (added with all player
+            # and NPC stations above), append "(for STATION)" so the active-trades
+            # display shows which station the NPC ship is working on behalf of.
             for sh in game_data["ships"].get("npc_ships", []):
                 if not (sh.get("object_id") and sh.get("name") and sh.get("code")):
                     continue
-                label    = f"{sh['name']} [{sh['code']}]"
-                cmdr_id  = sh.get("commander")
-                if cmdr_id:
-                    station_label = id_to_code.get(cmdr_id)
+                label      = f"{sh['name']} [{sh['code']}]"
+                homebase_id = sh.get("homebase")
+                if homebase_id:
+                    station_label = id_to_code.get(homebase_id)
                     if station_label:
                         label += f" (for {station_label})"
-                    else:
-                        # Commander exists but isn't a known station — print the
-                        # raw ID so we can see what format it arrives in.
-                        label += f" (for {cmdr_id})"
                 id_to_code[sh["object_id"]] = label
 
             if include_trade_history:
@@ -712,6 +744,60 @@ if __name__ == "__main__":
                 game_data["trades_scanned"]        = True
                 game_data["trade_history"]         = trade_result["trade_history"]
                 game_data["trade_history_scanned"] = True
+
+                # ── Counterparty station resolution ───────────────────────────
+                # Two resolution paths, tried in order:
+                #
+                # PATH A — Direct NPC station context (most reliable):
+                #   trade_combined_scanner.py now tracks which NPC station's
+                #   <entries type="trade"> block each log entry came from.
+                #   That station IS the counterparty — no ship chain needed.
+                #   Covers the vast majority of entries where the NPC station
+                #   that owns the trade ships also records the trades.
+                #
+                # PATH B — Ship → homebase chain (fallback for free traders):
+                #   For entries without a direct station context (e.g. from a
+                #   player station's own log block, or from a global entries block),
+                #   we fall back to: counterparty ship ID → homebase_index →
+                #   homebase station ID → npc_station_by_id → display name.
+                #   This covers ships that explicitly declare a homebase station
+                #   via a TradeRoutine 'range' or Middleman 'supplier' parameter.
+                for entry in game_data["trade_history"]:
+                    # Path A: direct NPC station reference.
+                    st_id = entry.get("counterparty_station_id", "")
+                    if st_id:
+                        entry["counterparty_station"] = npc_station_by_id.get(st_id)
+                    else:
+                        # Path B: ship → homebase chain.
+                        cp_id = entry["seller_id"] if entry["player_is_buyer"] else entry["buyer_id"]
+                        hb_id = homebase_index.get(cp_id)
+                        entry["counterparty_station"] = (
+                            npc_station_by_id.get(hb_id) if hb_id else None
+                        )
+                resolved = sum(1 for e in game_data["trade_history"] if e.get("counterparty_station"))
+                print(f"[Done] Counterparty stations resolved: "
+                      f"{resolved}/{len(game_data['trade_history'])} entries.")
+
+                # ── TEMPORARY DIAGNOSTIC — remove once counterparty resolution is working ──
+                print()
+                print("  [DEBUG] Counterparty resolution:")
+                history = game_data["trade_history"]
+                path_a = sum(1 for e in history if e.get("counterparty_station_id"))
+                print(f"          Entries with direct NPC station context (Path A): {path_a}/{len(history)}")
+                print(f"          homebase_index entries (Path B fallback): {len(homebase_index)}")
+                print(f"          npc_station_by_id entries: {len(npc_station_by_id)}")
+                print()
+                print("          First 10 entries — resolution detail:")
+                for entry in history[:10]:
+                    st_id   = entry.get("counterparty_station_id", "")
+                    cp_id   = entry["seller_id"] if entry["player_is_buyer"] else entry["buyer_id"]
+                    hb_id   = homebase_index.get(cp_id)
+                    path    = "A" if st_id else "B"
+                    result  = entry.get("counterparty_station") or "—"
+                    src_id  = st_id if st_id else cp_id
+                    print(f"            Path {path}  src={src_id!r:28s}  → {result!r}")
+                print()
+                # ── END DIAGNOSTIC ──
             else:
                 # Active orders only — single pass, no history.
                 game_data["trades"]         = _run_trade_pass(

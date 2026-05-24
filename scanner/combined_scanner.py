@@ -75,6 +75,7 @@ from scanner.ship_scanner import (
     _parse_shield,
     _parse_software,
     _parse_commander,
+    _parse_homebase,
     _extract_docked_ships,
 )
 from scanner.crew_scanner import (
@@ -147,6 +148,15 @@ def scan_save_and_ships(
     npc_ships:    list[dict] = []
     crew:         list[dict] = []   # ship crew only; managers are separate
 
+    # ship_id → homebase station object ID for every NPC ship encountered.
+    # Populated two ways depending on whether the ship is buffered:
+    #   - Buffered NPC ships (collect_all_npcs=True):  _parse_homebase(se) at close time.
+    #   - Non-buffered NPC ships (collect_all_npcs=False): in_hb_ship state machine.
+    # Ships that get filtered out by the tier filter are no longer in npc_ships,
+    # but their entries remain in homebase_index so the trade history scanner can
+    # resolve counterparty ships that have moved away from player sectors.
+    homebase_index: dict[str, str] = {}
+
     # ── Sector / zone context tracking ────────────────────────────────────────
     # current_sector:       resolved display name for stations ("The Void", etc.)
     # current_sector_macro: raw macro string stamped onto ship elements so
@@ -187,6 +197,28 @@ def scan_save_and_ships(
     ship_owner_pending: str               = ""
     ship_depth:         int               = 0
 
+    # ── Homebase extraction (non-buffered NPC ships) ───────────────────────────
+    # When collect_all_npcs=False (tier 1), NPC ships are not buffered. We still
+    # need their homebase station ID for trade history counterparty resolution, so
+    # we use a lightweight state machine that reads the default order params from
+    # start events without keeping any subtree in memory. Runs in parallel with the
+    # normal buffering loop, triggered by the ship detection block below.
+    in_hb_ship:     bool = False
+    hb_ship_id:     str  = ''
+    hb_depth:       int  = 0
+    hb_in_orders:   bool = False
+    hb_order_type:  str  = ''   # 'TradeRoutine' or 'Middleman'
+    hb_in_default:  bool = False
+
+    # The economy log can reference a ship by either the ship component's own id
+    # (hex bracket, e.g. "[0x1717a]") or the outer <connection> wrapper's decimal
+    # id (e.g. "114", which _norm() converts to "[0x72]"). These are different
+    # values. We track the most-recent connection wrapper id and add a second entry
+    # to homebase_index keyed by the normalised decimal form so the economy resolver
+    # gets a hit regardless of which format the log entry uses.
+    last_connection_id: str = ''   # id of the most-recent outer <connection> seen
+    hb_conn_id:         str = ''   # connection wrapper id captured at in_hb_ship entry
+
     # Tier 1 = player ships only. Tier 2+ = collect slim records for all NPC
     # ships during the stream, then filter to context sectors after the pass.
     collect_all_npcs = (ship_tier >= 2)
@@ -226,7 +258,8 @@ def scan_save_and_ships(
                 # Only update when we are not inside a buffered element — there
                 # are no nested sector or zone components inside a station or ship
                 # in practice, so this guard is both safe and correct.
-                if not inside_station and not inside_ship and npc_station_elem_pending is None:
+                if (not inside_station and not inside_ship
+                        and not in_hb_ship and npc_station_elem_pending is None):
                     if event == 'start' and tag == 'component':
                         if comp_cls == 'sector':
                             macro    = elem.get('macro', '')
@@ -243,6 +276,15 @@ def scan_save_and_ships(
                         elif comp_cls == 'zone':
                             current_zone_macro = elem.get('macro', '')
 
+                    elif event == 'start' and tag == 'connection':
+                        # Track the most-recent outer <connection id="NNN"> element.
+                        # Ships appear as direct children of these wrappers, so the
+                        # last connection id seen before a ship's opening tag is that
+                        # ship's own wrapper id. We use it to build a second
+                        # homebase_index key that matches the decimal-normalised form
+                        # that economy log entries use for most ship references.
+                        last_connection_id = elem.get('id', '')
+
                     elif event == 'end' and tag == 'component':
                         # Reset macro trackers on close so ships in a different
                         # sector can't accidentally inherit a stale macro.
@@ -258,6 +300,7 @@ def scan_save_and_ships(
                 if (event == 'start' and tag == 'component'
                         and not inside_station
                         and not inside_ship
+                        and not in_hb_ship
                         and npc_station_elem_pending is None):
 
                     # ── Player station ─────────────────────────────────────────
@@ -297,8 +340,11 @@ def scan_save_and_ships(
                             # Once inside_ship is True the current_* variables
                             # may advance, so we capture the sector/zone context
                             # at the moment this ship's opening tag was seen.
+                            # Also stamp the connection wrapper id for dual-key
+                            # homebase_index population at close time.
                             elem.set('_sector_macro', current_sector_macro)
                             elem.set('_zone_macro',   current_zone_macro)
+                            elem.set('_conn_id',      last_connection_id)
 
                             inside_ship        = True
                             ship_elem_pending  = elem
@@ -307,6 +353,20 @@ def scan_save_and_ships(
                             # Skip the default cleanup — this element must stay
                             # in memory until its closing tag is processed.
                             continue
+
+                        elif owner != 'player':
+                            # NPC ship not being fully buffered (tier 1 / collect_all_npcs=False).
+                            # Enter lightweight homebase extraction mode: track stream depth and
+                            # read the default order's homebase param from start events only.
+                            # No subtree stays in memory — each child is cleared on its end event.
+                            in_hb_ship    = True
+                            hb_ship_id    = elem.get('id', '')
+                            hb_conn_id    = last_connection_id   # capture wrapper id for dual-key indexing
+                            hb_depth      = 1
+                            hb_in_orders  = False
+                            hb_order_type = ''
+                            hb_in_default = False
+                            continue  # keep element in stream (children are not cleared yet)
 
                 # ── NPC station data collection ────────────────────────────────
                 # Read production macros and traded wares from START events only.
@@ -321,6 +381,21 @@ def scan_save_and_ships(
                         # Only the first <trade wares="..."> is the station-level
                         # ware list; inner <trade> elements have a different role.
                         npc_wares = elem.get('wares', '').split()
+                    elif comp_cls in SHIP_CLASSES:
+                        # Ship docked inside this NPC station — the station IS the
+                        # ship's homebase. Index the ship component ID directly so
+                        # the trade history counterparty resolver can find it.
+                        #
+                        # This is the most reliable homebase source: if a ship is
+                        # physically docked inside station X, X is its homebase.
+                        # The TradeRoutine/Middleman order-param approach (in_hb_ship
+                        # state machine) only covers ships currently in flight; docked
+                        # ships are invisible to that code because the ship detection
+                        # guard requires npc_station_elem_pending is None.
+                        ship_id    = elem.get('id', '')
+                        station_id = npc_station_elem_pending.get('id', '')
+                        if ship_id and station_id:
+                            homebase_index[ship_id] = station_id
 
                 # ── Ship buffering depth tracking ──────────────────────────────
                 # Count XML nesting so we detect when the ship's closing tag
@@ -424,9 +499,33 @@ def scan_save_and_ships(
                             else:
                                 # Slim NPC record — no crew, software, or health.
                                 # We only need enough to show faction activity in
-                                # the relevant sectors.
+                                # the relevant sectors, plus the homebase station
+                                # ID for trade history counterparty resolution.
+                                ship_id  = se.get('id', '')
+                                homebase = _parse_homebase(se)
+
+                                # Always populate homebase_index — even ships that
+                                # get filtered out by the tier filter may be trade
+                                # counterparties whose homebase we need to resolve.
+                                if ship_id and homebase:
+                                    # Primary key: the ship component's own hex bracket id.
+                                    homebase_index[ship_id] = homebase
+
+                                    # Secondary key: the outer <connection> wrapper's decimal
+                                    # id, normalised to [0xN] hex bracket format. Economy log
+                                    # entries reference ships by either the component id or the
+                                    # wrapper id — we need both so counterparty resolution works
+                                    # regardless of which format a given log entry uses.
+                                    conn_id = se.get('_conn_id', '')
+                                    if conn_id:
+                                        try:
+                                            homebase_index[f"[{hex(int(conn_id))}]"] = homebase
+                                        except (ValueError, TypeError):
+                                            pass  # wrapper id is not a plain decimal — skip
+
                                 npc_ships.append({
                                     "code":        code,
+                                    "object_id":   ship_id,
                                     "name":        name,
                                     "class":       cls,
                                     "size":        size,
@@ -436,6 +535,7 @@ def scan_save_and_ships(
                                     "owner":       owner,
                                     "sector":      sector,
                                     "order":       order,
+                                    "homebase":    homebase,  # station object ID or None
                                 })
 
                             # Reset buffering state and free memory.
@@ -444,6 +544,51 @@ def scan_save_and_ships(
                             ship_owner_pending = ""
                             se.clear()
                             continue
+
+                # ── Homebase extraction (non-buffered NPC ships) ──────────────
+                # State machine for NPC ships not going through the inside_ship
+                # path (i.e. when collect_all_npcs=False / tier 1). Each child
+                # element is cleared on its end event — no subtree stays in memory.
+                if in_hb_ship:
+                    if event == 'start':
+                        hb_depth += 1
+                        if elem.tag == 'orders':
+                            hb_in_orders = True
+                        elif hb_in_orders and elem.tag == 'order' and elem.get('default') == '1':
+                            hb_order_type = elem.get('order', '')
+                            hb_in_default = True
+                        elif hb_in_default and elem.tag == 'param' and elem.get('type') == 'component':
+                            name_ = elem.get('name', '')
+                            val   = elem.get('value', '')
+                            if val and (
+                                (hb_order_type == 'TradeRoutine' and name_ == 'range')
+                                or (hb_order_type == 'Middleman'    and name_ == 'supplier')
+                            ):
+                                # Primary key: the ship component's own hex bracket id.
+                                homebase_index[hb_ship_id] = val
+
+                                # Secondary key: the outer <connection> wrapper's decimal
+                                # id, normalised to [0xN] hex bracket format. Economy log
+                                # entries reference ships by either the component id or the
+                                # wrapper id — we need both so counterparty resolution works
+                                # regardless of which format a given log entry uses.
+                                if hb_conn_id:
+                                    try:
+                                        homebase_index[f"[{hex(int(hb_conn_id))}]"] = val
+                                    except (ValueError, TypeError):
+                                        pass  # wrapper id is not a plain decimal — skip
+                    elif event == 'end':
+                        hb_depth -= 1
+                        if hb_depth == 0:
+                            # Ship subtree is done — reset state machine.
+                            in_hb_ship    = False
+                            hb_ship_id    = ''
+                            hb_conn_id    = ''
+                            hb_in_orders  = False
+                            hb_order_type = ''
+                            hb_in_default = False
+                        elem.clear()
+                    continue  # never fall through to default cleanup while extracting
 
                 # ── Player station close ───────────────────────────────────────
                 # The identity check (elem is station_elem_pending) ensures we
@@ -629,8 +774,9 @@ def scan_save_and_ships(
 
                 # ── Default cleanup ────────────────────────────────────────────
                 # Free any element we are not actively buffering. This is what
-                # keeps RAM usage flat on 700MB+ save files.
-                if event == 'end' and not inside_station and not inside_ship:
+                # keeps RAM usage flat on 700MB+ save files. The in_hb_ship check
+                # is handled by the state machine's own elem.clear() above.
+                if event == 'end' and not inside_station and not inside_ship and not in_hb_ship:
                     elem.clear()
 
     except ET.XMLSyntaxError as e:
@@ -664,7 +810,8 @@ def scan_save_and_ships(
     npc_st_str   = f", {len(npc_stations_raw)} NPC station(s)" if collect_npc_stations else ""
     print(
         f"[Scanning] Combined — {len(stations)} station(s){npc_st_str}, "
-        f"{len(player_ships)} player ship(s){tier_npc_str}."
+        f"{len(player_ships)} player ship(s){tier_npc_str}. "
+        f"Homebase index: {len(homebase_index)} NPC ship(s)."
     )
 
     result: dict = {
@@ -680,8 +827,12 @@ def scan_save_and_ships(
         "player_ships":   player_ships,
         "npc_ships":      npc_ships,
         "crew":           crew,
-        # Internal plumbing — caller must pop this before game_data.update()
+        # Internal plumbing — caller must pop these before game_data.update()
         "sector_macro_to_name": sector_macro_to_name,
+        # ship_id → homebase station object ID for ALL NPC ships seen in the file.
+        # Includes ships filtered out by the tier filter — used for trade history
+        # counterparty resolution where the ship may have left the player's sector.
+        "homebase_index": homebase_index,
     }
 
     if collect_npc_stations:

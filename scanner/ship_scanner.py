@@ -397,6 +397,47 @@ def _parse_software(ship_elem: ET.Element) -> list[str]:
     return [w for w in wares_str.split() if w]
 
 
+def _parse_homebase(ship_elem: ET.Element) -> str | None:
+    """
+    Returns the homebase station's object ID from a fully-buffered ship element.
+
+    Trade ships store their assigned station as a component reference in the
+    default order's params. Two order types are supported:
+      - TradeRoutine → <param name="range"    type="component" value="[0xSTATION]"/>
+      - Middleman    → <param name="supplier" type="component" value="[0xSTATION]"/>
+
+    Returns the raw station object ID string (e.g. "[0x1717a]"), or None if
+    the ship has no trade default order or no homebase param is found.
+
+    This is the tree-walk version — it requires the ship subtree to be fully
+    buffered in memory. The iterparse state machine (in_hb_ship) in scan_ships()
+    does the same extraction without buffering, for NPC ships outside context sectors.
+    """
+    orders_elem = ship_elem.find('orders')
+    if orders_elem is None:
+        return None
+
+    for order in orders_elem.findall('order'):
+        if order.get('default') != '1':
+            continue
+        order_type = order.get('order', '')
+        if order_type == 'TradeRoutine':
+            param_name = 'range'
+        elif order_type == 'Middleman':
+            param_name = 'supplier'
+        else:
+            # Default order is not a trade order — ship has no homebase to resolve.
+            return None
+
+        for param in order.findall('param'):
+            if (param.get('name') == param_name
+                    and param.get('type') == 'component'):
+                val = param.get('value', '')
+                return val if val else None
+
+    return None
+
+
 def _extract_docked_ships(
     carrier_elem: ET.Element,
     carrier_sector: str,
@@ -565,6 +606,29 @@ def scan_ships(
     ship_owner_pending = None    # Its owner attribute, saved alongside it
     ship_depth         = 0       # Nesting depth counter; hits 0 at closing tag
 
+    # State variables for the lightweight homebase extraction machine.
+    # Runs for NPC ships that aren't being fully buffered (ships outside
+    # context sectors). Reads the homebase station ID from the default
+    # order params without keeping the ship subtree in memory.
+    in_hb_ship:     bool         = False
+    hb_ship_id:     str          = ''
+    hb_depth:       int          = 0
+    hb_in_orders:   bool         = False
+    hb_order_type:  str          = ''   # 'TradeRoutine' or 'Middleman'
+    hb_in_default:  bool         = False
+    homebase_index: dict[str, str] = {}  # ship_id → homebase station object ID
+
+    # The economy log uses two different IDs to identify a ship:
+    #   - The ship component's own id attribute  (hex bracket, e.g. "[0x1717a]")
+    #   - The outer <connection> wrapper's id     (plain decimal, e.g. "114")
+    # After _norm(), both become "[0xN]" format, but the decimal-derived form
+    # "[0x72]" does NOT equal the component hex "[0x1717a]" — they are different
+    # values. We track the most recent connection wrapper id so we can add a
+    # second entry to homebase_index keyed by the normalised decimal, giving the
+    # economy resolver a hit regardless of which format a log entry uses.
+    last_connection_id: str = ''   # id of the most-recent outer <connection> seen
+    hb_conn_id:         str = ''   # connection wrapper id captured at in_hb_ship entry
+
     print("[Scanning] Ships — player fleet and context NPC ships...")
 
     with open_save(file_path) as f:
@@ -575,14 +639,21 @@ def scan_ships(
             cls = elem.get('class', '')
 
             # ── Sector and zone tracking ───────────────────────────────────
-            # Only update when we're not inside a buffered ship, to avoid
-            # misreading nested references within the ship XML.
-            if not inside_ship:
+            # Only update when we're not inside any ship element (buffered or
+            # extraction-mode), to avoid misreading nested references.
+            if not inside_ship and not in_hb_ship:
                 if event == 'start':
                     if cls == 'sector':
                         current_sector_macro = elem.get('macro', '')
                     elif cls == 'zone':
                         current_zone_macro = elem.get('macro', '')
+                    elif tag == 'connection':
+                        # Track the most recent outer <connection id="NNN"> so we
+                        # can stamp it onto each ship that follows. Ships appear as
+                        # direct children of these wrappers in the XML, so the last
+                        # connection id seen before a ship's opening tag is always
+                        # that ship's own wrapper id.
+                        last_connection_id = elem.get('id', '')
                 elif event == 'end':
                     if cls == 'sector':
                         current_sector_macro = ""
@@ -591,7 +662,7 @@ def scan_ships(
 
             # ── Ship detection ─────────────────────────────────────────────
             # When a ship's opening tag is seen, decide whether to buffer it.
-            if event == 'start' and cls in SHIP_CLASSES and not inside_ship:
+            if event == 'start' and cls in SHIP_CLASSES and not inside_ship and not in_hb_ship:
                 owner = elem.get('owner', '')
 
                 # When npc_only=True, the caller only wants NPC rows.
@@ -615,14 +686,31 @@ def scan_ships(
                     # Stamp both location markers onto the element now so
                     # _parse_sector() can resolve the sector name once the
                     # full ship subtree is in memory.
+                    # Also stamp the connection wrapper id so we can add the
+                    # decimal-normalised key to homebase_index at close time.
                     elem.set('_sector_macro', current_sector_macro)
                     elem.set('_zone_macro',   current_zone_macro)
+                    elem.set('_conn_id',      last_connection_id)
 
                     inside_ship        = True
                     ship_elem_pending  = elem
                     ship_owner_pending = owner
                     ship_depth         = 1
                     continue  # skip the normal elem.clear() at the bottom
+
+                elif owner != 'player':
+                    # NPC ship outside context sectors: don't buffer the full
+                    # subtree, but do track the stream to extract the homebase
+                    # station ID from the default order params. This costs only
+                    # a few extra comparisons per element — no memory allocation.
+                    in_hb_ship    = True
+                    hb_ship_id    = elem.get('id', '')
+                    hb_conn_id    = last_connection_id   # capture wrapper id for dual-key indexing
+                    hb_depth      = 1
+                    hb_in_orders  = False
+                    hb_order_type = ''
+                    hb_in_default = False
+                    continue  # keep element in stream (children are not cleared)
 
             # ── Ship buffering ─────────────────────────────────────────────
             # While inside a ship, track nesting depth. When depth reaches 0,
@@ -764,27 +852,43 @@ def scan_ships(
                             # hull health are omitted because we don't own these
                             # ships and the extra parsing wouldn't be used.
                             #
-                            # Commander: trade ships assigned to a station carry
-                            # a <connection connection="commander"> that points
-                            # to their controlling station. We extract it here so
-                            # the trade history display can show which station an
-                            # NPC ship is trading on behalf of. Free traders and
-                            # ships on manual orders may return None.
-                            cmdr = _parse_commander(se)
+                            # Homebase: trade ships store their assigned station
+                            # in the default order params (TradeRoutine → 'range'
+                            # component; Middleman → 'supplier' component). The
+                            # full subtree is in memory here so _parse_homebase()
+                            # can walk it directly.
+                            ship_id  = se.get('id', '')   # hex bracket, e.g. "[0x1f673]"
+                            homebase = _parse_homebase(se)
+
+                            if ship_id and homebase:
+                                # Primary key: the ship component's own hex bracket ID.
+                                homebase_index[ship_id] = homebase
+
+                                # Secondary key: the outer <connection> wrapper's decimal
+                                # id, normalised to [0xN] format so it matches what the
+                                # economy log produces after _norm(). This covers the
+                                # majority of economy log entries which reference ships by
+                                # the wrapper id rather than the component id.
+                                conn_id = se.get('_conn_id', '')
+                                if conn_id:
+                                    try:
+                                        homebase_index[f"[{hex(int(conn_id))}]"] = homebase
+                                    except (ValueError, TypeError):
+                                        pass  # wrapper id is not a plain decimal — skip
 
                             npc_ships.append({
                                 "code":        code,
-                                "object_id":   se.get('id', ''),  # hex ref e.g. "[0x1f673]"
+                                "object_id":   ship_id,
                                 "name":        name,
                                 "class":       cls,
                                 "size":        size,
                                 "macro":       macro,
                                 "role":        role,
-                                "hull_origin": hull,      # faction that manufactured the hull
+                                "hull_origin": hull,
                                 "owner":       owner,
                                 "sector":      sector,
                                 "order":       order,
-                                "commander":   cmdr,      # raw ID of the commanding station (or None)
+                                "homebase":    homebase,
                             })
 
                         # Reset buffering state and free the element's memory.
@@ -794,16 +898,65 @@ def scan_ships(
                         se.clear()
                         continue
 
+            # ── Homebase extraction (non-context NPC ships) ────────────────
+            # State machine that reads the homebase station ID from the default
+            # order params without buffering the ship subtree. Runs for every
+            # NPC ship that isn't in a context sector. Each child element is
+            # cleared on its end event — no subtree stays in memory.
+            if in_hb_ship:
+                if event == 'start':
+                    hb_depth += 1
+                    if elem.tag == 'orders':
+                        hb_in_orders = True
+                    elif hb_in_orders and elem.tag == 'order' and elem.get('default') == '1':
+                        hb_order_type = elem.get('order', '')
+                        hb_in_default = True
+                    elif hb_in_default and elem.tag == 'param' and elem.get('type') == 'component':
+                        name_ = elem.get('name', '')
+                        val   = elem.get('value', '')
+                        if val and (
+                            (hb_order_type == 'TradeRoutine' and name_ == 'range')
+                            or (hb_order_type == 'Middleman'    and name_ == 'supplier')
+                        ):
+                            # Primary key: the ship component's own hex bracket id.
+                            homebase_index[hb_ship_id] = val
+
+                            # Secondary key: the outer <connection> wrapper's decimal
+                            # id, normalised to [0xN] hex bracket format so it matches
+                            # the form economy log entries take after _norm(). Without
+                            # this, most entries show "—" because the log uses the
+                            # wrapper's decimal id (e.g. "114" → "[0x72]"), not the
+                            # ship component's id (e.g. "[0x1717a]").
+                            if hb_conn_id:
+                                try:
+                                    homebase_index[f"[{hex(int(hb_conn_id))}]"] = val
+                                except (ValueError, TypeError):
+                                    pass  # wrapper id is not a plain decimal — skip
+                elif event == 'end':
+                    hb_depth -= 1
+                    if hb_depth == 0:
+                        in_hb_ship    = False
+                        hb_ship_id    = ''
+                        hb_conn_id    = ''
+                        hb_in_orders  = False
+                        hb_order_type = ''
+                        hb_in_default = False
+                    elem.clear()
+                continue  # never fall through to default cleanup while extracting
+
             # ── Default cleanup ────────────────────────────────────────────
             # For any element we're not buffering, free its memory immediately
             # after its closing tag. This is what keeps RAM usage low.
             if event == 'end' and not inside_ship:
                 elem.clear()
 
+    print(f"[Scanning] Ships — homebase index built "
+          f"({len(homebase_index)} non-context NPC ship(s) resolved).")
     return {
-        "player_ships": player_ships,
-        "npc_ships":    npc_ships,
-        "crew":         crew,
+        "player_ships":   player_ships,
+        "npc_ships":      npc_ships,
+        "crew":           crew,
+        "homebase_index": homebase_index,
     }
 
 
