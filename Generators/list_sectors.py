@@ -46,6 +46,11 @@ WARES_PATH = next((p for p in _WARES_CANDIDATES if p.exists()), _WARES_CANDIDATE
 # All component class values that represent a station-level object.
 STATION_CLASSES = {"station", "factory", "headquarters", "complex"}
 
+# All component class values that represent a ship.
+# Used to build the ship-tracking stack so $homebase assignments can be
+# attributed to the correct ship even when ships are nested inside carriers.
+SHIP_CLASSES = {"ship_s", "ship_m", "ship_l", "ship_xl"}
+
 # Faction abbreviations inlined from data/factions.py.
 # Used to prefix NPC station names in X4's UI style, e.g. "ARG Trade Station I".
 FACTION_ABBR = {
@@ -93,6 +98,65 @@ _TEXT_REF_RE = re.compile(r'^\{(\d+),(\d+)\}$')
 # Extracts the ware ID from production module macros like "prod_arg_energycells_macro".
 # The faction token uses non-greedy matching to handle multi-part names (e.g. prod_gen_...).
 _PROD_MACRO_RE = re.compile(r'^prod_(?:\w+?)_(\w+)_macro$', re.IGNORECASE)
+
+# Matches ship macro strings: ship_{faction}_{size}_{role}[_{subtype}]_{variant}_macro
+# Groups: (1) faction, (2) size, (3) role, (4) optional subtype (letters only —
+# digits mark the start of the variant number and end the named portion).
+# Uses [^_]+ to match each token up to the next underscore delimiter.
+_SHIP_MACRO_RE = re.compile(
+    r'^ship_([^_]+)_([^_]+)_([^_]+)(?:_([a-zA-Z][^_]*))?_\d',
+    re.IGNORECASE,
+)
+
+# Readable display names for X4 ship role tokens.
+# Title-casing alone fails for compound roles like "heavyfighter", so we map
+# the known roles explicitly and fall back to .title() for anything else.
+_SHIP_ROLE_NAMES = {
+    'trans':        'Transport',
+    'miner':        'Miner',
+    'fighter':      'Fighter',
+    'heavyfighter': 'Heavy Fighter',
+    'bomber':       'Bomber',
+    'corvette':     'Corvette',
+    'frigate':      'Frigate',
+    'destroyer':    'Destroyer',
+    'carrier':      'Carrier',
+    'builder':      'Builder',
+    'resupplier':   'Resupplier',
+    'scout':        'Scout',
+    'gunboat':      'Gunboat',
+}
+
+
+def _parse_ship_macro(macro: str) -> str:
+    """
+    Derives a human-readable label from a ship component macro string.
+
+    X4 ship macros follow the pattern:
+        ship_{faction}_{size}_{role}[_{subtype}]_{variant}_macro
+
+    Examples:
+        ship_arg_m_miner_liquid_01_a_macro   →  "ARG M Miner (Liquid)"
+        ship_tel_s_trans_container_01_macro  →  "TEL S Transport (Container)"
+        ship_xenon_s_fighter_01_macro        →  "XEN S Fighter"
+        ship_arg_xl_carrier_01_a_macro       →  "ARG XL Carrier"
+
+    Falls back to the raw macro string if it doesn't match the expected pattern
+    (e.g. DLC ships, modded ships, or unusual naming).
+    """
+    m = _SHIP_MACRO_RE.match(macro)
+    if not m:
+        return macro
+
+    faction = FACTION_ABBR.get(m.group(1).lower(), m.group(1).upper())
+    size    = m.group(2).upper()
+    role    = _SHIP_ROLE_NAMES.get(m.group(3).lower(), m.group(3).title())
+    subtype = m.group(4)
+
+    label = f"{faction} {size} {role}"
+    if subtype:
+        label += f" ({subtype.title()})"
+    return label
 
 
 # ─── Language file loader ─────────────────────────────────────────────────────
@@ -378,7 +442,7 @@ def scan_save(
     sector_names:  dict,
     texts:         dict,
     factory_names: dict,
-) -> tuple[list[dict], list[dict]]:
+) -> tuple[list[dict], list[dict], dict[str, list]]:
     """
     Single-pass scan that collects both sectors and stations from the save file.
 
@@ -400,11 +464,32 @@ def scan_save(
     The station_ref identity guard prevents nested sub-components that happen to
     share a station class value from being registered as separate stations.
 
+    SHIP HOMEBASE ASSIGNMENTS
+    The homebase station is stored in the ship's DEFAULT ORDER params — not in
+    script blackboard variables. Two order types carry it:
+        TradeRoutine → <param name="range"    type="component" value="[0xID]"/>
+        Middleman    → <param name="supplier" type="component" value="[0xID]"/>
+
+    We maintain a ship_stack: whenever a <component class="ship_*"> opens we
+    push a tracking dict onto it. Each dict carries boolean flags (in_orders,
+    in_default) that let us navigate the orders → order[@default=1] → param
+    path without buffering the ship subtree. When the ship element closes we
+    record the homebase (if found) and pop the stack. The stack handles docked
+    ships inside carriers — their orders are processed before connections are
+    opened, so the innermost ship at the top of the stack is always the right one.
+
     All elements are cleared on their end events to keep memory usage low.
+
+    Returns:
+        sectors       list of sector dicts
+        stations      list of station dicts (includes 'id' for cross-referencing)
+        homebase_map  {station_hex_id: [ship_macro, ...]}
     """
     seen_sectors:       set[str]              = set()
     sectors:            list[tuple[str, str]] = []
     stations:           list[dict]            = []
+    homebase_map:       dict[str, list]       = {}   # station hex id → [ship macro, ...]
+    ship_stack:         list                  = []   # stack of ship tracking dicts
 
     current_sector      = "Unknown Sector"
     station_ref         = None   # reference to the open station element
@@ -418,48 +503,97 @@ def scan_save(
     with opener(save_path, 'rb') as f:
         for event, elem in ET.iterparse(f, events=('start', 'end')):
 
-            if event == 'start' and elem.tag == 'component':
-                cls   = elem.get('class', '')
-                macro = elem.get('macro', '')
+            if event == 'start':
 
-                # ── Sector tracking ───────────────────────────────────────────
-                if cls == 'sector':
-                    resolved = macro_to_name(macro, sector_names)
-                    if resolved:
-                        current_sector = resolved
-                    if macro and macro not in seen_sectors:
-                        seen_sectors.add(macro)
-                        sectors.append({
-                            'name':      resolved or macro,
-                            'macro':     macro,
-                            'code':      elem.get('code', ''),
+                if elem.tag == 'component':
+                    cls   = elem.get('class', '')
+                    macro = elem.get('macro', '')
+
+                    # ── Sector tracking ───────────────────────────────────────
+                    if cls == 'sector':
+                        resolved = macro_to_name(macro, sector_names)
+                        if resolved:
+                            current_sector = resolved
+                        if macro and macro not in seen_sectors:
+                            seen_sectors.add(macro)
+                            sectors.append({
+                                'name':      resolved or macro,
+                                'macro':     macro,
+                                'code':      elem.get('code', ''),
+                                'owner':     elem.get('owner', ''),
+                                'contested': elem.get('contested') == '1',
+                            })
+
+                    # ── Station detection ─────────────────────────────────────
+                    elif station_ref is None and cls in STATION_CLASSES:
+                        # Save the element reference so we can recognise this exact
+                        # element's end event later, and capture the attributes now
+                        # while they're available on the start event.
+                        # 'id' is the station's hex component ID (e.g. "[0x1dc9a]");
+                        # we use it to match against $homebase ship assignments.
+                        station_ref     = elem
+                        station_pending = {
+                            'id':        elem.get('id', ''),
+                            'name_attr': elem.get('name', ''),
+                            'basename':  elem.get('basename', ''),
+                            'nameindex': elem.get('nameindex', ''),
                             'owner':     elem.get('owner', ''),
-                            'contested': elem.get('contested') == '1',
+                            'code':      elem.get('code', ''),
+                            'cls':       cls,
+                            'macro':     macro,
+                            'sector':    current_sector,
+                        }
+                        station_prod_macros = []
+
+                    # ── Production child collection ───────────────────────────
+                    # While inside a station, gather production module macros so
+                    # that _resolve_station_name() can fall back to them if
+                    # basename fails.
+                    elif station_ref is not None and cls == 'production':
+                        station_prod_macros.append(macro)
+
+                    # ── Ship stack push ───────────────────────────────────────
+                    # Push a tracking dict for this ship. in_orders/in_default
+                    # are scope flags navigated by the orders/order/param handlers
+                    # below; homebase is filled once the matching param is found.
+                    elif cls in SHIP_CLASSES:
+                        ship_stack.append({
+                            'elem':       elem,
+                            'macro':      macro,
+                            'in_orders':  False,
+                            'in_default': False,
+                            'order_type': '',
+                            'homebase':   '',
                         })
 
-                # ── Station detection ─────────────────────────────────────────
-                elif station_ref is None and cls in STATION_CLASSES:
-                    # Save the element reference so we can recognise this exact
-                    # element's end event later, and capture the attributes now
-                    # while they're available on the start event.
-                    station_ref     = elem
-                    station_pending = {
-                        'name_attr': elem.get('name', ''),
-                        'basename':  elem.get('basename', ''),
-                        'nameindex': elem.get('nameindex', ''),
-                        'owner':     elem.get('owner', ''),
-                        'code':      elem.get('code', ''),
-                        'cls':       cls,
-                        'macro':     macro,
-                        'sector':    current_sector,
-                    }
-                    station_prod_macros = []
+                # ── Ship homebase extraction (order params) ───────────────────
+                # The homebase is stored in the ship's default order params:
+                #   TradeRoutine → <param name="range"    type="component" value="[0xID]"/>
+                #   Middleman    → <param name="supplier" type="component" value="[0xID]"/>
+                # We walk into orders → default order → params via stack flags so
+                # that nested docked ships each track their own scope independently.
+                elif elem.tag == 'orders' and ship_stack:
+                    ship_stack[-1]['in_orders'] = True
 
-                # ── Production child collection ───────────────────────────────
-                # While inside a station, gather production module macros so that
-                # _resolve_station_name() can fall back to them if basename fails.
-                elif station_ref is not None and cls == 'production':
-                    station_prod_macros.append(macro)
+                elif elem.tag == 'order' and ship_stack and ship_stack[-1]['in_orders']:
+                    if elem.get('default') == '1':
+                        ship_stack[-1]['in_default'] = True
+                        ship_stack[-1]['order_type'] = elem.get('order', '')
+
+                elif elem.tag == 'param' and ship_stack and ship_stack[-1]['in_default']:
+                    ot = ship_stack[-1]['order_type']
+                    if ot == 'TradeRoutine':
+                        target = 'range'
+                    elif ot == 'Middleman':
+                        target = 'supplier'
+                    else:
+                        target = None
+                    if (target
+                            and elem.get('name') == target
+                            and elem.get('type') == 'component'):
+                        val = elem.get('value', '')
+                        if val:
+                            ship_stack[-1]['homebase'] = val
 
             # ── Station finalisation ──────────────────────────────────────────
             # When the exact element that opened our station closes, we have seen
@@ -478,6 +612,7 @@ def scan_save(
                     p['sector'],
                 )
                 stations.append({
+                    'id':     p['id'],     # hex component ID for homebase cross-ref
                     'name':   display,
                     'owner':  p['owner'],
                     'code':   p['code'],
@@ -489,13 +624,30 @@ def scan_save(
                 station_pending     = None
                 station_prod_macros = []
 
+            # ── Ship homebase finalisation ────────────────────────────────────
+            if event == 'end' and ship_stack:
+                # Unwind the orders/order scope flags as those elements close so
+                # that a subsequent docked ship doesn't inherit the wrong state.
+                if elem.tag == 'orders':
+                    ship_stack[-1]['in_orders'] = False
+                elif elem.tag == 'order' and ship_stack[-1]['in_default']:
+                    ship_stack[-1]['in_default'] = False
+                    ship_stack[-1]['order_type'] = ''
+                # When the ship component itself closes, record the homebase (if
+                # found) and pop the entry. Identity check ensures we only pop
+                # when the EXACT element that opened this entry closes.
+                elif elem is ship_stack[-1]['elem']:
+                    ship = ship_stack.pop()
+                    if ship['homebase']:
+                        homebase_map.setdefault(ship['homebase'], []).append(ship['macro'])
+
             # Free every element once it has fully closed. On a large save file
             # this is what keeps RAM manageable — without it the whole tree
             # would accumulate in memory.
             if event == 'end':
                 elem.clear()
 
-    return sectors, stations
+    return sectors, stations, homebase_map
 
 
 # ─── Entry point ──────────────────────────────────────────────────────────────
@@ -509,10 +661,10 @@ def main():
         input("\nPress Enter to exit...")
         return
 
-    sector_names, texts   = load_language(LANG_PATH)
-    factory_names         = load_ware_factory_names(WARES_PATH, texts)
-    sectors, stations     = scan_save(SAVE_PATH, sector_names, texts, factory_names)
-    elapsed               = time.perf_counter() - start
+    sector_names, texts        = load_language(LANG_PATH)
+    factory_names              = load_ware_factory_names(WARES_PATH, texts)
+    sectors, stations, hb_map  = scan_save(SAVE_PATH, sector_names, texts, factory_names)
+    elapsed                    = time.perf_counter() - start
 
     sep = '─' * 70
 
@@ -548,9 +700,15 @@ def main():
 
     sectors_with_stations = sorted(by_sector.keys(), key=str.lower)
 
+    # Total assigned ships across all known stations.
+    # Uses the cross-referenced sum rather than sum(len(v) for v in hb_map.values())
+    # so that ships assigned to non-station objects (e.g. carriers) aren't counted.
+    total_assigned = sum(len(hb_map.get(st['id'], [])) for st in stations)
+
     print(f"\n{sep}")
     print(f"  STATIONS BY SECTOR  "
-          f"({len(stations)} stations across {len(sectors_with_stations)} sectors)")
+          f"({len(stations)} stations across {len(sectors_with_stations)} sectors"
+          f"  ·  {total_assigned} assigned ships)")
     print(sep)
 
     for sec_name in sectors_with_stations:
@@ -565,16 +723,35 @@ def main():
         n     = len(sec_sts)
         label = 'station' if n == 1 else 'stations'
 
+        # Per-sector ship total — sum homebase counts for every station in this sector.
+        sec_ships      = sum(len(hb_map.get(st['id'], [])) for st in sec_sts)
+        sec_ships_str  = f"  ·  {sec_ships} ships" if sec_ships > 0 else ""
+
         # Sector header line — code and owner alongside the name.
         parts = [sec_name]
         if sec_code:  parts.append(sec_code)
         if sec_owner: parts.append(sec_owner)
-        print(f"\n  ┌─ {'  ·  '.join(parts)}  ({n} {label}){flag}")
+        print(f"\n  ┌─ {'  ·  '.join(parts)}  ({n} {label}{sec_ships_str}){flag}")
 
         for st in sec_sts:
-            owner_tag = f"[{st['owner']}]" if st['owner'] else ""
-            code_str  = f"({st['code']})"  if st['code']  else ""
-            print(f"  │   {owner_tag:<16}  {st['name']:<44}  {code_str}")
+            owner_tag  = f"[{st['owner']}]" if st['owner'] else ""
+            code_str   = f"({st['code']})"  if st['code']  else ""
+            # Retrieve the list of ship macros assigned to this station and
+            # aggregate them into named groups for the breakdown line.
+            macros     = hb_map.get(st['id'], [])
+            ship_count = len(macros)
+            ship_str   = f"  {ship_count} ships" if ship_count > 0 else ""
+            print(f"  │   {owner_tag:<16}  {st['name']:<44}  {code_str}{ship_str}")
+            if macros:
+                # Count how many of each resolved ship label are assigned.
+                counts: dict[str, int] = {}
+                for macro in macros:
+                    label = _parse_ship_macro(macro)
+                    counts[label] = counts.get(label, 0) + 1
+                # Sort by count descending so the most common type comes first.
+                parts = [f"{n}× {lbl}"
+                         for lbl, n in sorted(counts.items(), key=lambda x: (-x[1], x[0]))]
+                print(f"  │   {'':16}    ↳ {', '.join(parts)}")
 
     print(f"\n{sep}")
 
