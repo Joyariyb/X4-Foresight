@@ -323,13 +323,21 @@ def display_trade_history(data: dict):
             if sh.get("object_id")
         }
 
+        # Build object_id → name lookup for player stations so the Station
+        # column in Table 1 can display "Name [CODE]" instead of just the code.
+        station_id_to_name: dict[str, str] = {
+            st["object_id"]: st["name"]
+            for st in data.get("stations", [])
+            if st.get("object_id") and st.get("name")
+        }
+
         def _row_fields(t: dict) -> tuple[str, str, str, str, str]:
             """
             Decompose one trade entry into
             (station, ship_label, ship_id_str, direction, counterparty).
 
-            station      — player STATION code for station_entries. Always "—"
-                           for ship_entries (that table omits this field entirely).
+            station      — player station as "Name [CODE]" for station_entries,
+                           or "—" for ship_entries (table omits the column).
             ship_label   — the transport ship for station trades, or the player
                            ship itself for pure ship trades. ★ prefix = player-owned.
             ship_id_str  — raw hex object ID with brackets stripped ("0x1f673").
@@ -339,25 +347,34 @@ def display_trade_history(data: dict):
             # Station flags take priority: a player-station ↔ player-ship trade
             # is attributed to the station, not the ship.
             if t["player_is_buyer"]:
-                station   = t["buyer_code"]
-                direction = "In "
-                ship_id   = t["seller_id"]
-                ship_code = t["seller_code"]
+                station_id   = t["buyer_id"]
+                station_code = t["buyer_code"]
+                direction    = "In "
+                ship_id      = t["seller_id"]
+                ship_code    = t["seller_code"]
             elif t["player_is_seller"]:
-                station   = t["seller_code"]
-                direction = "Out"
-                ship_id   = t["buyer_id"]
-                ship_code = t["buyer_code"]
+                station_id   = t["seller_id"]
+                station_code = t["seller_code"]
+                direction    = "Out"
+                ship_id      = t["buyer_id"]
+                ship_code    = t["buyer_code"]
             elif t.get("player_ship_is_buyer"):
-                station   = "—"
-                direction = "In "
-                ship_id   = t["buyer_id"]
-                ship_code = t["buyer_code"]
+                station_id   = ""
+                station_code = "—"
+                direction    = "In "
+                ship_id      = t["buyer_id"]
+                ship_code    = t["buyer_code"]
             else:
-                station   = "—"
-                direction = "Out"
-                ship_id   = t["seller_id"]
-                ship_code = t["seller_code"]
+                station_id   = ""
+                station_code = "—"
+                direction    = "Out"
+                ship_id      = t["seller_id"]
+                ship_code    = t["seller_code"]
+
+            # Show "Name [CODE]" when the station name is available; plain code
+            # otherwise (e.g. if the station record is missing from this scan).
+            station_name = station_id_to_name.get(station_id, "")
+            station = f"{station_name} [{station_code}]" if station_name else station_code
 
             ship_label  = f"★ {ship_code}" if ship_id in player_ship_ids else ship_code
             # Strip "[" / "]" so the hex ID is copy-pasteable for save lookups.
@@ -377,6 +394,10 @@ def display_trade_history(data: dict):
         # ── Table 1: station trades ───────────────────────────────────────────
         if station_entries:
             st_rows = [_row_fields(t) for t in station_entries]
+
+            n_st = len(station_entries)
+            print(f"  STATION TRADES  ·  {n_st} {'entry' if n_st == 1 else 'entries'}")
+            print()
 
             tc  = 8
             sc  = max((len(r[0]) for r in st_rows), default=7)
