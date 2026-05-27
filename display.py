@@ -194,10 +194,24 @@ def display_trade_history(data: dict):
     """
     Prints a summary of completed trade history from the economylog.
 
-    Aggregates by station + direction + ware — individual log entries can number
-    in the thousands, so per-entry detail would be unreadable. Uses the same
-    table layout as display_trade_log for visual consistency.
+    Organised into two clearly labelled sections:
+
+      SUMMARY BY STATION  — aggregated counts and Cr totals per station,
+                            broken down by direction (In / Out) and ware.
+                            Ware rows are indented under their station header
+                            to make the parent-child relationship clear.
+
+      INDIVIDUAL TRADE LOG — every recorded entry, split into:
+                              · Station trades — grouped by player station,
+                                with column headers per group so they are
+                                always visible above the rows.
+                              · Player ship trades — flat list for trades
+                                where a player ship had no station on either
+                                side.
     """
+    from collections import defaultdict
+    from itertools import groupby
+
     LINE    = "─" * 68
     history = data.get("trade_history", [])
 
@@ -213,7 +227,7 @@ def display_trade_history(data: dict):
             print("    (X4 8.0 may store an empty global log — entries appear per station.)")
         return
 
-    # ── Summary line ──────────────────────────────────────────────────────────
+    # ── Top-level summary line ────────────────────────────────────────────────
     bought_cr = sum(t["total_cr"] for t in history if t["player_is_buyer"])
     sold_cr   = sum(t["total_cr"] for t in history if t["player_is_seller"])
     oldest_s  = max((t["time_ago_s"] for t in history), default=0)
@@ -225,16 +239,43 @@ def display_trade_history(data: dict):
           f"Log covers last ~{age_str}")
     print()
 
-    # ── Aggregate by station + direction + ware ───────────────────────────────
-    from collections import defaultdict
-
-    # Build code → name lookup from player stations so we can display
-    # "Station TV [SIZ-939]" instead of just "SIZ-939" in section headers.
+    # ── Shared lookups used by both sections ──────────────────────────────────
+    # code → name: station display name for aggregate section headers.
     code_to_name: dict[str, str] = {
         s["code"]: s["name"]
         for s in data.get("stations", [])
         if s.get("code") and s.get("name")
     }
+    # object_id → name: for grouping headers in the individual log section.
+    station_id_to_name: dict[str, str] = {
+        st["object_id"]: st["name"]
+        for st in data.get("stations", [])
+        if st.get("object_id") and st.get("name")
+    }
+    # Player ship IDs so the Ship column can mark them with ★.
+    player_ship_ids: set[str] = {
+        sh["object_id"]
+        for sh in data.get("ships", {}).get("player_ships", [])
+        if sh.get("object_id")
+    }
+
+    def _age(s: float) -> str:
+        """Format seconds-ago as a compact human-readable string."""
+        if s < 60:
+            return f"{int(s)}s"
+        if s < 3600:
+            return f"{int(s // 60)}m"
+        h = int(s // 3600)
+        m = int((s % 3600) // 60)
+        return f"{h}h {m:02d}m"
+
+    def _truncate(label: str, width: int) -> str:
+        """Clip to exactly `width` chars — f-string :<N pads but never clips."""
+        return label if len(label) <= width else label[:width - 1] + "…"
+
+    # ═════════════════════════════════════════════════════════════════════════
+    #  SECTION 1 — SUMMARY BY STATION
+    # ═════════════════════════════════════════════════════════════════════════
 
     agg: dict = defaultdict(lambda: {
         "In":  defaultdict(lambda: [0, 0, 0.0]),
@@ -249,24 +290,26 @@ def display_trade_history(data: dict):
             r = agg[t["seller_code"]]["Out"][ware]
             r[0] += 1;  r[1] += t["amount"];  r[2] += t["total_cr"]
 
-    wc = max(
+    agg_wc = max(
         (len(w) for station in agg.values() for side in station.values() for w in side),
         default=14,
     )
-    wc = max(14, min(28, wc + 1))
+    agg_wc = max(14, min(28, agg_wc + 1))
 
-    # Column headers printed once above all station blocks.
-    print(f"  {'':3}  {'Ware':<{wc}}  {'Trades':>6}  {'Units':>9}  {'Avg Cr/unit':>11}  {'Total Cr':>14}")
-    print(f"  {'─'*3}  {'─'*wc}  {'─'*6}  {'─'*9}  {'─'*11}  {'─'*14}")
+    print("  SUMMARY BY STATION")
+    print()
+    # Column header printed once; ware rows are indented 5 extra spaces below
+    # each station header to show they are subordinate to that station.
+    print(f"       {'Dir':<3}  {'Ware':<{agg_wc}}  {'Trades':>6}  {'Units':>9}  {'Avg Cr/unit':>11}  {'Total Cr':>14}")
+    print(f"       {'─'*3}  {'─'*agg_wc}  {'─'*6}  {'─'*9}  {'─'*11}  {'─'*14}")
 
     for code in sorted(agg):
-        inbound  = agg[code]["In"]
-        outbound = agg[code]["Out"]
+        inbound    = agg[code]["In"]
+        outbound   = agg[code]["Out"]
         buy_total  = sum(v[2] for v in inbound.values())
         sell_total = sum(v[2] for v in outbound.values())
 
-        # Station separator — name (if known) + code + per-station totals.
-        name = code_to_name.get(code)
+        name  = code_to_name.get(code)
         label = f"{name}  [{code}]" if name else code
         print(f"  ── {label}  ·  Purchased: {buy_total:,.0f} Cr  ·  Sold: {sell_total:,.0f} Cr")
 
@@ -274,25 +317,19 @@ def display_trade_history(data: dict):
             [("In",  w, *v) for w, v in sorted(inbound.items())] +
             [("Out", w, *v) for w, v in sorted(outbound.items())]
         )
-        for direction, ware, n, units, total in rows:
+        for direction, ware, n_trades, units, total in rows:
             avg = total / units if units else 0
-            print(f"  {direction:<3}  {ware:<{wc}}  {n:>6}  {units:>9,}  {avg:>11,.0f}  {total:>14,.0f}")
+            # 5-space indent visually nests these rows under the station header above.
+            print(f"       {direction:<3}  {ware:<{agg_wc}}  {n_trades:>6}  {units:>9,}  {avg:>11,.0f}  {total:>14,.0f}")
 
         print()
 
-    # ── Individual trade log ──────────────────────────────────────────────────
-    # Split into two tables so the station table never contains "—" rows:
-    #
-    #  Table 1 — Station trades: a player station is the buyer or seller.
-    #             Station column always holds a real code. The Ship column is
-    #             whichever entity (NPC or player ship) is on the other side.
-    #
-    #  Table 2 — Ship trades: a player ship is the only player entity — no
-    #             player station on either side. These are legs where the ship
-    #             picked up from or delivered to a purely NPC station.
-    #             The Station column is omitted; Counterparty shows the NPC station.
-    #
-    # Both sorted most-recent-first (smallest time_ago_s = most recent).
+    # ═════════════════════════════════════════════════════════════════════════
+    #  SECTION 2 — INDIVIDUAL TRADE LOG
+    # ═════════════════════════════════════════════════════════════════════════
+
+    # Station trades: player station on at least one side.
+    # Ship trades: player ship is the only player entity — no player station.
     station_entries = sorted(
         (t for t in history if t["player_is_buyer"] or t["player_is_seller"]),
         key=lambda t: t["time_ago_s"],
@@ -304,154 +341,100 @@ def display_trade_history(data: dict):
         key=lambda t: t["time_ago_s"],
     )
 
-    if station_entries or ship_entries:
-        def _age(s: float) -> str:
-            """Format a seconds-ago value as a compact human-readable string."""
-            if s < 60:
-                return f"{int(s)}s"
-            if s < 3600:
-                return f"{int(s // 60)}m"
-            h = int(s // 3600)
-            m = int((s % 3600) // 60)
-            return f"{h}h {m:02d}m"
+    if not station_entries and not ship_entries:
+        return
 
-        # Build a set of player ship object IDs so we can mark player-owned
-        # ships with ★ in the Ship column.
-        player_ship_ids: set[str] = {
-            sh["object_id"]
-            for sh in data.get("ships", {}).get("player_ships", [])
-            if sh.get("object_id")
-        }
+    print("  INDIVIDUAL TRADE LOG")
+    print()
 
-        # Build object_id → name lookup for player stations so the Station
-        # column in Table 1 can display "Name [CODE]" instead of just the code.
-        station_id_to_name: dict[str, str] = {
-            st["object_id"]: st["name"]
-            for st in data.get("stations", [])
-            if st.get("object_id") and st.get("name")
-        }
+    # ── Table 1: station trades, grouped by player station ───────────────────
+    # Grouping removes the need for a Station column on every row — the station
+    # appears once as a section header, making the table narrower and easier to
+    # scan within a single station's history.
+    if station_entries:
+        n_st = len(station_entries)
+        print(f"  STATION TRADES  ·  {n_st} {'entry' if n_st == 1 else 'entries'}")
+        print()
 
-        def _row_fields(t: dict) -> tuple[str, str, str, str, str]:
-            """
-            Decompose one trade entry into
-            (station, ship_label, ship_id_str, direction, counterparty).
+        def _st_key(t: dict) -> tuple[str, str]:
+            """(object_id, code) of the player-station side of this entry."""
+            return (t["buyer_id"],  t["buyer_code"])  if t["player_is_buyer"] \
+              else (t["seller_id"], t["seller_code"])
 
-            station      — player station as "Name [CODE]" for station_entries,
-                           or "—" for ship_entries (table omits the column).
-            ship_label   — the transport ship for station trades, or the player
-                           ship itself for pure ship trades. ★ prefix = player-owned.
-            ship_id_str  — raw hex object ID with brackets stripped ("0x1f673").
-            direction    — "In " (player entity received goods) or "Out" (sent).
-            counterparty — resolved NPC station name, or "—" when unresolved.
-            """
-            # Station flags take priority: a player-station ↔ player-ship trade
-            # is attributed to the station, not the ship.
-            if t["player_is_buyer"]:
-                station_id   = t["buyer_id"]
-                station_code = t["buyer_code"]
-                direction    = "In "
-                ship_id      = t["seller_id"]
-                ship_code    = t["seller_code"]
-            elif t["player_is_seller"]:
-                station_id   = t["seller_id"]
-                station_code = t["seller_code"]
-                direction    = "Out"
-                ship_id      = t["buyer_id"]
-                ship_code    = t["buyer_code"]
-            elif t.get("player_ship_is_buyer"):
-                station_id   = ""
-                station_code = "—"
-                direction    = "In "
-                ship_id      = t["buyer_id"]
-                ship_code    = t["buyer_code"]
-            else:
-                station_id   = ""
-                station_code = "—"
-                direction    = "Out"
-                ship_id      = t["seller_id"]
-                ship_code    = t["seller_code"]
+        def _ship_lbl(t: dict) -> str:
+            """Display label for the ship on the non-player-station side."""
+            ship_id   = t["seller_id"]   if t["player_is_buyer"] else t["buyer_id"]
+            ship_code = t["seller_code"] if t["player_is_buyer"] else t["buyer_code"]
+            return f"★ {ship_code}" if ship_id in player_ship_ids else ship_code
 
-            # Show "Name [CODE]" when the station name is available; plain code
-            # otherwise (e.g. if the station record is missing from this scan).
-            station_name = station_id_to_name.get(station_id, "")
-            station = f"{station_name} [{station_code}]" if station_name else station_code
+        # Sort by station code so rows are grouped, then most-recent-first within
+        # each group (smallest time_ago_s = happened most recently).
+        sorted_st = sorted(station_entries, key=lambda t: (_st_key(t)[1], t["time_ago_s"]))
 
-            ship_label  = f"★ {ship_code}" if ship_id in player_ship_ids else ship_code
-            # Strip "[" / "]" so the hex ID is copy-pasteable for save lookups.
-            ship_id_str = ship_id.strip('[]') if ship_id else "—"
-            counterparty = t.get("counterparty_station") or "—"
+        # Compute column widths once across all station entries.
+        tc     = 8
+        st_shc = max((len(_ship_lbl(t)) for t in station_entries), default=14)
+        st_shc = max(14, min(36, st_shc + 1))
+        st_wc  = max((len(t["ware_name"]) for t in station_entries), default=14)
+        st_wc  = max(14, min(28, st_wc + 1))
+        st_cc  = max((len(t.get("counterparty_station") or "—") for t in station_entries), default=11)
+        st_cc  = max(11, min(40, st_cc + 1))
 
-            return station, ship_label, ship_id_str, direction, counterparty
-
-        def _truncate(label: str, width: int) -> str:
-            """
-            Truncate label to exactly `width` chars if it is too long.
-            Python's f-string left-align (:<N) pads but never truncates, so
-            without this a long NPC ship name would overflow into the next column.
-            """
-            return label if len(label) <= width else label[:width - 1] + "…"
-
-        # ── Table 1: station trades ───────────────────────────────────────────
-        if station_entries:
-            st_rows = [_row_fields(t) for t in station_entries]
-
-            n_st = len(station_entries)
-            print(f"  STATION TRADES  ·  {n_st} {'entry' if n_st == 1 else 'entries'}")
+        for (st_id, st_code), grp in groupby(sorted_st, key=_st_key):
+            group = list(grp)
+            name  = station_id_to_name.get(st_id, "")
+            label = f"{name}  [{st_code}]" if name else st_code
+            n_grp = len(group)
+            print(f"  ── {label}  ·  {n_grp} {'entry' if n_grp == 1 else 'entries'}")
+            # Column headers per group so they are always visible above the rows,
+            # even when a station has many entries.
+            print(f"     {'Time':<{tc}}  {'Ship':<{st_shc}}  {'Dir'}  "
+                  f"{'Ware':<{st_wc}}  {'Units':>9}  {'Cr/unit':>9}  {'Total Cr':>12}  {'Counterparty':<{st_cc}}")
+            print(f"     {'─'*tc}  {'─'*st_shc}  {'─'*3}  "
+                  f"{'─'*st_wc}  {'─'*9}  {'─'*9}  {'─'*12}  {'─'*st_cc}")
+            for t in group:
+                direction = "In " if t["player_is_buyer"] else "Out"
+                cp        = t.get("counterparty_station") or "—"
+                print(f"     {_age(t['time_ago_s']):<{tc}}  "
+                      f"{_truncate(_ship_lbl(t), st_shc):<{st_shc}}  {direction}  "
+                      f"{t['ware_name']:<{st_wc}}  {t['amount']:>9,}  {t['price_cr']:>9,.2f}  "
+                      f"{t['total_cr']:>12,.0f}  {cp:<{st_cc}}")
             print()
 
-            tc  = 8
-            sc  = max((len(r[0]) for r in st_rows), default=7)
-            sc  = max(7,  sc  + 1)
-            shc = max((len(r[1]) for r in st_rows), default=14)
-            shc = max(14, min(36, shc + 1))
-            ic  = max((len(r[2]) for r in st_rows), default=8)
-            ic  = max(8,  min(12, ic  + 1))
-            cc  = max((len(r[4]) for r in st_rows), default=11)
-            cc  = max(11, min(40, cc  + 1))
+    # ── Table 2: ship-only trades (no player station on either side) ──────────
+    if ship_entries:
+        n_ship = len(ship_entries)
+        print(f"  PLAYER SHIP TRADES  ·  {n_ship} {'entry' if n_ship == 1 else 'entries'}")
+        print()
 
-            print(f"  {'Time':<{tc}}  {'Station':<{sc}}  {'Ship':<{shc}}  {'Ship ID':<{ic}}  {'Dir'}  "
-                  f"{'Ware':<{wc}}  {'Units':>9}  {'Cr/unit':>9}  {'Total Cr':>12}  {'Counterparty':<{cc}}")
-            print(f"  {'─'*tc}  {'─'*sc}  {'─'*shc}  {'─'*ic}  {'─'*3}  "
-                  f"{'─'*wc}  {'─'*9}  {'─'*9}  {'─'*12}  {'─'*cc}")
+        def _ship_lbl2(t: dict) -> str:
+            """Display label for the player ship in a ship-only entry."""
+            ship_id   = t["buyer_id"]   if t.get("player_ship_is_buyer") else t["seller_id"]
+            ship_code = t["buyer_code"] if t.get("player_ship_is_buyer") else t["seller_code"]
+            return f"★ {ship_code}" if ship_id in player_ship_ids else ship_code
 
-            for t, (station, ship_label, ship_id_str, direction, counterparty) in zip(station_entries, st_rows):
-                print(f"  {_age(t['time_ago_s']):<{tc}}  {station:<{sc}}  {_truncate(ship_label, shc):<{shc}}  "
-                      f"{ship_id_str:<{ic}}  {direction}  "
-                      f"{t['ware_name']:<{wc}}  {t['amount']:>9,}  {t['price_cr']:>9,.2f}  "
-                      f"{t['total_cr']:>12,.0f}  {counterparty:<{cc}}")
+        tc2  = 8
+        shc2 = max((len(_ship_lbl2(t)) for t in ship_entries), default=14)
+        shc2 = max(14, min(36, shc2 + 1))
+        wc2  = max((len(t["ware_name"]) for t in ship_entries), default=14)
+        wc2  = max(14, min(28, wc2 + 1))
+        cc2  = max((len(t.get("counterparty_station") or "—") for t in ship_entries), default=11)
+        cc2  = max(11, min(40, cc2 + 1))
 
-            print()
+        print(f"  {'Time':<{tc2}}  {'Ship':<{shc2}}  {'Dir'}  "
+              f"{'Ware':<{wc2}}  {'Units':>9}  {'Cr/unit':>9}  {'Total Cr':>12}  {'Counterparty':<{cc2}}")
+        print(f"  {'─'*tc2}  {'─'*shc2}  {'─'*3}  "
+              f"{'─'*wc2}  {'─'*9}  {'─'*9}  {'─'*12}  {'─'*cc2}")
 
-        # ── Table 2: ship-only trades (no player station on either side) ──────
-        if ship_entries:
-            sh_rows = [_row_fields(t) for t in ship_entries]
+        for t in ship_entries:
+            direction = "In " if t.get("player_ship_is_buyer") else "Out"
+            cp        = t.get("counterparty_station") or "—"
+            print(f"  {_age(t['time_ago_s']):<{tc2}}  "
+                  f"{_truncate(_ship_lbl2(t), shc2):<{shc2}}  {direction}  "
+                  f"{t['ware_name']:<{wc2}}  {t['amount']:>9,}  {t['price_cr']:>9,.2f}  "
+                  f"{t['total_cr']:>12,.0f}  {cp:<{cc2}}")
 
-            n_ship = len(ship_entries)
-            print(f"  PLAYER SHIP TRADES  ·  {n_ship} {'entry' if n_ship == 1 else 'entries'}")
-            print()
-
-            tc2  = 8
-            shc2 = max((len(r[1]) for r in sh_rows), default=14)
-            shc2 = max(14, min(36, shc2 + 1))
-            ic2  = max((len(r[2]) for r in sh_rows), default=8)
-            ic2  = max(8,  min(12, ic2  + 1))
-            wc2  = max((len(t["ware_name"]) for t in ship_entries), default=14)
-            wc2  = max(14, min(28, wc2 + 1))
-            cc2  = max((len(r[4]) for r in sh_rows), default=11)
-            cc2  = max(11, min(40, cc2  + 1))
-
-            print(f"  {'Time':<{tc2}}  {'Ship':<{shc2}}  {'Ship ID':<{ic2}}  {'Dir'}  "
-                  f"{'Ware':<{wc2}}  {'Units':>9}  {'Cr/unit':>9}  {'Total Cr':>12}  {'Counterparty':<{cc2}}")
-            print(f"  {'─'*tc2}  {'─'*shc2}  {'─'*ic2}  {'─'*3}  "
-                  f"{'─'*wc2}  {'─'*9}  {'─'*9}  {'─'*12}  {'─'*cc2}")
-
-            for t, (_, ship_label, ship_id_str, direction, counterparty) in zip(ship_entries, sh_rows):
-                print(f"  {_age(t['time_ago_s']):<{tc2}}  {_truncate(ship_label, shc2):<{shc2}}  "
-                      f"{ship_id_str:<{ic2}}  {direction}  "
-                      f"{t['ware_name']:<{wc2}}  {t['amount']:>9,}  {t['price_cr']:>9,.2f}  "
-                      f"{t['total_cr']:>12,.0f}  {counterparty:<{cc2}}")
-
-            print()
+        print()
 
 
 def display_results(data: dict):
