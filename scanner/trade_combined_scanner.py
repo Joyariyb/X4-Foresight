@@ -266,10 +266,16 @@ def scan_trade_log_and_history(
                         buyer_id  = _norm(elem.get('buyer',  ''))
                         seller_id = _norm(elem.get('seller', ''))
 
-                        buyer_is_player  = buyer_id  in player_station_ids
-                        seller_is_player = seller_id in player_station_ids
+                        buyer_is_player       = buyer_id  in player_station_ids
+                        seller_is_player      = seller_id in player_station_ids
+                        # Also capture trades where a player SHIP is the buyer or
+                        # seller — e.g. a player trader picking up from a player
+                        # station then delivering to an NPC station, or vice versa.
+                        buyer_ship_is_player  = buyer_id  in _ship_ids
+                        seller_ship_is_player = seller_id in _ship_ids
 
-                        if buyer_is_player or seller_is_player:
+                        if (buyer_is_player or seller_is_player
+                                or buyer_ship_is_player or seller_ship_is_player):
                             try:
                                 amount     = int(float(elem.get('v', 0)))
                                 price_cr   = float(elem.get('price', 0)) / 100
@@ -293,8 +299,13 @@ def scan_trade_log_and_history(
                                     'price_cr':        price_cr,
                                     'total_cr':        amount * price_cr,
                                     'time_ago_s':      max(0.0, game_time - entry_time),
-                                    'player_is_buyer':  buyer_is_player,
-                                    'player_is_seller': seller_is_player,
+                                    'player_is_buyer':        buyer_is_player,
+                                    'player_is_seller':       seller_is_player,
+                                    # True when a player-owned SHIP (not station) is
+                                    # on that side — covers the second leg of a player
+                                    # trader's route (e.g. ship sells to NPC station).
+                                    'player_ship_is_buyer':   buyer_ship_is_player,
+                                    'player_ship_is_seller':  seller_ship_is_player,
                                     # Direct NPC station reference — set when this
                                     # log entry appears inside an NPC station's
                                     # subtree. That station IS the counterparty.
@@ -376,15 +387,18 @@ def scan_trade_log_and_history(
     # ── Summary ────────────────────────────────────────────────────────────────
     station_hits = sum(1 for t in active_trades  if not t['player_is_ship'])
     ship_hits    = sum(1 for t in active_trades  if t['player_is_ship'])
-    bought       = sum(1 for t in history_trades if t['player_is_buyer'])
-    sold         = sum(1 for t in history_trades if t['player_is_seller'])
+    bought      = sum(1 for t in history_trades if t['player_is_buyer'])
+    sold        = sum(1 for t in history_trades if t['player_is_seller'])
+    ship_bought = sum(1 for t in history_trades if t.get('player_ship_is_buyer'))
+    ship_sold   = sum(1 for t in history_trades if t.get('player_ship_is_seller'))
     print(
         f"[Scanning] Active trades  — {len(active_trades)} order(s) "
         f"({station_hits} via station filter, {ship_hits} via ship filter)."
     )
     print(
         f"[Scanning] Trade history  — {len(history_trades)} completed trade(s) "
-        f"({bought} purchases, {sold} sales)."
+        f"({bought} station purchases, {sold} station sales, "
+        f"{ship_bought} ship purchases, {ship_sold} ship sales)."
     )
 
     return {

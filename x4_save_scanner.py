@@ -755,25 +755,50 @@ if __name__ == "__main__":
                 #   Covers the vast majority of entries where the NPC station
                 #   that owns the trade ships also records the trades.
                 #
-                # PATH B — Ship → homebase chain (fallback for free traders):
-                #   For entries without a direct station context (e.g. from a
-                #   player station's own log block, or from a global entries block),
-                #   we fall back to: counterparty ship ID → homebase_index →
-                #   homebase station ID → npc_station_by_id → display name.
-                #   This covers ships that explicitly declare a homebase station
-                #   via a TradeRoutine 'range' or Middleman 'supplier' parameter.
+                # PATH B — two-step fallback for entries without a direct station context
+                #   (e.g. from a player station's own log block, or from a global
+                #   entries block):
+                #
+                #   Step 1 — direct station hit:
+                #     When the player's ship traded with an NPC station the log
+                #     records the NPC station's hex ID as the counterparty.
+                #     A single npc_station_by_id lookup resolves it immediately.
+                #
+                #   Step 2 — ship → homebase chain:
+                #     When an NPC ship traded at the player's station the log
+                #     records the NPC ship's hex ID.  We resolve it by following:
+                #       ship hex ID → homebase_index → homebase station hex ID
+                #       → npc_station_by_id → display name.
+                #     This covers ships that declare a homebase via a TradeRoutine
+                #     'range' or Middleman 'supplier' order parameter.
                 for entry in game_data["trade_history"]:
                     # Path A: direct NPC station reference.
                     st_id = entry.get("counterparty_station_id", "")
                     if st_id:
                         entry["counterparty_station"] = npc_station_by_id.get(st_id)
                     else:
-                        # Path B: ship → homebase chain.
-                        cp_id = entry["seller_id"] if entry["player_is_buyer"] else entry["buyer_id"]
-                        hb_id = homebase_index.get(cp_id)
-                        entry["counterparty_station"] = (
-                            npc_station_by_id.get(hb_id) if hb_id else None
-                        )
+                        # Path B: resolve the counterparty from the opposite side of
+                        # the trade from the player entity (station or ship).
+                        player_is_buying = entry["player_is_buyer"] or entry.get("player_ship_is_buyer")
+                        cp_id = entry["seller_id"] if player_is_buying else entry["buyer_id"]
+
+                        # Step 1 — direct station lookup.
+                        # When the player's own ship traded directly with an NPC
+                        # station, cp_id is already that station's hex object ID.
+                        # Check npc_station_by_id first — it's a single O(1) dict hit.
+                        direct = npc_station_by_id.get(cp_id)
+                        if direct:
+                            entry["counterparty_station"] = direct
+                        else:
+                            # Step 2 — ship → homebase chain.
+                            # When an NPC ship visited the player's station, cp_id is
+                            # the ship's hex ID.  Look up its declared homebase station
+                            # (from its TradeRoutine 'range' / Middleman 'supplier'
+                            # order parameter) and resolve that station instead.
+                            hb_id = homebase_index.get(cp_id)
+                            entry["counterparty_station"] = (
+                                npc_station_by_id.get(hb_id) if hb_id else None
+                            )
                 resolved = sum(1 for e in game_data["trade_history"] if e.get("counterparty_station"))
                 print(f"[Done] Counterparty stations resolved: "
                       f"{resolved}/{len(game_data['trade_history'])} entries.")

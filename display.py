@@ -281,14 +281,30 @@ def display_trade_history(data: dict):
         print()
 
     # ── Individual trade log ──────────────────────────────────────────────────
-    # One row per completed log entry where the player is buyer or seller.
-    # Sorted most-recent-first (time_ago_s = 0 means it just happened).
-    player_entries = sorted(
+    # Split into two tables so the station table never contains "—" rows:
+    #
+    #  Table 1 — Station trades: a player station is the buyer or seller.
+    #             Station column always holds a real code. The Ship column is
+    #             whichever entity (NPC or player ship) is on the other side.
+    #
+    #  Table 2 — Ship trades: a player ship is the only player entity — no
+    #             player station on either side. These are legs where the ship
+    #             picked up from or delivered to a purely NPC station.
+    #             The Station column is omitted; Counterparty shows the NPC station.
+    #
+    # Both sorted most-recent-first (smallest time_ago_s = most recent).
+    station_entries = sorted(
         (t for t in history if t["player_is_buyer"] or t["player_is_seller"]),
         key=lambda t: t["time_ago_s"],
     )
+    ship_entries = sorted(
+        (t for t in history
+         if (t.get("player_ship_is_buyer") or t.get("player_ship_is_seller"))
+         and not (t["player_is_buyer"] or t["player_is_seller"])),
+        key=lambda t: t["time_ago_s"],
+    )
 
-    if player_entries:
+    if station_entries or ship_entries:
         def _age(s: float) -> str:
             """Format a seconds-ago value as a compact human-readable string."""
             if s < 60:
@@ -299,59 +315,122 @@ def display_trade_history(data: dict):
             m = int((s % 3600) // 60)
             return f"{h}h {m:02d}m"
 
-        # Column widths
-        tc = 8    # time-ago
-        sc = 11   # player station code
-
-        # Build a set of player ship object IDs so we can detect when the trade
-        # counterparty is one of the player's own ships (e.g. a trader delivering
-        # goods) rather than an NPC vessel. We mark those rows with ★.
+        # Build a set of player ship object IDs so we can mark player-owned
+        # ships with ★ in the Ship column.
         player_ship_ids: set[str] = {
             sh["object_id"]
             for sh in data.get("ships", {}).get("player_ships", [])
             if sh.get("object_id")
         }
 
-        def _cp_label(t: dict) -> str:
+        def _row_fields(t: dict) -> tuple[str, str, str, str, str]:
             """
-            Return the counterparty display label for one trade entry.
+            Decompose one trade entry into
+            (station, ship_label, ship_id_str, direction, counterparty).
 
-            The counterparty is whichever side the player is NOT on.
-            If that ID belongs to one of the player's own ships, prefix with ★
-            so player-owned traders are immediately distinguishable from NPC ships.
+            station      — player STATION code for station_entries. Always "—"
+                           for ship_entries (that table omits this field entirely).
+            ship_label   — the transport ship for station trades, or the player
+                           ship itself for pure ship trades. ★ prefix = player-owned.
+            ship_id_str  — raw hex object ID with brackets stripped ("0x1f673").
+            direction    — "In " (player entity received goods) or "Out" (sent).
+            counterparty — resolved NPC station name, or "—" when unresolved.
             """
+            # Station flags take priority: a player-station ↔ player-ship trade
+            # is attributed to the station, not the ship.
             if t["player_is_buyer"]:
-                raw_id = t["seller_id"]
-                code   = t["seller_code"]
+                station   = t["buyer_code"]
+                direction = "In "
+                ship_id   = t["seller_id"]
+                ship_code = t["seller_code"]
+            elif t["player_is_seller"]:
+                station   = t["seller_code"]
+                direction = "Out"
+                ship_id   = t["buyer_id"]
+                ship_code = t["buyer_code"]
+            elif t.get("player_ship_is_buyer"):
+                station   = "—"
+                direction = "In "
+                ship_id   = t["buyer_id"]
+                ship_code = t["buyer_code"]
             else:
-                raw_id = t["buyer_id"]
-                code   = t["buyer_code"]
-            # ★ = player ship; these are our own traders, not NPC activity.
-            if raw_id and raw_id in player_ship_ids:
-                return f"★ {code}"
-            return code
+                station   = "—"
+                direction = "Out"
+                ship_id   = t["seller_id"]
+                ship_code = t["seller_code"]
 
-        # Pre-compute labels so we can size the column width before printing.
-        cp_labels = [_cp_label(t) for t in player_entries]
-        cc = max((len(v) for v in cp_labels), default=11)
-        cc = max(11, min(40, cc + 1))
+            ship_label  = f"★ {ship_code}" if ship_id in player_ship_ids else ship_code
+            # Strip "[" / "]" so the hex ID is copy-pasteable for save lookups.
+            ship_id_str = ship_id.strip('[]') if ship_id else "—"
+            counterparty = t.get("counterparty_station") or "—"
 
-        print(f"  {'Time':<{tc}}  {'Station':<{sc}}  {'Dir'}  "
-              f"{'Ware':<{wc}}  {'Units':>9}  {'Cr/unit':>9}  {'Total Cr':>12}  {'Counterparty':<{cc}}")
-        print(f"  {'─'*tc}  {'─'*sc}  {'─'*3}  "
-              f"{'─'*wc}  {'─'*9}  {'─'*9}  {'─'*12}  {'─'*cc}")
+            return station, ship_label, ship_id_str, direction, counterparty
 
-        for t, cp in zip(player_entries, cp_labels):
-            age       = _age(t["time_ago_s"])
-            direction = "In " if t["player_is_buyer"] else "Out"
-            # Player station code: buyer when we purchased, seller when we sold.
-            station   = t["buyer_code"] if t["player_is_buyer"] else t["seller_code"]
+        def _truncate(label: str, width: int) -> str:
+            """
+            Truncate label to exactly `width` chars if it is too long.
+            Python's f-string left-align (:<N) pads but never truncates, so
+            without this a long NPC ship name would overflow into the next column.
+            """
+            return label if len(label) <= width else label[:width - 1] + "…"
 
-            print(f"  {age:<{tc}}  {station:<{sc}}  {direction}  "
-                  f"{t['ware_name']:<{wc}}  {t['amount']:>9,}  {t['price_cr']:>9,.2f}  "
-                  f"{t['total_cr']:>12,.0f}  {cp:<{cc}}")
+        # ── Table 1: station trades ───────────────────────────────────────────
+        if station_entries:
+            st_rows = [_row_fields(t) for t in station_entries]
 
-        print()
+            tc  = 8
+            sc  = max((len(r[0]) for r in st_rows), default=7)
+            sc  = max(7,  sc  + 1)
+            shc = max((len(r[1]) for r in st_rows), default=14)
+            shc = max(14, min(36, shc + 1))
+            ic  = max((len(r[2]) for r in st_rows), default=8)
+            ic  = max(8,  min(12, ic  + 1))
+            cc  = max((len(r[4]) for r in st_rows), default=11)
+            cc  = max(11, min(40, cc  + 1))
+
+            print(f"  {'Time':<{tc}}  {'Station':<{sc}}  {'Ship':<{shc}}  {'Ship ID':<{ic}}  {'Dir'}  "
+                  f"{'Ware':<{wc}}  {'Units':>9}  {'Cr/unit':>9}  {'Total Cr':>12}  {'Counterparty':<{cc}}")
+            print(f"  {'─'*tc}  {'─'*sc}  {'─'*shc}  {'─'*ic}  {'─'*3}  "
+                  f"{'─'*wc}  {'─'*9}  {'─'*9}  {'─'*12}  {'─'*cc}")
+
+            for t, (station, ship_label, ship_id_str, direction, counterparty) in zip(station_entries, st_rows):
+                print(f"  {_age(t['time_ago_s']):<{tc}}  {station:<{sc}}  {_truncate(ship_label, shc):<{shc}}  "
+                      f"{ship_id_str:<{ic}}  {direction}  "
+                      f"{t['ware_name']:<{wc}}  {t['amount']:>9,}  {t['price_cr']:>9,.2f}  "
+                      f"{t['total_cr']:>12,.0f}  {counterparty:<{cc}}")
+
+            print()
+
+        # ── Table 2: ship-only trades (no player station on either side) ──────
+        if ship_entries:
+            sh_rows = [_row_fields(t) for t in ship_entries]
+
+            n_ship = len(ship_entries)
+            print(f"  PLAYER SHIP TRADES  ·  {n_ship} {'entry' if n_ship == 1 else 'entries'}")
+            print()
+
+            tc2  = 8
+            shc2 = max((len(r[1]) for r in sh_rows), default=14)
+            shc2 = max(14, min(36, shc2 + 1))
+            ic2  = max((len(r[2]) for r in sh_rows), default=8)
+            ic2  = max(8,  min(12, ic2  + 1))
+            wc2  = max((len(t["ware_name"]) for t in ship_entries), default=14)
+            wc2  = max(14, min(28, wc2 + 1))
+            cc2  = max((len(r[4]) for r in sh_rows), default=11)
+            cc2  = max(11, min(40, cc2  + 1))
+
+            print(f"  {'Time':<{tc2}}  {'Ship':<{shc2}}  {'Ship ID':<{ic2}}  {'Dir'}  "
+                  f"{'Ware':<{wc2}}  {'Units':>9}  {'Cr/unit':>9}  {'Total Cr':>12}  {'Counterparty':<{cc2}}")
+            print(f"  {'─'*tc2}  {'─'*shc2}  {'─'*ic2}  {'─'*3}  "
+                  f"{'─'*wc2}  {'─'*9}  {'─'*9}  {'─'*12}  {'─'*cc2}")
+
+            for t, (_, ship_label, ship_id_str, direction, counterparty) in zip(ship_entries, sh_rows):
+                print(f"  {_age(t['time_ago_s']):<{tc2}}  {_truncate(ship_label, shc2):<{shc2}}  "
+                      f"{ship_id_str:<{ic2}}  {direction}  "
+                      f"{t['ware_name']:<{wc2}}  {t['amount']:>9,}  {t['price_cr']:>9,.2f}  "
+                      f"{t['total_cr']:>12,.0f}  {counterparty:<{cc2}}")
+
+            print()
 
 
 def display_results(data: dict):
