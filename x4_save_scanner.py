@@ -539,6 +539,10 @@ if __name__ == "__main__":
         # ships excluded by tier 1 (player-only) can still be resolved in trade
         # history entries where they appear as buyer or seller hex IDs.
         npc_ship_codes: dict = {}
+        # Object IDs of player-owned buildstorage components. Added to
+        # player_station_ids so economy log entries where buildstorage is BUYER
+        # of construction materials are classified as internal, not commercial.
+        buildstorage_ids: set = set()
 
         game_data: dict = {
             "player_name":      None,
@@ -583,6 +587,9 @@ if __name__ == "__main__":
             # (e.g. "ARG Mercury Vanguard [HOH-092]"). Used below to supplement
             # id_to_code for ships not included in npc_ships[] (e.g. at tier 1).
             npc_ship_codes       = combined.pop("npc_ship_codes", {})
+            # buildstorage_ids: object IDs of player-owned construction storage
+            # modules found inside player station subtrees.
+            buildstorage_ids     = combined.pop("buildstorage_ids", set())
 
             # Remaining keys: player_name, player_credits, player_sector,
             # stations, managers, reputation — all safe to update into game_data.
@@ -703,6 +710,12 @@ if __name__ == "__main__":
                 for st in game_data["stations"]
                 if st.get("object_id")
             }
+            # Buildstorage components (class="buildstorage") sit inside player
+            # station subtrees and appear as BUYER of construction materials in
+            # the economy log. Adding them here makes player_is_buyer=True for
+            # those entries, so _is_internal() correctly routes them to the
+            # INTERNAL TRADE section rather than the commercial station section.
+            player_station_ids.update(buildstorage_ids)
             # Ship IDs are only available when Pass 3 (or 1+3) ran.
             # An empty set is safe — the scanners treat it as "no ship filter".
             player_ship_ids = {

@@ -196,6 +196,12 @@ def scan_save_and_ships(
     # for tier 2+ ships (already in id_to_code) are never overwritten.
     npc_ship_codes: dict[str, str] = {}
 
+    # Object IDs of player-owned buildstorage components found inside player
+    # station subtrees. Returned to the caller so they can be added to
+    # player_station_ids — making economy log trades where a buildstorage is
+    # the BUYER correctly flagged as internal rather than commercial.
+    buildstorage_ids: set[str] = set()
+
     # ship_id → homebase station object ID for every NPC ship encountered.
     # Populated two ways depending on whether the ship is buffered:
     #   - Buffered NPC ships (collect_all_npcs=True):  _parse_homebase(se) at close time.
@@ -423,6 +429,25 @@ def scan_save_and_ships(
                             hb_in_default = False
                             continue  # keep element in stream (children are not cleared yet)
 
+                    # ── Player buildstorage ───────────────────────────────────
+                    # Buildstorages appear at ZONE level as siblings of player
+                    # stations — NOT nested inside them — so they can never be
+                    # found by walking the station's buffered subtree. Detecting
+                    # them here on the start event is the correct approach.
+                    # All needed attributes (id, code) are on the opening tag.
+                    # These components receive construction materials (hull parts,
+                    # energy cells, claytronics, etc.) from the player station in
+                    # the economy log. Indexing them lets the trade display show
+                    # "Build Storage [CODE]" and routes those trades to the
+                    # INTERNAL TRADE section via player_station_ids.
+                    elif comp_cls == 'buildstorage' and elem.get('owner') == 'player':
+                        _bs_id   = elem.get('id', '')
+                        _bs_code = elem.get('code', '')
+                        if _bs_id:
+                            _bs_label = f"Build Storage [{_bs_code}]" if _bs_code else "Build Storage"
+                            npc_ship_codes[_bs_id] = _bs_label
+                            buildstorage_ids.add(_bs_id)
+
                 # ── NPC station data collection ────────────────────────────────
                 # Read production macros and traded wares from START events only.
                 # Using start events avoids double-counting: on the end event of
@@ -567,6 +592,17 @@ def scan_save_and_ships(
                                     npc_ship_codes[ship_id] = _build_npc_ship_label(
                                         macro, code, owner
                                     )
+                                    # X4 occasionally records the default order's own
+                                    # component ID as the buyer/seller in economy log
+                                    # entries instead of the ship's component ID (seen
+                                    # with Middleman orders). Index that order ID too so
+                                    # those hex references resolve to the ship label.
+                                    for _ord in se.iter('order'):
+                                        if _ord.get('default') == '1':
+                                            _ord_id = _ord.get('id', '')
+                                            if _ord_id:
+                                                npc_ship_codes[_ord_id] = npc_ship_codes[ship_id]
+                                            break
                                 homebase = _parse_homebase(se)
 
                                 # Always populate homebase_index — even ships that
@@ -622,6 +658,12 @@ def scan_save_and_ships(
                         elif hb_in_orders and elem.tag == 'order' and elem.get('default') == '1':
                             hb_order_type = elem.get('order', '')
                             hb_in_default = True
+                            # Same Middleman-order-ID fix as the buffered path above:
+                            # index the order's own component ID so economy log entries
+                            # that reference it by order ID resolve to the ship label.
+                            _ord_id = elem.get('id', '')
+                            if _ord_id and hb_ship_id in npc_ship_codes:
+                                npc_ship_codes[_ord_id] = npc_ship_codes[hb_ship_id]
                         elif hb_in_default and elem.tag == 'param' and elem.get('type') == 'component':
                             name_ = elem.get('name', '')
                             val   = elem.get('value', '')
@@ -723,6 +765,21 @@ def scan_save_and_ships(
                         health       = _parse_station_health(modules)
                         storage      = _parse_station_storage(elem)
                         docked_ships = _extract_station_docked_ships(elem)
+
+                        # Index any NPC ships docked inside this player station.
+                        # The inside_station guard blocks the main ship detection
+                        # loop from seeing them, so without this they appear as
+                        # unresolved hex IDs in trade log counterparty columns.
+                        for _dc in elem.iter('component'):
+                            if (_dc.get('class', '') in SHIP_CLASSES
+                                    and _dc.get('owner', '') not in ('', 'player')):
+                                _dc_id = _dc.get('id', '')
+                                if _dc_id:
+                                    npc_ship_codes[_dc_id] = _build_npc_ship_label(
+                                        _dc.get('macro', ''),
+                                        _dc.get('code',  ''),
+                                        _dc.get('owner', ''),
+                                    )
 
                         raw_state = elem.get('state')
                         status    = _STATE_LABELS.get(raw_state, "Operational")
@@ -904,6 +961,10 @@ def scan_save_and_ships(
         # Lets x4_save_scanner.py resolve hex IDs in economy log entries that
         # reference ships excluded by the tier filter (e.g. all NPC ships at tier 1).
         "npc_ship_codes":  npc_ship_codes,
+        # Object IDs of player-owned buildstorage components. Caller adds these to
+        # player_station_ids so trades where buildstorage is BUYER are flagged as
+        # internal rather than commercial, and to id_to_code via npc_ship_codes above.
+        "buildstorage_ids": buildstorage_ids,
     }
 
     if collect_npc_stations:
