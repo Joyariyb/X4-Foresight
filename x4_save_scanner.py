@@ -746,59 +746,138 @@ if __name__ == "__main__":
                 game_data["trade_history_scanned"] = True
 
                 # ── Counterparty station resolution ───────────────────────────
+                # The counterparty is always resolved to a STATION — never a ship.
                 # Two resolution paths, tried in order:
                 #
                 # PATH A — Direct NPC station context (most reliable):
-                #   trade_combined_scanner.py now tracks which NPC station's
+                #   trade_combined_scanner.py tracks which NPC station's
                 #   <entries type="trade"> block each log entry came from.
                 #   That station IS the counterparty — no ship chain needed.
-                #   Covers the vast majority of entries where the NPC station
-                #   that owns the trade ships also records the trades.
                 #
-                # PATH B — two-step fallback for entries without a direct station context
-                #   (e.g. from a player station's own log block, or from a global
-                #   entries block):
+                # PATH B — fallback for entries without direct station context.
+                #   cp_id is whichever side of the trade the player entity is NOT on.
                 #
                 #   Step 1 — direct station hit:
-                #     When the player's ship traded with an NPC station the log
-                #     records the NPC station's hex ID as the counterparty.
-                #     A single npc_station_by_id lookup resolves it immediately.
+                #     cp_id is already a station hex ID (player ship flew directly
+                #     to an NPC station).  One lookup resolves it immediately.
                 #
-                #   Step 2 — ship → homebase chain:
-                #     When an NPC ship traded at the player's station the log
-                #     records the NPC ship's hex ID.  We resolve it by following:
-                #       ship hex ID → homebase_index → homebase station hex ID
-                #       → npc_station_by_id → display name.
-                #     This covers ships that declare a homebase via a TradeRoutine
-                #     'range' or Middleman 'supplier' order parameter.
+                #   Step 2 — player ship pairing:
+                #     cp_id is a player ship.  A player ship is a courier — it picks
+                #     up at one station and delivers to another.  The counterparty is
+                #     the FAR END of that journey, not the ship's homebase (which just
+                #     loops back to the station that sent it).  We find the far end by
+                #     searching the rest of the trade log for the PAIRED leg: same
+                #     ship, same ware, ship on the opposite side, closest in time.
+                #     That paired entry's other-side station is the counterparty.
+                #
+                #   Step 3 — NPC ship homebase chain:
+                #     cp_id is an NPC ship.  NPC ships act on behalf of their home
+                #     station, so the homebase IS the counterparty.  Follow:
+                #       ship hex ID → homebase_index → station hex ID
+                #       → npc_station_by_id or player_station_by_id → display name.
+
+                # Player-station lookup: homebase chain and pairing both need to
+                # resolve player station IDs (not in npc_station_by_id).
+                player_station_by_id: dict = {
+                    st["object_id"]: f"{st['name']}  [{st['code']}]"
+                    for st in game_data.get("stations", [])
+                    if st.get("object_id") and st.get("name") and st.get("code")
+                }
+
+                # Pairing index: (ship_id, ware) → [(ship_role, entry), ...]
+                # ship_role is "buyer" or "seller" — the ship's role in THAT entry.
+                # Built from all entries so we can match across station and ship legs.
+                from collections import defaultdict as _dd
+                _ship_idx: dict = _dd(list)
+                for _e in game_data["trade_history"]:
+                    _w = _e["ware"]
+                    # Station trade — ship is the counterparty side.
+                    if _e["player_is_seller"]:       # ship bought from player station
+                        _ship_idx[(_e["buyer_id"],  _w)].append(("buyer",  _e))
+                    if _e["player_is_buyer"]:        # ship sold to player station
+                        _ship_idx[(_e["seller_id"], _w)].append(("seller", _e))
+                    # Ship-only trade — player ship is explicitly flagged.
+                    _st = _e["player_is_buyer"] or _e["player_is_seller"]
+                    if _e.get("player_ship_is_seller") and not _st:
+                        _ship_idx[(_e["seller_id"], _w)].append(("seller", _e))
+                    if _e.get("player_ship_is_buyer") and not _st:
+                        _ship_idx[(_e["buyer_id"],  _w)].append(("buyer",  _e))
+
+                def _paired_station(cp_id: str, ship_role: str,
+                                    ware: str, t: float, self_entry: dict):
+                    """
+                    Find the counterparty station for a player ship trade by locating
+                    the paired delivery / pickup leg in the trade log.
+
+                    ship_role — role of the ship in the CURRENT entry ("buyer" or
+                                "seller").  We look for the opposite role in paired
+                                entries (buyer picks up → paired entry is ship as seller
+                                at the delivery destination, and vice-versa).
+                    t         — time_ago_s of the current entry; we take the closest
+                                match to minimise false pairings on busy trade routes.
+                    """
+                    opp = "seller" if ship_role == "buyer" else "buyer"
+                    best_entry, best_diff = None, float("inf")
+                    for role, e2 in _ship_idx.get((cp_id, ware), []):
+                        if role != opp or e2 is self_entry:
+                            continue
+                        diff = abs(e2["time_ago_s"] - t)
+                        if diff < best_diff:
+                            best_diff, best_entry = diff, e2
+                    if best_entry is None:
+                        return None
+                    # The station is on the non-ship side of the paired entry.
+                    other_id = (best_entry["buyer_id"]  if opp == "seller"
+                                else best_entry["seller_id"])
+                    return (npc_station_by_id.get(other_id) or
+                            player_station_by_id.get(other_id))
+
                 for entry in game_data["trade_history"]:
                     # Path A: direct NPC station reference.
                     st_id = entry.get("counterparty_station_id", "")
                     if st_id:
                         entry["counterparty_station"] = npc_station_by_id.get(st_id)
-                    else:
-                        # Path B: resolve the counterparty from the opposite side of
-                        # the trade from the player entity (station or ship).
-                        player_is_buying = entry["player_is_buyer"] or entry.get("player_ship_is_buyer")
-                        cp_id = entry["seller_id"] if player_is_buying else entry["buyer_id"]
+                        continue
 
-                        # Step 1 — direct station lookup.
-                        # When the player's own ship traded directly with an NPC
-                        # station, cp_id is already that station's hex object ID.
-                        # Check npc_station_by_id first — it's a single O(1) dict hit.
-                        direct = npc_station_by_id.get(cp_id)
-                        if direct:
-                            entry["counterparty_station"] = direct
-                        else:
-                            # Step 2 — ship → homebase chain.
-                            # When an NPC ship visited the player's station, cp_id is
-                            # the ship's hex ID.  Look up its declared homebase station
-                            # (from its TradeRoutine 'range' / Middleman 'supplier'
-                            # order parameter) and resolve that station instead.
-                            hb_id = homebase_index.get(cp_id)
-                            entry["counterparty_station"] = (
-                                npc_station_by_id.get(hb_id) if hb_id else None
-                            )
+                    # Path B: identify cp_id — the side the player entity is NOT on.
+                    # Station flags take priority over ship flags. An entry where a
+                    # player station SELLS to a player ship has both player_is_seller=True
+                    # AND player_ship_is_buyer=True. Using the ship flag alone would set
+                    # cp_id = seller_id = the player station, making it resolve to itself
+                    # as its own counterparty. Checking station flags first avoids this.
+                    if entry["player_is_buyer"]:
+                        cp_id = entry["seller_id"]
+                    elif entry["player_is_seller"]:
+                        cp_id = entry["buyer_id"]
+                    elif entry.get("player_ship_is_buyer"):
+                        cp_id = entry["seller_id"]
+                    else:
+                        cp_id = entry["buyer_id"]
+
+                    # Step 1 — direct station lookup.
+                    direct = npc_station_by_id.get(cp_id) or player_station_by_id.get(cp_id)
+                    if direct:
+                        entry["counterparty_station"] = direct
+                        continue
+
+                    # Step 2 — player ship: find the paired leg in the trade log.
+                    # ship_role is the ship's actual position in this entry — derived
+                    # directly from cp_id's side rather than a separate derived variable,
+                    # so it stays correct even when multiple player-entity flags are set.
+                    if cp_id in player_ship_ids:
+                        ship_role = "seller" if cp_id == entry["seller_id"] else "buyer"
+                        entry["counterparty_station"] = _paired_station(
+                            cp_id, ship_role, entry["ware"],
+                            entry["time_ago_s"], entry,
+                        )
+                        continue
+
+                    # Step 3 — NPC ship: follow homebase chain.
+                    hb_id = homebase_index.get(cp_id)
+                    entry["counterparty_station"] = (
+                        (npc_station_by_id.get(hb_id) or player_station_by_id.get(hb_id))
+                        if hb_id else None
+                    )
                 resolved = sum(1 for e in game_data["trade_history"] if e.get("counterparty_station"))
                 print(f"[Done] Counterparty stations resolved: "
                       f"{resolved}/{len(game_data['trade_history'])} entries.")
@@ -814,13 +893,23 @@ if __name__ == "__main__":
                 print()
                 print("          First 10 entries — resolution detail:")
                 for entry in history[:10]:
-                    st_id   = entry.get("counterparty_station_id", "")
-                    cp_id   = entry["seller_id"] if entry["player_is_buyer"] else entry["buyer_id"]
-                    hb_id   = homebase_index.get(cp_id)
-                    path    = "A" if st_id else "B"
-                    result  = entry.get("counterparty_station") or "—"
-                    src_id  = st_id if st_id else cp_id
-                    print(f"            Path {path}  src={src_id!r:28s}  → {result!r}")
+                    st_id = entry.get("counterparty_station_id", "")
+                    if entry["player_is_buyer"]:
+                        _cp = entry["seller_id"]
+                    elif entry["player_is_seller"]:
+                        _cp = entry["buyer_id"]
+                    elif entry.get("player_ship_is_buyer"):
+                        _cp = entry["seller_id"]
+                    else:
+                        _cp = entry["buyer_id"]
+                    path   = "A" if st_id else "B"
+                    result = entry.get("counterparty_station") or "—"
+                    src_id = st_id if st_id else _cp
+                    flags  = (f"{'StBuy ' if entry['player_is_buyer'] else ''}"
+                              f"{'StSell ' if entry['player_is_seller'] else ''}"
+                              f"{'ShBuy ' if entry.get('player_ship_is_buyer') else ''}"
+                              f"{'ShSell' if entry.get('player_ship_is_seller') else ''}").strip()
+                    print(f"            Path {path}  [{flags:<13}]  src={src_id!r:28s}  → {result!r}")
                 print()
                 # ── END DIAGNOSTIC ──
             else:
