@@ -24,8 +24,9 @@
 #                              orders, software, and hull data can be read.
 #
 #  None of these three ever nest inside another, so ships inside station bays
-#  are invisible to the main loop (blocked by inside_station) and picked up
-#  by _extract_station_docked_ships() on the fully-buffered station element.
+#  are invisible to the main loop (blocked by inside_station) and extracted
+#  by walking the fully-buffered station subtree at close time — NPC ships
+#  into npc_ship_codes, player ships fully into player_ships (with crew).
 #  Ships inside carrier bays are similarly invisible (blocked by inside_ship)
 #  and extracted by _extract_docked_ships() when the carrier closes.
 #
@@ -780,6 +781,84 @@ def scan_save_and_ships(
                                         _dc.get('code',  ''),
                                         _dc.get('owner', ''),
                                     )
+
+                        # Extract player ships docked inside this player station.
+                        # Same guard issue — inside_station hides them from the
+                        # main loop. We walk the fully-buffered subtree here and
+                        # do a full extraction (crew, hull, shields, orders) so
+                        # these ships appear in the fleet list and get the star
+                        # prefix in the trade display via player_ship_ids.
+                        for _dc in elem.iter('component'):
+                            if not (_dc.get('class', '') in SHIP_CLASSES
+                                    and _dc.get('owner', '') == 'player'):
+                                continue
+                            _dc_id = _dc.get('id', '')
+                            if not _dc_id:
+                                continue
+                            # Skip ships already captured (e.g. via _extract_docked_ships
+                            # from a carrier that was also buffered before station closed).
+                            if any(s["object_id"] == _dc_id for s in player_ships):
+                                continue
+
+                            _dc_macro = _dc.get('macro', '')
+                            _dc_cls   = _dc.get('class', '')
+                            _dc_code  = _dc.get('code', '')
+
+                            _raw_dc_name = _dc.get('name')
+                            _dc_name = (
+                                _raw_dc_name
+                                if _raw_dc_name and not LANG_STRING_RE.match(_raw_dc_name)
+                                else resolve_ship_type(_dc_macro)
+                            )
+
+                            _dc_hull_hp  = _parse_hull(_dc)
+                            _dc_max_hull = SHIP_STATS.get(_dc_macro, {}).get("max_hull")
+                            if _dc_hull_hp is None:
+                                _dc_hull_pct = 100.0
+                            elif _dc_max_hull:
+                                _dc_hull_pct = (_dc_hull_hp / _dc_max_hull) * 100.0
+                            else:
+                                _dc_hull_pct = None
+
+                            _dc_shield = _parse_shield(_dc)
+                            _dc_pilot  = _parse_pilot(_dc)
+
+                            if _dc_pilot["name"]:
+                                crew.append({
+                                    "name":          _dc_pilot["name"],
+                                    "role":          "pilot",
+                                    "skills":        _dc_pilot["skills"],
+                                    "assigned_to":   _dc_name,
+                                    "assigned_code": _dc_code,
+                                    "assigned_type": "ship",
+                                    "sector":        station_sector_pending,
+                                })
+                            crew.extend(_extract_people(
+                                _dc, _dc_name, _dc_code, station_sector_pending,
+                            ))
+
+                            player_ships.append({
+                                "code":        _dc_code,
+                                "object_id":   _dc_id,
+                                "name":        _dc_name,
+                                "class":       _dc_cls,
+                                "size":        SIZE_LABELS.get(_dc_cls, _dc_cls),
+                                "macro":       _dc_macro,
+                                "role":        extract_role(_dc_macro),
+                                "hull_origin": extract_faction_from_macro(_dc_macro),
+                                "owner":       "player",
+                                "sector":      station_sector_pending,
+                                "order":       _parse_current_order(_dc),
+                                "pilot":       _dc_pilot,
+                                "software":    _parse_software(_dc),
+                                "commander":   _parse_commander(_dc),
+                                "hull_hp":     _dc_hull_hp,
+                                "hull_pct":    _dc_hull_pct,
+                                "max_hull":    _dc_max_hull,
+                                "shield_hp":   _dc_shield["shield_hp"],
+                                "shield_max":  _dc_shield["shield_max"],
+                                "shield_pct":  _dc_shield["shield_pct"],
+                            })
 
                         raw_state = elem.get('state')
                         status    = _STATE_LABELS.get(raw_state, "Operational")

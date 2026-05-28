@@ -116,6 +116,19 @@ def scan_trade_log_and_history(
     game_time_found: bool       = False
     in_trade_entries: bool      = False   # True while inside <entries type="trade">
 
+    # ── Economylog removed-object state (Pass 6 extension) ───────────────────────
+    # <economylog><removed> lists ships/stations that made trades but have since
+    # despawned. Their plain-decimal object IDs appear as buyer/seller in log
+    # entries. We collect them here so those entries resolve to a readable label.
+    #
+    # X4 records two distinct ID formats in economy log entries:
+    #   "[0x1234]" — bracketed hex  (persistent components still in the save)
+    #   "408"      — plain decimal  (economy objects now in <removed>)
+    # _norm() converts both to "[0xNN]" before lookup; removed_codes is keyed
+    # the same way so id_to_code → removed_codes → raw-hex is a clean chain.
+    in_removed:    bool           = False
+    removed_codes: dict[str, str] = {}
+
     # ── NPC station context for economy log (Pass 6) ───────────────────────────
     # X4 records each completed trade in the economy log of BOTH the buyer and
     # the seller station. When we are inside an NPC station's <component> subtree
@@ -156,6 +169,22 @@ def scan_trade_log_and_history(
                     # initial depth=1 in the NPC-station-detection block below.)
                     if in_npc_station:
                         npc_depth += 1
+
+                    # ── Economylog removed-object collection (Pass 6) ────────
+                    if tag == 'removed':
+                        in_removed = True
+
+                    if in_removed and tag == 'object':
+                        _raw_id = elem.get('id', '')
+                        # Only decimal-format IDs belong to removed economy
+                        # objects; hex-bracket IDs in other <removed> sections
+                        # are a different concept and should not be collected.
+                        if _raw_id and not _raw_id.startswith('['):
+                            _rname = elem.get('name', '')
+                            _rcode = elem.get('code', '')
+                            if _rname:
+                                _rlabel = f"{_rname} [{_rcode}]" if _rcode else _rname
+                                removed_codes[_norm(_raw_id)] = _rlabel
 
                     # ── Game time capture (Pass 6) ────────────────────────────
                     # <game time="..."> appears near the top of every save.
@@ -291,8 +320,12 @@ def scan_trade_log_and_history(
                                 history_trades.append({
                                     'buyer_id':        buyer_id,
                                     'seller_id':       seller_id,
-                                    'buyer_code':      id_to_code.get(buyer_id,  buyer_id)  if buyer_id  else '—',
-                                    'seller_code':     id_to_code.get(seller_id, seller_id) if seller_id else '—',
+                                    # id_to_code first (persistent component), then
+                                    # removed_codes (despawned economy object whose
+                                    # plain-decimal ID was normalised by _norm()),
+                                    # then raw hex as last resort.
+                                    'buyer_code':      id_to_code.get(buyer_id,  removed_codes.get(buyer_id,  buyer_id))  if buyer_id  else '—',
+                                    'seller_code':     id_to_code.get(seller_id, removed_codes.get(seller_id, seller_id)) if seller_id else '—',
                                     'ware':            ware_id,
                                     'ware_name':       ware_name,
                                     'amount':          amount,
@@ -336,6 +369,10 @@ def scan_trade_log_and_history(
                         order_depth -= 1
                         if order_depth == 0:
                             in_trade_order = False
+
+                    # ── Economylog removed section close (Pass 6) ─────────────
+                    if tag == 'removed' and in_removed:
+                        in_removed = False
 
                     # ── Economylog section close (Pass 6) ─────────────────────
                     if tag == 'entries' and in_trade_entries:
