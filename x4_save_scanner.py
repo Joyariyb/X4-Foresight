@@ -804,33 +804,54 @@ if __name__ == "__main__":
                         _ship_idx[(_e["buyer_id"],  _w)].append(("buyer",  _e))
 
                 def _paired_station(cp_id: str, ship_role: str,
-                                    ware: str, t: float, self_entry: dict):
+                                    ware: str, t: float, self_entry: dict,
+                                    own_station_id: str | None = None):
                     """
                     Find the counterparty station for a player ship trade by locating
                     the paired delivery / pickup leg in the trade log.
 
-                    ship_role — role of the ship in the CURRENT entry ("buyer" or
-                                "seller").  We look for the opposite role in paired
-                                entries (buyer picks up → paired entry is ship as seller
-                                at the delivery destination, and vice-versa).
-                    t         — time_ago_s of the current entry; we take the closest
-                                match to minimise false pairings on busy trade routes.
+                    ship_role      — role of the ship in the CURRENT entry ("buyer" or
+                                     "seller").  We look for the opposite role in paired
+                                     entries (buyer picks up → paired entry is ship as
+                                     seller at the delivery destination, and vice-versa).
+                    t              — time_ago_s of the current entry; we take the closest
+                                     match to minimise false pairings on busy trade routes.
+                    own_station_id — object_id of the player station in the current entry.
+                                     Used to detect circular pairings — e.g. a gas miner
+                                     that both delivers hydrogen to a station AND refuels
+                                     with hydrogen there.  If the non-ship side of a
+                                     candidate entry equals own_station_id, we check the
+                                     ship side: if that also has no station resolution the
+                                     entry is genuinely circular and is skipped.
                     """
                     opp = "seller" if ship_role == "buyer" else "buyer"
-                    best_entry, best_diff = None, float("inf")
+                    best_entry, best_other_id, best_diff = None, None, float("inf")
                     for role, e2 in _ship_idx.get((cp_id, ware), []):
                         if role != opp or e2 is self_entry:
                             continue
+                        # Non-ship side of this candidate paired entry.
+                        other_id = (e2["buyer_id"]  if opp == "seller"
+                                    else e2["seller_id"])
+                        # Circular-reference guard: if the non-ship side is our own
+                        # station, check the ship side of the entry.  If that also
+                        # has no station resolution there is nothing useful here —
+                        # skip it.  If the ship side somehow resolves to a real
+                        # station (edge case), use that as the counterparty instead.
+                        if own_station_id and other_id == own_station_id:
+                            alt_id = (e2["seller_id"] if opp == "seller"
+                                      else e2["buyer_id"])
+                            alt_st = (npc_station_by_id.get(alt_id) or
+                                      player_station_by_id.get(alt_id))
+                            if not alt_st:
+                                continue        # truly circular — discard
+                            other_id = alt_id   # use the alt side instead
                         diff = abs(e2["time_ago_s"] - t)
                         if diff < best_diff:
-                            best_diff, best_entry = diff, e2
+                            best_diff, best_entry, best_other_id = diff, e2, other_id
                     if best_entry is None:
                         return None
-                    # The station is on the non-ship side of the paired entry.
-                    other_id = (best_entry["buyer_id"]  if opp == "seller"
-                                else best_entry["seller_id"])
-                    return (npc_station_by_id.get(other_id) or
-                            player_station_by_id.get(other_id))
+                    return (npc_station_by_id.get(best_other_id) or
+                            player_station_by_id.get(best_other_id))
 
                 for entry in game_data["trade_history"]:
                     # Path A: direct NPC station reference.
@@ -866,9 +887,17 @@ if __name__ == "__main__":
                     # so it stays correct even when multiple player-entity flags are set.
                     if cp_id in player_ship_ids:
                         ship_role = "seller" if cp_id == entry["seller_id"] else "buyer"
+                        # own_station_id lets _paired_station detect and discard entries
+                        # where the non-ship side is our own station (e.g. a gas miner
+                        # that both delivers hydrogen and refuels with it at the same
+                        # station — the fuel log entry would otherwise be a false pairing).
+                        own_st = (entry["buyer_id"]  if entry["player_is_buyer"]
+                                  else entry["seller_id"] if entry["player_is_seller"]
+                                  else None)
                         entry["counterparty_station"] = _paired_station(
                             cp_id, ship_role, entry["ware"],
                             entry["time_ago_s"], entry,
+                            own_station_id=own_st,
                         )
                         continue
 
