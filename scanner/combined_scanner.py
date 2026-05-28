@@ -48,6 +48,7 @@ from scanner.language import (
     macro_to_sector_name,
     nameindex_to_roman,
     resolve_sector_from_location,
+    resolve_station_macro_name,
     resolve_station_type,
     resolve_text_ref,
     open_save,
@@ -86,6 +87,41 @@ from scanner.crew_scanner import (
 )
 from data.wares import WARE_NAMES
 from data.ship_stats import SHIP_STATS
+from data.ships import SHIP_NAMES
+from data.factions import FACTION_NAMES
+
+
+# ── NPC ship display label helpers ────────────────────────────────────────────
+# Build a short faction → abbreviation map from the bracket notation used in
+# FACTION_NAMES, e.g. "[ARG] Argon Republic" → {"argon": "ARG"}.
+# Used by _build_npc_ship_label() to prefix NPC ship labels with their faction.
+_FACTION_SHORT: dict[str, str] = {}
+for _fid, _display in FACTION_NAMES.items():
+    if _display.startswith('['):
+        _bracket = _display.find(']')
+        if _bracket > 1:
+            _FACTION_SHORT[_fid] = _display[1:_bracket]
+
+
+def _build_npc_ship_label(macro: str, code: str, owner: str) -> str:
+    """
+    Builds a short display label for an NPC ship, e.g. 'ARG Mercury Vanguard [HOH-092]'.
+
+    Used to populate npc_ship_codes — a lightweight id → label index that lets
+    x4_save_scanner.py resolve NPC ship hex IDs in trade history entries even
+    when the ship was not fully buffered (tier 1 / collect_all_npcs=False).
+    """
+    parts = []
+    short = _FACTION_SHORT.get(owner.lower(), '')
+    if short:
+        parts.append(short)
+    ship_name = SHIP_NAMES.get(macro, '')
+    if ship_name:
+        parts.append(ship_name)
+    label = ' '.join(parts) or macro
+    if code:
+        label += f' [{code}]'
+    return label
 
 
 def scan_save_and_ships(
@@ -133,6 +169,10 @@ def scan_save_and_ships(
                                subsequent scans, not user-facing data.
         npc_stations_raw — present only when collect_npc_stations=True.
                            Unfiltered list of all NPC stations found.
+        npc_ship_codes   — dict mapping NPC ship object_id → short display label
+                           (e.g. "ARG Mercury Vanguard [HOH-092]") for every NPC
+                           ship seen, regardless of tier filter.  Used by the caller
+                           to fill id_to_code gaps for ships not in npc_ships[].
     """
     texts = language_texts or {}
 
@@ -147,6 +187,14 @@ def scan_save_and_ships(
     player_ships: list[dict] = []
     npc_ships:    list[dict] = []
     crew:         list[dict] = []   # ship crew only; managers are separate
+
+    # id → display label for every NPC ship component seen during the stream.
+    # Populated regardless of ship_tier so that tier 1 runs (player ships only,
+    # no NPC ship buffering) can still resolve NPC ship hex IDs that appear as
+    # trade counterparties in the economy log. x4_save_scanner.py merges this
+    # into id_to_code with setdefault so that richer homebase-annotated labels
+    # for tier 2+ ships (already in id_to_code) are never overwritten.
+    npc_ship_codes: dict[str, str] = {}
 
     # ship_id → homebase station object ID for every NPC ship encountered.
     # Populated two ways depending on whether the ship is buffered:
@@ -361,6 +409,13 @@ def scan_save_and_ships(
                             # No subtree stays in memory — each child is cleared on its end event.
                             in_hb_ship    = True
                             hb_ship_id    = elem.get('id', '')
+                            # Index a display label for this ship regardless of tier. At tier 1
+                            # the ship never enters npc_ships[] or id_to_code, so economy-log
+                            # entries referencing it would show a raw hex ID without this capture.
+                            if hb_ship_id:
+                                npc_ship_codes[hb_ship_id] = _build_npc_ship_label(
+                                    elem.get('macro', ''), elem.get('code', ''), owner
+                                )
                             hb_conn_id    = last_connection_id   # capture wrapper id for dual-key indexing
                             hb_depth      = 1
                             hb_in_orders  = False
@@ -502,6 +557,16 @@ def scan_save_and_ships(
                                 # the relevant sectors, plus the homebase station
                                 # ID for trade history counterparty resolution.
                                 ship_id  = se.get('id', '')
+                                # Index a display label so trade-history entries
+                                # can resolve this ship's hex ID to a readable name.
+                                # x4_save_scanner.py uses setdefault when merging
+                                # npc_ship_codes into id_to_code, so the richer
+                                # homebase-annotated label built later for this ship
+                                # (if it survives the tier filter) is never overwritten.
+                                if ship_id:
+                                    npc_ship_codes[ship_id] = _build_npc_ship_label(
+                                        macro, code, owner
+                                    )
                                 homebase = _parse_homebase(se)
 
                                 # Always populate homebase_index — even ships that
@@ -744,7 +809,9 @@ def scan_save_and_ships(
                         elem.get('name', '') or elem.get('basename', ''),
                         texts,
                     )
-                    type_name = raw_name or resolve_station_type(npc_prod_macros, texts)
+                    type_name = (raw_name
+                                 or resolve_station_type(npc_prod_macros, texts)
+                                 or resolve_station_macro_name(elem.get('macro', '')))
                     display   = _build_npc_display_name(
                         type_name,
                         elem.get('nameindex', '0'),
@@ -832,7 +899,11 @@ def scan_save_and_ships(
         # ship_id → homebase station object ID for ALL NPC ships seen in the file.
         # Includes ships filtered out by the tier filter — used for trade history
         # counterparty resolution where the ship may have left the player's sector.
-        "homebase_index": homebase_index,
+        "homebase_index":  homebase_index,
+        # ship_id → short display label for ALL NPC ships, regardless of tier filter.
+        # Lets x4_save_scanner.py resolve hex IDs in economy log entries that
+        # reference ships excluded by the tier filter (e.g. all NPC ships at tier 1).
+        "npc_ship_codes":  npc_ship_codes,
     }
 
     if collect_npc_stations:

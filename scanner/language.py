@@ -188,6 +188,60 @@ def resolve_text_ref(raw: str, texts: dict) -> str:
     return raw
 
 
+# Known X4 size suffixes — stripped from the end of the station type token
+# before looking up the display name.
+_STATION_MACRO_SIZES = {'xs', 's', 'm', 'l', 'xl', 'xxl', 'xxxl', 'xxxxxl'}
+
+# Explicit type-key → display name for non-production station types.
+# These stations have no production modules, so resolve_station_type() returns
+# empty and this lookup is the only way to get a meaningful name.
+_STATION_MACRO_TYPE_NAMES: dict[str, str] = {
+    'equipmentdock':   'Equipment Dock',
+    'tradingstation':  'Trading Station',
+    'tradestation':    'Trading Station',
+    'hq':              'Headquarters',
+    'headquarters':    'Headquarters',
+    'wharf':           'Wharf',
+    'wharfservices':   'Wharf Services',
+    'shipyard':        'Shipyard',
+    'storage':         'Storage Facility',
+    'defense':         'Defense Platform',
+    'piratebase':      'Pirate Base',
+    'resupply':        'Resupply Station',
+    'relay':           'Relay Station',
+    'supplybase':      'Supply Base',
+    'lasertower':      'Laser Tower',
+    'miningstationbase': 'Mining Station',
+}
+
+# Matches station macros: station_{faction}_{type}[_{size}]_macro
+_STATION_MACRO_RE = re.compile(r'^station_[a-z]+_(.+?)(?:_(?:' +
+                                '|'.join(_STATION_MACRO_SIZES) +
+                                r'))?_macro$', re.IGNORECASE)
+
+
+def resolve_station_macro_name(macro: str) -> str:
+    """
+    Derives a station type display name from its macro string.
+    Used as a last-resort fallback when neither the name/basename attribute
+    nor production module macros provide a type name.
+
+    Station macros follow the pattern: station_{faction}_{type}[_{size}]_macro
+    e.g. 'station_tel_equipmentdock_l_macro' → 'Equipment Dock'
+         'station_arg_hq_macro'              → 'Headquarters'
+         'station_ter_wharf_m_macro'         → 'Wharf'
+    """
+    if not macro:
+        return ''
+    m = _STATION_MACRO_RE.match(macro)
+    if not m:
+        return ''
+    type_key = m.group(1).lower()
+    # Look up known types first; fall back to title-casing the raw key.
+    return _STATION_MACRO_TYPE_NAMES.get(type_key,
+                                         type_key.replace('_', ' ').title())
+
+
 def macro_to_sector_name(macro: str, sector_names: dict) -> str:
     """Converts 'cluster_XY_sectorZZ_macro' to a readable name via the language file."""
     m = _SECTOR_MACRO_RE.match(macro)

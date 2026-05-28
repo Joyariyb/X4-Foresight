@@ -534,6 +534,11 @@ if __name__ == "__main__":
         # trade ships fly in from stations in neighboring sectors the player may not
         # have any presence in.
         npc_station_by_id: dict = {}
+        # Maps NPC ship object_id → short display label for every NPC ship seen
+        # during the combined pass. Populated regardless of tier filter so that
+        # ships excluded by tier 1 (player-only) can still be resolved in trade
+        # history entries where they appear as buyer or seller hex IDs.
+        npc_ship_codes: dict = {}
 
         game_data: dict = {
             "player_name":      None,
@@ -574,6 +579,10 @@ if __name__ == "__main__":
             # object IDs. Covers ALL NPC ships regardless of tier filtering, so
             # trade counterparties that left player sectors are still resolvable.
             homebase_index       = combined.pop("homebase_index", {})
+            # npc_ship_codes maps NPC ship object IDs to short display labels
+            # (e.g. "ARG Mercury Vanguard [HOH-092]"). Used below to supplement
+            # id_to_code for ships not included in npc_ships[] (e.g. at tier 1).
+            npc_ship_codes       = combined.pop("npc_ship_codes", {})
 
             # Remaining keys: player_name, player_credits, player_sector,
             # stations, managers, reputation — all safe to update into game_data.
@@ -734,6 +743,13 @@ if __name__ == "__main__":
                     if station_label:
                         label += f" (for {station_label})"
                 id_to_code[sh["object_id"]] = label
+
+            # Supplement id_to_code with lightweight labels for NPC ships that
+            # were captured during the scan but excluded by the tier filter (e.g.
+            # all NPC ships at tier 1). setdefault preserves the richer
+            # homebase-annotated labels built for tier 2+ ships just above.
+            for ship_id, label in npc_ship_codes.items():
+                id_to_code.setdefault(ship_id, label)
 
             if include_trade_history:
                 # Both active orders and completed history requested — one read.

@@ -4,7 +4,7 @@ from lxml import etree as ET
 
 from data.factions import FACTION_NAMES
 from data.wares import WARE_NAMES
-from scanner.language import macro_to_sector_name, open_save, resolve_station_type, resolve_text_ref
+from scanner.language import macro_to_sector_name, open_save, resolve_station_type, resolve_text_ref, resolve_station_macro_name
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  CONSTANTS
@@ -210,9 +210,9 @@ def scan_npc_stations(
                             # Path A resolved a name from name/basename attributes.
                             # Path B: if that was empty, infer the factory type from
                             # the collected production module macros.
-                            type_name = pending['name'] or resolve_station_type(
-                                pending['prod_macros'], texts
-                            )
+                            type_name = (pending['name']
+                                         or resolve_station_type(pending['prod_macros'], texts)
+                                         or resolve_station_macro_name(pending['macro']))
                             display = _build_display_name(
                                 type_name,
                                 pending['nameindex'],
