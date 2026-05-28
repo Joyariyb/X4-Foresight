@@ -328,26 +328,60 @@ def display_trade_history(data: dict):
     #  SECTION 2 — INDIVIDUAL TRADE LOG
     # ═════════════════════════════════════════════════════════════════════════
 
-    # Station trades: player station on at least one side.
-    # Ship trades: player ship is the only player entity — no player station.
+    def _is_internal(t: dict) -> bool:
+        """True for trades where goods flow between player-owned entities.
+
+        Covers station-to-station transfers and player ships delivering TO a
+        player station (mining, inbound transport). Explicitly excludes the
+        case where a player ship is picking up from a player station to sell
+        to an NPC — that ship is just the commercial transport leg.
+        """
+        if t["player_is_buyer"] and t["player_is_seller"]:
+            return True  # station-to-station
+        if t["player_is_buyer"] and t.get("player_ship_is_seller", False):
+            return True  # player ship delivering to player station
+        return False
+
+    # Commercial: player station on one side, external NPC on the other.
     station_entries = sorted(
-        (t for t in history if t["player_is_buyer"] or t["player_is_seller"]),
+        (t for t in history
+         if (t["player_is_buyer"] or t["player_is_seller"]) and not _is_internal(t)),
         key=lambda t: t["time_ago_s"],
     )
+    # Player ship as transport on an NPC-to-NPC route — no player station on either side.
     ship_entries = sorted(
         (t for t in history
          if (t.get("player_ship_is_buyer") or t.get("player_ship_is_seller"))
-         and not (t["player_is_buyer"] or t["player_is_seller"])),
+         and not (t["player_is_buyer"] or t["player_is_seller"])
+         and not _is_internal(t)),
+        key=lambda t: t["time_ago_s"],
+    )
+    # Internal: player-owned entity on both sides — mining deliveries, inter-station
+    # transfers, and resupply runs between player stations and player ships.
+    internal_entries = sorted(
+        (t for t in history if _is_internal(t)),
         key=lambda t: t["time_ago_s"],
     )
 
-    if not station_entries and not ship_entries:
+    if not station_entries and not ship_entries and not internal_entries:
         return
 
     print("  INDIVIDUAL TRADE LOG")
     print()
 
-    # ── Table 1: station trades, grouped by player station ───────────────────
+    # Helpers shared by the commercial station and internal trade sections.
+    def _st_key(t: dict) -> tuple[str, str]:
+        """(object_id, code) of the player-station side of this entry."""
+        return (t["buyer_id"],  t["buyer_code"])  if t["player_is_buyer"] \
+          else (t["seller_id"], t["seller_code"])
+
+    def _ship_lbl(t: dict) -> str:
+        """Display label for the entity on the non-player-station side."""
+        ship_id   = t["seller_id"]   if t["player_is_buyer"] else t["buyer_id"]
+        ship_code = t["seller_code"] if t["player_is_buyer"] else t["buyer_code"]
+        return f"★ {ship_code}" if ship_id in player_ship_ids else ship_code
+
+    # ── Table 1: commercial station trades, grouped by player station ─────────
     # Grouping removes the need for a Station column on every row — the station
     # appears once as a section header, making the table narrower and easier to
     # scan within a single station's history.
@@ -355,17 +389,6 @@ def display_trade_history(data: dict):
         n_st = len(station_entries)
         print(f"  STATION TRADES  ·  {n_st} {'entry' if n_st == 1 else 'entries'}")
         print()
-
-        def _st_key(t: dict) -> tuple[str, str]:
-            """(object_id, code) of the player-station side of this entry."""
-            return (t["buyer_id"],  t["buyer_code"])  if t["player_is_buyer"] \
-              else (t["seller_id"], t["seller_code"])
-
-        def _ship_lbl(t: dict) -> str:
-            """Display label for the ship on the non-player-station side."""
-            ship_id   = t["seller_id"]   if t["player_is_buyer"] else t["buyer_id"]
-            ship_code = t["seller_code"] if t["player_is_buyer"] else t["buyer_code"]
-            return f"★ {ship_code}" if ship_id in player_ship_ids else ship_code
 
         # Sort by station code so rows are grouped, then most-recent-first within
         # each group (smallest time_ago_s = happened most recently).
@@ -435,6 +458,41 @@ def display_trade_history(data: dict):
                   f"{t['total_cr']:>12,.0f}  {cp:<{cc2}}")
 
         print()
+
+    # ── Table 3: internal trades (player-owned entities on both sides) ────────
+    # Covers mining deliveries (player miner → player station), inter-station
+    # transfers (player station → player station), and resupply runs. Separated
+    # from commercial station trades so external market activity stays readable.
+    if internal_entries:
+        n_int = len(internal_entries)
+        print(f"  INTERNAL TRADE  ·  {n_int} {'entry' if n_int == 1 else 'entries'}")
+        print()
+
+        tc_i   = 8
+        in_shc = max((len(_ship_lbl(t)) for t in internal_entries), default=14)
+        in_shc = max(14, min(36, in_shc + 1))
+        in_wc  = max((len(t["ware_name"]) for t in internal_entries), default=14)
+        in_wc  = max(14, min(28, in_wc + 1))
+
+        sorted_int = sorted(internal_entries, key=lambda t: (_st_key(t)[1], t["time_ago_s"]))
+
+        for (st_id, st_code), grp in groupby(sorted_int, key=_st_key):
+            group = list(grp)
+            name  = station_id_to_name.get(st_id, "")
+            label = f"{name}  [{st_code}]" if name else st_code
+            n_grp = len(group)
+            print(f"  ── {label}  ·  {n_grp} {'entry' if n_grp == 1 else 'entries'}")
+            print(f"     {'Time':<{tc_i}}  {'Counterparty':<{in_shc}}  {'Dir'}  "
+                  f"{'Ware':<{in_wc}}  {'Units':>9}  {'Cr/unit':>9}  {'Total Cr':>12}")
+            print(f"     {'─'*tc_i}  {'─'*in_shc}  {'─'*3}  "
+                  f"{'─'*in_wc}  {'─'*9}  {'─'*9}  {'─'*12}")
+            for t in group:
+                direction = "In " if t["player_is_buyer"] else "Out"
+                print(f"     {_age(t['time_ago_s']):<{tc_i}}  "
+                      f"{_truncate(_ship_lbl(t), in_shc):<{in_shc}}  {direction}  "
+                      f"{t['ware_name']:<{in_wc}}  {t['amount']:>9,}  {t['price_cr']:>9,.2f}  "
+                      f"{t['total_cr']:>12,.0f}")
+            print()
 
 
 def display_results(data: dict):
