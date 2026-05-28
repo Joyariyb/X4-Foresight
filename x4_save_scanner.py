@@ -42,7 +42,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scanner.language            import load_sector_names, load_text_pages
-from scanner.scanner             import scan_save, scan_reputation, scan_trade_orders, scan_trade_history, scan_save_and_ships, scan_trade_log_and_history
+from scanner.scanner             import scan_save, scan_reputation, scan_trade_orders, scan_save_and_ships, scan_trade_log_and_history
 from scanner.ship_scanner        import scan_ships, merge_station_docked_ships
 from export.jsonexport           import export_json
 from display                     import display_results
@@ -290,21 +290,6 @@ def _run_trade_combined_pass(
         save_file, player_station_ids, id_to_code, player_ship_ids
     )
     print(f"[Done] Trade log + history pass completed in {time.perf_counter() - t0:.2f}s")
-    return result
-
-
-def _run_trade_history_pass(
-    save_file:          pathlib.Path,
-    player_station_ids: set,
-    id_to_code:         dict,
-) -> list:
-    """
-    Runs the completed trade history scan (Pass 6).
-    Only needs player station IDs — ships are not buyers/sellers in completed logs.
-    """
-    t0     = time.perf_counter()
-    result = scan_trade_history(save_file, player_station_ids, id_to_code)
-    print(f"[Done] Trade history pass completed in {time.perf_counter() - t0:.2f}s")
     return result
 
 
@@ -596,10 +581,6 @@ if __name__ == "__main__":
             game_data.update(combined)
             # Seed crew with station managers; ship crew is appended below.
             game_data["crew"] = combined.get("managers", [])
-
-            # Plug in any player ships that were docked inside station bays and
-            # missed by the iterparse loop (inside_station blocks their detection).
-            merge_station_docked_ships(game_data["stations"], player_ships)
 
             game_data["ships"] = {
                 "player_ships": player_ships,
@@ -940,36 +921,6 @@ if __name__ == "__main__":
                 print(f"[Done] Counterparty stations resolved: "
                       f"{resolved}/{len(game_data['trade_history'])} entries.")
 
-                # ── TEMPORARY DIAGNOSTIC — remove once counterparty resolution is working ──
-                print()
-                print("  [DEBUG] Counterparty resolution:")
-                history = game_data["trade_history"]
-                path_a = sum(1 for e in history if e.get("counterparty_station_id"))
-                print(f"          Entries with direct NPC station context (Path A): {path_a}/{len(history)}")
-                print(f"          homebase_index entries (Path B fallback): {len(homebase_index)}")
-                print(f"          npc_station_by_id entries: {len(npc_station_by_id)}")
-                print()
-                print("          First 10 entries — resolution detail:")
-                for entry in history[:10]:
-                    st_id = entry.get("counterparty_station_id", "")
-                    if entry["player_is_buyer"]:
-                        _cp = entry["seller_id"]
-                    elif entry["player_is_seller"]:
-                        _cp = entry["buyer_id"]
-                    elif entry.get("player_ship_is_buyer"):
-                        _cp = entry["seller_id"]
-                    else:
-                        _cp = entry["buyer_id"]
-                    path   = "A" if st_id else "B"
-                    result = entry.get("counterparty_station") or "—"
-                    src_id = st_id if st_id else _cp
-                    flags  = (f"{'StBuy ' if entry['player_is_buyer'] else ''}"
-                              f"{'StSell ' if entry['player_is_seller'] else ''}"
-                              f"{'ShBuy ' if entry.get('player_ship_is_buyer') else ''}"
-                              f"{'ShSell' if entry.get('player_ship_is_seller') else ''}").strip()
-                    print(f"            Path {path}  [{flags:<13}]  src={src_id!r:28s}  → {result!r}")
-                print()
-                # ── END DIAGNOSTIC ──
             else:
                 # Active orders only — single pass, no history.
                 game_data["trades"]         = _run_trade_pass(

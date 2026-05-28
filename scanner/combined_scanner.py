@@ -767,36 +767,35 @@ def scan_save_and_ships(
                         storage      = _parse_station_storage(elem)
                         docked_ships = _extract_station_docked_ships(elem)
 
-                        # Index any NPC ships docked inside this player station.
-                        # The inside_station guard blocks the main ship detection
-                        # loop from seeing them, so without this they appear as
-                        # unresolved hex IDs in trade log counterparty columns.
+                        # Index NPC ships and fully extract player ships docked at
+                        # this player station. The inside_station guard blocks the
+                        # main detection loop from seeing either — a single walk of
+                        # the buffered subtree handles both in one pass.
+                        #
+                        # NPC ships:    label → npc_ship_codes for trade display
+                        # Player ships: full extraction → player_ships + crew, so
+                        #               they appear in the fleet list and receive
+                        #               the ★ prefix via player_ship_ids downstream.
                         for _dc in elem.iter('component'):
-                            if (_dc.get('class', '') in SHIP_CLASSES
-                                    and _dc.get('owner', '') not in ('', 'player')):
-                                _dc_id = _dc.get('id', '')
+                            if _dc.get('class', '') not in SHIP_CLASSES:
+                                continue
+                            _dc_owner = _dc.get('owner', '')
+                            _dc_id    = _dc.get('id', '')
+
+                            if _dc_owner not in ('', 'player'):
+                                # NPC ship: index a display label for trade resolution.
                                 if _dc_id:
                                     npc_ship_codes[_dc_id] = _build_npc_ship_label(
                                         _dc.get('macro', ''),
                                         _dc.get('code',  ''),
-                                        _dc.get('owner', ''),
+                                        _dc_owner,
                                     )
-
-                        # Extract player ships docked inside this player station.
-                        # Same guard issue — inside_station hides them from the
-                        # main loop. We walk the fully-buffered subtree here and
-                        # do a full extraction (crew, hull, shields, orders) so
-                        # these ships appear in the fleet list and get the star
-                        # prefix in the trade display via player_ship_ids.
-                        for _dc in elem.iter('component'):
-                            if not (_dc.get('class', '') in SHIP_CLASSES
-                                    and _dc.get('owner', '') == 'player'):
                                 continue
-                            _dc_id = _dc.get('id', '')
-                            if not _dc_id:
+
+                            if not (_dc_owner == 'player' and _dc_id):
                                 continue
                             # Skip ships already captured (e.g. via _extract_docked_ships
-                            # from a carrier that was also buffered before station closed).
+                            # from a carrier buffered before this station closed).
                             if any(s["object_id"] == _dc_id for s in player_ships):
                                 continue
 
