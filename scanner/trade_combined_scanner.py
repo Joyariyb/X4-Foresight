@@ -69,6 +69,7 @@ def scan_trade_log_and_history(
     player_station_ids: set,
     id_to_code:         dict,
     player_ship_ids:    set | None = None,
+    npc_station_ids:    set | None = None,
 ) -> dict:
     """
     Streams the save file once and returns both active trade orders and
@@ -85,17 +86,45 @@ def scan_trade_log_and_history(
                             ships. When provided, active trades where a player
                             ship is the executing transport are included even
                             when neither station is player-owned.
+        npc_station_ids:    Optional set of hex object IDs for all known NPC
+                            stations. Used to exclude stations from the NPC ship
+                            visit buffer — only ships (free traders) are buffered,
+                            not station-to-station trade records.
 
     Returns a dict:
-        "trades"        — list of active TradePerform order dicts
-                          (same shape as scan_trade_orders returns)
-        "trade_history" — list of completed economylog entry dicts
-                          (same shape as scan_trade_history returns)
+        "trades"          — list of active TradePerform order dicts
+                            (same shape as scan_trade_orders returns)
+        "trade_history"   — list of completed economylog entry dicts
+                            (same shape as scan_trade_history returns)
+        "npc_ship_visits" — dict mapping NPC ship hex ID → list of visit records.
+                            Each record: {station_id, ware, time_ago_s}.
+                            Used by the caller to resolve counterparty stations
+                            for TradeRoutine free traders that have no homebase.
     """
     if not player_station_ids and not (player_ship_ids or set()):
         return {"trades": [], "trade_history": []}
 
     _ship_ids = player_ship_ids or set()
+    # Combined set of all known station IDs — both player and NPC.
+    # NPC ship visit buffering only stores records where the visitor is a SHIP,
+    # not another station. If npc_station_ids is not provided (e.g. the NPC scan
+    # was skipped), we fall back to player_station_ids alone — that still
+    # correctly excludes the most obvious station IDs from the visitor slot.
+    _all_station_ids = player_station_ids | (npc_station_ids or set())
+    # Maps NPC free-trader ship hex ID → list of {station_id, ware, time_ago_s}
+    # dicts, one per completed trade recorded in an NPC station's economy log.
+    # TradeRoutine ships have no homebase (their default-order range param is a
+    # sector ID, not a station), so the homebase chain always fails for them.
+    # By recording every NPC-station trade they appear in, the caller can match
+    # an unresolved player-station entry to the NPC station the free trader
+    # most recently traded at.
+    npc_ship_visits: dict[str, list] = {}
+    # Set of (station_id, ware_id) pairs for NPC stations that appear as BUYERS
+    # in the economy log. Used by Step 5 (sector-ware inference): for each
+    # player-sells entry whose NPC ship counterparty remains unresolved, we look
+    # up which NPC station in the player station's sector buys that ware. If
+    # exactly one such station exists the match is deterministic and safe.
+    npc_station_ware_buyers: set[tuple] = set()
 
     # ── Active trade order state (Pass 5) ─────────────────────────────────────
     # ship_stack tracks the current ship context as a LIFO stack.
@@ -354,6 +383,54 @@ def scan_trade_log_and_history(
                                     ),
                                 })
 
+                        elif npc_station_ids and (
+                            buyer_id  in npc_station_ids or
+                            seller_id in npc_station_ids
+                        ):
+                            # Neither side of this log entry is a player entity, but
+                            # one side IS a known NPC station. The other side is a
+                            # visiting ship (or another station). Buffer the visit so
+                            # Step 4 can resolve counterparties for TradeRoutine free
+                            # traders that have no homebase in homebase_index.
+                            #
+                            # X4 stores the economy log as a single GLOBAL block, not
+                            # per-station subtrees. So we identify the station side
+                            # via npc_station_ids rather than via in_npc_station.
+                            if buyer_id in npc_station_ids:
+                                station_id = buyer_id
+                                visitor_id = seller_id
+                            else:
+                                station_id = seller_id
+                                visitor_id = buyer_id
+
+                            # Step 5 support: record every NPC station that appears as
+                            # a BUYER in the economy log. The caller cross-references
+                            # these with sector data to build (sector, ware) → station
+                            # lookup. When only one station in the player station's
+                            # sector buys a given ware, that station is the delivery
+                            # destination for any unresolved NPC free trader carrying
+                            # that ware out of the player's station.
+                            ware_id = elem.get('ware', '')
+                            if buyer_id in npc_station_ids and ware_id:
+                                npc_station_ware_buyers.add((buyer_id, ware_id))
+
+                            # Filter out station-to-station entries: if the visitor is
+                            # itself a known station, there is no "ship" to buffer.
+                            if visitor_id and visitor_id not in _all_station_ids:
+                                try:
+                                    amount     = int(float(elem.get('v', 0)))
+                                    entry_time = float(elem.get('time', game_time))
+                                except (ValueError, TypeError):
+                                    amount = 0; entry_time = game_time
+                                if amount > 0:
+                                    if not ware_id:
+                                        ware_id = elem.get('ware', '')
+                                    npc_ship_visits.setdefault(visitor_id, []).append({
+                                        'station_id': station_id,
+                                        'ware':       ware_id,
+                                        'time_ago_s': max(0.0, game_time - entry_time),
+                                    })
+
                 elif event == 'end':
 
                     # ── Ship component tracking (Pass 5) ──────────────────────
@@ -432,13 +509,25 @@ def scan_trade_log_and_history(
         f"[Scanning] Active trades  — {len(active_trades)} order(s) "
         f"({station_hits} via station filter, {ship_hits} via ship filter)."
     )
+    npc_visitor_ships = len(npc_ship_visits)
+    npc_visit_records = sum(len(v) for v in npc_ship_visits.values())
     print(
         f"[Scanning] Trade history  — {len(history_trades)} completed trade(s) "
         f"({bought} station purchases, {sold} station sales, "
         f"{ship_bought} ship purchases, {ship_sold} ship sales)."
     )
+    print(
+        f"[Scanning] NPC ship visits buffered — {npc_visit_records} record(s) "
+        f"across {npc_visitor_ships} unique ship(s) for Step 4 resolution."
+    )
+    print(
+        f"[Scanning] NPC station ware-buyer pairs — {len(npc_station_ware_buyers)} "
+        f"unique (station, ware) buyer entries for Step 5 sector inference."
+    )
 
     return {
-        "trades":        active_trades,
-        "trade_history": history_trades,
+        "trades":                  active_trades,
+        "trade_history":           history_trades,
+        "npc_ship_visits":         npc_ship_visits,
+        "npc_station_ware_buyers": npc_station_ware_buyers,
     }

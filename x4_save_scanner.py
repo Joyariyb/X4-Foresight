@@ -278,16 +278,20 @@ def _run_trade_combined_pass(
     player_station_ids: set,
     id_to_code:         dict,
     player_ship_ids:    set,
+    npc_station_ids:    set | None = None,
 ) -> dict:
     """
     Runs Pass 5 (active TradePerform orders) and Pass 6 (completed economylog
     entries) in a single file read.
 
-    Returns a dict with keys "trades" and "trade_history".
+    Returns a dict with keys "trades", "trade_history", and "npc_ship_visits".
+    npc_station_ids is forwarded to the scanner so it can exclude known station
+    IDs from the NPC ship visit buffer (only ships should be buffered).
     """
     t0     = time.perf_counter()
     result = scan_trade_log_and_history(
-        save_file, player_station_ids, id_to_code, player_ship_ids
+        save_file, player_station_ids, id_to_code, player_ship_ids,
+        npc_station_ids=npc_station_ids,
     )
     print(f"[Done] Trade log + history pass completed in {time.perf_counter() - t0:.2f}s")
     return result
@@ -519,6 +523,11 @@ if __name__ == "__main__":
         # trade ships fly in from stations in neighboring sectors the player may not
         # have any presence in.
         npc_station_by_id: dict = {}
+        # Maps NPC station object_id → resolved sector display name (same string
+        # that player station entries use for their "sector" field). Built from
+        # npc_stations_raw alongside npc_station_by_id. Used by Step 5 to join
+        # the npc_station_ware_buyers set with a per-sector lookup table.
+        npc_station_sector: dict = {}
         # Maps NPC ship object_id → short display label for every NPC ship seen
         # during the combined pass. Populated regardless of tier filter so that
         # ships excluded by tier 1 (player-only) can still be resolved in trade
@@ -605,6 +614,14 @@ if __name__ == "__main__":
                     for st in npc_raw
                     if st.get("object_id") and st.get("name")
                 }
+                # Sector index: maps each NPC station's object_id to its sector
+                # display name. Used by Step 5 to build (sector, ware) → station
+                # lookup from the NPC buyer patterns found in the economy log.
+                npc_station_sector = {
+                    st["object_id"]: st["sector"]
+                    for st in npc_raw
+                    if st.get("object_id") and st.get("sector")
+                }
                 game_data["npc_stations"] = [
                     st for st in npc_raw if st["sector"] in player_sectors
                 ]
@@ -636,6 +653,11 @@ if __name__ == "__main__":
                         st["object_id"]: st["name"]
                         for st in npc_raw
                         if st.get("object_id") and st.get("name")
+                    }
+                    npc_station_sector = {
+                        st["object_id"]: st["sector"]
+                        for st in npc_raw
+                        if st.get("object_id") and st.get("sector")
                     }
                     game_data["npc_stations"] = [
                         st for st in npc_raw if st["sector"] in player_sectors
@@ -748,12 +770,54 @@ if __name__ == "__main__":
             if include_trade_history:
                 # Both active orders and completed history requested — one read.
                 trade_result = _run_trade_combined_pass(
-                    SAVE_FILE, player_station_ids, id_to_code, player_ship_ids
+                    SAVE_FILE, player_station_ids, id_to_code, player_ship_ids,
+                    # Passing the full NPC station ID set lets the scanner exclude
+                    # known stations from the visitor buffer — only ships get buffered.
+                    npc_station_ids=set(npc_station_by_id.keys()),
                 )
                 game_data["trades"]                = trade_result["trades"]
                 game_data["trades_scanned"]        = True
                 game_data["trade_history"]         = trade_result["trade_history"]
                 game_data["trade_history_scanned"] = True
+                # NPC free-trader visit log — maps ship hex ID to the NPC stations
+                # it traded at (one record per economy-log entry: ware + time_ago_s).
+                # Used in Step 4 of the counterparty resolution loop below to
+                # resolve TradeRoutine ships whose homebase chain returns nothing
+                # because their default-order range param is a sector, not a station.
+                npc_ship_visits: dict = trade_result.get("npc_ship_visits", {})
+                # Set of (station_id, ware_id) pairs for NPC stations that appear
+                # as BUYERS in the economy log. The Step 5 lookup is built from
+                # this set by joining each station_id with npc_station_sector to
+                # group buyers by sector, then filtering to the player station's
+                # sector for each unresolved entry.
+                _npc_ware_buyers: set = trade_result.get("npc_station_ware_buyers", set())
+
+                # Player station sector index — maps each player station's object_id
+                # to its sector display name. Needed by Step 5 to know which sector
+                # to look up in sector_ware_npc_buyers. Defined before the lookup
+                # table so both player and NPC station IDs can be checked when
+                # resolving a (station_id, ware_id) pair's sector.
+                player_station_sector: dict = {
+                    st["object_id"]: st["sector"]
+                    for st in game_data.get("stations", [])
+                    if st.get("object_id") and st.get("sector")
+                }
+
+                # ── Step 5 lookup: (sector, ware) → {npc_station_id, …} ───────
+                # For each NPC station that appeared as a BUYER of a specific ware
+                # in the economy log, record it under the station's sector. When
+                # exactly one NPC station in the player station's sector buys a
+                # given ware, that station is the unambiguous delivery destination
+                # for any TradeRoutine ship that picked up that ware from the player.
+                #
+                # Only used when the sector is known (not "Unknown Sector") to
+                # avoid false matches between different unnamed sectors.
+                sector_ware_npc_buyers: dict = {}
+                for _st_id, _ware_id in _npc_ware_buyers:
+                    _sector = (npc_station_sector.get(_st_id)
+                               or player_station_sector.get(_st_id, ''))
+                    if _sector and _sector != 'Unknown Sector':
+                        sector_ware_npc_buyers.setdefault((_sector, _ware_id), set()).add(_st_id)
 
                 # ── Counterparty station resolution ───────────────────────────
                 # The counterparty is always resolved to a STATION — never a ship.
@@ -785,6 +849,18 @@ if __name__ == "__main__":
                 #     station, so the homebase IS the counterparty.  Follow:
                 #       ship hex ID → homebase_index → station hex ID
                 #       → npc_station_by_id or player_station_by_id → display name.
+                #
+                #   Step 4 — NPC free-trader visit log:
+                #     Homebase chain fails for TradeRoutine ships (range= is a sector,
+                #     not a station).  Match the ship against npc_ship_visits: pick the
+                #     NPC station visit whose ware matches and whose time is closest.
+                #
+                #   Step 5 — sector-ware NPC station inference:
+                #     The delivery leg of a TradeRoutine ship may be absent from the
+                #     economy log entirely (NPC-to-NPC virtual-money trades).  Infer
+                #     the destination from npc_station_ware_buyers: if exactly one NPC
+                #     station in the player station's sector appears as a buyer of that
+                #     ware in the economy log, it is the unambiguous delivery target.
 
                 # Player-station lookup: homebase chain and pairing both need to
                 # resolve player station IDs (not in npc_station_by_id).
@@ -912,11 +988,69 @@ if __name__ == "__main__":
                         continue
 
                     # Step 3 — NPC ship: follow homebase chain.
+                    # Middleman-assigned NPC ships store their homebase station ID in
+                    # their default order params; following this chain gives the
+                    # counterparty directly. TradeRoutine (free-trader) ships store a
+                    # SECTOR ID instead — the chain technically runs but always fails
+                    # silently because sector IDs never appear in npc_station_by_id.
                     hb_id = homebase_index.get(cp_id)
-                    entry["counterparty_station"] = (
-                        (npc_station_by_id.get(hb_id) or player_station_by_id.get(hb_id))
-                        if hb_id else None
-                    )
+                    if hb_id:
+                        hb_name = (npc_station_by_id.get(hb_id)
+                                   or player_station_by_id.get(hb_id))
+                        if hb_name:
+                            entry["counterparty_station"] = hb_name
+                            continue
+
+                    # Step 4 — NPC free-trader: search the buffered NPC station
+                    # visit log for a matching trade (same ship, same ware, closest
+                    # time_ago_s). Covers TradeRoutine ships whose homebase chain
+                    # returns nothing because range= is a sector, not a station.
+                    visits = npc_ship_visits.get(cp_id, [])
+                    if visits:
+                        ware     = entry['ware']
+                        t        = entry['time_ago_s']
+                        matching = [
+                            (abs(v['time_ago_s'] - t), v)
+                            for v in visits if v['ware'] == ware
+                        ]
+                        if matching:
+                            matching.sort(key=lambda x: x[0])
+                            best_station_id = matching[0][1]['station_id']
+                            best_name = (npc_station_by_id.get(best_station_id)
+                                         or player_station_by_id.get(best_station_id))
+                            if best_name:
+                                entry["counterparty_station"] = best_name
+                                continue
+
+                    # Step 5 — sector-ware NPC station inference.
+                    # When the NPC ship's delivery leg is absent from the economy
+                    # log (virtual-money NPC-to-NPC trades are not always logged),
+                    # infer the destination from the known NPC buyers of that ware
+                    # in the player station's sector. If exactly one NPC station in
+                    # the sector buys this ware — a deterministic match — use it.
+                    # This resolves TradeRoutine ships like argon_refinedmineral_
+                    # trader_m that repeatedly buy from a player station and deliver
+                    # to a single NPC consumer in the same sector.
+                    if entry["player_is_seller"]:
+                        _ps_id = entry["seller_id"]
+                    elif entry["player_is_buyer"]:
+                        _ps_id = entry["buyer_id"]
+                    else:
+                        _ps_id = None
+                    if _ps_id:
+                        _ps_sector = player_station_sector.get(_ps_id, '')
+                        if _ps_sector and _ps_sector != 'Unknown Sector':
+                            _ware      = entry['ware']
+                            _candidates = sector_ware_npc_buyers.get((_ps_sector, _ware), set())
+                            if len(_candidates) == 1:
+                                _sid  = next(iter(_candidates))
+                                _name = npc_station_by_id.get(_sid)
+                                if _name:
+                                    entry["counterparty_station"] = _name
+                                    continue
+
+                    entry["counterparty_station"] = None
+
                 resolved = sum(1 for e in game_data["trade_history"] if e.get("counterparty_station"))
                 print(f"[Done] Counterparty stations resolved: "
                       f"{resolved}/{len(game_data['trade_history'])} entries.")
