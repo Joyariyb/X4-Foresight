@@ -381,6 +381,12 @@ def display_trade_history(data: dict):
         ship_code = t["seller_code"] if t["player_is_buyer"] else t["buyer_code"]
         return f"★ {ship_code}" if ship_id in player_ship_ids else ship_code
 
+    def _ship_id(t: dict) -> str:
+        """Hex component ID of the non-player-station entity (seller if player buys, buyer if player sells).
+        Shown in the Ship ID column so any ship can be cross-referenced in the save XML."""
+        sid = t["seller_id"] if t["player_is_buyer"] else t["buyer_id"]
+        return sid or "—"
+
     # ── Table 1: commercial station trades, grouped by player station ─────────
     # Grouping removes the need for a Station column on every row — the station
     # appears once as a section header, making the table narrower and easier to
@@ -398,6 +404,8 @@ def display_trade_history(data: dict):
         tc     = 8
         st_shc = max((len(_ship_lbl(t)) for t in station_entries), default=14)
         st_shc = max(14, min(36, st_shc + 1))
+        st_ic  = max((len(_ship_id(t)) for t in station_entries), default=9)
+        st_ic  = max(9, min(14, st_ic + 1))
         st_wc  = max((len(t["ware_name"]) for t in station_entries), default=14)
         st_wc  = max(14, min(28, st_wc + 1))
         st_cc  = max((len(t.get("counterparty_station") or "—") for t in station_entries), default=11)
@@ -411,15 +419,15 @@ def display_trade_history(data: dict):
             print(f"  ── {label}  ·  {n_grp} {'entry' if n_grp == 1 else 'entries'}")
             # Column headers per group so they are always visible above the rows,
             # even when a station has many entries.
-            print(f"     {'Time':<{tc}}  {'Ship':<{st_shc}}  {'Dir'}  "
+            print(f"     {'Time':<{tc}}  {'Ship':<{st_shc}}  {'Ship ID':<{st_ic}}  {'Dir'}  "
                   f"{'Ware':<{st_wc}}  {'Units':>9}  {'Cr/unit':>9}  {'Total Cr':>12}  {'Counterparty':<{st_cc}}")
-            print(f"     {'─'*tc}  {'─'*st_shc}  {'─'*3}  "
+            print(f"     {'─'*tc}  {'─'*st_shc}  {'─'*st_ic}  {'─'*3}  "
                   f"{'─'*st_wc}  {'─'*9}  {'─'*9}  {'─'*12}  {'─'*st_cc}")
             for t in group:
                 direction = "In " if t["player_is_buyer"] else "Out"
                 cp        = t.get("counterparty_station") or "—"
                 print(f"     {_age(t['time_ago_s']):<{tc}}  "
-                      f"{_truncate(_ship_lbl(t), st_shc):<{st_shc}}  {direction}  "
+                      f"{_truncate(_ship_lbl(t), st_shc):<{st_shc}}  {_ship_id(t):<{st_ic}}  {direction}  "
                       f"{t['ware_name']:<{st_wc}}  {t['amount']:>9,}  {t['price_cr']:>9,.2f}  "
                       f"{t['total_cr']:>12,.0f}  {cp:<{st_cc}}")
             print()
@@ -436,24 +444,31 @@ def display_trade_history(data: dict):
             ship_code = t["buyer_code"] if t.get("player_ship_is_buyer") else t["seller_code"]
             return f"★ {ship_code}" if ship_id in player_ship_ids else ship_code
 
+        def _ship_id2(t: dict) -> str:
+            """Hex component ID of the player ship in a ship-only entry."""
+            sid = t["buyer_id"] if t.get("player_ship_is_buyer") else t["seller_id"]
+            return sid or "—"
+
         tc2  = 8
         shc2 = max((len(_ship_lbl2(t)) for t in ship_entries), default=14)
         shc2 = max(14, min(36, shc2 + 1))
+        ic2  = max((len(_ship_id2(t)) for t in ship_entries), default=9)
+        ic2  = max(9, min(14, ic2 + 1))
         wc2  = max((len(t["ware_name"]) for t in ship_entries), default=14)
         wc2  = max(14, min(28, wc2 + 1))
         cc2  = max((len(t.get("counterparty_station") or "—") for t in ship_entries), default=11)
         cc2  = max(11, min(40, cc2 + 1))
 
-        print(f"  {'Time':<{tc2}}  {'Ship':<{shc2}}  {'Dir'}  "
+        print(f"  {'Time':<{tc2}}  {'Ship':<{shc2}}  {'Ship ID':<{ic2}}  {'Dir'}  "
               f"{'Ware':<{wc2}}  {'Units':>9}  {'Cr/unit':>9}  {'Total Cr':>12}  {'Counterparty':<{cc2}}")
-        print(f"  {'─'*tc2}  {'─'*shc2}  {'─'*3}  "
+        print(f"  {'─'*tc2}  {'─'*shc2}  {'─'*ic2}  {'─'*3}  "
               f"{'─'*wc2}  {'─'*9}  {'─'*9}  {'─'*12}  {'─'*cc2}")
 
         for t in ship_entries:
             direction = "In " if t.get("player_ship_is_buyer") else "Out"
             cp        = t.get("counterparty_station") or "—"
             print(f"  {_age(t['time_ago_s']):<{tc2}}  "
-                  f"{_truncate(_ship_lbl2(t), shc2):<{shc2}}  {direction}  "
+                  f"{_truncate(_ship_lbl2(t), shc2):<{shc2}}  {_ship_id2(t):<{ic2}}  {direction}  "
                   f"{t['ware_name']:<{wc2}}  {t['amount']:>9,}  {t['price_cr']:>9,.2f}  "
                   f"{t['total_cr']:>12,.0f}  {cp:<{cc2}}")
 
@@ -471,6 +486,8 @@ def display_trade_history(data: dict):
         tc_i   = 8
         in_shc = max((len(_ship_lbl(t)) for t in internal_entries), default=14)
         in_shc = max(14, min(36, in_shc + 1))
+        in_ic  = max((len(_ship_id(t)) for t in internal_entries), default=9)
+        in_ic  = max(9, min(14, in_ic + 1))
         in_wc  = max((len(t["ware_name"]) for t in internal_entries), default=14)
         in_wc  = max(14, min(28, in_wc + 1))
 
@@ -482,14 +499,14 @@ def display_trade_history(data: dict):
             label = f"{name}  [{st_code}]" if name else st_code
             n_grp = len(group)
             print(f"  ── {label}  ·  {n_grp} {'entry' if n_grp == 1 else 'entries'}")
-            print(f"     {'Time':<{tc_i}}  {'Counterparty':<{in_shc}}  {'Dir'}  "
+            print(f"     {'Time':<{tc_i}}  {'Counterparty':<{in_shc}}  {'Ship ID':<{in_ic}}  {'Dir'}  "
                   f"{'Ware':<{in_wc}}  {'Units':>9}  {'Cr/unit':>9}  {'Total Cr':>12}")
-            print(f"     {'─'*tc_i}  {'─'*in_shc}  {'─'*3}  "
+            print(f"     {'─'*tc_i}  {'─'*in_shc}  {'─'*in_ic}  {'─'*3}  "
                   f"{'─'*in_wc}  {'─'*9}  {'─'*9}  {'─'*12}")
             for t in group:
                 direction = "In " if t["player_is_buyer"] else "Out"
                 print(f"     {_age(t['time_ago_s']):<{tc_i}}  "
-                      f"{_truncate(_ship_lbl(t), in_shc):<{in_shc}}  {direction}  "
+                      f"{_truncate(_ship_lbl(t), in_shc):<{in_shc}}  {_ship_id(t):<{in_ic}}  {direction}  "
                       f"{t['ware_name']:<{in_wc}}  {t['amount']:>9,}  {t['price_cr']:>9,.2f}  "
                       f"{t['total_cr']:>12,.0f}")
             print()
