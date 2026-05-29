@@ -477,6 +477,23 @@ def scan_save_and_ships(
                         station_id = npc_station_elem_pending.get('id', '')
                         if ship_id and station_id:
                             homebase_index[ship_id] = station_id
+                            # Also register a display label so that economy-log entries
+                            # referencing this ship resolve to a readable name instead
+                            # of a raw hex ID. The outer ship-detection block (which
+                            # normally builds npc_ship_codes) is bypassed for docked
+                            # ships because its guard requires npc_station_elem_pending
+                            # is None — so we must do it here.
+                            # setdefault: if the ship somehow also appears in the flying
+                            # path (shouldn't happen, but defensive), keep the richer
+                            # label that path may have already built.
+                            npc_ship_codes.setdefault(
+                                ship_id,
+                                _build_npc_ship_label(
+                                    elem.get('macro', ''),
+                                    elem.get('code',  ''),
+                                    elem.get('owner', ''),
+                                ),
+                            )
 
                 # ── Ship buffering depth tracking ──────────────────────────────
                 # Count XML nesting so we detect when the ship's closing tag
