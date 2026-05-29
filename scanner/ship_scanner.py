@@ -438,6 +438,50 @@ def _parse_homebase(ship_elem: ET.Element) -> str | None:
     return None
 
 
+def _parse_active_dest(ship_elem: ET.Element) -> str | None:
+    """
+    Returns the destination station ID from the ship's current active trading
+    DockAt sub-order, or None if the ship is not mid-delivery.
+
+    When a TradeRoutine ship executes a delivery leg, the game creates a
+    temporary DockAt order (temp="1", state="started") with a 'destination'
+    component param pointing at the receiving station. A 'trading' integer
+    param (value="1") confirms this is a commercial delivery rather than a
+    routine dock (repairs, patrol waypoints, etc.).
+
+    This gives a direct pointer to where the ship is currently taking cargo —
+    stronger evidence than sector-ware inference when the ship has an active
+    delivery in progress at save time.
+    """
+    orders_elem = ship_elem.find('orders')
+    if orders_elem is None:
+        return None
+
+    for order in orders_elem.findall('order'):
+        # Only match temp DockAt orders that are currently executing.
+        if (order.get('order') != 'DockAt'
+                or order.get('temp') != '1'
+                or order.get('state') != 'started'):
+            continue
+
+        dest    = None
+        trading = False
+        for param in order.findall('param'):
+            name_ = param.get('name', '')
+            if name_ == 'destination' and param.get('type') == 'component':
+                dest = param.get('value', '') or None
+            elif name_ == 'trading' and param.get('value') == '1':
+                trading = True
+
+        # Only return the destination when both conditions are satisfied:
+        # we have a valid target station AND the order is flagged as a
+        # commercial trade delivery (not just any docking action).
+        if dest and trading:
+            return dest
+
+    return None
+
+
 def _extract_docked_ships(
     carrier_elem: ET.Element,
     carrier_sector: str,
@@ -618,6 +662,16 @@ def scan_ships(
     hb_in_default:  bool         = False
     homebase_index: dict[str, str] = {}  # ship_id → homebase station object ID
 
+    # State variables for active delivery destination extraction (Step 6).
+    # When a TradeRoutine ship is mid-delivery it has a temp DockAt order
+    # with a 'destination' param. We detect that order in the same state
+    # machine that extracts homebase, and store the result here.
+    hb_in_dockat:           bool = False   # inside a temp DockAt order
+    hb_dockat_dest:         str  = ''      # destination station ID found so far
+    hb_dockat_trading:      bool = False   # trading=1 param seen → commercial dock
+    hb_dockat_entry_depth:  int  = 0       # hb_depth value when DockAt order opened
+    delivery_dest_index: dict[str, str] = {}  # ship_id → active delivery station ID
+
     # The economy log uses two different IDs to identify a ship:
     #   - The ship component's own id attribute  (hex bracket, e.g. "[0x1717a]")
     #   - The outer <connection> wrapper's id     (plain decimal, e.g. "114")
@@ -703,13 +757,17 @@ def scan_ships(
                     # subtree, but do track the stream to extract the homebase
                     # station ID from the default order params. This costs only
                     # a few extra comparisons per element — no memory allocation.
-                    in_hb_ship    = True
-                    hb_ship_id    = elem.get('id', '')
-                    hb_conn_id    = last_connection_id   # capture wrapper id for dual-key indexing
-                    hb_depth      = 1
-                    hb_in_orders  = False
-                    hb_order_type = ''
-                    hb_in_default = False
+                    in_hb_ship            = True
+                    hb_ship_id            = elem.get('id', '')
+                    hb_conn_id            = last_connection_id   # capture wrapper id for dual-key indexing
+                    hb_depth              = 1
+                    hb_in_orders          = False
+                    hb_order_type         = ''
+                    hb_in_default         = False
+                    hb_in_dockat          = False
+                    hb_dockat_dest        = ''
+                    hb_dockat_trading     = False
+                    hb_dockat_entry_depth = 0
                     continue  # keep element in stream (children are not cleared)
 
             # ── Ship buffering ─────────────────────────────────────────────
@@ -857,8 +915,11 @@ def scan_ships(
                             # component; Middleman → 'supplier' component). The
                             # full subtree is in memory here so _parse_homebase()
                             # can walk it directly.
-                            ship_id  = se.get('id', '')   # hex bracket, e.g. "[0x1f673]"
-                            homebase = _parse_homebase(se)
+                            ship_id     = se.get('id', '')   # hex bracket, e.g. "[0x1f673]"
+                            homebase    = _parse_homebase(se)
+                            active_dest = _parse_active_dest(se)
+                            # Read conn_id once — both index lookups need it.
+                            conn_id = se.get('_conn_id', '')
 
                             if ship_id and homebase:
                                 # Primary key: the ship component's own hex bracket ID.
@@ -869,12 +930,22 @@ def scan_ships(
                                 # economy log produces after _norm(). This covers the
                                 # majority of economy log entries which reference ships by
                                 # the wrapper id rather than the component id.
-                                conn_id = se.get('_conn_id', '')
                                 if conn_id:
                                     try:
                                         homebase_index[f"[{hex(int(conn_id))}]"] = homebase
                                     except (ValueError, TypeError):
                                         pass  # wrapper id is not a plain decimal — skip
+
+                            # Step 6 data: record where the ship is currently
+                            # delivering cargo so the trade counterparty resolver
+                            # can assign the destination station to unresolved entries.
+                            if ship_id and active_dest:
+                                delivery_dest_index[ship_id] = active_dest
+                                if conn_id:
+                                    try:
+                                        delivery_dest_index[f"[{hex(int(conn_id))}]"] = active_dest
+                                    except (ValueError, TypeError):
+                                        pass
 
                             npc_ships.append({
                                 "code":        code,
@@ -908,10 +979,31 @@ def scan_ships(
                     hb_depth += 1
                     if elem.tag == 'orders':
                         hb_in_orders = True
+
                     elif hb_in_orders and elem.tag == 'order' and elem.get('default') == '1':
                         hb_order_type = elem.get('order', '')
                         hb_in_default = True
-                    elif hb_in_default and elem.tag == 'param' and elem.get('type') == 'component':
+
+                    # Detect active trading DockAt sub-orders — these only appear
+                    # when the ship is mid-delivery. We capture the destination
+                    # station ID for Step 6 counterparty resolution. The order must
+                    # be temp (AI-generated subroutine) and state=started (currently
+                    # executing), and we only enter when not already tracking one.
+                    elif (hb_in_orders and not hb_in_dockat
+                          and elem.tag == 'order'
+                          and elem.get('order') == 'DockAt'
+                          and elem.get('temp') == '1'
+                          and elem.get('state') == 'started'):
+                        hb_in_dockat          = True
+                        hb_dockat_dest        = ''
+                        hb_dockat_trading     = False
+                        hb_dockat_entry_depth = hb_depth  # remember depth at order open
+
+                    # Homebase param: only fire when in the default order and NOT inside
+                    # a DockAt — the guard prevents the destination param of a DockAt
+                    # (which also has type="component") from being mistaken for a homebase.
+                    elif (hb_in_default and not hb_in_dockat
+                          and elem.tag == 'param' and elem.get('type') == 'component'):
                         name_ = elem.get('name', '')
                         val   = elem.get('value', '')
                         if val and (
@@ -932,15 +1024,52 @@ def scan_ships(
                                     homebase_index[f"[{hex(int(hb_conn_id))}]"] = val
                                 except (ValueError, TypeError):
                                     pass  # wrapper id is not a plain decimal — skip
+
+                    # DockAt params — read destination station and trading flag.
+                    elif hb_in_dockat and elem.tag == 'param':
+                        name_ = elem.get('name', '')
+                        if name_ == 'destination' and elem.get('type') == 'component':
+                            hb_dockat_dest = elem.get('value', '') or ''
+                        elif name_ == 'trading' and elem.get('value') == '1':
+                            hb_dockat_trading = True
+
                 elif event == 'end':
                     hb_depth -= 1
                     if hb_depth == 0:
-                        in_hb_ship    = False
-                        hb_ship_id    = ''
-                        hb_conn_id    = ''
-                        hb_in_orders  = False
-                        hb_order_type = ''
-                        hb_in_default = False
+                        # Ship subtree finished — commit any pending delivery dest
+                        # (handles the edge case where the DockAt is the last order).
+                        if hb_in_dockat and hb_dockat_dest and hb_dockat_trading:
+                            delivery_dest_index[hb_ship_id] = hb_dockat_dest
+                            if hb_conn_id:
+                                try:
+                                    delivery_dest_index[f"[{hex(int(hb_conn_id))}]"] = hb_dockat_dest
+                                except (ValueError, TypeError):
+                                    pass
+                        in_hb_ship            = False
+                        hb_ship_id            = ''
+                        hb_conn_id            = ''
+                        hb_in_orders          = False
+                        hb_order_type         = ''
+                        hb_in_default         = False
+                        hb_in_dockat          = False
+                        hb_dockat_dest        = ''
+                        hb_dockat_trading     = False
+                        hb_dockat_entry_depth = 0
+
+                    elif hb_in_dockat and hb_depth < hb_dockat_entry_depth:
+                        # DockAt order's own closing tag arrived — commit if complete.
+                        if hb_dockat_dest and hb_dockat_trading:
+                            delivery_dest_index[hb_ship_id] = hb_dockat_dest
+                            if hb_conn_id:
+                                try:
+                                    delivery_dest_index[f"[{hex(int(hb_conn_id))}]"] = hb_dockat_dest
+                                except (ValueError, TypeError):
+                                    pass
+                        hb_in_dockat          = False
+                        hb_dockat_dest        = ''
+                        hb_dockat_trading     = False
+                        hb_dockat_entry_depth = 0
+
                     elem.clear()
                 continue  # never fall through to default cleanup while extracting
 
@@ -950,13 +1079,14 @@ def scan_ships(
             if event == 'end' and not inside_ship:
                 elem.clear()
 
-    print(f"[Scanning] Ships — homebase index built "
-          f"({len(homebase_index)} non-context NPC ship(s) resolved).")
+    print(f"[Scanning] Ships — homebase index: {len(homebase_index)} NPC ships resolved; "
+          f"delivery dest index: {len(delivery_dest_index)} ships mid-delivery.")
     return {
-        "player_ships":   player_ships,
-        "npc_ships":      npc_ships,
-        "crew":           crew,
-        "homebase_index": homebase_index,
+        "player_ships":        player_ships,
+        "npc_ships":           npc_ships,
+        "crew":                crew,
+        "homebase_index":      homebase_index,
+        "delivery_dest_index": delivery_dest_index,
     }
 
 

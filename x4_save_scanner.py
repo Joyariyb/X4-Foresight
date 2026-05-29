@@ -421,13 +421,15 @@ def _run_ships_pass(
         ]
 
         return {
-            "player_ships":   result["player_ships"],
-            "npc_ships":      result["npc_ships"],
-            "crew":           result.get("crew", []),
+            "player_ships":        result["player_ships"],
+            "npc_ships":           result["npc_ships"],
+            "crew":                result.get("crew", []),
             # Pass homebase_index through so the trade log dispatcher can use it
             # for counterparty station resolution. It covers ALL NPC ships seen
             # in the pass, regardless of which ones survived the tier 3 filter.
-            "homebase_index": result.get("homebase_index", {}),
+            "homebase_index":      result.get("homebase_index", {}),
+            # Active delivery destinations for Step 6 counterparty resolution.
+            "delivery_dest_index": result.get("delivery_dest_index", {}),
         }
 
     else:
@@ -516,6 +518,9 @@ if __name__ == "__main__":
         # Populated by the combined or ships pass; used for trade history
         # counterparty station resolution after trade scanning completes.
         homebase_index: dict = {}
+        # Active delivery destinations for NPC ships mid-delivery at save time.
+        # Used in Step 6 counterparty resolution (see resolution loop below).
+        delivery_dest_index: dict = {}
         # Maps NPC station object_id → display name for ALL stations in the file
         # (not filtered to player sectors). Built from npc_stations_raw before the
         # sector filter is applied, so counterparty homebases outside player sectors
@@ -577,6 +582,9 @@ if __name__ == "__main__":
             # object IDs. Covers ALL NPC ships regardless of tier filtering, so
             # trade counterparties that left player sectors are still resolvable.
             homebase_index       = combined.pop("homebase_index", {})
+            # delivery_dest_index maps NPC ship object IDs to the station they
+            # are currently delivering cargo to (Step 6 resolution data).
+            delivery_dest_index  = combined.pop("delivery_dest_index", {})
             # npc_ship_codes maps NPC ship object IDs to short display labels
             # (e.g. "ARG Mercury Vanguard [HOH-092]"). Used below to supplement
             # id_to_code for ships not included in npc_ships[] (e.g. at tier 1).
@@ -693,8 +701,9 @@ if __name__ == "__main__":
                 }
                 game_data["crew"] += ships_result.get("crew", [])
                 game_data["ships_scanned"] = True
-                # Capture homebase_index for trade history counterparty resolution.
-                homebase_index = ships_result.get("homebase_index", {})
+                # Capture homebase and delivery dest indexes for counterparty resolution.
+                homebase_index      = ships_result.get("homebase_index", {})
+                delivery_dest_index = ships_result.get("delivery_dest_index", {})
 
         # ── Pass 2: reputation ────────────────────────────────────────────────
         if "reputation" in passes:
@@ -861,6 +870,15 @@ if __name__ == "__main__":
                 #     the destination from npc_station_ware_buyers: if exactly one NPC
                 #     station in the player station's sector appears as a buyer of that
                 #     ware in the economy log, it is the unambiguous delivery target.
+                #
+                #   Step 6 — active delivery order:
+                #     When Step 5 has multiple candidates (sector has several NPC
+                #     stations buying the same ware), fall back to the ship's current
+                #     active DockAt order (temp="1", state="started", trading=1).
+                #     That order is a direct pointer to where the ship is taking cargo
+                #     RIGHT NOW.  Applied to all unresolved entries for that ship —
+                #     trade-routine ships follow consistent routes so the current
+                #     delivery is a reliable proxy for all recent economy log entries.
 
                 # Player-station lookup: homebase chain and pairing both need to
                 # resolve player station IDs (not in npc_station_by_id).
@@ -1047,6 +1065,21 @@ if __name__ == "__main__":
                                 _name = npc_station_by_id.get(_sid)
                                 if _name:
                                     entry["counterparty_station"] = _name
+                                    continue
+
+                    # Step 6 — active delivery order resolution.
+                    # Only applies when the player station is the SELLER (i.e. the
+                    # NPC ship bought goods from the player and is now delivering
+                    # them elsewhere). The DockAt destination is where that delivery
+                    # is going, which is the counterparty we want.
+                    if entry["player_is_seller"]:
+                        _cp_ship_id = entry.get("buyer_id", "")
+                        if _cp_ship_id:
+                            _dest_id = delivery_dest_index.get(_cp_ship_id)
+                            if _dest_id:
+                                _dest_name = npc_station_by_id.get(_dest_id)
+                                if _dest_name:
+                                    entry["counterparty_station"] = _dest_name
                                     continue
 
                     entry["counterparty_station"] = None
