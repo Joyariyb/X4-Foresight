@@ -45,6 +45,46 @@ def _build_npc_summary(npc_ships: list[dict]) -> dict:
     }
 
 
+def _build_station_trades(data: dict) -> list[dict]:
+    """Returns completed commercial station trades — player station on one side, NPC on the other."""
+    history = data.get("trade_history", [])
+
+    def _is_internal(t):
+        if t["player_is_buyer"] and t["player_is_seller"]:
+            return True
+        if t["player_is_buyer"] and t.get("player_ship_is_seller", False):
+            return True
+        return False
+
+    result = []
+    for t in history:
+        if not (t["player_is_buyer"] or t["player_is_seller"] or t.get("_homebase_seller_id")):
+            continue
+        if _is_internal(t) or t.get("_courier_pickup"):
+            continue
+
+        station_code = (
+            t.get("_homebase_seller_code") or
+            (t["buyer_code"]  if t["player_is_buyer"]  else None) or
+            (t["seller_code"] if t["player_is_seller"] else None)
+        )
+        direction = "In" if t["player_is_buyer"] else "Out"
+        result.append({
+            "station_code":      station_code,
+            "direction":         direction,
+            "ware":              t["ware"],
+            "ware_name":         t["ware_name"],
+            "amount":            t["amount"],
+            "price_cr":          t["price_cr"],
+            "total_cr":          math.floor(t["total_cr"]),
+            "time_ago_s":        round(t["time_ago_s"]),
+            "counterparty":      t.get("counterparty_station"),
+            "ship_code":         t.get("seller_code") if t["player_is_buyer"] else t.get("buyer_code"),
+        })
+
+    return result
+
+
 def _build_in_progress_deliveries(data: dict) -> list[dict]:
     """Returns deliveries where cargo is physically in transit at save time."""
     delivery_dest_index: dict = data.get("delivery_dest_index", {})
@@ -84,6 +124,7 @@ def export_json(data: dict, output_dir: pathlib.Path | None = None):
         "stations":                data.get("stations", []),
         "reputation":              data.get("reputation", []),
         "crew":                    data.get("crew", []),
+        "station_trades":          _build_station_trades(data),
         "in_progress_deliveries":  _build_in_progress_deliveries(data),
         "ships": {
             "player_ships":  player_ships,
