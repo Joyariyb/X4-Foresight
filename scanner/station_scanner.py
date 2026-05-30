@@ -713,6 +713,13 @@ def scan_save(
                         storage       = _parse_station_storage(elem)
                         docked_ships  = _extract_station_docked_ships(elem)
 
+                        # Station account: own="1" marks the station's own money,
+                        # as opposed to trade escrow accounts which have no own attr.
+                        acct_elem     = elem.find('account[@own="1"]')
+                        account_amount = int(acct_elem.get('amount')) if acct_elem is not None and acct_elem.get('amount') else None
+                        account_min    = int(acct_elem.get('min'))    if acct_elem is not None and acct_elem.get('min')    else None
+                        account_max    = int(acct_elem.get('max'))    if acct_elem is not None and acct_elem.get('max')    else None
+
                         raw_state = elem.get('state')
                         status    = _STATE_LABELS.get(raw_state, "Operational")
 
@@ -755,6 +762,9 @@ def scan_save(
                             "cargo_adj_pct":           storage["cargo_adj_pct"],
                             "inventory":     storage["inventory"],
                             "modules":       modules,
+                            "account_amount": account_amount,
+                            "account_min":    account_min,
+                            "account_max":    account_max,
                         }
 
                         if not any(s["code"] == code for s in data["stations"]):

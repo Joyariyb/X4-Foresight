@@ -975,6 +975,11 @@ def scan_save_and_ships(
                         raw_state = elem.get('state')
                         status    = _STATE_LABELS.get(raw_state, "Operational")
 
+                        acct_elem      = elem.find('account[@own="1"]')
+                        account_amount = int(acct_elem.get('amount')) if acct_elem is not None and acct_elem.get('amount') else None
+                        account_min    = int(acct_elem.get('min'))    if acct_elem is not None and acct_elem.get('min')    else None
+                        account_max    = int(acct_elem.get('max'))    if acct_elem is not None and acct_elem.get('max')    else None
+
                         entry = {
                             "name":          display_name,
                             "code":          code,
@@ -1014,6 +1019,9 @@ def scan_save_and_ships(
                             "cargo_adj_pct":           storage["cargo_adj_pct"],
                             "inventory":     storage["inventory"],
                             "modules":       modules,
+                            "account_amount": account_amount,
+                            "account_min":    account_min,
+                            "account_max":    account_max,
                         }
 
                         # De-duplicate by code — the same station can appear in

@@ -867,6 +867,16 @@ def display_results(data: dict):
                     detail = "  (" + "  ·  ".join(parts) + ")" if parts else ""
                     print(f"  {indent} Docked   : {len(docked)} ships{detail}")
 
+                # ── Station account / budget ──────────────────────────────────
+                acct_amount = s.get("account_amount")
+                acct_min    = s.get("account_min")
+                acct_max    = s.get("account_max")
+                if acct_amount is not None:
+                    acct_str = f"{acct_amount:,} Cr"
+                    if acct_min is not None and acct_max is not None:
+                        acct_str += f"  ·  Budget: {acct_min:,} – {acct_max:,} Cr"
+                    print(f"  {indent} Account  : {acct_str}")
+
                 # Blank line between stations within a sector for breathing room,
                 # but not after the last one (the sector group already adds one).
                 if not is_last:
