@@ -1,5 +1,6 @@
 import sys
 import os
+import math
 from collections import Counter, defaultdict
 from data.factions import FACTION_NAMES as _FACTION_NAMES
 from data.production import display_name_to_id, units_per_cycle, units_per_hour, inputs_per_cycle, runtime_minutes
@@ -102,9 +103,9 @@ def display_trade_log(data: dict):
     ship_cr     = sum(t["total_cr"] for t in ship_trades)
     n           = len(trades)
     parts       = [f"{n} {'order' if n == 1 else 'orders'}"]
-    if inbound_cr:  parts.append(f"Inbound: {inbound_cr:,.0f} Cr")
-    if outbound_cr: parts.append(f"Outbound: {outbound_cr:,.0f} Cr")
-    if ship_cr:     parts.append(f"Ship routes: {ship_cr:,.0f} Cr")
+    if inbound_cr:  parts.append(f"Inbound: {math.floor(inbound_cr):,} Cr")
+    if outbound_cr: parts.append(f"Outbound: {math.floor(outbound_cr):,} Cr")
+    if ship_cr:     parts.append(f"Ship routes: {math.floor(ship_cr):,} Cr")
     print(f"  {'  ·  '.join(parts)}")
     print()
 
@@ -142,7 +143,7 @@ def display_trade_log(data: dict):
             sell_total = sum(v[2] for v in sells.values())
 
             # Station separator — code + per-station totals on one line.
-            print(f"  ── {code}  ·  In: {buy_total:,.0f} Cr  ·  Out: {sell_total:,.0f} Cr")
+            print(f"  ── {code}  ·  In: {math.floor(buy_total):,} Cr  ·  Out: {math.floor(sell_total):,} Cr")
 
             rows = (
                 [("In",  w, *v) for w, v in sorted(buys.items())] +
@@ -150,7 +151,7 @@ def display_trade_log(data: dict):
             )
             for direction, ware, n, units, total, ships in rows:
                 avg = total / units if units else 0
-                print(f"  {direction:<3}  {ware:<{wc}}  {n:>6}  {units:>9,}  {avg:>11,.0f}  {total:>14,.0f}")
+                print(f"  {direction:<3}  {ware:<{wc}}  {n:>6}  {units:>9,}  {avg:>11,.0f}  {math.floor(total):>14,}")
                 if ships:
                     # ↳ line indented to align with the start of the Ware column.
                     # Indent = 2 (margin) + 3 (dir) + 2 (gap) = 7 spaces.
@@ -165,7 +166,7 @@ def display_trade_log(data: dict):
     if ship_trades:
         n_st = len(ship_trades)
         print(f"  PLAYER SHIPS — NPC-to-NPC ROUTES  ·  "
-              f"{n_st} {'order' if n_st == 1 else 'orders'}  ·  {ship_cr:,.0f} Cr")
+              f"{n_st} {'order' if n_st == 1 else 'orders'}  ·  {math.floor(ship_cr):,} Cr")
         print()
 
         sc = max(
@@ -185,7 +186,7 @@ def display_trade_log(data: dict):
             dest  = t.get("buyer_code") or "?"
             print(
                 f"  {label:<{sc}}  {t['ware_name']:<{wc}}  "
-                f"{t['amount']:>9,}  {t['price_cr']:>9,.0f}  {t['total_cr']:>14,.0f}  → {dest}"
+                f"{t['amount']:>9,}  {t['price_cr']:>9,.2f}  {math.floor(t['total_cr']):>14,}  → {dest}"
             )
         print()
 
@@ -229,13 +230,20 @@ def display_trade_history(data: dict):
 
     # ── Top-level summary line ────────────────────────────────────────────────
     bought_cr = sum(t["total_cr"] for t in history if t["player_is_buyer"])
-    sold_cr   = sum(t["total_cr"] for t in history if t["player_is_seller"])
+    # Exclude courier pickup legs (BUY legs where station sold to its own ship at
+    # the internal handoff price). Include homebase-attributed SELL legs instead,
+    # which carry the correct commercial price the NPC buyer actually paid.
+    sold_cr   = sum(
+        t["total_cr"] for t in history
+        if (t["player_is_seller"] or t.get("_homebase_seller_id"))
+        and not t.get("_courier_pickup")
+    )
     oldest_s  = max((t["time_ago_s"] for t in history), default=0)
     age_str   = f"{oldest_s / 3600:.1f}h" if oldest_s >= 3600 else f"{oldest_s / 60:.0f}m"
     n         = len(history)
 
     print(f"  {n:,} {'entry' if n == 1 else 'entries'}  ·  "
-          f"Purchased: {bought_cr:,.0f} Cr  ·  Sold: {sold_cr:,.0f} Cr  ·  "
+          f"Purchased: {math.floor(bought_cr):,} Cr  ·  Sold: {math.floor(sold_cr):,} Cr  ·  "
           f"Log covers last ~{age_str}")
     print()
 
@@ -273,6 +281,24 @@ def display_trade_history(data: dict):
         """Clip to exactly `width` chars — f-string :<N pads but never clips."""
         return label if len(label) <= width else label[:width - 1] + "…"
 
+    # ── Entry classification helpers ──────────────────────────────────────────
+    # Defined here (before Section 1) so they are available to both the summary
+    # aggregation and the individual trade log sections below.
+
+    def _is_internal(t: dict) -> bool:
+        """True for trades where goods flow between player-owned entities.
+
+        Covers station-to-station transfers and player ships delivering TO a
+        player station (mining, inbound transport). Explicitly excludes the
+        case where a player ship is picking up from a player station to sell
+        to an NPC — that ship is just the commercial transport leg.
+        """
+        if t["player_is_buyer"] and t["player_is_seller"]:
+            return True  # station-to-station
+        if t["player_is_buyer"] and t.get("player_ship_is_seller", False):
+            return True  # player ship delivering to player station
+        return False
+
     # ═════════════════════════════════════════════════════════════════════════
     #  SECTION 1 — SUMMARY BY STATION
     # ═════════════════════════════════════════════════════════════════════════
@@ -282,12 +308,17 @@ def display_trade_history(data: dict):
         "Out": defaultdict(lambda: [0, 0, 0.0]),
     })
     for t in history:
+        if _is_internal(t) or t.get("_courier_pickup"):
+            continue
         ware = t["ware_name"]
         if t["player_is_buyer"]:
             r = agg[t["buyer_code"]]["In"][ware]
             r[0] += 1;  r[1] += t["amount"];  r[2] += t["total_cr"]
         if t["player_is_seller"]:
             r = agg[t["seller_code"]]["Out"][ware]
+            r[0] += 1;  r[1] += t["amount"];  r[2] += t["total_cr"]
+        if t.get("_homebase_seller_id"):
+            r = agg[t["_homebase_seller_code"]]["Out"][ware]
             r[0] += 1;  r[1] += t["amount"];  r[2] += t["total_cr"]
 
     agg_wc = max(
@@ -311,7 +342,7 @@ def display_trade_history(data: dict):
 
         name  = code_to_name.get(code)
         label = f"{name}  [{code}]" if name else code
-        print(f"  ── {label}  ·  Purchased: {buy_total:,.0f} Cr  ·  Sold: {sell_total:,.0f} Cr")
+        print(f"  ── {label}  ·  Purchased: {math.floor(buy_total):,} Cr  ·  Sold: {math.floor(sell_total):,} Cr")
 
         rows = (
             [("In",  w, *v) for w, v in sorted(inbound.items())] +
@@ -320,7 +351,7 @@ def display_trade_history(data: dict):
         for direction, ware, n_trades, units, total in rows:
             avg = total / units if units else 0
             # 5-space indent visually nests these rows under the station header above.
-            print(f"       {direction:<3}  {ware:<{agg_wc}}  {n_trades:>6}  {units:>9,}  {avg:>11,.0f}  {total:>14,.0f}")
+            print(f"       {direction:<3}  {ware:<{agg_wc}}  {n_trades:>6}  {units:>9,}  {avg:>11,.0f}  {math.floor(total):>14,}")
 
         print()
 
@@ -328,31 +359,25 @@ def display_trade_history(data: dict):
     #  SECTION 2 — INDIVIDUAL TRADE LOG
     # ═════════════════════════════════════════════════════════════════════════
 
-    def _is_internal(t: dict) -> bool:
-        """True for trades where goods flow between player-owned entities.
-
-        Covers station-to-station transfers and player ships delivering TO a
-        player station (mining, inbound transport). Explicitly excludes the
-        case where a player ship is picking up from a player station to sell
-        to an NPC — that ship is just the commercial transport leg.
-        """
-        if t["player_is_buyer"] and t["player_is_seller"]:
-            return True  # station-to-station
-        if t["player_is_buyer"] and t.get("player_ship_is_seller", False):
-            return True  # player ship delivering to player station
-        return False
-
     # Commercial: player station on one side, external NPC on the other.
+    # Also includes homebase-attributed SELL legs (player courier delivering from
+    # a player station to an NPC buyer). Courier pickup legs are suppressed — the
+    # SELL leg shows the correct commercial price, the BUY leg would show the
+    # internal handoff price.
     station_entries = sorted(
         (t for t in history
-         if (t["player_is_buyer"] or t["player_is_seller"]) and not _is_internal(t)),
+         if (t["player_is_buyer"] or t["player_is_seller"] or t.get("_homebase_seller_id"))
+         and not _is_internal(t)
+         and not t.get("_courier_pickup")),
         key=lambda t: t["time_ago_s"],
     )
-    # Player ship as transport on an NPC-to-NPC route — no player station on either side.
+    # Player ship as transport with no player station on either side.
+    # Homebase-attributed SELL legs have moved to station_entries above.
     ship_entries = sorted(
         (t for t in history
          if (t.get("player_ship_is_buyer") or t.get("player_ship_is_seller"))
          and not (t["player_is_buyer"] or t["player_is_seller"])
+         and not t.get("_homebase_seller_id")
          and not _is_internal(t)),
         key=lambda t: t["time_ago_s"],
     )
@@ -372,18 +397,28 @@ def display_trade_history(data: dict):
     # Helpers shared by the commercial station and internal trade sections.
     def _st_key(t: dict) -> tuple[str, str]:
         """(object_id, code) of the player-station side of this entry."""
+        if t.get("_homebase_seller_id"):
+            # SELL leg attributed to a homebase player station — group under that station.
+            return (t["_homebase_seller_id"], t["_homebase_seller_code"])
         return (t["buyer_id"],  t["buyer_code"])  if t["player_is_buyer"] \
           else (t["seller_id"], t["seller_code"])
 
     def _ship_lbl(t: dict) -> str:
         """Display label for the entity on the non-player-station side."""
-        ship_id   = t["seller_id"]   if t["player_is_buyer"] else t["buyer_id"]
-        ship_code = t["seller_code"] if t["player_is_buyer"] else t["buyer_code"]
+        if t.get("_homebase_seller_id"):
+            # Original seller_id is still the ship (not the homebase station).
+            ship_id   = t["seller_id"]
+            ship_code = t["seller_code"]
+        else:
+            ship_id   = t["seller_id"]   if t["player_is_buyer"] else t["buyer_id"]
+            ship_code = t["seller_code"] if t["player_is_buyer"] else t["buyer_code"]
         return f"★ {ship_code}" if ship_id in player_ship_ids else ship_code
 
     def _ship_id(t: dict) -> str:
         """Hex component ID of the non-player-station entity (seller if player buys, buyer if player sells).
         Shown in the Ship ID column so any ship can be cross-referenced in the save XML."""
+        if t.get("_homebase_seller_id"):
+            return t["seller_id"] or "—"
         sid = t["seller_id"] if t["player_is_buyer"] else t["buyer_id"]
         return sid or "—"
 
@@ -429,7 +464,7 @@ def display_trade_history(data: dict):
                 print(f"     {_age(t['time_ago_s']):<{tc}}  "
                       f"{_truncate(_ship_lbl(t), st_shc):<{st_shc}}  {_ship_id(t):<{st_ic}}  {direction}  "
                       f"{t['ware_name']:<{st_wc}}  {t['amount']:>9,}  {t['price_cr']:>9,.2f}  "
-                      f"{t['total_cr']:>12,.0f}  {cp:<{st_cc}}")
+                      f"{math.floor(t['total_cr']):>12,}  {cp:<{st_cc}}")
             print()
 
     # ── Table 2: ship-only trades (no player station on either side) ──────────
@@ -470,7 +505,7 @@ def display_trade_history(data: dict):
             print(f"  {_age(t['time_ago_s']):<{tc2}}  "
                   f"{_truncate(_ship_lbl2(t), shc2):<{shc2}}  {_ship_id2(t):<{ic2}}  {direction}  "
                   f"{t['ware_name']:<{wc2}}  {t['amount']:>9,}  {t['price_cr']:>9,.2f}  "
-                  f"{t['total_cr']:>12,.0f}  {cp:<{cc2}}")
+                  f"{math.floor(t['total_cr']):>12,}  {cp:<{cc2}}")
 
         print()
 
@@ -508,8 +543,111 @@ def display_trade_history(data: dict):
                 print(f"     {_age(t['time_ago_s']):<{tc_i}}  "
                       f"{_truncate(_ship_lbl(t), in_shc):<{in_shc}}  {_ship_id(t):<{in_ic}}  {direction}  "
                       f"{t['ware_name']:<{in_wc}}  {t['amount']:>9,}  {t['price_cr']:>9,.2f}  "
-                      f"{t['total_cr']:>12,.0f}")
+                      f"{math.floor(t['total_cr']):>12,}")
             print()
+
+
+def display_in_progress_deliveries(data: dict):
+    """
+    Prints deliveries that are physically mid-flight at save time — ships that
+    have already picked up their cargo and are en route to drop it off.
+
+    A delivery is "in progress" when the ship has an active TradePerform order
+    AND a DockAt sub-order pointing at its delivery destination. The scanner
+    captures this in delivery_dest_index (ship_id → destination station ID);
+    we cross-reference that against the active trades list to find the matching
+    ware, quantity, and price.
+
+    Ships without a matching TradePerform entry are shown with ware = "—" so
+    mid-delivery ships that bypassed the trade scanner are still visible.
+    """
+    LINE   = "─" * 68
+    trades = data.get("trades", [])
+    delivery_dest_index: dict = data.get("delivery_dest_index", {})
+    id_to_label: dict = {}
+
+    # Build station ID → display code from player and NPC stations.
+    for st in data.get("stations", []) + data.get("npc_stations", []):
+        oid = st.get("object_id")
+        if oid:
+            id_to_label[oid] = st.get("code") or oid
+
+    # Build ship display labels.
+    ship_labels: dict[str, str] = {}
+    for s in data.get("ships", {}).get("player_ships", []):
+        code = s.get("code", "")
+        name = s.get("name")
+        oid  = s.get("object_id", "")
+        if oid:
+            ship_labels[oid] = f"{name} [{code}]" if name else code
+
+    print(LINE)
+    print("  IN PROGRESS DELIVERIES")
+    print()
+
+    if not data.get("trades_scanned"):
+        print("    Trade scan not selected.")
+        return
+
+    if not delivery_dest_index:
+        print("    No ships currently mid-delivery.")
+        return
+
+    # Index trades by ship_id for fast lookup.
+    trade_by_ship: dict[str, dict] = {
+        t["ship_id"]: t for t in trades if t.get("ship_id")
+    }
+
+    # Only show deliveries involving a player station or player ship.
+    relevant = {
+        ship_id: dest_id
+        for ship_id, dest_id in delivery_dest_index.items()
+        if ship_id in trade_by_ship or ship_id in ship_labels
+    }
+
+    if not relevant:
+        print("    No player-related deliveries in progress.")
+        return
+
+    total_cr = sum(
+        math.floor(trade_by_ship[sid]["total_cr"])
+        for sid in relevant
+        if sid in trade_by_ship
+    )
+
+    n = len(relevant)
+    print(f"  {n} {'delivery' if n == 1 else 'deliveries'}  ·  Value in transit: {total_cr:,} Cr")
+    print()
+
+    sc = max(
+        (len(ship_labels.get(sid, sid)) for sid in relevant),
+        default=20,
+    )
+    sc = max(20, min(44, sc + 1))
+    wc = max(
+        (len(trade_by_ship[sid]["ware_name"]) for sid in relevant if sid in trade_by_ship),
+        default=12,
+    )
+    wc = max(12, min(24, wc + 1))
+
+    print(f"  {'Ship':<{sc}}  {'Ware':<{wc}}  {'Units':>9}  {'Cr/unit':>9}  {'Total Cr':>12}  Destination")
+    print(f"  {'─'*sc}  {'─'*wc}  {'─'*9}  {'─'*9}  {'─'*12}  {'─'*20}")
+
+    for ship_id, dest_id in sorted(relevant.items(),
+                                    key=lambda kv: ship_labels.get(kv[0], kv[0])):
+        ship_lbl = ship_labels.get(ship_id, ship_id)
+        dest_lbl = id_to_label.get(dest_id, dest_id)
+        t = trade_by_ship.get(ship_id)
+        if t:
+            print(
+                f"  {ship_lbl:<{sc}}  {t['ware_name']:<{wc}}  "
+                f"{t['amount']:>9,}  {t['price_cr']:>9,.2f}  "
+                f"{math.floor(t['total_cr']):>12,}  → {dest_lbl}"
+            )
+        else:
+            print(f"  {ship_lbl:<{sc}}  {'—':<{wc}}  {'—':>9}  {'—':>9}  {'—':>12}  → {dest_lbl}")
+
+    print()
 
 
 def display_results(data: dict):
@@ -1078,6 +1216,7 @@ def display_results(data: dict):
         print()
 
     display_trade_log(data)
+    display_in_progress_deliveries(data)
     display_trade_history(data)
 
     print(f"\n{SEP}")

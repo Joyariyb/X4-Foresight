@@ -872,9 +872,10 @@ def scan_ships(
 
                             shield = _parse_shield(se)
 
+                            _ps_id = se.get('id', '')
                             player_ships.append({
                                 "code":        code,
-                                "object_id":   se.get('id', ''),  # hex ref e.g. "[0x4d4c]" — used as buyer/seller in economylog trade entries
+                                "object_id":   _ps_id,  # hex ref e.g. "[0x4d4c]" — used as buyer/seller in economylog trade entries
                                 "name":        name,
                                 "class":       cls,
                                 "size":        size,
@@ -894,6 +895,20 @@ def scan_ships(
                                 "shield_max":  shield["shield_max"],
                                 "shield_pct":  shield["shield_pct"],
                             })
+
+                            # Index homebase for player ships so active trade
+                            # attribution can resolve which station a courier
+                            # ship is assigned to.
+                            _ps_hb   = _parse_homebase(se)
+                            _ps_conn = se.get('_conn_id', '')
+                            if _ps_id and _ps_hb:
+                                homebase_index[_ps_id] = _ps_hb
+                                if _ps_conn:
+                                    try:
+                                        homebase_index[f"[{hex(int(_ps_conn))}]"] = _ps_hb
+                                    except (ValueError, TypeError):
+                                        pass
+
                             # Also extract any ships docked inside this one.
                             # Carriers hold fighter wings internally — those ships
                             # are invisible to the main iterparse loop because the

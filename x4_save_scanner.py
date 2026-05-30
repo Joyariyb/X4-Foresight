@@ -605,8 +605,9 @@ if __name__ == "__main__":
             }
             # Append ship crew after managers so managers appear first in the list.
             game_data["crew"] += ship_crew
-            game_data["stations_scanned"] = True
-            game_data["ships_scanned"]    = True
+            game_data["stations_scanned"]    = True
+            game_data["ships_scanned"]       = True
+            game_data["delivery_dest_index"] = delivery_dest_index
 
             if include_npc_stations:
                 # NPC stations were collected unfiltered — apply the player-sector
@@ -704,6 +705,7 @@ if __name__ == "__main__":
                 # Capture homebase and delivery dest indexes for counterparty resolution.
                 homebase_index      = ships_result.get("homebase_index", {})
                 delivery_dest_index = ships_result.get("delivery_dest_index", {})
+                game_data["delivery_dest_index"] = delivery_dest_index
 
         # ── Pass 2: reputation ────────────────────────────────────────────────
         if "reputation" in passes:
@@ -788,6 +790,32 @@ if __name__ == "__main__":
                 game_data["trades_scanned"]        = True
                 game_data["trade_history"]         = trade_result["trade_history"]
                 game_data["trade_history_scanned"] = True
+
+                # ── Active trade homebase attribution ──────────────────────────
+                # TradePerform orders for player-courier ships don't reference
+                # the originating player station — the <trade> element only has
+                # buyer (NPC station) and partner (ship). Now that homebase_index
+                # includes player ships (added during ship buffering), we can
+                # look up each courier ship's assigned station and attribute the
+                # active trade to it. This moves the entry from "NPC-to-NPC routes"
+                # into the per-station STATION TRADES section of the active log.
+                _at_code_map: dict = {
+                    st["object_id"]: st["code"]
+                    for st in game_data.get("stations", [])
+                    if st.get("object_id") and st.get("code")
+                }
+                for _at in game_data["trades"]:
+                    if not _at.get("player_is_ship"):
+                        continue
+                    _at_ship_id = _at.get("ship_id", "")
+                    _at_hb_id   = homebase_index.get(_at_ship_id)
+                    if not _at_hb_id or _at_hb_id not in player_station_ids:
+                        continue
+                    # Attribute the active trade to the homebase player station.
+                    _at["player_is_seller"] = True
+                    _at["player_is_ship"]   = False
+                    _at["seller_id"]        = _at_hb_id
+                    _at["seller_code"]      = _at_code_map.get(_at_hb_id, _at_hb_id)
                 # NPC free-trader visit log — maps ship hex ID to the NPC stations
                 # it traded at (one record per economy-log entry: ware + time_ago_s).
                 # Used in Step 4 of the counterparty resolution loop below to
@@ -990,6 +1018,19 @@ if __name__ == "__main__":
                     # directly from cp_id's side rather than a separate derived variable,
                     # so it stays correct even when multiple player-entity flags are set.
                     if cp_id in player_ship_ids:
+                        # If this is a player-station BUY leg (station sold to own ship)
+                        # and the ship is currently mid-delivery, the commercial SELL leg
+                        # hasn't been logged yet. Suppress it here so it doesn't appear as
+                        # a completed Out trade — it belongs in IN PROGRESS DELIVERIES.
+                        if (entry.get("player_is_seller")
+                                and entry.get("player_ship_is_buyer")
+                                and delivery_dest_index.get(cp_id)):
+                            entry["_courier_pickup"] = True
+                            dest_id   = delivery_dest_index[cp_id]
+                            dest_name = npc_station_by_id.get(dest_id)
+                            entry["counterparty_station"] = dest_name
+                            continue
+
                         ship_role = "seller" if cp_id == entry["seller_id"] else "buyer"
                         # own_station_id lets _paired_station detect and discard entries
                         # where the non-ship side is our own station (e.g. a gas miner
@@ -1068,10 +1109,12 @@ if __name__ == "__main__":
                                     continue
 
                     # Step 6 — active delivery order resolution.
-                    # Only applies when the player station is the SELLER (i.e. the
-                    # NPC ship bought goods from the player and is now delivering
-                    # them elsewhere). The DockAt destination is where that delivery
-                    # is going, which is the counterparty we want.
+                    # When the player station is the SELLER and the buyer ship is
+                    # currently mid-delivery (DockAt sub-order in delivery_dest_index),
+                    # the delivery hasn't completed yet — the economy log records the
+                    # pickup but not the sale. Suppress the BUY leg from the completed
+                    # history (it will appear in IN PROGRESS DELIVERIES instead) and
+                    # resolve the counterparty for reference.
                     if entry["player_is_seller"]:
                         _cp_ship_id = entry.get("buyer_id", "")
                         if _cp_ship_id:
@@ -1080,13 +1123,105 @@ if __name__ == "__main__":
                                 _dest_name = npc_station_by_id.get(_dest_id)
                                 if _dest_name:
                                     entry["counterparty_station"] = _dest_name
-                                    continue
+                                # Ship is mid-delivery — the commercial SELL leg
+                                # hasn't been logged yet. Suppress the BUY leg so
+                                # it doesn't show as a completed Out trade.
+                                if entry.get("player_ship_is_buyer"):
+                                    entry["_courier_pickup"] = True
+                                continue
 
                     entry["counterparty_station"] = None
 
                 resolved = sum(1 for e in game_data["trade_history"] if e.get("counterparty_station"))
                 print(f"[Done] Counterparty stations resolved: "
                       f"{resolved}/{len(game_data['trade_history'])} entries.")
+
+                # ── SELL leg homebase attribution ──────────────────────────────
+                # Middleman-courier player ships generate two economy log entries
+                # per delivery: a BUY leg (station → ship at internal handoff
+                # price) and a SELL leg (ship → NPC buyer at commercial price).
+                # We attribute the SELL leg to the ship's homebase player station
+                # so it appears in STATION TRADES at the correct commercial price,
+                # and mark the BUY leg as a courier pickup so display.py can
+                # suppress it (it would otherwise show the internal handoff price
+                # instead of what the NPC buyer actually paid).
+                #
+                # TradeRoutine free-traders are unaffected: their homebase is a
+                # sector ID, not a player station, so the check below fails for
+                # them and their BUY legs remain in STATION TRADES unchanged.
+                _ps_code_map: dict = {
+                    st["object_id"]: st["code"]
+                    for st in game_data.get("stations", [])
+                    if st.get("object_id") and st.get("code")
+                }
+                # Index BUY legs by (ship_id, ware) for fast matching.
+                # A BUY leg has player_is_seller=True (station sold) and
+                # player_ship_is_buyer=True (the buyer is a player ship).
+                _buy_leg_idx: dict = {}
+                for _e in game_data["trade_history"]:
+                    if _e["player_is_seller"] and _e.get("player_ship_is_buyer"):
+                        _k = (_e["buyer_id"], _e["ware"])
+                        _buy_leg_idx.setdefault(_k, []).append(_e)
+
+                for _e in game_data["trade_history"]:
+                    # Only process SELL legs where a player ship is the seller
+                    # and no player station is already attributed on either side.
+                    if (not _e.get("player_ship_is_seller")
+                            or _e["player_is_buyer"]
+                            or _e["player_is_seller"]):
+                        continue
+                    _sell_ship_id = _e["seller_id"]
+                    _ware         = _e["ware"]
+                    # Find BUY legs for the same ship and ware.  The BUY leg's
+                    # seller_id IS the player station — no homebase index needed.
+                    _candidates = _buy_leg_idx.get((_sell_ship_id, _ware), [])
+                    if not _candidates:
+                        continue  # no player-station pickup found for this delivery
+                    # Closest BUY leg in time (BUY always precedes the SELL leg).
+                    _best_buy   = min(_candidates,
+                                      key=lambda x: abs(x["time_ago_s"] - _e["time_ago_s"]))
+                    _station_id = _best_buy["seller_id"]  # player station that loaded the ship
+                    if _station_id not in player_station_ids:
+                        continue  # safety guard — shouldn't happen
+                    # Attribute SELL leg to the player station.
+                    # Original seller_id (the ship) is kept intact so display.py
+                    # can still show which ship made the delivery.
+                    _e["_homebase_seller_id"]   = _station_id
+                    _e["_homebase_seller_code"] = _ps_code_map.get(_station_id, _station_id)
+                    # Suppress the BUY leg from the commercial view — it carries
+                    # the internal handoff price, not the NPC buyer's price.
+                    _best_buy["_courier_pickup"] = True
+
+                # ── Pending-delivery suppression ───────────────────────────────
+                # After attribution, some BUY legs remain unmatched (no _courier_pickup).
+                # A BUY leg is a pending delivery when it is more recent than every
+                # SELL leg for the same ship+ware — meaning the ship picked up cargo
+                # but hasn't delivered yet. These must be suppressed from the completed
+                # trade history; the in-progress delivery section covers them instead.
+                #
+                # Build a minimum time_ago_s for each (ship, ware) sell leg so we
+                # can compare per-BUY in O(1).
+                _min_sell_timeago: dict = {}
+                for _e in game_data["trade_history"]:
+                    if (not _e.get("player_ship_is_seller")
+                            or _e["player_is_buyer"]
+                            or _e["player_is_seller"]):
+                        continue
+                    _k = (_e["seller_id"], _e["ware"])
+                    cur = _min_sell_timeago.get(_k, float("inf"))
+                    if _e["time_ago_s"] < cur:
+                        _min_sell_timeago[_k] = _e["time_ago_s"]
+
+                for _e in game_data["trade_history"]:
+                    if _e.get("_courier_pickup"):
+                        continue
+                    if not (_e["player_is_seller"] and _e.get("player_ship_is_buyer")):
+                        continue
+                    _k = (_e["buyer_id"], _e["ware"])
+                    min_sell = _min_sell_timeago.get(_k, float("inf"))
+                    # BUY is more recent than all SELL legs → no delivery logged yet.
+                    if _e["time_ago_s"] < min_sell:
+                        _e["_courier_pickup"] = True
 
             else:
                 # Active orders only — single pass, no history.
