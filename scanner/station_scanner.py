@@ -6,6 +6,7 @@ from data.wares import WARE_NAMES, WARE_VOLUME, WARE_TRANSPORT
 from data.station_stats import STATION_STATS
 from scanner.language import macro_to_sector_name, nameindex_to_roman, resolve_sector_from_location, resolve_station_type, open_save, resolve_text_ref
 from scanner.crew_scanner import _parse_manager, _iter_components
+from scanner.budget import estimate_station_budget
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  CONSTANTS
@@ -712,6 +713,10 @@ def scan_save(
                         health        = _parse_station_health(modules)
                         storage       = _parse_station_storage(elem)
                         docked_ships  = _extract_station_docked_ships(elem)
+                        # Reverse-engineered supply budget the station manager would
+                        # allocate; needs the resolved sector name for the sunlight
+                        # multiplier used in energy-cell production.
+                        budget        = estimate_station_budget(elem, station_sector_pending)
 
                         # Station account: own="1" marks the station's own money,
                         # as opposed to trade escrow accounts which have no own attr.
@@ -761,6 +766,7 @@ def scan_save(
                             "cargo_adj_m3":            storage["cargo_adj_m3"],
                             "cargo_adj_pct":           storage["cargo_adj_pct"],
                             "inventory":     storage["inventory"],
+                            "budget":        budget,
                             "modules":       modules,
                             "account_amount": account_amount,
                             "account_min":    account_min,

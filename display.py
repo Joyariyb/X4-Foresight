@@ -867,14 +867,16 @@ def display_results(data: dict):
                     detail = "  (" + "  ·  ".join(parts) + ")" if parts else ""
                     print(f"  {indent} Docked   : {len(docked)} ships{detail}")
 
-                # ── Station account / budget ──────────────────────────────────
-                acct_amount = s.get("account_amount")
-                acct_min    = s.get("account_min")
-                acct_max    = s.get("account_max")
+                # ── Station account & supply budget ───────────────────────────
+                # Account = the station's current cash on hand (left as-is).
+                # Budget  = our reverse-engineered supply budget (scanner/budget.py),
+                # replacing the old account min–max range that used to stand in for it.
+                acct_amount  = s.get("account_amount")
+                budget_total = (s.get("budget") or {}).get("total")
                 if acct_amount is not None:
                     acct_str = f"{acct_amount:,} Cr"
-                    if acct_min is not None and acct_max is not None:
-                        acct_str += f"  ·  Budget: {acct_min:,} – {acct_max:,} Cr"
+                    if budget_total:
+                        acct_str += f"  ·  Budget: {budget_total:,.0f} Cr"
                     print(f"  {indent} Account  : {acct_str}")
 
                 # Blank line between stations within a sector for breathing room,

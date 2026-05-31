@@ -66,6 +66,7 @@ from scanner.station_scanner import (
     _parse_station_health,
     _parse_station_storage,
 )
+from scanner.budget import estimate_station_budget
 from scanner.ship_scanner import (
     SIZE_LABELS,
     extract_role,
@@ -879,6 +880,9 @@ def scan_save_and_ships(
                         health       = _parse_station_health(modules)
                         storage      = _parse_station_storage(elem)
                         docked_ships = _extract_station_docked_ships(elem)
+                        # Reverse-engineered supply budget; needs the resolved
+                        # sector name for the sunlight multiplier (see scanner/budget.py).
+                        budget       = estimate_station_budget(elem, station_sector_pending)
 
                         # Index NPC ships and fully extract player ships docked at
                         # this player station. The inside_station guard blocks the
@@ -1018,6 +1022,7 @@ def scan_save_and_ships(
                             "cargo_adj_m3":            storage["cargo_adj_m3"],
                             "cargo_adj_pct":           storage["cargo_adj_pct"],
                             "inventory":     storage["inventory"],
+                            "budget":        budget,
                             "modules":       modules,
                             "account_amount": account_amount,
                             "account_min":    account_min,
