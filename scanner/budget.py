@@ -46,6 +46,7 @@ import re
 from data.production_stats import PRODUCTION_STATS
 from data.ware_prices import WARE_PRICES
 from data.sector_stats import SECTOR_SUNLIGHT
+from data.wares import WARE_NAMES
 from scanner.crew_scanner import _iter_components
 
 # Production module macros look like prod_{faction}_{ware}_macro, e.g.
@@ -311,11 +312,13 @@ def estimate_station_budget(station_elem, sector_name: str) -> dict:
 
         value = amount * price
         lines.append({
-            "ware":   ware,
-            "amount": amount,
-            "price":  price,
-            "value":  value,
-            "basis":  basis,
+            "ware":      ware,
+            # Display name for the UI/report; falls back to a title-cased id.
+            "ware_name": WARE_NAMES.get(ware, ware.replace('_', ' ').title()),
+            "amount":    amount,
+            "price":     price,
+            "value":     value,
+            "basis":     basis,
         })
 
     total = sum(line["value"] for line in lines)

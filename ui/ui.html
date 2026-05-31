@@ -1143,6 +1143,13 @@
     track.querySelectorAll('.tri-opt').forEach((o, i) => {
       o.classList.toggle('active', i === pos);
     });
+    // Swap the whole card body to the panel matching the slider position
+    // (0 = Overview, 1 = Economy, 2 = placeholder).
+    const card = document.getElementById('station-' + code);
+    if (!card) return;
+    card.querySelectorAll('.station-slider-panel').forEach(p => {
+      p.style.display = (p.dataset.slider === String(pos)) ? 'block' : 'none';
+    });
   }
 
   // Derives a 3-letter faction tag from the station's module list.
@@ -1569,6 +1576,42 @@
         storageRows = typeRowsHtml + totalRow;
       }
 
+      // ── ECONOMY PANEL (slider position 1) ──────────────────────────────────
+      // Renders the reverse-engineered supply budget (scanner/budget.py): a total
+      // header, the sunlight multiplier that scales energy-cell output, then one
+      // row per budgeted ware showing amount × price = value and the basis tag
+      // (which rule set the figure). Mirrors the validated console breakdown.
+      const bud      = s.budget || {};
+      const budLines = bud.lines || [];
+      const fmtCr    = n => n == null ? '—' : Math.round(n).toLocaleString();
+      const BASIS_LABEL = {
+        'manual storage cap':    'Manual cap',
+        'auto: 2h production':   'Auto · 2h prod',
+        'auto: 2h consumption':  'Auto · 2h use',
+        'trade (max price)':     'Trade · max',
+        'buy order (unverified)':'Buy order',
+      };
+      const econRows = budLines.length === 0
+        ? `<div style="padding:12px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No economy data</div>`
+        : `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 14px;background:var(--bg-panel);border-bottom:1px solid var(--border)">
+             <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-faint)">Supply Budget</span>
+             <span style="font-family:var(--font-mono);font-size:13px;color:var(--lime)">${fmtCr(bud.total)} Cr</span>
+           </div>
+           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 14px;border-bottom:1px solid var(--border)">
+             <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-faint)">Sunlight</span>
+             <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">${bud.sunlight != null ? Math.round(bud.sunlight*100)+'%' : '—'}</span>
+           </div>` +
+           budLines.map(ln => {
+              const wareCol = WARE_COLOURS[ln.ware_name] || 'var(--text-dim)';
+              return `<div style="display:flex;align-items:center;gap:8px;padding:5px 14px;border-bottom:1px solid var(--border)">
+                 <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase;color:${wareCol};min-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ln.ware_name}</span>
+                 <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-faint);padding:1px 5px;border:1px solid var(--border);border-radius:2px;white-space:nowrap">${BASIS_LABEL[ln.basis] || ln.basis}</span>
+                 <span style="flex:1"></span>
+                 <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);min-width:104px;text-align:right">${fmtCr(ln.amount)} × ${fmtCr(ln.price)}</span>
+                 <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);min-width:80px;text-align:right">${fmtCr(ln.value)}</span>
+               </div>`;
+           }).join('');
+
       return `<div class="panel" id="station-${s.code}">
         <!-- Header: vertical faction tag + name/location/status -->
         <div style="display:flex;min-height:52px">
@@ -1636,7 +1679,7 @@
                 <div class="tri-thumb"></div>
                 <span class="tri-opt active" onclick="setStationSlider('${s.code}',0)">Overview</span>
                 <span class="tri-opt"        onclick="setStationSlider('${s.code}',1)">Economy</span>
-                <span class="tri-opt"        onclick="setStationSlider('${s.code}',2)">Right</span>
+                <span class="tri-opt"        onclick="setStationSlider('${s.code}',2)">More</span>
               </div>
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px">
@@ -1645,6 +1688,10 @@
             </div>
           </div>
         </div>
+        <!-- Slider panel 0: Overview — the default station body (health, stats, tabs).
+             The three-position header slider (setStationSlider) swaps this whole
+             region for the Economy panel (1) or the placeholder (2). -->
+        <div class="station-slider-panel" data-slider="0" style="display:block">
         <!-- Hull + Shields health bars -->
         <div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
           <div style="padding:7px 14px;border-right:1px solid var(--border)">
@@ -1675,6 +1722,13 @@
         <!-- Tab panels -->
         <div class="station-tab-panel" data-tab="production" style="display:block">${prodRows}</div>
         <div class="station-tab-panel" data-tab="docked"     style="display:none">${dockedRows}</div>
+        </div>
+        <!-- Slider panel 1: Economy — reverse-engineered supply budget breakdown -->
+        <div class="station-slider-panel" data-slider="1" style="display:none">${econRows}</div>
+        <!-- Slider panel 2: placeholder for a future view -->
+        <div class="station-slider-panel" data-slider="2" style="display:none">
+          <div style="padding:12px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">—</div>
+        </div>
       </div>`;
     }).join("");
 
