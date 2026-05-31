@@ -219,6 +219,17 @@
     /* Dark text on the bright teal thumb; subtle emboss via text-shadow.       */
     .tri-opt.active { color: #051210; font-weight: 700; text-shadow: 0 1px 0 rgba(255,255,255,0.22); }
 
+    /* ── ECONOMY PIE CHART ── */
+    /* Slices dim slightly at rest and pop on hover; the hovered slice also nudges
+       outward via a per-slice translate set inline (transform-box keeps the
+       rotation/scale origin at the slice centroid). */
+    .pie-slice { cursor: pointer; transition: opacity 0.12s, filter 0.12s; opacity: 0.82; }
+    .pie-slice:hover { opacity: 1; filter: brightness(1.18); }
+    /* Radial ware labels splayed around the pie; pointer-events off so hover
+       always targets the slice beneath, not the text. */
+    .pie-label { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.04em;
+                 text-transform: uppercase; pointer-events: none; user-select: none; }
+
     /* ── SORT DROPDOWN ── */
     /* Sits inline in the section header, right of the divider line */
     .sort-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); flex-shrink: 0; }
@@ -569,6 +580,91 @@
     "Stimulants":                   "#e6ee9c",
     "Hallucinogenics":              "#b39ddb",
   };
+
+  // ── ECONOMY PIE CHART ──────────────────────────────────────────────────────
+  // Builds an interactive SVG donut/pie of a station's supply budget. Each slice
+  // is sized by its share of the total budget value and filled with the ware's
+  // text colour (WARE_COLOURS). Ware names are placed just outside their slice
+  // and rotated to the slice's mid-angle so they splay outward like spokes
+  // (flipped on the left half so text never reads upside-down). Every slice
+  // carries a data-budget-tip so the shared hover tooltip shows the full figures.
+  function economyPieSvg(bud) {
+    const lines = (bud.lines || []).filter(l => l.value > 0);
+    const total = lines.reduce((sum, l) => sum + l.value, 0);
+    if (!lines.length || total <= 0) {
+      return `<div style="padding:24px 14px;text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No budget to chart</div>`;
+    }
+
+    const cx = 150, cy = 150, r = 92, labelR = r + 14;
+    const polar = (cxx, cyy, rad, deg) => {
+      const a = (deg - 90) * Math.PI / 180; // -90 so 0° starts at the top
+      return [cxx + rad * Math.cos(a), cyy + rad * Math.sin(a)];
+    };
+
+    let angle = 0;
+    const slices = [];
+    const labels = [];
+    lines.forEach(ln => {
+      const frac  = ln.value / total;
+      const start = angle;
+      const end   = angle + frac * 360;
+      angle = end;
+      const mid   = (start + end) / 2;
+      const col   = WARE_COLOURS[ln.ware_name] || 'var(--text-dim)';
+
+      // Slice path. A single full-circle ware would degenerate the arc, so draw
+      // it as a complete circle instead of a zero-length wedge.
+      let path;
+      if (frac >= 0.999) {
+        path = `M ${cx} ${cy - r} A ${r} ${r} 0 1 1 ${cx - 0.01} ${cy - r} Z`;
+      } else {
+        const [x1, y1] = polar(cx, cy, r, start);
+        const [x2, y2] = polar(cx, cy, r, end);
+        const largeArc = (end - start) > 180 ? 1 : 0;
+        path = `M ${cx} ${cy} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
+      }
+
+      const pct = (frac * 100).toFixed(1);
+      const tip = encodeURIComponent(JSON.stringify({
+        ware: ln.ware_name, amount: ln.amount, price: ln.price,
+        value: ln.value, basis: ln.basis, pct, colour: col,
+      }));
+      // Nudge the hovered slice outward along its mid-angle (set as a CSS var the
+      // :hover rule could use; kept subtle via a transform on the group).
+      slices.push(
+        `<path class="pie-slice" d="${path}" fill="${col}" stroke="var(--bg-card)" stroke-width="1.5" data-budget-tip="${tip}"></path>`
+      );
+
+      // Radial label, rotated to the slice mid-angle and flipped on the left side.
+      const [lx, ly] = polar(cx, cy, labelR, mid);
+      const onLeft   = mid > 180;
+      const rot      = onLeft ? mid + 180 : mid; // keep upright
+      const anchor   = onLeft ? 'end' : 'start';
+      // Hide labels for very thin slices to avoid overlap clutter.
+      if (frac >= 0.03) {
+        labels.push(
+          `<text class="pie-label" x="${lx.toFixed(2)}" y="${ly.toFixed(2)}" fill="${col}"
+                 text-anchor="${anchor}" dominant-baseline="middle"
+                 transform="rotate(${(rot - 90).toFixed(2)} ${lx.toFixed(2)} ${ly.toFixed(2)})">${ln.ware_name}</text>`
+        );
+      }
+    });
+
+    // Centre hole + total label make it a donut and give the figures a home.
+    const hole = r * 0.5;
+    return `
+      <div style="display:flex;justify-content:center;padding:10px 6px 16px">
+        <svg viewBox="0 0 300 300" width="300" height="300" style="overflow:visible">
+          ${slices.join('')}
+          <circle cx="${cx}" cy="${cy}" r="${hole}" fill="var(--bg-card)"></circle>
+          <text x="${cx}" y="${cy - 6}" text-anchor="middle" fill="var(--text-faint)"
+                style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase">Budget</text>
+          <text x="${cx}" y="${cy + 12}" text-anchor="middle" fill="var(--lime)"
+                style="font-family:var(--font-mono);font-size:15px">${Math.round(bud.total).toLocaleString()}</text>
+          ${labels.join('')}
+        </svg>
+      </div>`;
+  }
 
   const ROLE_ICONS = {
     "Fighter":              "ti-rocket",
@@ -1591,26 +1687,15 @@
         'trade (max price)':     'Trade · max',
         'buy order (unverified)':'Buy order',
       };
+      // Compact sunlight strip above the interactive pie. The budget total lives
+      // in the donut centre, and per-ware figures appear on slice hover.
       const econRows = budLines.length === 0
         ? `<div style="padding:12px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No economy data</div>`
-        : `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 14px;background:var(--bg-panel);border-bottom:1px solid var(--border)">
-             <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-faint)">Supply Budget</span>
-             <span style="font-family:var(--font-mono);font-size:13px;color:var(--lime)">${fmtCr(bud.total)} Cr</span>
-           </div>
-           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 14px;border-bottom:1px solid var(--border)">
+        : `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 14px;background:var(--bg-panel);border-bottom:1px solid var(--border)">
              <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-faint)">Sunlight</span>
              <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">${bud.sunlight != null ? Math.round(bud.sunlight*100)+'%' : '—'}</span>
            </div>` +
-           budLines.map(ln => {
-              const wareCol = WARE_COLOURS[ln.ware_name] || 'var(--text-dim)';
-              return `<div style="display:flex;align-items:center;gap:8px;padding:5px 14px;border-bottom:1px solid var(--border)">
-                 <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase;color:${wareCol};min-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ln.ware_name}</span>
-                 <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-faint);padding:1px 5px;border:1px solid var(--border);border-radius:2px;white-space:nowrap">${BASIS_LABEL[ln.basis] || ln.basis}</span>
-                 <span style="flex:1"></span>
-                 <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);min-width:104px;text-align:right">${fmtCr(ln.amount)} × ${fmtCr(ln.price)}</span>
-                 <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);min-width:80px;text-align:right">${fmtCr(ln.value)}</span>
-               </div>`;
-           }).join('');
+           economyPieSvg(bud);
 
       return `<div class="panel" id="station-${s.code}">
         <!-- Header: vertical faction tag + name/location/status -->
@@ -1810,6 +1895,34 @@
       `</div>`;
     }
 
+    function budgetTipHtml(d) {
+      // Per-slice economy tooltip: ware name in its colour, share of budget, the
+      // amount × price = value figures, and which rule set the value (basis).
+      const fmt = n => Math.round(n).toLocaleString();
+      const BASIS = {
+        'manual storage cap':    'Manual storage cap',
+        'auto: 2h production':   'Automatic · 2h production',
+        'auto: 2h consumption':  'Automatic · 2h consumption',
+        'trade (max price)':     'Trade ware · max price',
+        'buy order (unverified)':'Buy order',
+      };
+      return `<div style="min-width:200px;padding:2px 0">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:5px">
+          <span style="color:${d.colour};font-size:11px;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap">${d.ware}</span>
+          <span style="color:${d.colour};font-family:var(--font-mono);font-size:12px">${d.pct}%</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;gap:12px;padding:1px 0">
+          <span style="color:var(--text-faint);font-size:10px">Amount × Price</span>
+          <span style="color:var(--text-dim);font-family:var(--font-mono);font-size:10px">${fmt(d.amount)} × ${fmt(d.price)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;gap:12px;padding:1px 0">
+          <span style="color:var(--text-faint);font-size:10px">Value</span>
+          <span style="color:var(--lime);font-family:var(--font-mono);font-size:11px">${fmt(d.value)} Cr</span>
+        </div>
+        <div style="margin-top:5px;padding-top:4px;border-top:1px solid var(--border);font-size:10px;color:var(--text-faint)">${BASIS[d.basis] || d.basis}</div>
+      </div>`;
+    }
+
     function storageTipHtml(types) {
       // Renders each storage type as a label + % row followed by a fill bar.
       // Label, percentage, and m³ text all use the category's fixed accent colour.
@@ -1840,10 +1953,15 @@
     }
 
     document.addEventListener('mousemove', function(e) {
-      const el = e.target.closest('[data-hull-tip],[data-pilot-skills],[data-storage-tip],[data-modules-tip]');
+      const el = e.target.closest('[data-hull-tip],[data-pilot-skills],[data-storage-tip],[data-modules-tip],[data-budget-tip]');
       if (!el) { tip.style.display = 'none'; return; }
 
-      if (el.dataset.pilotSkills) {
+      if (el.dataset.budgetTip) {
+        // Economy pie slice: ware share, figures, and basis
+        tip.innerHTML = budgetTipHtml(JSON.parse(decodeURIComponent(el.dataset.budgetTip)));
+        tip.style.color      = '';
+        tip.style.whiteSpace = 'normal';
+      } else if (el.dataset.pilotSkills) {
         // Pilot skills: multi-line stars per skill
         tip.innerHTML = pilotTipHtml(JSON.parse(el.dataset.pilotSkills));
         tip.style.color      = '';
@@ -1879,15 +1997,38 @@
     document.addEventListener('mouseleave', function() { tip.style.display = 'none'; });
   })();
 
-  new QWebChannel(qt.webChannelTransport, function(channel) {
-    channel.objects.bridge.get_empire_data(function(jsonStr) {
-      try {
-        populate(JSON.parse(jsonStr));
-      } catch(e) {
-        document.getElementById("loading").textContent = "Error parsing data: " + e;
-      }
+  // Primary data path: the Qt QWebChannel bridge exposed by main_ui.py.
+  // When running inside QtWebEngine, `qt.webChannelTransport` exists and we pull
+  // the empire data straight from the EmpireBridge.
+  //
+  // Browser fallback: when opened in a plain browser (e.g. the dev preview
+  // server), there is no Qt bridge, so we fetch the exported JSON over HTTP
+  // instead. This lets the UI render with real data outside the desktop app for
+  // fast layout iteration. The bridge always wins when present — this branch
+  // only runs when it's absent.
+  function loadFromJsonFile() {
+    fetch('../x4_empire_state.json')
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(populate)
+      .catch(e => {
+        document.getElementById("loading").textContent =
+          "No Qt bridge and could not load x4_empire_state.json: " + e;
+      });
+  }
+
+  if (typeof qt !== 'undefined' && qt.webChannelTransport) {
+    new QWebChannel(qt.webChannelTransport, function(channel) {
+      channel.objects.bridge.get_empire_data(function(jsonStr) {
+        try {
+          populate(JSON.parse(jsonStr));
+        } catch(e) {
+          document.getElementById("loading").textContent = "Error parsing data: " + e;
+        }
+      });
     });
-  });
+  } else {
+    loadFromJsonFile();
+  }
 </script>
 
 <script>
