@@ -223,8 +223,16 @@
     /* Slices dim slightly at rest and pop on hover; the hovered slice also nudges
        outward via a per-slice translate set inline (transform-box keeps the
        rotation/scale origin at the slice centroid). */
-    .pie-slice { cursor: pointer; transition: opacity 0.12s, filter 0.12s; opacity: 0.82; }
-    .pie-slice:hover { opacity: 1; filter: brightness(1.18); }
+    /* Soft drop shadow under the whole ring so the donut lifts off the card.
+       CSS drop-shadow is used instead of an SVG <filter> (feDropShadow renders
+       inconsistently in this QtWebEngine build). */
+    .pie-ring { filter: drop-shadow(0 4px 5px rgba(0,0,0,0.5)); }
+    .pie-slice { cursor: pointer; transition: opacity 0.12s, filter 0.12s, transform 0.12s;
+                 opacity: 0.9; }
+    /* Lift the hovered slice toward the viewer along its mid-angle (--dx/--dy set
+       per slice) and brighten it, reinforcing the 3D feel on interaction. */
+    .pie-slice:hover { opacity: 1; filter: brightness(1.22) drop-shadow(0 3px 4px rgba(0,0,0,0.5));
+                       transform: translate(var(--dx,0), var(--dy,0)); }
     /* Radial ware labels splayed around the pie; pointer-events off so hover
        always targets the slice beneath, not the text. */
     .pie-label { font-family: var(--font-mono); font-size: 12px; font-weight: 600;
@@ -600,6 +608,7 @@
     }
 
     const cx = 150, cy = 150, r = 92, labelR = r + 14;
+    const lift = 7; // px a slice translates outward on hover (also sizes the sheen)
     const polar = (cxx, cyy, rad, deg) => {
       const a = (deg - 90) * Math.PI / 180; // -90 so 0° starts at the top
       return [cxx + rad * Math.cos(a), cyy + rad * Math.sin(a)];
@@ -633,10 +642,12 @@
         ware: ln.ware_name, amount: ln.amount, price: ln.price,
         value: ln.value, basis: ln.basis, pct, colour: col,
       }));
-      // Nudge the hovered slice outward along its mid-angle (set as a CSS var the
-      // :hover rule could use; kept subtle via a transform on the group).
+      // Per-slice outward unit vector along the mid-angle, exposed as CSS vars so
+      // the :hover rule can lift the slice toward the viewer for a 3D "pop".
+      const [ux, uy] = polar(0, 0, 1, mid); // unit direction from centre
       slices.push(
-        `<path class="pie-slice" d="${path}" fill="${col}" stroke="var(--bg-card)" stroke-width="1.5" data-budget-tip="${tip}"></path>`
+        `<path class="pie-slice" d="${path}" fill="${col}" stroke="var(--bg-card)" stroke-width="1.5"
+               style="--dx:${(ux*lift).toFixed(2)}px;--dy:${(uy*lift).toFixed(2)}px" data-budget-tip="${tip}"></path>`
       );
 
       // Radial label, rotated to the slice mid-angle and flipped on the left side.
@@ -664,11 +675,36 @@
 
     // Centre hole + total label make it a donut and give the figures a home.
     const hole = r * 0.5;
+    // 3D effect, all purely visual (labels/hover/geometry unchanged):
+    //  • pieDrop  — soft drop shadow under the ring so it lifts off the card
+    //  • pieSheen — a spherical highlight→shadow overlay (light from top-left)
+    //               laid over the slices so the ring reads as a curved surface
+    //  • pieHole  — a dark inner-edge gradient on the centre hole, making the
+    //               donut look like it has real thickness (recessed centre)
     return `
       <div style="display:flex;justify-content:center;padding:10px 6px 16px">
         <svg viewBox="-55 -25 410 350" width="440" height="376">
-          ${slices.join('')}
+          <defs>
+            <radialGradient id="pieSheen" cx="0.36" cy="0.30" r="0.75">
+              <stop offset="0%"   stop-color="#fff" stop-opacity="0.42"/>
+              <stop offset="42%"  stop-color="#fff" stop-opacity="0.06"/>
+              <stop offset="62%"  stop-color="#000" stop-opacity="0"/>
+              <stop offset="100%" stop-color="#000" stop-opacity="0.42"/>
+            </radialGradient>
+            <radialGradient id="pieHole" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="60%"  stop-color="#000" stop-opacity="0"/>
+              <stop offset="100%" stop-color="#000" stop-opacity="0.55"/>
+            </radialGradient>
+          </defs>
+          <g class="pie-ring">${slices.join('')}</g>
+          <!-- Spherical sheen sits above the slices but ignores pointer events
+               so slice hover/tooltip still works through it. Radius is r + the
+               hover lift so a lifted slice's rim stays under the sheen (otherwise
+               the protruding crescent escapes the rim shading and looks bright). -->
+          <circle cx="${cx}" cy="${cy}" r="${r + lift}" fill="url(#pieSheen)" style="pointer-events:none"></circle>
           <circle cx="${cx}" cy="${cy}" r="${hole}" fill="var(--bg-card)"></circle>
+          <!-- Inner-edge shadow gives the centre hole apparent depth. -->
+          <circle cx="${cx}" cy="${cy}" r="${hole}" fill="url(#pieHole)" style="pointer-events:none"></circle>
           <text x="${cx}" y="${cy - 6}" text-anchor="middle" fill="var(--text-faint)"
                 style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase">Budget</text>
           <text x="${cx}" y="${cy + 12}" text-anchor="middle" fill="var(--lime)"
