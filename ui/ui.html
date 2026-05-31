@@ -227,8 +227,10 @@
     .pie-slice:hover { opacity: 1; filter: brightness(1.18); }
     /* Radial ware labels splayed around the pie; pointer-events off so hover
        always targets the slice beneath, not the text. */
-    .pie-label { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.04em;
-                 text-transform: uppercase; pointer-events: none; user-select: none; }
+    .pie-label { font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+                 letter-spacing: 0.04em; text-transform: uppercase; pointer-events: none;
+                 user-select: none; paint-order: stroke; stroke: var(--bg-card);
+                 stroke-width: 2.5px; stroke-linejoin: round; }
 
     /* ── SORT DROPDOWN ── */
     /* Sits inline in the section header, right of the divider line */
@@ -589,7 +591,9 @@
   // (flipped on the left half so text never reads upside-down). Every slice
   // carries a data-budget-tip so the shared hover tooltip shows the full figures.
   function economyPieSvg(bud) {
-    const lines = (bud.lines || []).filter(l => l.value > 0);
+    // Largest share first so the slices sweep from big to small clockwise.
+    const lines = (bud.lines || []).filter(l => l.value > 0)
+                    .slice().sort((a, b) => b.value - a.value);
     const total = lines.reduce((sum, l) => sum + l.value, 0);
     if (!lines.length || total <= 0) {
       return `<div style="padding:24px 14px;text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No budget to chart</div>`;
@@ -642,10 +646,18 @@
       const anchor   = onLeft ? 'end' : 'start';
       // Hide labels for very thin slices to avoid overlap clutter.
       if (frac >= 0.03) {
+        // Wrap multi-word ware names onto stacked lines (no abbreviation) so each
+        // spoke stays short. Lines are vertically centred on the label anchor.
+        const words = ln.ware_name.split(' ');
+        const lh    = 12; // line height in SVG units, ~matches the 12px font
+        const y0    = ly - ((words.length - 1) * lh) / 2;
+        const tspans = words.map((w, i) =>
+          `<tspan x="${lx.toFixed(2)}" y="${(y0 + i * lh).toFixed(2)}">${w}</tspan>`
+        ).join('');
         labels.push(
-          `<text class="pie-label" x="${lx.toFixed(2)}" y="${ly.toFixed(2)}" fill="${col}"
+          `<text class="pie-label" fill="${col}"
                  text-anchor="${anchor}" dominant-baseline="middle"
-                 transform="rotate(${(rot - 90).toFixed(2)} ${lx.toFixed(2)} ${ly.toFixed(2)})">${ln.ware_name}</text>`
+                 transform="rotate(${(rot - 90).toFixed(2)} ${lx.toFixed(2)} ${ly.toFixed(2)})">${tspans}</text>`
         );
       }
     });
@@ -654,7 +666,7 @@
     const hole = r * 0.5;
     return `
       <div style="display:flex;justify-content:center;padding:10px 6px 16px">
-        <svg viewBox="0 0 300 300" width="300" height="300" style="overflow:visible">
+        <svg viewBox="-55 -25 410 350" width="440" height="376">
           ${slices.join('')}
           <circle cx="${cx}" cy="${cy}" r="${hole}" fill="var(--bg-card)"></circle>
           <text x="${cx}" y="${cy - 6}" text-anchor="middle" fill="var(--text-faint)"
