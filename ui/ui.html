@@ -244,6 +244,13 @@
        hour is selected. The marker dot beneath grows via a sibling selector. */
     .cf-col { fill: transparent; cursor: crosshair; }
     .cf-col:hover { fill: rgba(94,234,212,0.09); }
+    /* Hourly / By-Trade toggle above the cash-flow chart. */
+    .cf-toggle-btn { padding: 2px 8px; font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em;
+                     text-transform: uppercase; color: var(--text-faint); background: transparent;
+                     border: 1px solid var(--border); border-radius: 2px; cursor: pointer; user-select: none;
+                     white-space: nowrap; transition: color 0.12s, border-color 0.12s; }
+    .cf-toggle-btn:hover { color: var(--text-dim); border-color: var(--text-faint); }
+    .cf-toggle-btn.active { color: #5eead4; border-color: #5eead4; }
 
     /* ── SORT DROPDOWN ── */
     /* Sits inline in the section header, right of the divider line */
@@ -720,92 +727,53 @@
   }
 
   // ── STATION CASH-FLOW CHART ────────────────────────────────────────────────
-  // Plots the station's net trade cash flow per hour over the last 24 h, binned
-  // from the trade history (time_ago_s). Sells bring credits IN (+), buys send
-  // credits OUT (−); netting them per hour gives how much the station's money
-  // changed that hour. Measured directly from recorded trades — unlike account
-  // balance or inventory, which can't be reconstructed from a save snapshot
-  // (only player↔NPC trades are logged as events, not production/consumption).
+  // Plots the station's trade cash flow over the last 24 h. Two views, switched
+  // by a toggle (setCashflowMode):
+  //   • Hourly — net credits per hour (sells + / buys −), one bar-like point per
+  //     hour; hover shows that hour's per-ware summary.
+  //   • By Trade — a smooth cumulative cash-flow curve with one vertex per
+  //     individual trade; hover (nearest point) shows that exact trade's full
+  //     details. This is the "drilled down" view.
+  // Both are measured directly from recorded trades — unlike account balance or
+  // inventory, which can't be reconstructed from a save snapshot (only
+  // player↔NPC trades are logged as events, not production/consumption).
   const HOURS = 24;
+  // Per-station point arrays for the By-Trade view's nearest-point hover,
+  // keyed by safeCode. Populated as the detail chart is built.
+  const cashflowDetailData = {};
+  const cfNiceStep = (range, target) => {
+    const raw  = Math.max(range, 1) / target;
+    const mag  = Math.pow(10, Math.floor(Math.log10(raw)));
+    const norm = raw / mag;
+    const nice = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10;
+    return nice * mag;
+  };
+  const cfFmtY = v => {
+    const a = Math.abs(v);
+    return a >= 1e6 ? (v / 1e6).toFixed(a % 1e6 ? 1 : 0) + 'M'
+         : a >= 1e3 ? (v / 1e3).toFixed(a % 1e3 ? 1 : 0) + 'k'
+         : String(v);
+  };
+  const cfFmtCr = n => (n < 0 ? '−' : '+') + Math.abs(Math.round(n)).toLocaleString() + ' cr';
+
   function goodsChartSvg(station, allTrades) {
-    const trades = allTrades.filter(t => t.station_code === station.code);
-
-    // Net credits per hour: bin i covers [i, i+1) hours ago (bin 0 = most
-    // recent hour). "Out" = the station sold goods → money in (+);
-    // "In" = the station bought goods → money out (−). detail[i] keeps a
-    // per-ware breakdown of that hour's trades for the hover tooltip.
-    const net    = new Array(HOURS).fill(0);
-    const detail = Array.from({ length: HOURS }, () => ({}));
-    let traded = false;
-    trades.forEach(t => {
-      const i = Math.floor(t.time_ago_s / 3600);
-      if (i < 0 || i >= HOURS) return;
-      const cr = t.total_cr || 0;
-      net[i] += (t.direction === 'Out' ? 1 : -1) * cr;
-      const w = t.ware_name || 'Unknown';
-      const d = detail[i][w] || (detail[i][w] = { soldU: 0, soldCr: 0, boughtU: 0, boughtCr: 0 });
-      if (t.direction === 'Out') { d.soldU += t.amount; d.soldCr += cr; }
-      else                       { d.boughtU += t.amount; d.boughtCr += cr; }
-      traded = true;
-    });
-
-    if (!traded) {
-      return `<div style="padding:16px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No trade activity in the last 24h</div>`;
+    const trades = allTrades.filter(t => t.station_code === station.code &&
+                                         t.time_ago_s / 3600 < HOURS);
+    if (trades.length === 0) {
+      return `<div style="flex:1 1 360px;min-width:320px;padding:16px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No trade activity in the last 24h</div>`;
     }
 
-    // Y-axis: linear with a zero baseline (cash flow can go negative on hours
-    // the station spent more on inputs than it earned). Bracket the range to a
-    // "nice" step from the 1/2/2.5/5 series so the gridlines land on round
-    // credit figures, and always include zero.
-    const hi = Math.max(0, ...net);
-    const lo = Math.min(0, ...net);
-    const niceStep = (range, target) => {
-      const raw  = Math.max(range, 1) / target;
-      const mag  = Math.pow(10, Math.floor(Math.log10(raw)));
-      const norm = raw / mag;
-      const nice = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10;
-      return nice * mag;
-    };
-    const step    = niceStep(hi - lo, 6);
-    const axisTop = Math.ceil(hi / step) * step || step;   // ≥ one step above 0
-    const axisBot = Math.floor(lo / step) * step;          // ≤ 0
-
-    // SVG layout. The viewBox fixes the internal coordinate system; the SVG
-    // itself stretches to fill its flex column (width:100%), so this aspect
-    // ratio is what matters, not the pixel size.
+    // Shared SVG layout. The viewBox fixes the internal coordinate system; the
+    // SVG stretches to fill its flex column (width:100%), so this aspect ratio
+    // is what matters, not the pixel size.
     const svgW = 560, svgH = 320;
-    const ml = 56, mr = 14, mt = 12, mb = 30; // margins
-    const pw = svgW - ml - mr;   // plot width
-    const ph = svgH - mt - mb;   // plot height
+    const ml = 56, mr = 14, mt = 12, mb = 30;
+    const pw = svgW - ml - mr, ph = svgH - mt - mb;
     const xOf = h => ml + (HOURS - h) / HOURS * pw;  // h=0 → right edge (now)
-    const yOf = v => mt + ph - (v - axisBot) / (axisTop - axisBot) * ph;
-    const zeroY = yOf(0);
+    const safeCode = station.code.replace(/[^a-z0-9]/gi, '');
 
-    const fmtY = v => {
-      const a = Math.abs(v);
-      const s = a >= 1e6 ? (v / 1e6).toFixed(a % 1e6 ? 1 : 0) + 'M'
-              : a >= 1e3 ? (v / 1e3).toFixed(a % 1e3 ? 1 : 0) + 'k'
-              : String(v);
-      return s;
-    };
-
-    // Horizontal grid + y labels at each step; the zero line is emphasised.
-    const yTicks = [];
-    for (let v = axisBot; v <= axisTop + 0.5; v += step) yTicks.push(v);
-    const gridLines = yTicks.map(v => {
-      const y = yOf(v).toFixed(1);
-      const isZero = Math.abs(v) < step * 0.001;
-      return `<line x1="${ml}" y1="${y}" x2="${ml + pw}" y2="${y}"
-                    stroke="#19e6c8" stroke-opacity="${isZero ? 0.35 : 0.10}" stroke-width="${isZero ? 1 : 0.6}"/>`;
-    }).join('');
-    const yLabels = yTicks.map(v => {
-      const y = yOf(v).toFixed(1);
-      return `<text x="${ml - 6}" y="${y}" text-anchor="end" dominant-baseline="middle"
-                    fill="#5fe9d4" fill-opacity="0.7" style="font-family:var(--font-mono);font-size:8px">${fmtY(v)}</text>`;
-    }).join('');
-
-    // Vertical hour gridlines + x labels every 6 h.
-    const xTicks = [0, 6, 12, 18, 24].map(h => {
+    // Shared vertical hour gridlines + x labels every 6 h.
+    const xTicksHtml = [0, 6, 12, 18, 24].map(h => {
       const x = xOf(h).toFixed(1);
       const label = h === 0 ? 'NOW' : `-${h}H`;
       return `<line x1="${x}" y1="${mt}" x2="${x}" y2="${mt + ph}" stroke="#19e6c8" stroke-opacity="0.08" stroke-width="0.6"/>
@@ -813,109 +781,206 @@
                     style="font-family:var(--font-mono);font-size:8px;letter-spacing:0.06em">${label}</text>`;
     }).join('');
 
-    // Cash-flow line + area, ordered oldest→newest so the area path closes
-    // cleanly along the zero baseline. The fill is split at zero by a vertical
-    // gradient: teal above (income), red below (expense).
-    const safeCode = station.code.replace(/[^a-z0-9]/gi, '');
-    const glowId   = `holo-glow-${safeCode}`;
-    const fillId   = `cashfill-${safeCode}`;
-    const ordered  = [];
-    for (let i = HOURS - 1; i >= 0; i--) ordered.push([xOf(i + 0.5), net[i]]);
-    const linePts  = ordered.map(([x, v]) => `${x.toFixed(1)},${yOf(v).toFixed(1)}`).join(' ');
-    const areaPath = `M ${ordered[0][0].toFixed(1)} ${zeroY.toFixed(1)} ` +
-                     ordered.map(([x, v]) => `L ${x.toFixed(1)} ${yOf(v).toFixed(1)}`).join(' ') +
-                     ` L ${ordered[ordered.length - 1][0].toFixed(1)} ${zeroY.toFixed(1)} Z`;
-    // Gradient stops in userSpace; hard transition at the zero line so income
-    // fills teal and expense fills red.
-    const zeroFrac = ((zeroY - mt) / ph).toFixed(4);
+    // Reusable y-axis (grid + labels) for a given axis range.
+    const yAxisHtml = (yOf, axBot, axTop, step) => {
+      const ticks = [];
+      for (let v = axBot; v <= axTop + 0.5; v += step) ticks.push(v);
+      const grid = ticks.map(v => {
+        const y = yOf(v).toFixed(1), isZero = Math.abs(v) < step * 0.001;
+        return `<line x1="${ml}" y1="${y}" x2="${ml + pw}" y2="${y}"
+                      stroke="#19e6c8" stroke-opacity="${isZero ? 0.35 : 0.10}" stroke-width="${isZero ? 1 : 0.6}"/>`;
+      }).join('');
+      const labels = ticks.map(v => {
+        const y = yOf(v).toFixed(1);
+        return `<text x="${ml - 6}" y="${y}" text-anchor="end" dominant-baseline="middle"
+                      fill="#5fe9d4" fill-opacity="0.7" style="font-family:var(--font-mono);font-size:8px">${cfFmtY(v)}</text>`;
+      }).join('');
+      return grid + labels;
+    };
 
-    // Running total for the header readout.
+    // Net per hour (for header readout + hourly body).
+    const net    = new Array(HOURS).fill(0);
+    const detail = Array.from({ length: HOURS }, () => ({}));
+    trades.forEach(t => {
+      const i = Math.floor(t.time_ago_s / 3600);
+      const cr = t.total_cr || 0;
+      net[i] += (t.direction === 'Out' ? 1 : -1) * cr;
+      const w = t.ware_name || 'Unknown';
+      const d = detail[i][w] || (detail[i][w] = { soldU: 0, soldCr: 0, boughtU: 0, boughtCr: 0 });
+      if (t.direction === 'Out') { d.soldU += t.amount; d.soldCr += cr; }
+      else                       { d.boughtU += t.amount; d.boughtCr += cr; }
+    });
     const net24 = net.reduce((a, b) => a + b, 0);
-    const fmtCr = n => (n < 0 ? '−' : '+') + Math.abs(Math.round(n)).toLocaleString() + ' cr';
 
-    // Per-hour data-point markers + transparent hover columns. Each active hour
-    // gets a dot at its cash-flow value and a full-height column (one hour wide)
-    // carrying that hour's trade breakdown for the shared tooltip. Empty hours
-    // get neither — there's nothing to show.
-    const colW = pw / HOURS;
-    const markers = [], hitCols = [];
-    for (let i = 0; i < HOURS; i++) {
-      const rows = [];
-      Object.keys(detail[i]).forEach(w => {
-        const d = detail[i][w], col = WARE_COLOURS[w] || '#5eead4';
-        if (d.soldU   > 0) rows.push({ ware: w, colour: col, dir: 'sell', units: d.soldU,   cr:  d.soldCr });
-        if (d.boughtU > 0) rows.push({ ware: w, colour: col, dir: 'buy',  units: d.boughtU, cr: -d.boughtCr });
-      });
-      if (!rows.length) continue;
-      rows.sort((a, b) => Math.abs(b.cr) - Math.abs(a.cr));
-      const cx = xOf(i + 0.5).toFixed(1), cy = yOf(net[i]).toFixed(1);
-      const dotCol = net[i] >= 0 ? '#5eead4' : '#ef5350';
-      markers.push(
-        `<circle cx="${cx}" cy="${cy}" r="2.6" fill="${dotCol}" filter="url(#${glowId})"/>
-         <circle cx="${cx}" cy="${cy}" r="2.2" fill="${dotCol}"/>`
-      );
-      const tip = encodeURIComponent(JSON.stringify({ hAgo: i, net: net[i], rows }));
-      hitCols.push(
-        `<rect class="cf-col" x="${xOf(i + 1).toFixed(1)}" y="${mt}" width="${colW.toFixed(1)}" height="${ph}" data-cashflow-tip="${tip}"></rect>`
-      );
-    }
+    // ── Hourly body ──────────────────────────────────────────────────────────
+    const hourlyBody = (() => {
+      const hi = Math.max(0, ...net), lo = Math.min(0, ...net);
+      const step = cfNiceStep(hi - lo, 6);
+      const axTop = Math.ceil(hi / step) * step || step;
+      const axBot = Math.floor(lo / step) * step;
+      const yOf = v => mt + ph - (v - axBot) / (axTop - axBot) * ph;
+      const zeroY = yOf(0), zeroFrac = ((zeroY - mt) / ph).toFixed(4);
+      const glowId = `holo-glow-${safeCode}-h`, fillId = `cashfill-${safeCode}-h`;
 
-    return `
-      <div style="flex:1 1 360px;min-width:320px;display:flex;flex-direction:column">
-        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px">
-          <span style="font-family:var(--font-mono);font-size:8px;letter-spacing:0.18em;color:#5fe9d4;text-transform:uppercase">
-            Cash Flow · net credits per hour · 24h
-          </span>
-          <span style="font-family:var(--font-mono);font-size:10px;color:${net24 >= 0 ? '#19e6c8' : '#ef5350'}">${fmtCr(net24)}</span>
-        </div>
+      const ordered = [];
+      for (let i = HOURS - 1; i >= 0; i--) ordered.push([xOf(i + 0.5), net[i]]);
+      const linePts = ordered.map(([x, v]) => `${x.toFixed(1)},${yOf(v).toFixed(1)}`).join(' ');
+      const areaPath = `M ${ordered[0][0].toFixed(1)} ${zeroY.toFixed(1)} ` +
+                       ordered.map(([x, v]) => `L ${x.toFixed(1)} ${yOf(v).toFixed(1)}`).join(' ') +
+                       ` L ${ordered[ordered.length - 1][0].toFixed(1)} ${zeroY.toFixed(1)} Z`;
+
+      const colW = pw / HOURS;
+      const markers = [], hitCols = [];
+      for (let i = 0; i < HOURS; i++) {
+        const rows = [];
+        Object.keys(detail[i]).forEach(w => {
+          const d = detail[i][w], col = WARE_COLOURS[w] || '#5eead4';
+          if (d.soldU   > 0) rows.push({ ware: w, colour: col, dir: 'sell', units: d.soldU,   cr:  d.soldCr });
+          if (d.boughtU > 0) rows.push({ ware: w, colour: col, dir: 'buy',  units: d.boughtU, cr: -d.boughtCr });
+        });
+        if (!rows.length) continue;
+        rows.sort((a, b) => Math.abs(b.cr) - Math.abs(a.cr));
+        const cx = xOf(i + 0.5).toFixed(1), cy = yOf(net[i]).toFixed(1);
+        const dotCol = net[i] >= 0 ? '#5eead4' : '#ef5350';
+        markers.push(`<circle cx="${cx}" cy="${cy}" r="2.6" fill="${dotCol}" filter="url(#${glowId})"/>
+                      <circle cx="${cx}" cy="${cy}" r="2.2" fill="${dotCol}"/>`);
+        const tip = encodeURIComponent(JSON.stringify({ hAgo: i, net: net[i], rows }));
+        hitCols.push(`<rect class="cf-col" x="${xOf(i + 1).toFixed(1)}" y="${mt}" width="${colW.toFixed(1)}" height="${ph}" data-cashflow-tip="${tip}"></rect>`);
+      }
+
+      return `
         <div style="background:#030d14;border:1px solid rgba(25,230,200,0.18);border-radius:3px;box-shadow:inset 0 0 24px rgba(25,230,200,0.05);padding:4px">
-          <svg viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="xMidYMid meet"
-               style="display:block;width:100%;height:auto">
+          <svg viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:auto">
             <defs>
-              <filter id="${glowId}" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="2" />
-              </filter>
+              <filter id="${glowId}" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2"/></filter>
               <linearGradient id="${fillId}" x1="0" y1="${mt}" x2="0" y2="${mt + ph}" gradientUnits="userSpaceOnUse">
-                <stop offset="0"            stop-color="#19e6c8" stop-opacity="0.30"/>
-                <stop offset="${zeroFrac}"  stop-color="#19e6c8" stop-opacity="0.05"/>
-                <stop offset="${zeroFrac}"  stop-color="#ef5350" stop-opacity="0.05"/>
-                <stop offset="1"            stop-color="#ef5350" stop-opacity="0.30"/>
+                <stop offset="0"           stop-color="#19e6c8" stop-opacity="0.30"/>
+                <stop offset="${zeroFrac}" stop-color="#19e6c8" stop-opacity="0.05"/>
+                <stop offset="${zeroFrac}" stop-color="#ef5350" stop-opacity="0.05"/>
+                <stop offset="1"           stop-color="#ef5350" stop-opacity="0.30"/>
               </linearGradient>
             </defs>
-            <!-- Plot frame + grid -->
             <rect x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="#020a10"/>
-            ${gridLines}
-            ${xTicks}
-            ${yLabels}
-            <!-- Cash-flow area + line -->
+            ${yAxisHtml(yOf, axBot, axTop, step)}
+            ${xTicksHtml}
             <path d="${areaPath}" fill="url(#${fillId})" stroke="none"/>
-            <polyline points="${linePts}" fill="none" stroke="#2dd4bf" stroke-width="3"
-                      stroke-linejoin="round" stroke-linecap="round" opacity="0.35" filter="url(#${glowId})"/>
-            <polyline points="${linePts}" fill="none" stroke="#5eead4" stroke-width="1.5"
-                      stroke-linejoin="round" stroke-linecap="round"/>
-            <!-- Data-point markers (one per active hour) -->
+            <polyline points="${linePts}" fill="none" stroke="#2dd4bf" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" opacity="0.35" filter="url(#${glowId})"/>
+            <polyline points="${linePts}" fill="none" stroke="#5eead4" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
             ${markers.join('')}
-            <!-- Axes -->
             <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="#19e6c8" stroke-opacity="0.35" stroke-width="1"/>
-            <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle"
-                  fill="#5fe9d4" fill-opacity="0.6" style="font-family:var(--font-mono);font-size:8px;letter-spacing:0.1em"
-                  transform="rotate(-90 9 ${mt + ph / 2})">CREDITS/HR</text>
-            <!-- Transparent per-hour hover columns, drawn last so they sit on top -->
+            <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.6"
+                  style="font-family:var(--font-mono);font-size:8px;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">CREDITS/HR</text>
             ${hitCols.join('')}
           </svg>
         </div>
-        <!-- Direction key -->
         <div style="display:flex;gap:16px;padding:6px 2px 2px;font-family:var(--font-mono);font-size:9px;letter-spacing:0.04em">
-          <span style="display:inline-flex;align-items:center;gap:5px;color:#19e6c8">
-            <span style="display:inline-block;width:11px;height:2px;background:#19e6c8;border-radius:1px;filter:drop-shadow(0 0 2px #19e6c8)"></span>
-            INCOME (SELLS)
-          </span>
-          <span style="display:inline-flex;align-items:center;gap:5px;color:#ef5350">
-            <span style="display:inline-block;width:11px;height:2px;background:#ef5350;border-radius:1px;filter:drop-shadow(0 0 2px #ef5350)"></span>
-            SPEND (BUYS)
-          </span>
+          <span style="display:inline-flex;align-items:center;gap:5px;color:#19e6c8"><span style="display:inline-block;width:11px;height:2px;background:#19e6c8;border-radius:1px;filter:drop-shadow(0 0 2px #19e6c8)"></span>INCOME (SELLS)</span>
+          <span style="display:inline-flex;align-items:center;gap:5px;color:#ef5350"><span style="display:inline-block;width:11px;height:2px;background:#ef5350;border-radius:1px;filter:drop-shadow(0 0 2px #ef5350)"></span>SPEND (BUYS)</span>
+        </div>`;
+    })();
+
+    // ── By-Trade body (drill-down) ─────────────────────────────────────────────
+    // Size of each individual trade: every vertex is one trade plotted at its
+    // signed credit value (sells +, buys −), connected in time order — a spiky
+    // line that shows how big each deal was. Hover snaps to the nearest trade.
+    const detailBody = (() => {
+      const chron = trades.slice().sort((a, b) => b.time_ago_s - a.time_ago_s); // oldest → newest
+      const pts = chron.map(t => ({
+        hAgo: t.time_ago_s / 3600,
+        value: (t.direction === 'Out' ? 1 : -1) * (t.total_cr || 0),
+        t,
+      }));
+      let rlo = 0, rhi = 0;
+      pts.forEach(p => { if (p.value < rlo) rlo = p.value; if (p.value > rhi) rhi = p.value; });
+      const step = cfNiceStep(rhi - rlo, 6);
+      const axTop = Math.ceil(rhi / step) * step || step;
+      const axBot = Math.floor(rlo / step) * step;
+      const yOf = v => mt + ph - (v - axBot) / (axTop - axBot) * ph;
+      const zeroY = yOf(0), zeroFrac = ((zeroY - mt) / ph).toFixed(4);
+      const glowId = `holo-glow-${safeCode}-d`, fillId = `cashfill-${safeCode}-d`;
+
+      // Spiky line through each trade's value, with the area filled to the zero
+      // baseline (teal above for sells, red below for buys).
+      const verts    = pts.map(p => [xOf(p.hAgo), yOf(p.value)]);
+      const linePts  = verts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+      const areaPath = `M ${verts[0][0].toFixed(1)} ${zeroY.toFixed(1)} ` +
+                       verts.map(([x, y]) => `L ${x.toFixed(1)} ${y.toFixed(1)}`).join(' ') +
+                       ` L ${verts[verts.length - 1][0].toFixed(1)} ${zeroY.toFixed(1)} Z`;
+
+      // Per-trade dots + the hover lookup table (nearest-point by x fraction).
+      const store = [];
+      const dots = pts.map(p => {
+        const x = xOf(p.hAgo), y = yOf(p.value);
+        const isSell = p.t.direction === 'Out';
+        store.push({
+          fx: (x - ml) / pw, vbx: +x.toFixed(1), vby: +y.toFixed(1),
+          ware: p.t.ware_name || 'Unknown', colour: WARE_COLOURS[p.t.ware_name] || '#5eead4',
+          dir: isSell ? 'sell' : 'buy', units: p.t.amount, priceEa: p.t.price_cr,
+          total: p.value, hAgo: p.hAgo, ship: p.t.ship_code || '', counterparty: p.t.counterparty || '',
+        });
+        return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.6" fill="${isSell ? '#5eead4' : '#ef5350'}" opacity="0.85"/>`;
+      }).join('');
+      cashflowDetailData[safeCode] = store;
+
+      return `
+        <div style="background:#030d14;border:1px solid rgba(25,230,200,0.18);border-radius:3px;box-shadow:inset 0 0 24px rgba(25,230,200,0.05);padding:4px">
+          <svg viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:auto">
+            <defs>
+              <filter id="${glowId}" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>
+              <linearGradient id="${fillId}" x1="0" y1="${mt}" x2="0" y2="${mt + ph}" gradientUnits="userSpaceOnUse">
+                <stop offset="0"           stop-color="#2dd4bf" stop-opacity="0.45"/>
+                <stop offset="${zeroFrac}" stop-color="#2dd4bf" stop-opacity="0.04"/>
+                <stop offset="${zeroFrac}" stop-color="#ef5350" stop-opacity="0.04"/>
+                <stop offset="1"           stop-color="#ef5350" stop-opacity="0.45"/>
+              </linearGradient>
+            </defs>
+            <rect x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="#020a10"/>
+            ${yAxisHtml(yOf, axBot, axTop, step)}
+            ${xTicksHtml}
+            <path d="${areaPath}" fill="url(#${fillId})" stroke="none"/>
+            <polyline points="${linePts}" fill="none" stroke="#2dd4bf" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" opacity="0.45" filter="url(#${glowId})"/>
+            <polyline points="${linePts}" fill="none" stroke="#7af5e4" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+            ${dots}
+            <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="#19e6c8" stroke-opacity="0.35" stroke-width="1"/>
+            <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.6"
+                  style="font-family:var(--font-mono);font-size:8px;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">TRADE SIZE · CR</text>
+            <!-- Highlight ring follows the nearest trade on hover -->
+            <circle class="cf-detail-marker" r="3.8" fill="none" stroke="#ffffff" stroke-width="1.5" style="display:none;pointer-events:none"/>
+            <!-- Transparent plot overlay drives nearest-point hover -->
+            <rect data-cfdetail="${safeCode}" x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="transparent" style="cursor:crosshair"/>
+          </svg>
         </div>
+        <div style="padding:6px 2px 2px;font-family:var(--font-mono);font-size:9px;letter-spacing:0.04em;color:var(--text-faint)">
+          ${pts.length.toLocaleString()} trades · individual trade size · hover a point for trade details
+        </div>`;
+    })();
+
+    // ── Section wrapper with the Hourly / By-Trade toggle ──────────────────────
+    return `
+      <div id="cf-${safeCode}" style="flex:1 1 360px;min-width:320px;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
+          <div style="display:flex;align-items:center;gap:6px;min-width:0">
+            <span style="font-family:var(--font-mono);font-size:8px;letter-spacing:0.18em;color:#5fe9d4;text-transform:uppercase;white-space:nowrap">Cash Flow · 24h</span>
+            <button class="cf-toggle-btn active" data-mode="hourly" onclick="setCashflowMode('${safeCode}','hourly')">Hourly</button>
+            <button class="cf-toggle-btn"        data-mode="trade"  onclick="setCashflowMode('${safeCode}','trade')">By Trade</button>
+          </div>
+          <span style="font-family:var(--font-mono);font-size:10px;color:${net24 >= 0 ? '#19e6c8' : '#ef5350'};white-space:nowrap">${cfFmtCr(net24)}</span>
+        </div>
+        <div data-cfmode="hourly" style="display:block">${hourlyBody}</div>
+        <div data-cfmode="trade"  style="display:none">${detailBody}</div>
       </div>`;
+  }
+
+  // Toggle between the Hourly and By-Trade cash-flow views for one station card.
+  function setCashflowMode(code, mode) {
+    const sec = document.getElementById('cf-' + code);
+    if (!sec) return;
+    sec.querySelectorAll('[data-cfmode]').forEach(el => {
+      el.style.display = el.dataset.cfmode === mode ? 'block' : 'none';
+    });
+    sec.querySelectorAll('.cf-toggle-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.mode === mode);
+    });
   }
 
   const ROLE_ICONS = {
@@ -2208,6 +2273,41 @@
       `</div>`;
     }
 
+    function cashflowTradeTipHtml(d) {
+      // By-Trade hover: one individual trade's full details + the running total.
+      const fmtU = n => Math.round(n).toLocaleString();
+      const fmtC = n => (n < 0 ? '−' : '+') + Math.abs(Math.round(n)).toLocaleString();
+      const ago  = d.hAgo < 1 ? Math.round(d.hAgo * 60) + 'm ago'
+                              : d.hAgo.toFixed(1).replace(/\.0$/, '') + 'h ago';
+      // The trade has two "other side" fields: counterparty (the station the
+      // goods went to / came from — the scanner resolves this for almost all
+      // sells) and ship (the transport, resolved for most buys but often a
+      // transient NPC buyer whose ID is a raw "[0x…]" hex on sells). Show the
+      // station as the buyer/seller and the transport as the ship; fall back to
+      // "Unknown" only when neither resolves.
+      const isRawId = s => /^\[?0x[0-9a-f]+\]?$/i.test(String(s).trim());
+      const shipResolved = d.ship && !isRawId(d.ship);
+      const partyLabel   = d.dir === 'sell' ? 'Buyer' : 'Seller';
+      const row = (label, value, colour) => `
+        <div style="display:flex;justify-content:space-between;gap:12px;padding:1px 0">
+          <span style="color:var(--text-faint);font-size:10px">${label}</span>
+          <span style="color:${colour || 'var(--text-dim)'};font-family:var(--font-mono);font-size:10px;text-align:right">${value}</span>
+        </div>`;
+      return `<div style="min-width:220px;padding:2px 0">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid var(--border)">
+          <span style="color:${d.colour};font-size:11px;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">
+            <span style="color:${d.dir === 'sell' ? '#19e6c8' : '#ef5350'}">${d.dir === 'sell' ? '▲ SOLD' : '▼ BOUGHT'}</span> ${d.ware}
+          </span>
+        </div>` +
+        row('Amount × Price', `${fmtU(d.units)} × ${fmtU(d.priceEa)} Cr`) +
+        row('Trade value', `${fmtC(d.total)} Cr`, d.total >= 0 ? '#19e6c8' : '#ef5350') +
+        (d.counterparty ? row(partyLabel, d.counterparty) : '') +
+        (shipResolved   ? row('Ship', d.ship) : '') +
+        (!d.counterparty && !shipResolved ? row(partyLabel, 'Unknown') : '') +
+        `<div style="margin-top:5px;padding-top:4px;border-top:1px solid var(--border);text-align:right;font-size:10px;color:var(--text-faint)">${ago}</div>
+      </div>`;
+    }
+
     function storageTipHtml(types) {
       // Renders each storage type as a label + % row followed by a fill bar.
       // Label, percentage, and m³ text all use the category's fixed accent colour.
@@ -2238,10 +2338,29 @@
     }
 
     document.addEventListener('mousemove', function(e) {
-      const el = e.target.closest('[data-hull-tip],[data-pilot-skills],[data-storage-tip],[data-modules-tip],[data-budget-tip],[data-cashflow-tip]');
+      // The By-Trade chart's highlight ring is shown only while hovering that
+      // chart; clear any visible ones each move, then re-show below if needed.
+      document.querySelectorAll('.cf-detail-marker').forEach(m => { m.style.display = 'none'; });
+
+      const el = e.target.closest('[data-hull-tip],[data-pilot-skills],[data-storage-tip],[data-modules-tip],[data-budget-tip],[data-cashflow-tip],[data-cfdetail]');
       if (!el) { tip.style.display = 'none'; return; }
 
-      if (el.dataset.cashflowTip) {
+      if (el.dataset.cfdetail) {
+        // By-Trade chart: find the trade nearest the cursor's x position and
+        // show its details, with the highlight ring snapped to that point.
+        const arr = cashflowDetailData[el.dataset.cfdetail];
+        if (!arr || !arr.length) { tip.style.display = 'none'; return; }
+        const r = el.getBoundingClientRect();
+        const f = (e.clientX - r.left) / r.width;
+        let best = arr[0], bd = Infinity;
+        for (const p of arr) { const dd = Math.abs(p.fx - f); if (dd < bd) { bd = dd; best = p; } }
+        tip.innerHTML = cashflowTradeTipHtml(best);
+        tip.style.color = '';
+        tip.style.whiteSpace = 'normal';
+        const svg = el.closest('svg');
+        const mk = svg && svg.querySelector('.cf-detail-marker');
+        if (mk) { mk.setAttribute('cx', best.vbx); mk.setAttribute('cy', best.vby); mk.style.display = 'block'; }
+      } else if (el.dataset.cashflowTip) {
         // Cash-flow chart: one hour's per-ware trade breakdown
         tip.innerHTML = cashflowTipHtml(JSON.parse(decodeURIComponent(el.dataset.cashflowTip)));
         tip.style.color      = '';
