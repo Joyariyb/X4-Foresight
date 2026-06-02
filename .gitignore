@@ -46,3 +46,5 @@ people.xml
 /station xml
 AGENTS.md
 trade_perform_samples.txt
+savegame_formatted.xml
+.claude/launch.json
