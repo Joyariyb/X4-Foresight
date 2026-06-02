@@ -85,7 +85,12 @@ class ReputationHandler:
         already been processed. We scale every raw value and append entries
         to ctx.reputation, sorted highest-first to match the v1 display order.
         """
-        if elem.get('id') != 'player' or not self._active:
+        # Use self._active only — do not check elem.get('id') here.
+        # Attributes on non-component elements are cleared at their END event,
+        # which fires before this method; id may no longer be available.
+        # self._active is only True inside the player faction block, so this
+        # check is equivalent and safe across all scanner configurations.
+        if not self._active:
             return
 
         self._active = False

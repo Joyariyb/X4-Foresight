@@ -3,7 +3,7 @@ from pathlib import Path
 from lxml.etree import iterparse as lxml_iterparse
 
 from .context import ScanContext, ComponentFrame, STATION_CLASSES, SHIP_CLASSES
-from .language import open_save, load_sector_names
+from .language import open_save, load_sector_names, load_text_pages, resolve_sector_from_location
 from .handlers.station     import StationHandler
 from .handlers.ship        import ShipHandler
 from .handlers.reputation  import ReputationHandler
@@ -50,20 +50,26 @@ class Scanner:
         # Load sector names once at startup. All handlers that need to resolve
         # a sector macro to a human name receive the same pre-built dict.
         # Defaults to the standard project-root location of the language file.
-        _lang_path    = lang_path or Path('0001-l044.xml')
-        sector_names  = load_sector_names(_lang_path)
+        _lang_path   = lang_path or Path('0001-l044.xml')
+        sector_names = load_sector_names(_lang_path)
 
-        self._station = StationHandler()
+        # Pages needed by NpcStationHandler (and later StationHandler):
+        #   20102 — station basename text refs  e.g. "{20102,1301}" → "Advanced Electronics"
+        #   20215 — factory category names used by resolve_station_type()
+        texts = load_text_pages(_lang_path, {20102, 20215})
+
+        self._station = StationHandler(sector_names, texts)
         self._ship    = ShipHandler()
         self._rep     = ReputationHandler()
         self._trade   = TradeHandler()
         self._economy = EconomyHandler()
         self._crew    = CrewHandler()
-        self._npc     = NpcStationHandler()
+        self._npc     = NpcStationHandler(texts)
         self._sector  = SectorHandler(sector_names)
 
-        # Store for handlers that need it later (ship, station sector resolution).
+        # Stored for handlers that need them during scan (ship, station).
         self._sector_names = sector_names
+        self._texts        = texts
 
     def scan(self, save_path: str | Path, scan_id: int) -> ScanContext:
         """
@@ -131,13 +137,24 @@ class Scanner:
                         frame = ctx.top
 
                         if buffer_depth is not None and ctx.depth == buffer_depth:
-                            # Closing the root of a buffered section. The full
-                            # subtree is still in memory — hand it to the handler.
+                            # Closing the buffer root — the full subtree is
+                            # still in memory. Hand it to the handler, then
+                            # release the buffer and clear.
                             self._on_buffered_end(frame, elem, ctx)
                             buffer_depth = None
+                            ctx.pop()
+                            elem.clear()
 
-                        ctx.pop()
-                        elem.clear()
+                        elif buffer_depth is None:
+                            # Normal streaming — clear after processing.
+                            ctx.pop()
+                            elem.clear()
+
+                        else:
+                            # Nested component inside a buffered section.
+                            # Do NOT clear — the buffered root's on_end handler
+                            # needs to walk this element. Just pop the frame.
+                            ctx.pop()
 
                     continue
 
@@ -147,16 +164,15 @@ class Scanner:
                 if buffer_depth is not None:
                     continue
 
-                # Outside a buffered section: dispatch start and end events,
-                # then clear. Start events carry all attribute data; end events
-                # are used by handlers that need to finalise after collecting
-                # children (e.g. ReputationHandler after the player faction block).
+                # Outside a buffered section: dispatch start and end events.
+                # Only clear on END so that element attributes remain available
+                # across the full start→end lifetime (e.g. <faction id="player">
+                # must still have its id attribute when on_faction_end fires).
                 if event == 'start':
                     self._on_element_start(tag, elem, ctx)
                 elif event == 'end':
                     self._on_element_end(tag, elem, ctx)
-
-                elem.clear()
+                    elem.clear()
 
         return ctx
 
@@ -214,7 +230,28 @@ class Scanner:
         is safe to always call through — unrecognised contexts are simply
         ignored by the handler.
         """
-        if tag == 'faction':
+        if tag == 'player' and not ctx.player_name:
+            # <player name="..." location="..."> appears once near the top.
+            ctx.player_name = elem.get('name', '')
+            loc = elem.get('location', '')
+            if loc:
+                ctx.player_sector = resolve_sector_from_location(
+                    loc, self._sector_names
+                )
+
+        elif tag == 'account' and self._rep._active:
+            # Player faction cash account — <account amount="..."> inside the
+            # <faction id="player"> block. RepHandler._active is True only
+            # while we're inside that block.
+            if not ctx.player_credits:
+                try:
+                    ctx.player_credits = int(
+                        elem.get('amount') or elem.get('balance') or 0
+                    )
+                except (ValueError, TypeError):
+                    pass
+
+        elif tag == 'faction':
             # Opening tag of a faction block — RepHandler checks if it's the
             # player faction and starts collecting if so.
             self._rep.on_faction_start(elem, ctx)

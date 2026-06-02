@@ -64,6 +64,10 @@ class SectorHandler:
         # standard output — only deviates for sectors near unusual stars.
         sunlight = SECTOR_SUNLIGHT.get(sector_name, 1.0)
 
+        # Keep context up to date so station/ship handlers know which sector
+        # they are currently parsing — more reliable than walking the stack.
+        ctx.current_sector_macro = sector_macro
+
         ctx.sectors.append(Sector(
             scan_id       = ctx.scan_id,
             sector_macro  = sector_macro,

@@ -68,6 +68,13 @@ class ScanContext:
     # Anchors the time_ago_s calculation on every trade record.
     game_time_s: float = 0.0
 
+    # Player identity — populated early in the parse from <player> and
+    # <faction id="player"><account> elements. Written to the Scan record
+    # after the parse completes.
+    player_name:    str = ''
+    player_credits: int = 0
+    player_sector:  str = ''
+
 
     # ── Parse-time state ──────────────────────────────────────────────────────
     # These fields change every time iterparse moves to a new element.
@@ -75,6 +82,13 @@ class ScanContext:
 
     # Full component nesting stack — see ComponentFrame above.
     component_stack: list[ComponentFrame] = field(default_factory=list)
+
+    # Tracks the most recently entered sector macro. Updated by SectorHandler
+    # each time a sector component is processed. All station and ship handlers
+    # read this instead of walking the stack — the stack depth between a sector
+    # and its child stations/ships varies (zones and other components also push
+    # frames), so frame_at(1) is unreliable for sector resolution.
+    current_sector_macro: str = ''
 
     # The entity object currently being built. Set by a handler when it opens a
     # relevant component; cleared when the closing </component> is processed.
