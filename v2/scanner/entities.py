@@ -218,6 +218,12 @@ class TradeHistory:
     counterparty_name: str | None # display name fallback e.g. "TEL Quantum Tube Factory I (OHW-677)"
     game_time_s:       float      # absolute in-game clock at trade time — dedup key across scans
     time_ago_s:        float      # seconds before save time e.g. 540.0 = 9 minutes ago
+    # How the counterparty was resolved — lets the UI/AI weight confidence:
+    #   PROVEN   : "direct" (station↔station), "courier" (player BUY/SELL legs paired)
+    #   INFERRED : "homebase", "visit", "sector", "delivery" (best-effort guesses for
+    #              unlogged NPC→NPC legs — a station is shown but it is not certain)
+    #   ""       : unresolved (counterparty_name is None)
+    resolution:        str = ''
 
 
 # ─────────────────────────────────────────────────────────────────────────────

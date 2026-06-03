@@ -136,10 +136,35 @@ class ScanContext:
     # homebase names to ships and group fleets without a second file read.
     homebase_index: dict[str, str] = field(default_factory=dict)
 
+    # ShipHandler → post-processor (in-progress delivery resolution)
+    # Maps ship object_id → destination station object_id for ships that are
+    # mid-delivery at save time (an active, started DockAt order flagged
+    # trading="1"). Used to name the counterparty for a courier that has picked
+    # up cargo from a player station but whose commercial SELL leg has not been
+    # logged yet — that trade lives in "in-progress deliveries", not history.
+    delivery_dest_index: dict[str, str] = field(default_factory=dict)
+
     # ShipHandler → trade name resolution
     # Maps ship code → ship display name. Trade records reference ships by code;
     # this index resolves names without a separate lookup table.
     npc_ship_codes: dict[str, str] = field(default_factory=dict)
+
+    # EconomyHandler → TradePostProcessor
+    # Raw completed-trade rows harvested from the economy log during the scan.
+    # Deliberately NOT classified or resolved here: a player ship can appear in
+    # the file AFTER the trade-log block (e.g. docked at the HQ near the end), so
+    # the id indexes (player_ship_ids, homebase_index, …) are not guaranteed
+    # complete at log time. The post-processor classifies and resolves these once
+    # the full parse is done and every index is final. Each row is a dict:
+    #   buyer, seller (normalised ids), ware, amount, price_cr, game_time_s, time_ago_s
+    trade_log: list[dict] = field(default_factory=list)
+
+    # EconomyHandler → TradePostProcessor
+    # Despawned economy objects listed in <economylog><removed>. Their plain
+    # decimal ids appear as buyer/seller in some trade rows; this maps the
+    # normalised id to a readable "Name [CODE]" label so those rows still resolve
+    # to a human-meaningful party instead of a raw hex id.
+    removed_codes: dict[str, str] = field(default_factory=dict)
 
 
     # ── Stack helpers ─────────────────────────────────────────────────────────

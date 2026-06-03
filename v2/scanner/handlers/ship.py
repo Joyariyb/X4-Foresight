@@ -362,6 +362,54 @@ def _parse_homebase(ship_elem) -> str | None:
     return None
 
 
+def _parse_active_dest(ship_elem) -> str | None:
+    """
+    Returns the destination station id from a ship's active trading delivery,
+    or None if the ship is not mid-delivery.
+
+    When a trade ship is executing a delivery leg, X4 creates a temporary
+    DockAt order (verified in save_001.xml on the TDD-486 freighter):
+
+        <order id="[0x684]" order="DockAt" state="critical" temp="1">
+          <param name="destination" type="component" value="[0x11c34]"/>
+          <param name="trading"     type="integer"   value="1"/>
+          ...
+        </order>
+
+    Two conditions must both hold for this to be a commercial delivery (not a
+    routine dock for repairs, refuel, or a patrol waypoint):
+      - a 'destination' param of type="component" giving the target station id
+      - a 'trading' param set to "1"
+
+    Note: the order's state may be "started" OR "critical" (an in-progress dock
+    that is committed). We accept either; what matters is temp="1" (an AI-issued
+    delivery subroutine) plus the trading flag. We only read the FIRST matching
+    DockAt — a ship delivers to one place at a time.
+    """
+    orders_elem = ship_elem.find("orders")
+    if orders_elem is None:
+        return None
+
+    for order in orders_elem.findall("order"):
+        if order.get("order") != "DockAt" or order.get("temp") != "1":
+            continue
+
+        dest    = None
+        trading = False
+        for param in order.findall("param"):
+            name = param.get("name", "")
+            if name == "destination" and param.get("type") == "component":
+                dest = param.get("value", "") or None
+            elif name == "trading" and param.get("value") == "1":
+                trading = True
+
+        # Only a destination + trading flag together is a commercial delivery.
+        if dest and trading:
+            return dest
+
+    return None
+
+
 def _parse_commander(ship_elem) -> str | None:
     """
     Returns the connection reference of this ship's commander, or None.
@@ -681,6 +729,23 @@ class ShipHandler:
         # opening tag is the safe approach.
         self._sector_macro: str = ""
 
+        # ── Streaming DockAt extraction for non-buffered NPC ships ─────────────
+        # NPC ships are NOT buffered, so we can't walk their subtree in on_end().
+        # Instead we extract the active delivery destination as their <order> and
+        # <param> children stream past. This mirrors v1's in_hb_ship machine.
+        #
+        # WHY THIS IS THE KEY RESOLVER: a free-trader's TradeRoutine range param
+        # is a *sector*, not a station — useless for counterparty. But when the
+        # ship is mid-delivery it carries an active DockAt order whose
+        # destination IS the NPC station it is hauling to. The post-processor
+        # applies that destination across all of the ship's logged trades, which
+        # is exactly how v1 resolves the bulk of NPC-ship counterparties.
+        self._npc_ship_id:  str  = ""    # object_id of the NPC ship being streamed
+        self._npc_dockat:   bool = False  # inside an active trading DockAt order
+        self._npc_dest:     str  = ""     # destination station id seen so far
+        self._npc_trading:  bool = False  # the trading="1" flag was seen
+        self._npc_committed: bool = False  # delivery dest already recorded
+
     # ── Dispatcher entry points ───────────────────────────────────────────────
 
     def on_start(self, elem, ctx) -> None:
@@ -700,6 +765,9 @@ class ShipHandler:
 
         owner = elem.get("owner", "")
         if owner == "player":
+            # Player ships are buffered; their orders never reach the streaming
+            # dispatch. Clear the NPC streaming marker so a stale id can't leak.
+            self._npc_ship_id = ""
             # Will be fully handled by on_end() — nothing else to do here.
             return
 
@@ -708,6 +776,15 @@ class ShipHandler:
         macro  = elem.get("macro", "")
         code   = elem.get("code",  "")
         obj_id = elem.get("id",    "")
+
+        # Arm the streaming DockAt extractor for this NPC ship. Its <order> and
+        # <param> children will stream past next; on_npc_order/on_npc_param read
+        # the active delivery destination from them.
+        self._npc_ship_id  = obj_id
+        self._npc_dockat   = False
+        self._npc_dest     = ""
+        self._npc_trading  = False
+        self._npc_committed = False
 
         hull_prefix, hull_name = _extract_hull_origin(macro)
         type_name = _resolve_ship_type(macro)
@@ -751,6 +828,67 @@ class ShipHandler:
         # not by object ID. This index lets the trade handler look up names fast.
         if code:
             ctx.npc_ship_codes[code] = type_name
+
+    # ── Streaming DockAt extraction (non-buffered NPC ships) ───────────────────
+
+    def _in_current_npc_ship(self, ctx) -> bool:
+        """
+        True only while iterparse is directly inside the NPC ship we armed in
+        on_start. The stack top must be that exact ship — this guards against
+        processing orders of a ship docked *inside* an NPC carrier (whose frame
+        would be on top instead), and against stale ids between ships.
+        """
+        if not self._npc_ship_id:
+            return False
+        t = ctx.top
+        return (
+            t is not None
+            and t.owner != "player"
+            and t.cls in SIZE_LABELS            # a ship class
+            and t.object_id == self._npc_ship_id
+        )
+
+    def on_npc_order(self, elem, ctx) -> None:
+        """
+        Fires on every <order> start while streaming (cheap no-op unless we are
+        inside the armed NPC ship). Begins capturing when an active trading
+        DockAt order opens; any other order ends capture.
+
+        We accept any temp DockAt (state may be "started" or "critical") and rely
+        on the destination + trading="1" params to confirm it is a real delivery —
+        matching _parse_active_dest() used for buffered player ships.
+        """
+        if not self._in_current_npc_ship(ctx):
+            return
+        if elem.get("order") == "DockAt" and elem.get("temp") == "1":
+            self._npc_dockat  = True
+            self._npc_dest    = ""
+            self._npc_trading = False
+        else:
+            # A non-DockAt order — its params are not a delivery destination.
+            self._npc_dockat = False
+
+    def on_npc_param(self, elem, ctx) -> None:
+        """
+        Reads the destination + trading flag from an active DockAt order's params
+        and records the delivery destination once both are present.
+        """
+        if self._npc_committed or not self._npc_dockat:
+            return
+        if not self._in_current_npc_ship(ctx):
+            return
+        name = elem.get("name", "")
+        if name == "destination" and elem.get("type") == "component":
+            self._npc_dest = elem.get("value", "") or ""
+        elif name == "trading" and elem.get("value") == "1":
+            self._npc_trading = True
+
+        # Both pieces present → this is a commercial delivery. Record it.
+        # setdefault: the first active DockAt wins, and we never clobber a
+        # player-ship entry (keyed by a disjoint id space).
+        if self._npc_dest and self._npc_trading:
+            ctx.delivery_dest_index.setdefault(self._npc_ship_id, self._npc_dest)
+            self._npc_committed = True
 
     def on_end(self, elem, ctx) -> None:
         """
@@ -830,6 +968,13 @@ class ShipHandler:
         # can find which station this ship is assigned to in O(1).
         if homebase:
             ctx.homebase_index[obj_id] = homebase
+
+        # If this ship is mid-delivery, record where it is taking the cargo.
+        # The post-processor uses this to name the counterparty for couriers
+        # whose commercial SELL leg has not been logged yet (still in transit).
+        active_dest = _parse_active_dest(elem)
+        if active_dest:
+            ctx.delivery_dest_index[obj_id] = active_dest
 
         # Register type name for trade record name resolution.
         if code:

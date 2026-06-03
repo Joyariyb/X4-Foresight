@@ -264,10 +264,34 @@ class Scanner:
             # Temporary reputation bonus inside a faction's <relations> block.
             self._rep.on_booster(elem, ctx)
 
-        elif tag == 'entry':
-            # Economy log entries (completed trades). EconomyHandler checks
-            # ctx internally to filter by player-station involvement.
-            self._economy.on_entry(elem, ctx)
+        elif tag == 'log':
+            # Completed-trade rows in the global economy log
+            # (<entries type="trade"><log type="trade" .../></entries>).
+            # EconomyHandler harvests raw rows; classification/resolution is
+            # deferred to the post-processor (id indexes aren't final yet here).
+            self._economy.on_log(elem, ctx)
+
+        elif tag == 'removed':
+            # Open an <economylog><removed> block — despawned objects whose ids
+            # appear as buyer/seller in trade rows.
+            self._economy.on_removed_start(elem, ctx)
+
+        elif tag == 'object':
+            # Despawned object label inside a <removed> block. EconomyHandler
+            # guards on its own in-removed flag, so this is a cheap no-op for
+            # the many other <object> elements elsewhere in the save.
+            self._economy.on_object(elem, ctx)
+
+        elif tag == 'order':
+            # Order element streaming past — used by ShipHandler to detect an
+            # active DockAt delivery on a non-buffered NPC ship. The handler
+            # no-ops unless we are currently inside the NPC ship it armed.
+            self._ship.on_npc_order(elem, ctx)
+
+        elif tag == 'param':
+            # Param of an NPC ship's active DockAt order (destination / trading).
+            # Same gating as on_npc_order — cheap no-op outside an NPC ship.
+            self._ship.on_npc_param(elem, ctx)
 
         elif tag == 'trade':
             # Active trade orders outside buffered sections (NPC stations, free
@@ -293,3 +317,7 @@ class Scanner:
         """
         if tag == 'faction':
             self._rep.on_faction_end(elem, ctx)
+
+        elif tag == 'removed':
+            # Close the <economylog><removed> block.
+            self._economy.on_removed_end(elem, ctx)

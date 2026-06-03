@@ -1,6 +1,27 @@
 from __future__ import annotations
 
 
+def norm_id(raw: str) -> str:
+    """
+    Normalise an economy-log component id to bracketed-hex form '[0xNN]'.
+
+    X4 writes object ids two different ways in trade-log rows:
+      '[0x1234]' — bracketed hex   (persistent components still in the save)
+      '853'      — plain decimal   (connection-wrapper ids and removed objects)
+
+    Both index the same component-id space, so a single trade can reference the
+    same object in either form depending on the row. We canonicalise to '[0xNN]'
+    so lookups against the player-station / player-ship / npc-station id sets are
+    consistent no matter which form a given row happened to use.
+    """
+    if not raw or raw.startswith('['):
+        return raw
+    try:
+        return f'[{hex(int(raw))}]'
+    except (ValueError, TypeError):
+        return raw
+
+
 def iter_station_components(root):
     """
     Yields every <component> element in root's subtree, skipping ship subtrees.
