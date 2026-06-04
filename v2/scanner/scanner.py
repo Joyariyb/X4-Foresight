@@ -215,6 +215,10 @@ class Scanner:
         if frame.cls in STATION_CLASSES:
             if frame.owner == 'player':
                 self._station.on_end(elem, ctx)
+                # Ships parked in this station's dock piers are nested in its
+                # buffered subtree (the main loop never saw them). Pull out the
+                # player-owned ones now while the subtree is still in memory.
+                self._ship.extract_station_docked_ships(elem, ctx)
             else:
                 self._npc.on_end(elem, ctx)
 

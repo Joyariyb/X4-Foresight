@@ -36,7 +36,8 @@ rows needing them currently end up provenance "unresolved".
 from __future__ import annotations
 from collections import Counter, defaultdict
 from data.wares import WARE_NAMES
-from .entities import TradeHistory, TradeHistoryInternal
+from .entities import TradeHistory, TradeHistoryInternal, TradeHistoryMining
+from .ship_names import ship_display_name
 
 
 def _ware_name(ware_id: str) -> str:
@@ -141,14 +142,21 @@ class TradePostProcessor:
         return None
 
     def _resolve_ship(self, ship_id):
-        """Return (ship_id, ship_code, ship_name) for a transport ship id."""
+        """
+        Return (ship_id, ship_code, ship_name) for a transport ship id.
+
+        ship_name is the canonical display name (custom name, else the resolved
+        type name like "Ides Vanguard") — never a bare code, so a row reads
+        "Ides Vanguard [WNP-362]" rather than "WNP-362 [WNP-362]".
+        """
         if not ship_id:
             return '', '', ''
         sh = self.ship_by_id.get(ship_id)
         if sh is not None:
-            return ship_id, sh.code, (sh.name or sh.code or ship_id)
+            return ship_id, sh.code, ship_display_name(sh.macro, sh.name)
         label = self.removed.get(ship_id)
         if label:
+            # Despawned object — only a "Name [CODE]" label survives in removed.
             return ship_id, label, label
         return ship_id, ship_id, ship_id   # raw id fallback
 
@@ -308,8 +316,17 @@ class TradePostProcessor:
             self._emit_internal(e)
             return
         if e['player_is_buyer'] and e['player_ship_is_seller']:
-            stats['internal'] += 1
-            self._emit_internal(e)
+            # A player station buying from a player ship. If that ship is a
+            # MINER, this is a mining delivery (miner → its home station), not a
+            # station-to-station transfer — classify it as such so it doesn't
+            # show the confusing "STN ↔ STN" self-reference.
+            seller = self.ship_by_id.get(e['seller'])
+            if seller is not None and seller.role.startswith('Miner'):
+                stats['mining'] += 1
+                self._emit_mining(e)
+            else:
+                stats['internal'] += 1
+                self._emit_internal(e)
             return
 
         # Attributed SELL leg: player ship sold to NPC, credited to the player
@@ -433,6 +450,27 @@ class TradePostProcessor:
             game_time_s       = e['game_time_s'],
             time_ago_s        = e['time_ago_s'],
             resolution        = prov if cp_name else '',
+        ))
+
+    def _emit_mining(self, e) -> None:
+        """A player mining ship delivered raw resource to a player station."""
+        st = self.pstn_by_id.get(e['buyer'])
+        ship_id, ship_code, ship_name = self._resolve_ship(e['seller'])
+        self.ctx.trade_history_mining.append(TradeHistoryMining(
+            scan_id      = self.ctx.scan_id,
+            station_id   = e['buyer'],
+            station_code = st.code if st else e['buyer'],
+            station_name = st.name if st else e['buyer'],
+            ship_id      = ship_id,
+            ship_code    = ship_code,
+            ship_name    = ship_name,
+            ware_id      = e['ware'],
+            ware_name    = _ware_name(e['ware']),
+            amount       = e['amount'],
+            price_cr     = e['price_cr'],
+            total_cr     = e['total_cr'],
+            game_time_s  = e['game_time_s'],
+            time_ago_s   = e['time_ago_s'],
         ))
 
     def _emit_internal(self, e) -> None:

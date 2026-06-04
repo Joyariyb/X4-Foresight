@@ -38,11 +38,19 @@ def source_label(res: str) -> str:
     return '[?] unknown'
 
 
+def ship_label(t) -> str:
+    name = t.ship_name or t.ship_code or ''
+    # Append the code (like v1) when it isn't already the name, so the row
+    # identifies the specific hull: "Ides Vanguard [WNP-362]".
+    if t.ship_code and t.ship_code != name:
+        name = f'{name} [{t.ship_code}]'
+    return name
+
+
 def row_line(t) -> str:
-    ship = (t.ship_name or t.ship_code or '')[:26]
-    cp   = (t.counterparty_name or '—')[:38]
+    cp = (t.counterparty_name or '—')[:38]
     return (f'  {fmt_time(t.time_ago_s):<8}'
-            f'{ship:<28}{t.direction:<4}'
+            f'{ship_label(t)[:32]:<33}{t.direction:<4}'
             f'{t.ware_name[:16]:<17}{t.amount:>7,}'
             f'{t.price_cr:>9.2f}{t.total_cr:>12,.0f}  '
             f'{cp:<40}{source_label(t.resolution)}')
@@ -67,9 +75,9 @@ def main():
               'inferred' if t.resolution in INFERRED else 'unknown'] += 1
         return c
 
-    header = (f"  {'Time':<8}{'Ship':<28}{'Dir':<4}{'Ware':<17}{'Units':>7}"
+    header = (f"  {'Time':<8}{'Ship':<33}{'Dir':<4}{'Ware':<17}{'Units':>7}"
               f"{'Cr/u':>9}{'Total':>12}  {'Counterparty':<40}Source")
-    rule = '  ' + '─' * 124
+    rule = '  ' + '─' * 129
 
     # ── Build full report ──────────────────────────────────────────────────────
     full = []
@@ -111,6 +119,8 @@ def main():
           f"[~] inferred {overall['inferred']:,}   "
           f"[?] unknown {overall['unknown']:,}")
     print('  by method: ' + '  '.join(f'{k}={n}' for k, n in by_method.most_common()))
+    print(f"  (separately: {len(ctx.trade_history_mining):,} mining deliveries, "
+          f"{len(ctx.trade_history_internal):,} internal transfers — not commercial)")
     print()
     for (code, name), rows in sorted(by_station.items(), key=lambda x: -len(x[1])):
         cc = conf_counts(rows)

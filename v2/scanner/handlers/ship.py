@@ -18,72 +18,26 @@ ALL XML attribute names in this file have been verified against save_001.xml.
 No guesswork.
 """
 from __future__ import annotations
-import re
 from data.factions   import FACTION_NAMES
-from data.ships      import SHIP_NAMES
 from data.ship_stats  import SHIP_STATS    # macro → {max_hull: N}
 from data.station_stats import STATION_STATS  # macro → {max_shield: N} — same table for ship shields
 from ..entities      import Ship, CrewMember
 from ..xml_utils     import iter_station_components
+# Ship naming/classification now lives in one shared module. Imported with the
+# original underscore aliases so the call sites below stay unchanged.
+from ..ship_names    import (
+    SIZE_LABELS,
+    LANG_REF_RE       as _LANG_REF_RE,
+    extract_role      as _extract_role,
+    extract_hull_origin as _extract_hull_origin,
+    resolve_ship_type as _resolve_ship_type,
+    ship_display_name,
+)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  LOOKUP TABLES  (all verified from save_001.xml)
+#  LOOKUP TABLES  (verified from save_001.xml)
 # ─────────────────────────────────────────────────────────────────────────────
-
-# Maps the ship class attribute to the short size notation used in the UI.
-# Verified: the save uses exactly these four class values for ships.
-SIZE_LABELS: dict[str, str] = {
-    "ship_s":  "S",
-    "ship_m":  "M",
-    "ship_l":  "L",
-    "ship_xl": "XL",
-}
-
-# Role patterns matched against the ship macro string.
-# Order matters — more specific patterns (miner_solid) must come before
-# the broader parent (miner) so the correct label wins.
-_ROLE_PATTERNS: list[tuple[re.Pattern, str]] = [
-    (re.compile(r'miner_solid',     re.I), "Miner (Solid)"),
-    (re.compile(r'miner_liquid',    re.I), "Miner (Liquid)"),
-    (re.compile(r'miner_gas',       re.I), "Miner (Gas)"),
-    (re.compile(r'miner',           re.I), "Miner"),
-    (re.compile(r'trans_container', re.I), "Freighter"),
-    (re.compile(r'trans_',          re.I), "Transport"),
-    (re.compile(r'heavyfighter',    re.I), "Heavy Fighter"),
-    (re.compile(r'fighter',         re.I), "Fighter"),
-    (re.compile(r'corvette',        re.I), "Corvette"),
-    (re.compile(r'frigate',         re.I), "Frigate"),
-    (re.compile(r'bomber',          re.I), "Bomber"),
-    (re.compile(r'destroyer',       re.I), "Destroyer"),
-    (re.compile(r'carrier',         re.I), "Carrier"),
-    (re.compile(r'resupplier',      re.I), "Resupplier"),
-    (re.compile(r'builder',         re.I), "Builder"),
-    (re.compile(r'scout',           re.I), "Scout"),
-]
-
-# Maps the 3-letter faction prefix in ship macro names to a display name.
-# X4 macro format: ship_{prefix}_{size}_{role}_{index}_{variant}_macro
-# e.g. "ship_arg_l_trans_container_01_b_macro" → prefix "arg" → "Argon"
-# Used to flag ships whose hull faction differs from their current owner
-# (captured ships, prizes, faction cross-ownership).
-_HULL_FACTION: dict[str, str] = {
-    "arg": "Argon",
-    "tel": "Teladi",
-    "par": "Paranid",
-    "tri": "Paranid",   # Paranid religious faction — same hull stock
-    "spl": "Split",
-    "ter": "Terran",
-    "bor": "Boron",
-    "xen": "Xenon",
-    "yak": "Yaki",
-    "pir": "Buccaneer",
-    "kha": "Kha'ak",
-    "buc": "Buccaneer",
-    "atf": "Terran",    # ATF uses Terran hull designs
-    "pio": "Pioneer",
-    "gen": "Generic",   # cross-faction hull (e.g. generic miners/freighters)
-}
 
 # Maps X4's internal order identifier to a human-readable label shown in the UI.
 # Verified from actual order= values seen in save_001.xml.
@@ -118,11 +72,6 @@ _ORDER_LABELS: dict[str, str] = {
     "Explore":           "Exploring",
 }
 
-# Matches unresolved language reference tokens like "{20101,22603}" that appear
-# in some name attributes. The game resolves these at runtime — we skip any
-# name that matches this so we don't store a raw token as a display name.
-_LANG_REF_RE = re.compile(r'^\{\d+,\d+\}$')
-
 # Ship size classes that can carry docked ships inside their hull.
 # X4 only allows docking inside L (resupplier/carrier variants) and XL hulls.
 # Checking both avoids hardcoding specific carrier macros.
@@ -131,62 +80,9 @@ _CARRIER_CLASSES = frozenset({"ship_l", "ship_xl"})
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  MODULE-LEVEL HELPERS  (stateless, called by the handler methods)
+#  Ship naming/classification helpers (extract_role/hull_origin/resolve_ship_type
+#  and SIZE_LABELS) now live in scanner/ship_names.py — imported above.
 # ─────────────────────────────────────────────────────────────────────────────
-
-def _extract_role(macro: str) -> str:
-    """Returns a human-readable role label by matching the macro against _ROLE_PATTERNS."""
-    for pattern, label in _ROLE_PATTERNS:
-        if pattern.search(macro):
-            return label
-    return "Unknown"
-
-
-def _extract_hull_origin(macro: str) -> tuple[str, str]:
-    """
-    Returns (faction_prefix, display_name) for the ship's original hull faction.
-
-    The prefix is the second underscore-delimited segment in the macro, e.g.
-    "ship_arg_l_trans_container_01_b_macro" → ("arg", "Argon").
-    If the macro doesn't follow the expected format, returns ("", "Unknown").
-    """
-    parts = macro.split("_")
-    if len(parts) > 1:
-        prefix = parts[1].lower()
-        return prefix, _HULL_FACTION.get(prefix, prefix.title())
-    return "", "Unknown"
-
-
-def _resolve_ship_type(macro: str) -> str:
-    """
-    Returns a display name for the ship type from the macro string.
-
-    Priority:
-      1. SHIP_NAMES lookup (data/ships.py) — exact in-game names, e.g. "Magnetar Vanguard"
-      2. Constructed fallback from macro parts — e.g. "Argon L Freighter (B)"
-    """
-    if macro in SHIP_NAMES:
-        return SHIP_NAMES[macro]
-
-    parts = macro.split("_")
-    if len(parts) < 4:
-        return macro  # too short to parse safely — return raw macro
-
-    _, hull_name = _extract_hull_origin(macro)
-    size         = parts[2].upper()              # e.g. "L", "M", "XL"
-    role         = _extract_role(macro)
-
-    # Variant letter (a, b, c...) is the last segment before the trailing "macro"
-    # token, e.g. "ship_arg_l_trans_container_01_b_macro" → last core part = "b".
-    # Only treat it as a variant if it's exactly one alpha character.
-    core    = parts[:-1]  # strip the trailing "macro" token
-    last    = core[-1] if core else ""
-    variant = last.upper() if len(last) == 1 and last.isalpha() else None
-
-    name = f"{hull_name} {size} {role}"
-    if variant:
-        name += f" ({variant})"
-    return name
-
 
 def _parse_char_macro(macro: str) -> tuple[str | None, str | None]:
     """
@@ -747,6 +643,23 @@ class ShipHandler:
         self._npc_committed: bool = False  # delivery dest already recorded
 
     # ── Dispatcher entry points ───────────────────────────────────────────────
+
+    def extract_station_docked_ships(self, station_elem, ctx) -> None:
+        """
+        Extract player ships docked INSIDE a player station's buffered subtree.
+
+        Called by the scanner when a player station closes. Ships parked in a
+        station's dock piers (connection="dock") are nested inside the buffered
+        station, so the main loop never dispatches them and StationHandler's
+        iter_station_components() deliberately skips ship_* subtrees. Without
+        this, e.g. a self-supply miner docked at its home station is invisible —
+        and its internal silicon deliveries can't be classified.
+
+        Reuses the same subtree walk as carrier-docked extraction; only
+        player-owned nested ships are taken (civilian visitors are left out, as
+        in v1). docked_at is set to the station's id.
+        """
+        _extract_docked_ships(station_elem, ctx.current_sector_macro, ctx)
 
     def on_start(self, elem, ctx) -> None:
         """
