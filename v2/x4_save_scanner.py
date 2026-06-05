@@ -28,15 +28,13 @@ from scanner.trade_postprocess import TradePostProcessor
 from db.connection import get_connection
 from db.write import write_scan
 from export.jsonexport import write_export
+from display import display_report
 
 # Outputs and inputs live in the project root, alongside v1's.
 LANG_FILE = ROOT / '0001-l044.xml'
 DB_PATH   = ROOT / 'x4_foresight.db'
 JSON_PATH = ROOT / 'x4_empire_state.json'
 ROOT_SAVE = ROOT / 'save_001.xml'
-
-PROVEN   = {'direct', 'courier'}
-INFERRED = {'homebase', 'visit', 'sector', 'delivery'}
 
 
 # ── Save selection (ported from v1, .gz + root fallback) ───────────────────────
@@ -110,29 +108,14 @@ def run(save_path: Path) -> None:
     conn.close()
 
     elapsed = time.perf_counter() - t0
-    _summary(ctx, scan_id, elapsed)
+    display_report(ctx)
+    _footer(ctx, scan_id, elapsed)
 
 
-def _summary(ctx, scan_id, elapsed) -> None:
-    th = ctx.trade_history
-    proven   = sum(1 for t in th if t.resolution in PROVEN)
-    inferred = sum(1 for t in th if t.resolution in INFERRED)
-    unknown  = len(th) - proven - inferred
-    players  = sum(1 for s in ctx.ships if s.owner_id == 'player')
-
-    print("\n  ── RESULT ─────────────────────────────────────────────────────")
-    print(f"  Player    : {ctx.player_name}  —  {ctx.player_sector}  "
-          f"—  {ctx.player_credits:,} Cr")
-    print(f"  Stations  : {len(ctx.stations)}   Ships(player): {players}   "
-          f"Crew: {len(ctx.crew)}   Reputation: {len(ctx.reputation)}")
-    print(f"  Trades    : {len(th):,} commercial "
-          f"({proven:,} proven, {inferred:,} inferred, {unknown:,} unknown)")
-    print(f"              {len(ctx.trade_history_mining):,} mining, "
-          f"{len(ctx.trade_history_internal):,} internal")
-    print()
-    print(f"  DB        : scan #{scan_id} -> {DB_PATH.name}")
-    print(f"  Export    : {JSON_PATH.name}")
-    print(f"  Completed in {elapsed:.1f}s")
+def _footer(ctx, scan_id, elapsed) -> None:
+    """One-line output/timing footer after the full report."""
+    print(f"  DB scan #{scan_id} -> {DB_PATH.name}   ·   Export -> {JSON_PATH.name}"
+          f"   ·   {elapsed:.1f}s\n")
 
 
 def main() -> None:

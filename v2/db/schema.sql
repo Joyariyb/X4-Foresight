@@ -135,6 +135,26 @@ CREATE TABLE IF NOT EXISTS ships (
     PRIMARY KEY (scan_id, object_id)
 );
 
+-- NPC ships in the player's station sectors — situational awareness (who is
+-- operating near your stations). Bounded subset (~hundreds), per-scan so threat
+-- presence can be tracked over time. Identity-level only (no hull/crew); the
+-- full ~12k NPC ships are NOT stored.
+CREATE TABLE IF NOT EXISTS npc_ships (
+    scan_id      INTEGER NOT NULL REFERENCES scans(scan_id) ON DELETE CASCADE,
+    object_id    TEXT,
+    code         TEXT,
+    name         TEXT,         -- resolved type name e.g. "Mercury Vanguard"
+    ship_class   TEXT,
+    size         TEXT,
+    macro        TEXT,
+    role         TEXT,
+    owner_id     TEXT,         -- faction id
+    owner_name   TEXT,
+    sector_macro TEXT,
+    sector_name  TEXT,
+    destination  TEXT          -- station it is hauling to, if mid-delivery; else NULL
+);
+
 CREATE TABLE IF NOT EXISTS crew (
     scan_id           INTEGER NOT NULL REFERENCES scans(scan_id) ON DELETE CASCADE,
     role              TEXT,                       -- "pilot" | "manager" | "service" | "marine"

@@ -542,10 +542,26 @@ def _extract_docked_ships(
         obj_id = child.get("id",     "")
         owner  = child.get("owner",  "")
 
-        # Only extract player-owned docked ships — NPC ships inside an NPC
-        # carrier are not our concern and their data is available from their
-        # own top-level on_start() call in the main loop.
+        # Non-player ships docked here are VISITORS (e.g. civilian traders parked
+        # at a player station). Capture them SHALLOW — identity + docked_at +
+        # sector only — so they appear in the station's docked count and the NPC
+        # presence panel, without the deep hull/crew walk we do for our own ships.
         if owner != "player":
+            v_prefix, v_name = _extract_hull_origin(macro)
+            ctx.ships.append(Ship(
+                scan_id=ctx.scan_id, object_id=obj_id, code=code, name=None,
+                ship_class=cls, size=SIZE_LABELS.get(cls, cls), macro=macro,
+                role=_extract_role(macro), owner_id=owner,
+                owner_name=FACTION_NAMES.get(owner, owner.title()),
+                hull_origin_id=v_prefix, hull_origin_name=v_name,
+                sector_macro=sector_macro, order="", homebase_id=None,
+                docked_at=carrier_elem.get("id"), commander_id=None,
+                under_construction=False, hull_hp=None, hull_max=None, hull_pct=None,
+                shield_hp=None, shield_max=None, shield_pct=None,
+                cargo_m3=None, cargo_max_m3=None, pilot_id=None,
+            ))
+            if code:
+                ctx.npc_ship_codes[code] = _resolve_ship_type(macro)
             continue
 
         hull_prefix, hull_name = _extract_hull_origin(macro)

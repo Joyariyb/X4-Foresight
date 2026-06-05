@@ -75,6 +75,26 @@ def _fleet_summary(ships: list[dict]) -> dict:
     }
 
 
+def _npc_ships(conn, scan_id) -> list[dict]:
+    """NPC ships in the player's station sectors (situational awareness)."""
+    return [_drop(dict(r), 'scan_id')
+            for r in conn.execute(
+                "SELECT * FROM npc_ships WHERE scan_id=? "
+                "ORDER BY sector_name, owner_name, role", (scan_id,))]
+
+
+def _npc_presence(npc_ships: list[dict]) -> dict:
+    """Digest NPC ships into sector → faction → role counts, so an AI gets a
+    threat/activity read without re-aggregating ~300 rows."""
+    out: dict = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
+    for s in npc_ships:
+        out[s['sector_name']][s['owner_name']][s['role']] += 1
+    return {
+        sector: {fac: dict(roles) for fac, roles in facs.items()}
+        for sector, facs in out.items()
+    }
+
+
 def _crew(conn, scan_id) -> list[dict]:
     return [_drop(dict(r), 'scan_id')
             for r in conn.execute("SELECT * FROM crew WHERE scan_id=?", (scan_id,))]
@@ -170,6 +190,7 @@ def to_export(conn: sqlite3.Connection, scan_id: int | None = None) -> dict:
     total_scans = conn.execute("SELECT COUNT(*) AS n FROM scans").fetchone()['n']
     game_time = scan['game_time_s']
     ships = _ships(conn, scan_id)
+    npc_ships = _npc_ships(conn, scan_id)
 
     return {
         'meta': {
@@ -189,6 +210,10 @@ def to_export(conn: sqlite3.Connection, scan_id: int | None = None) -> dict:
         'stations':              _stations(conn, scan_id),
         'ships':                 ships,
         'fleet_summary':         _fleet_summary(ships),
+        # NPC ships operating in the player's station sectors + a digested
+        # sector → faction → role presence summary.
+        'npc_ships':             npc_ships,
+        'npc_presence':          _npc_presence(npc_ships),
         'crew':                  _crew(conn, scan_id),
         'station_trades':        _station_trades(conn, scan_id, game_time),
         'mining_deliveries':     _mining(conn, scan_id, game_time),

@@ -21,6 +21,7 @@ import sqlite3
 from datetime import datetime, timezone
 
 from data.wares import WARE_NAMES
+from scanner.ship_names import ship_display_name
 
 
 def _ware_name(ware_id: str) -> str:
@@ -69,6 +70,7 @@ def write_scan(conn: sqlite3.Connection, ctx) -> int:
     _write_reputation(cur, scan_id, ctx)
     _write_stations(cur, scan_id, ctx)
     _write_ships(cur, scan_id, ctx)
+    _write_npc_ships(cur, scan_id, ctx)
     _write_crew(cur, scan_id, ctx)
     _write_active(cur, scan_id, ctx)
     _write_ledger(cur, scan_id, ctx)
@@ -128,6 +130,39 @@ def _write_ships(cur, scan_id, ctx) -> None:
           sh.pilot_id)
          for sh in ctx.ships if sh.owner_id == 'player'],
     )
+
+
+def _write_npc_ships(cur, scan_id, ctx) -> None:
+    """
+    NPC ships operating in the player's STATION sectors — situational awareness.
+
+    We capture every NPC ship's identity during the scan; here we keep only the
+    ones whose sector contains a player station (a bounded, strategically
+    relevant subset), resolve a readable type name, and attach a destination
+    station for the ones currently mid-delivery.
+    """
+    pstn_sectors = {s.sector_macro for s in ctx.stations if s.sector_macro}
+    if not pstn_sectors:
+        return
+    sect_name = {sec.sector_macro: sec.sector_name for sec in ctx.sectors}
+
+    rows = []
+    for s in ctx.ships:
+        if s.owner_id == 'player' or s.sector_macro not in pstn_sectors:
+            continue
+        # Where is it hauling, if mid-delivery? Resolve to a station name.
+        dest = None
+        dest_id = ctx.delivery_dest_index.get(s.object_id)
+        if dest_id:
+            d = ctx.npc_station_index.get(dest_id)
+            dest = d.name if d else None
+        rows.append((
+            scan_id, s.object_id, s.code, ship_display_name(s.macro, s.name),
+            s.ship_class, s.size, s.macro, s.role, s.owner_id, s.owner_name,
+            s.sector_macro, sect_name.get(s.sector_macro), dest,
+        ))
+    cur.executemany(
+        "INSERT INTO npc_ships VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
 
 
 def _write_crew(cur, scan_id, ctx) -> None:

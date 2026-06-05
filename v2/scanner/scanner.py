@@ -9,7 +9,6 @@ from .handlers.ship        import ShipHandler
 from .handlers.reputation  import ReputationHandler
 from .handlers.trade       import TradeHandler
 from .handlers.economy     import EconomyHandler
-from .handlers.crew        import CrewHandler
 from .handlers.npc_station import NpcStationHandler
 from .handlers.sector      import SectorHandler
 
@@ -63,7 +62,6 @@ class Scanner:
         self._rep     = ReputationHandler()
         self._trade   = TradeHandler()
         self._economy = EconomyHandler()
-        self._crew    = CrewHandler()
         self._npc     = NpcStationHandler(texts)
         self._sector  = SectorHandler(sector_names)
 
@@ -302,12 +300,6 @@ class Scanner:
             # orders). Player-station orders are inside buffered elements and
             # are handled by StationHandler's tree walk.
             self._trade.on_trade(elem, ctx)
-
-        elif tag == 'npc':
-            # Crew elements outside buffered sections. Player ship/station crew
-            # is inside buffered elements; this fires for NPC ship crew.
-            # CrewHandler checks ctx.top.owner before doing any work.
-            self._crew.on_npc(elem, ctx)
 
     def _on_element_end(
         self, tag: str, elem, ctx: ScanContext
