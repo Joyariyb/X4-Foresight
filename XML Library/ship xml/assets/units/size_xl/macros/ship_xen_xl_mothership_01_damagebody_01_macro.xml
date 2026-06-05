@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--Exported by: Lino (192.168.3.107) on 2023-10-11 15:40:45-->
-<macros>
-  <macro name="ship_xen_xl_mothership_01_damagebody_01_macro" class="destructible">
-    <component ref="ship_xen_xl_mothership_01_damagebody_01" />
-  </macro>
-</macros>

@@ -47,7 +47,7 @@ from data.production_stats import PRODUCTION_STATS
 from data.ware_prices import WARE_PRICES
 from data.sector_stats import SECTOR_SUNLIGHT
 from data.wares import WARE_NAMES
-from scanner.crew_scanner import _iter_components
+from .xml_utils import iter_station_components as _iter_components
 
 # Production module macros look like prod_{faction}_{ware}_macro, e.g.
 # prod_gen_refinedmetals_macro. Group 1 is the faction token, group 2 the ware.
