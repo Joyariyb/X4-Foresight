@@ -160,9 +160,10 @@ def _write_npc_ships(cur, scan_id, ctx) -> None:
             scan_id, s.object_id, s.code, ship_display_name(s.macro, s.name),
             s.ship_class, s.size, s.macro, s.role, s.owner_id, s.owner_name,
             s.sector_macro, sect_name.get(s.sector_macro), dest,
+            s.order or "Idle",
         ))
     cur.executemany(
-        "INSERT INTO npc_ships VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
+        "INSERT INTO npc_ships VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
 
 
 def _write_crew(cur, scan_id, ctx) -> None:

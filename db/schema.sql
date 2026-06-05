@@ -152,7 +152,8 @@ CREATE TABLE IF NOT EXISTS npc_ships (
     owner_name   TEXT,
     sector_macro TEXT,
     sector_name  TEXT,
-    destination  TEXT          -- station it is hauling to, if mid-delivery; else NULL
+    destination  TEXT,         -- station it is hauling to, if mid-delivery; else NULL
+    ship_order   TEXT          -- current order e.g. "Trading", "Attacking", "Patrolling"
 );
 
 CREATE TABLE IF NOT EXISTS crew (

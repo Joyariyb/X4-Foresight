@@ -49,7 +49,7 @@ class Scanner:
         # Load sector names once at startup. All handlers that need to resolve
         # a sector macro to a human name receive the same pre-built dict.
         # Defaults to the standard project-root location of the language file.
-        _lang_path   = lang_path or Path('0001-l044.xml')
+        _lang_path   = lang_path or Path(__file__).resolve().parent.parent / '0001-l044.xml'
         sector_names = load_sector_names(_lang_path)
 
         # Pages needed by NpcStationHandler (and later StationHandler):

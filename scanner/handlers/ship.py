@@ -658,6 +658,14 @@ class ShipHandler:
         self._npc_trading:  bool = False  # the trading="1" flag was seen
         self._npc_committed: bool = False  # delivery dest already recorded
 
+        # ── Streaming order capture for non-buffered NPC ships ─────────────────
+        # NPC ships aren't buffered, so _parse_order() can't be used. Instead we
+        # capture the order label as <order> children stream past and write it
+        # directly onto the Ship object while it's still in memory.
+        self._current_npc_ship: 'Ship | None' = None
+        self._npc_order_active:  str = ""   # first started non-temp order label
+        self._npc_order_default: str = ""   # default="1" order label (fallback)
+
     # ── Dispatcher entry points ───────────────────────────────────────────────
 
     def extract_station_docked_ships(self, station_elem, ctx) -> None:
@@ -706,14 +714,16 @@ class ShipHandler:
         code   = elem.get("code",  "")
         obj_id = elem.get("id",    "")
 
-        # Arm the streaming DockAt extractor for this NPC ship. Its <order> and
-        # <param> children will stream past next; on_npc_order/on_npc_param read
-        # the active delivery destination from them.
-        self._npc_ship_id  = obj_id
-        self._npc_dockat   = False
-        self._npc_dest     = ""
-        self._npc_trading  = False
-        self._npc_committed = False
+        # Arm the streaming extractors for this NPC ship. Its <order> and <param>
+        # children stream past next; on_npc_order/on_npc_param read the active
+        # delivery destination AND the current order label from them.
+        self._npc_ship_id    = obj_id
+        self._npc_dockat     = False
+        self._npc_dest       = ""
+        self._npc_trading    = False
+        self._npc_committed  = False
+        self._npc_order_active  = ""
+        self._npc_order_default = ""
 
         hull_prefix, hull_name = _extract_hull_origin(macro)
         type_name = _resolve_ship_type(macro)
@@ -751,6 +761,7 @@ class ShipHandler:
         )
 
         ctx.ships.append(ship)
+        self._current_npc_ship = ship
 
         # Register code → display name for trade record name resolution.
         # Trade history entries identify ships by their code (e.g. "WYX-052"),
@@ -789,13 +800,29 @@ class ShipHandler:
         """
         if not self._in_current_npc_ship(ctx):
             return
-        if elem.get("order") == "DockAt" and elem.get("temp") == "1":
+
+        order_type = elem.get("order", "")
+
+        # ── Delivery destination tracking (existing) ──────────────────────────
+        if order_type == "DockAt" and elem.get("temp") == "1":
             self._npc_dockat  = True
             self._npc_dest    = ""
             self._npc_trading = False
         else:
-            # A non-DockAt order — its params are not a delivery destination.
             self._npc_dockat = False
+
+        # ── Order label capture ───────────────────────────────────────────────
+        # Mirrors the priority logic of _parse_order(): a started non-temp order
+        # is what the ship is doing right now; default="1" is the standing order
+        # it falls back to. Active wins over default; first active seen wins.
+        label = _ORDER_LABELS.get(order_type, order_type)
+        if elem.get("temp") != "1" and elem.get("state") == "started":
+            if not self._npc_order_active:
+                self._npc_order_active = label
+                self._current_npc_ship.order = label
+        elif elem.get("default") == "1" and not self._npc_order_active:
+            self._npc_order_default = label
+            self._current_npc_ship.order = label
 
     def on_npc_param(self, elem, ctx) -> None:
         """
