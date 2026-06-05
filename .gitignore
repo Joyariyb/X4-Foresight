@@ -11,40 +11,21 @@ env/
 
 # IDE project files
 .idea/
-*.iml
 .vscode/
 
-# X4 save file (large, user-specific)
+# User-provided game data (must be supplied locally; not committed)
+0001-l044.xml
 save_001.xml
 
-# Generated output (can be reproduced by running the scanner)
+# Generated scanner output
 x4_empire_state.json
+
+# Generated SQLite database
+*.db
+*.db-wal
+*.db-shm
 
 # OS junk
 .DS_Store
 Thumbs.db
-
-# PyInstaller build output (spec and build.bat are committed; built app is not)
-X4 Executable/X4 Empire Intelligence/
-X4 Executable/_build_tmp/
-/X4 Executable
-/.claude/worktrees
-/Legacy
-
-#Other folders
-/ship xml
-
-#Files
-character_components.xml
-character_macros.xml
-charactergroups.xml
-Complete cat Dump.txt
-npc_agent.xml
-npc_instantiation.xml
-people.xml
-/shield xml
-/station xml
-AGENTS.md
-trade_perform_samples.txt
-savegame_formatted.xml
-.claude/launch.json
+*.pyc
