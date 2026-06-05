@@ -20,6 +20,11 @@ save_001.xml
 # Generated output (can be reproduced by running the scanner)
 x4_empire_state.json
 
+# Generated SQLite databases (v2 multi-scan history + test dbs, reproducible)
+*.db
+*.db-wal
+*.db-shm
+
 # OS junk
 .DS_Store
 Thumbs.db
