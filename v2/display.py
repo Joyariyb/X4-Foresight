@@ -123,6 +123,19 @@ def _health_str(pct, hp, mx) -> str:
     return paint(body, _health_color(pct))
 
 
+def _shield_str(pct, hp, mx) -> str:
+    """Shield reading — always blue (V1 convention), to set it apart from hull."""
+    if pct is None:
+        return paint("—", GREY)
+    if pct >= 99.9:
+        body = f"Full ({mx:,.0f})" if mx else "Full"
+    else:
+        body = f"{pct:.0f}%"
+        if hp is not None and mx:
+            body += f" ({hp:,.0f}/{mx:,.0f})"
+    return paint(body, BLUE)
+
+
 def _runtime(mins) -> tuple[str, str]:
     """Return (text, colour) for input-stock runtime — red when running low."""
     if mins is None:
@@ -360,7 +373,7 @@ def _fleet(ctx, sector_name: dict) -> None:
             ind  = "      " if last else "│     "
             name = ship_display_name(s.macro, s.name)
             hp   = _health_str(s.hull_pct, s.hull_hp, s.hull_max)
-            sh   = _health_str(s.shield_pct, s.shield_hp, s.shield_max) if s.shield_pct is not None else ''
+            sh   = _shield_str(s.shield_pct, s.shield_hp, s.shield_max) if s.shield_pct is not None else ''
             line = (f"  {conn} {name:<{name_col}} {s.size:<3} {s.role:<16} "
                     f"{DIM}{s.order:<14}{RESET} {hp}")
             if sh:
@@ -482,21 +495,6 @@ def _trades(ctx) -> None:
                 print(f"     {paint(f'{d:<3}', dcol)} {ware[:20]:<20} {n:>6} "
                       f"{units:>11,} {avg:>8,.0f} {total:>14,.0f}")
 
-    # ── Recent commercial trades (coloured by provenance) ────────────────────
-    recent = sorted(th, key=lambda t: t.time_ago_s)[:15]
-    if recent:
-        print(f"\n  {BOLD}── Recent commercial trades ──{RESET}  "
-              f"{DIM}counterparty: {paint('proven', GREEN)}/"
-              f"{paint('inferred', YELLOW)}/{paint('unknown', GREY)}{RESET}")
-        print(f"     {'Time':<7} {'Ship':<24} {'Dir':<3} {'Ware':<16} "
-              f"{'Total Cr':>11}  Counterparty")
-        for t in recent:
-            ship = t.ship_name or t.ship_code or ''
-            # Counterparty is the last column — print full, coloured by provenance.
-            cp = _prov_paint(t.resolution, t.counterparty_name or '—')
-            print(f"     {_ago(t.time_ago_s):<7} {ship[:24]:<24} {t.direction:<3} "
-                  f"{t.ware_name[:16]:<16} {t.total_cr:>11,.0f}  {cp}")
-
     # ── Mining deliveries summary (raw resources → your stations) ────────────
     if mining:
         magg: dict = defaultdict(lambda: defaultdict(lambda: [0, 0.0]))
@@ -509,6 +507,38 @@ def _trades(ctx) -> None:
                 f"{u:,} {w}" for w, (u, _) in
                 sorted(wares.items(), key=lambda x: -x[1][0]))
             print(f"     {code:<10} {DIM}{parts}{RESET}")
+
+
+# ── section: full per-station trade log ─────────────────────────────────────────
+
+def _trade_log(ctx) -> None:
+    """Every completed commercial trade, grouped by player station, most recent
+    first — the full history behind the Trade Activity summary."""
+    th = ctx.trade_history
+    if not th:
+        return
+    print("\n" + LINE)
+    print(f"  {BOLD}COMPLETED TRADE LOG{RESET}  ({len(th):,} entries)   "
+          f"{DIM}counterparty: {paint('proven', GREEN)}/"
+          f"{paint('inferred', YELLOW)}/{paint('unknown', GREY)}{RESET}")
+
+    by_station: dict = defaultdict(list)
+    for t in th:
+        by_station[(t.station_code, t.station_name)].append(t)
+
+    for (code, name), rows in sorted(by_station.items(), key=lambda kv: -len(kv[1])):
+        rows.sort(key=lambda t: t.time_ago_s)
+        print(f"\n  {paint('┌─ ' + name, CYAN)} [{code}]  ·  {len(rows)} entries")
+        print(f"     {'Time':<7} {'Ship':<31} {'Dir':<3} {'Ware':<16} "
+              f"{'Units':>8} {'Cr/u':>8} {'Total Cr':>12}  Counterparty")
+        for t in rows:
+            ship = t.ship_name or t.ship_code or ''
+            if t.ship_code and t.ship_code != ship:
+                ship = f"{ship} [{t.ship_code}]"
+            cp = _prov_paint(t.resolution, t.counterparty_name or '—')
+            print(f"     {_ago(t.time_ago_s):<7} {ship[:31]:<31} {t.direction:<3} "
+                  f"{t.ware_name[:16]:<16} {t.amount:>8,} {t.price_cr:>8,.2f} "
+                  f"{t.total_cr:>12,.0f}  {cp}")
 
 
 # ── section: crew roster ─────────────────────────────────────────────────────────
@@ -543,5 +573,6 @@ def display_report(ctx) -> None:
     _fleet(ctx, sector_name)
     _npc_presence(ctx, sector_name)
     _trades(ctx)
+    _trade_log(ctx)
     _crew(ctx)
     print("\n" + paint(SEP, CYAN) + "\n")
