@@ -438,8 +438,8 @@ def _npc_presence(ctx, sector_name: dict) -> None:
 
 # ── section: trade activity ─────────────────────────────────────────────────────
 
-_PROVEN = {'direct', 'courier'}
-_INFERRED = {'homebase', 'visit', 'sector', 'delivery'}
+_PROVEN   = {'direct', 'courier'}
+_INFERRED = {'homebase', 'visit', 'sector', 'delivery', 'docked'}
 
 
 def _prov_paint(resolution: str, text: str) -> str:
@@ -535,7 +535,10 @@ def _trade_log(ctx) -> None:
             ship = t.ship_name or t.ship_code or ''
             if t.ship_code and t.ship_code != ship:
                 ship = f"{ship} [{t.ship_code}]"
-            cp = _prov_paint(t.resolution, t.counterparty_name or '—')
+            if t.resolution == 'despawned':
+                cp = paint('despawned', GREY)
+            else:
+                cp = _prov_paint(t.resolution, t.counterparty_name or '—')
             ship_id_col = t.ship_id or ''
             print(f"     {_ago(t.time_ago_s):<7} {ship[:31]:<31} {ship_id_col:<10} {t.direction:<3} "
                   f"{t.ware_name[:16]:<16} {t.amount:>8,} {t.price_cr:>8,.2f} "

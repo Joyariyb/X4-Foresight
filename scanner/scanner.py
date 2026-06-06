@@ -219,6 +219,7 @@ class Scanner:
                 self._ship.extract_station_docked_ships(elem, ctx)
             else:
                 self._npc.on_end(elem, ctx)
+                self._ship.extract_npc_docked_ships(elem, frame.object_id, ctx)
 
         elif frame.cls in SHIP_CLASSES and frame.owner == 'player':
             self._ship.on_end(elem, ctx)

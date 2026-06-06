@@ -49,6 +49,7 @@ def _rank(col: str) -> str:
         "WHEN 'direct' THEN 3 WHEN 'courier' THEN 3 "
         "WHEN 'homebase' THEN 1 WHEN 'visit' THEN 1 "
         "WHEN 'sector' THEN 1 WHEN 'delivery' THEN 1 "
+        "WHEN 'docked' THEN 1 WHEN 'despawned' THEN 1 "
         "ELSE 0 END)"
     )
 

@@ -166,6 +166,19 @@ class ScanContext:
     # to a human-meaningful party instead of a raw hex id.
     removed_codes: dict[str, str] = field(default_factory=dict)
 
+    # ShipHandler → TradePostProcessor (NPC ships docked at NPC stations)
+    # Maps ship object_id → (code, macro, npc_station_id) for every NPC ship
+    # found inside a buffered NPC station subtree at scan time.
+    #
+    # WHY THIS EXISTS: ships docked at NPC stations are invisible to on_start()
+    # because the scanner suppresses dispatch inside buffered sections. They never
+    # reach ctx.ships, so ship_by_id and delivery_dest_index both miss them.
+    # Capturing them here gives the postprocessor two things:
+    #   1. name resolution  — code + macro → display name
+    #   2. counterparty     — the station they are physically sitting in is the
+    #                         most direct evidence of where goods were delivered
+    npc_docked_ships: dict[str, tuple] = field(default_factory=dict)
+
 
     # ── Stack helpers ─────────────────────────────────────────────────────────
 

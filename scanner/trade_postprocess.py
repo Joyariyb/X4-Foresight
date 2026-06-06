@@ -63,6 +63,7 @@ class TradePostProcessor:
         self.homebase   = ctx.homebase_index
         self.delivery   = ctx.delivery_dest_index
         self.removed    = ctx.removed_codes
+        self.npc_docked = ctx.npc_docked_ships   # ship_id → (code, macro, station_id)
         self.ctx        = ctx
 
         # ── Flag rows with player-involvement booleans; keep player rows ──────
@@ -154,6 +155,10 @@ class TradePostProcessor:
         sh = self.ship_by_id.get(ship_id)
         if sh is not None:
             return ship_id, sh.code, ship_display_name(sh.macro, sh.name)
+        info = self.npc_docked.get(ship_id)
+        if info:
+            code, macro, _ = info
+            return ship_id, code, ship_display_name(macro, None)
         label = self.removed.get(ship_id)
         if label:
             # Despawned object — only a "Name [CODE]" label survives in removed.
@@ -192,6 +197,16 @@ class TradePostProcessor:
             if stn:
                 return hb, stn[1], 'homebase'
 
+        # Step 3b — NPC dock: ship is physically sitting in an NPC station's bay
+        # at save time. Strongest per-ship evidence after homebase — a ship
+        # docked here either just delivered or is about to load for a run.
+        info = self.npc_docked.get(ship_id)
+        if info:
+            _, _, dock_id = info
+            stn = self._as_station(dock_id)
+            if stn:
+                return dock_id, stn[1], 'docked'
+
         # Step 4 — visits: the ship's own logged trade of THIS ware at an NPC
         # station, closest in time. Per-trade evidence, beats a sector guess.
         vs = self.visits.get(ship_id)
@@ -205,14 +220,20 @@ class TradePostProcessor:
                     return sid, stn[1], 'visit'
 
         # Step 5 — sector-ware inference (player-sells only): the single NPC
-        # consumer of this ware in the player station's sector.
-        if is_sell and player_sector:
-            buyers = self.sector_ware_buyers.get((player_sector, ware))
-            if buyers and len(buyers) == 1:
-                sid = next(iter(buyers))
-                stn = self._as_station(sid)
-                if stn:
-                    return sid, stn[1], 'sector'
+        # consumer of this ware in the player station's sector, then — if that
+        # yields nothing — in the ship's own sector. sector_ware_buyers is
+        # already activity-filtered (built from trade log rows), so both lookups
+        # automatically exclude stations with no recent transactions.
+        if is_sell:
+            sh = self.ship_by_id.get(ship_id)
+            ship_sector = sh.sector_macro if sh else ''
+            for sect in dict.fromkeys(s for s in (player_sector, ship_sector) if s):
+                buyers = self.sector_ware_buyers.get((sect, ware))
+                if buyers and len(buyers) == 1:
+                    sid = next(iter(buyers))
+                    stn = self._as_station(sid)
+                    if stn:
+                        return sid, stn[1], 'sector'
 
         # Step 6 — delivery: the ship's live DockAt destination. Last resort —
         # correct for recent loads, stale for old ones, so it ranks below the
@@ -222,6 +243,11 @@ class TradePostProcessor:
             stn = self._as_station(dest)
             if stn:
                 return dest, stn[1], 'delivery'
+
+        # Explicitly flag despawned ships so the display can distinguish "we know
+        # it's gone" from "we just don't know who this is".
+        if self.removed.get(ship_id):
+            return None, None, 'despawned'
 
         return None, None, 'unresolved'
 
@@ -449,7 +475,7 @@ class TradePostProcessor:
             counterparty_name = cp_name,
             game_time_s       = e['game_time_s'],
             time_ago_s        = e['time_ago_s'],
-            resolution        = prov if cp_name else '',
+            resolution        = prov if (cp_name or prov == 'despawned') else '',
         ))
 
     def _emit_mining(self, e) -> None:

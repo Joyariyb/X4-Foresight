@@ -668,6 +668,34 @@ class ShipHandler:
 
     # ── Dispatcher entry points ───────────────────────────────────────────────
 
+    def extract_npc_docked_ships(self, station_elem, station_id: str, ctx) -> None:
+        """
+        Record ships docked inside an NPC station's buffered subtree.
+
+        Called alongside _npc.on_end() when an NPC station closes. Unlike
+        extract_station_docked_ships (which pulls full Ship entities for player
+        stations), this only writes ship_id → (code, macro, station_id) into
+        ctx.npc_docked_ships. Full entities aren't needed — the postprocessor
+        only uses code/macro for name resolution and station_id for counterparty
+        attribution, and we don't want to flood ctx.ships with every NPC visitor
+        across every NPC station in the galaxy.
+        """
+        for child in station_elem.iter():
+            if child is station_elem:
+                continue
+            cls = child.get("class", "")
+            if cls not in SIZE_LABELS:
+                continue
+            if child.get("owner", "") == "player":
+                continue   # player ships at NPC stations are handled elsewhere
+            ship_id = child.get("id", "")
+            if ship_id:
+                ctx.npc_docked_ships[ship_id] = (
+                    child.get("code",  ""),
+                    child.get("macro", ""),
+                    station_id,
+                )
+
     def extract_station_docked_ships(self, station_elem, ctx) -> None:
         """
         Extract player ships docked INSIDE a player station's buffered subtree.
