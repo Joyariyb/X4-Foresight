@@ -529,14 +529,15 @@ def _trade_log(ctx) -> None:
     for (code, name), rows in sorted(by_station.items(), key=lambda kv: -len(kv[1])):
         rows.sort(key=lambda t: t.time_ago_s)
         print(f"\n  {paint('┌─ ' + name, CYAN)} [{code}]  ·  {len(rows)} entries")
-        print(f"     {'Time':<7} {'Ship':<31} {'Dir':<3} {'Ware':<16} "
+        print(f"     {'Time':<7} {'Ship':<31} {'Ship ID':<10} {'Dir':<3} {'Ware':<16} "
               f"{'Units':>8} {'Cr/u':>8} {'Total Cr':>12}  Counterparty")
         for t in rows:
             ship = t.ship_name or t.ship_code or ''
             if t.ship_code and t.ship_code != ship:
                 ship = f"{ship} [{t.ship_code}]"
             cp = _prov_paint(t.resolution, t.counterparty_name or '—')
-            print(f"     {_ago(t.time_ago_s):<7} {ship[:31]:<31} {t.direction:<3} "
+            ship_id_col = t.ship_id or ''
+            print(f"     {_ago(t.time_ago_s):<7} {ship[:31]:<31} {ship_id_col:<10} {t.direction:<3} "
                   f"{t.ware_name[:16]:<16} {t.amount:>8,} {t.price_cr:>8,.2f} "
                   f"{t.total_cr:>12,.0f}  {cp}")
 
