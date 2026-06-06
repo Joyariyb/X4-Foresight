@@ -326,7 +326,7 @@ def _npc_stations(ctx, sector_name: dict) -> None:
 # Distance → colour, near (green) to far (grey).
 _DIST_COLOR = {0: GREEN, 1: CYAN, 2: BLUE, 3: MAGENTA, 4: YELLOW, 5: GREY}
 
-_HEX_W   = 7   # interior label width — a hex tile is _HEX_W + 2 chars wide
+_HEX_W   = 8   # interior width of a tile's info rows — a tile is _HEX_W + 2 wide
 _PER_ROW = 6   # hexes per honeycomb row (keeps the widest row within 78 cols)
 
 _ROMAN_RE = re.compile(r'^[IVXLCDM]+$')
@@ -360,37 +360,101 @@ def _abbrev(name: str, width: int = _HEX_W) -> str:
     return abbr[:width] or name[:width]
 
 
-def _hex_tile(label: str, is_asset: bool, color: str) -> tuple[str, str, str]:
-    """Return the (top, middle, bottom) lines of one hex tile, already coloured."""
-    body = (f"*{label}" if is_asset else label).center(_HEX_W)[:_HEX_W]
-    top = " " + "_" * _HEX_W + " "
-    mid = f"/{body}\\"
-    bot = "\\" + "_" * _HEX_W + "/"
+def _hex_tile(label: str, is_asset: bool, color: str, jumps: int) -> list[str]:
+    """
+    Return the coloured lines of one hexagon tile (all exactly _HEX_W + 2 wide).
+
+    Six rows: a flat top, a top bevel whose corners angle out to the vertical
+    sides, two full-width info rows (sector label, then jumps-to-nearest-station)
+    bounded by `|` sides, a bottom bevel, and a flat bottom.
+
+    The flat TOP uses underscores (they render at the bottom of their cell, so
+    they tuck down onto the bevel below). The flat BOTTOM uses the overline `‾`
+    (renders at the top of its cell, tucking up under the bevel above) — using
+    underscores there would sink to the cell floor and detach from the shape.
+    """
+    flat = _HEX_W - 2                                       # span of the flat edges
+    name = (f"*{label}" if is_asset else label).center(_HEX_W)[:_HEX_W]
+    jstr = f"{jumps} jmp".center(_HEX_W)[:_HEX_W]
+    lines = [
+        f"  {'_' * flat}  ",                               # flat top
+        f" /{' ' * flat}\\ ",                              # top bevel
+        f"|{name}|",                                       # sector label
+        f"|{jstr}|",                                       # jumps to nearest station
+        f" \\{' ' * flat}/ ",                              # bottom bevel
+        f"  {'‾' * flat}  ",                               # flat bottom (overline)
+    ]
     col = GREEN if is_asset else color
-    return (paint(top, col),
-            paint(f"{BOLD}{mid}" if is_asset else mid, col),
-            paint(bot, col))
+    out = []
+    for i, ln in enumerate(lines):
+        if is_asset and i == 2:
+            out.append(paint(f"{BOLD}{ln}", col))          # asset name stands out
+        elif i == 3:
+            out.append(paint(f"{DIM}{ln}", col))           # jumps row is secondary
+        else:
+            out.append(paint(ln, col))
+    return out
 
 
-def _render_ring(cells: list[tuple[str, bool]], color: str, indent: int = 4) -> list[str]:
+def _render_ring(cells: list[tuple[str, bool]], color: str, jumps: int,
+                 indent: int = 4) -> list[str]:
     """
     Lay a band of hex tiles out as honeycomb rows.
 
-    cells is (abbrev, is_asset). Rows hold up to _PER_ROW tiles; alternate rows
-    are nudged half a tile right so the tiles stagger like a honeycomb.
+    cells is (abbrev, is_asset); jumps is the band's distance (same for every tile
+    in the band, shown on each tile's second row). Rows hold up to _PER_ROW tiles;
+    alternate rows are nudged half a tile right so the tiles stagger like a
+    honeycomb. Tiles are composed line-by-line, so this works for any tile height.
     """
     out: list[str] = []
     for start in range(0, len(cells), _PER_ROW):
         row = cells[start:start + _PER_ROW]
         pad = " " * (indent + (5 if (start // _PER_ROW) % 2 else 0))
-        tops, mids, bots = [], [], []
-        for label, is_asset in row:
-            t, m, b = _hex_tile(label, is_asset, color)
-            tops.append(t); mids.append(m); bots.append(b)
-        out.append(pad + " ".join(tops))
-        out.append(pad + " ".join(mids))
-        out.append(pad + " ".join(bots))
+        tiles = [_hex_tile(label, is_asset, color, jumps) for label, is_asset in row]
+        for i in range(len(tiles[0])):
+            out.append(pad + " ".join(tile[i] for tile in tiles))
     return out
+
+
+def _fit_name(name: str, width: int) -> str:
+    """
+    Truncate a sector name to width, but keep a trailing roman/number suffix.
+
+    Sibling sectors differ only by that numeral ("Atiya's Misfortune I" vs "III"),
+    so a naive slice would make them indistinguishable. We abbreviate the body and
+    re-attach the suffix: "Atiya's Misfortune III" -> "Atiya's Misfor… III".
+    """
+    if len(name) <= width:
+        return name
+    tokens = name.split()
+    if len(tokens) > 1 and (_ROMAN_RE.match(tokens[-1]) or tokens[-1].isdigit()):
+        suffix = tokens[-1]
+        body = " ".join(tokens[:-1])
+        keep = width - len(suffix) - 2          # room for "… " + suffix
+        if keep >= 1:
+            return f"{body[:keep]}… {suffix}"
+    return name[:width - 1] + "…"
+
+
+def _index_cell(abbr: str, name: str, jumps: int, is_asset: bool,
+                abbr_w: int, name_w: int) -> str:
+    """
+    Format one sector-index entry: `ABBR  Full Name [*]`, fixed visible width.
+
+    The abbrev is tinted by its distance colour (matching the hex bands), and asset
+    sectors get a bold-green name + trailing `*`. The jump count is NOT shown — the
+    index is grouped under per-distance sub-headers that carry it. Visible text is
+    padded BEFORE colour is applied so columns line up (ANSI has no width).
+    """
+    nm = _fit_name(name, name_w)
+    abbr_cell = paint(f"{abbr:<{abbr_w}}", _DIST_COLOR[jumps])
+    if is_asset:
+        name_cell = paint(f"{BOLD}{nm:<{name_w}}", GREEN)
+        mark = paint(" *", GREEN)
+    else:
+        name_cell = f"{nm:<{name_w}}"
+        mark = "  "
+    return f"{abbr_cell} {name_cell}{mark}"
 
 
 def _galaxy_map(ctx, sector_name: dict) -> None:
@@ -409,8 +473,11 @@ def _galaxy_map(ctx, sector_name: dict) -> None:
 
     print("\n" + LINE)
     print(f"  {BOLD}GALAXY MAP — WITHIN 5 JUMPS OF YOUR EMPIRE{RESET}  ({len(dist)} sectors)")
-    key = "  ".join(paint(f"{d}█", _DIST_COLOR[d]) for d in range(6))
-    print(f"  {DIM}jumps{RESET} {key}    {paint('* = your assets', GREEN)}")
+
+    # ── Legend (map key) ──────────────────────────────────────────────────────
+    swatches = " ".join(paint(f"{d}█", _DIST_COLOR[d]) for d in range(6))
+    print(f"  {DIM}Legend{RESET}  hex = sector · top = name · bottom = jumps to nearest station")
+    print(f"          distance {swatches}    {paint('* = your station', GREEN)}")
 
     by_dist: dict[int, list[str]] = defaultdict(list)
     for macro, d in dist.items():
@@ -424,8 +491,26 @@ def _galaxy_map(ctx, sector_name: dict) -> None:
         head = f"{d} {'jump' if d == 1 else 'jumps'}" + (" · your empire" if d == 0 else "")
         print(f"\n  {paint('◆', _DIST_COLOR[d])} {head}  ({len(sectors)})")
         cells = [(_abbrev(sector_name.get(m, m)), m in asset_sectors) for m in sectors]
-        for line in _render_ring(cells, _DIST_COLOR[d]):
+        for line in _render_ring(cells, _DIST_COLOR[d], d):
             print(line)
+
+    # ── Sector index: grouped by jumps (like the map), labels A–Z within ───────
+    abbr_w = min(_HEX_W, max(len(_abbrev(sector_name.get(m, m))) for m in dist))
+    name_w = max(14, 32 - abbr_w)            # two columns fit within 78 cols
+    print(f"\n  {BOLD}Sector index{RESET}  {DIM}(by jumps, then label){RESET}")
+    for d in range(6):
+        macros = by_dist.get(d)
+        if not macros:
+            continue
+        entries = sorted(
+            ((_abbrev(sector_name.get(m, m)), sector_name.get(m, m), m in asset_sectors)
+             for m in macros),
+            key=lambda e: (e[0].lower(), e[1]))
+        head = f"{d} {'jump' if d == 1 else 'jumps'}"
+        print(f"   {paint(head, _DIST_COLOR[d])}")
+        cells2 = [_index_cell(a, n, d, asset, abbr_w, name_w) for a, n, asset in entries]
+        for i in range(0, len(cells2), 2):
+            print("    " + "  ".join(cells2[i:i + 2]))
 
 
 # ── section: reputation ─────────────────────────────────────────────────────────

@@ -29,3 +29,6 @@ x4_empire_state.json
 .DS_Store
 Thumbs.db
 *.pyc
+
+# Throwaway test/temp scripts, caches, and fixtures
+scratch/
