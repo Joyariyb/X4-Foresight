@@ -22,6 +22,7 @@ from datetime import datetime, timezone
 
 from data.wares import WARE_NAMES
 from scanner.ship_names import ship_display_name
+from scanner import galaxy_map
 
 
 def _ware_name(ware_id: str) -> str:
@@ -283,4 +284,14 @@ def _write_reference(cur, scan_id, ctx) -> None:
     ]
     cur.executemany(
         "INSERT OR REPLACE INTO npc_station_wares VALUES(?,?,?)", ware_rows,
+    )
+
+    # Galaxy connectivity graph. The topology is one coherent graph re-derived
+    # from this scan's gates + sectors, so we clear and rewrite the whole table
+    # rather than upserting per edge (see schema.sql).
+    graph = galaxy_map.build_graph(ctx.gates, ctx.sectors)
+    cur.execute("DELETE FROM sector_links")
+    cur.executemany(
+        "INSERT INTO sector_links(sector_a, sector_b, cost, last_scan_id) VALUES(?,?,?,?)",
+        [(a, b, cost, scan_id) for a, b, cost in galaxy_map.edges(graph)],
     )

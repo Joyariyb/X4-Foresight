@@ -319,3 +319,18 @@ CREATE TABLE IF NOT EXISTS npc_station_wares (
     ware_name    TEXT,
     PRIMARY KEY (station_id, ware_id)
 );
+
+-- Galaxy connectivity graph: one row per undirected sector-to-sector link.
+--   cost 1 = a gate / orbital accelerator hop (counts toward jump range)
+--   cost 0 = an intra-cluster superhighway hop (free — same "big hex")
+-- Unlike the other REFERENCE tables (which accumulate one row per object and
+-- track staleness via last_scan_id), the topology is ONE coherent graph, so the
+-- writer clears and rewrites it every scan rather than upserting per row.
+-- sector_a < sector_b canonicalises each undirected edge to a single stored row.
+CREATE TABLE IF NOT EXISTS sector_links (
+    sector_a      TEXT    NOT NULL,
+    sector_b      TEXT    NOT NULL,
+    cost          INTEGER NOT NULL,
+    last_scan_id  INTEGER NOT NULL,
+    PRIMARY KEY (sector_a, sector_b)
+);

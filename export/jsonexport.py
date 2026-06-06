@@ -20,6 +20,8 @@ import sqlite3
 from collections import Counter, defaultdict
 from pathlib import Path
 
+from scanner import galaxy_map as gm
+
 
 def _rows(conn, sql, params=()) -> list[dict]:
     return [dict(r) for r in conn.execute(sql, params).fetchall()]
@@ -115,6 +117,45 @@ def _sectors(conn) -> list[dict]:
         "sunlight FROM sectors ORDER BY sector_name")
 
 
+def _galaxy_map(conn, scan_id) -> dict:
+    """
+    Galaxy connectivity for this scan's player empire.
+
+    Rebuilds the adjacency graph from the stored sector_links, then reports the
+    jump distance from the NEAREST player-asset sector to every reachable sector
+    (0-1 BFS: gate/accelerator hops cost 1, intra-cluster superhighways cost 0).
+
+    Consumers get three things:
+      - player_sectors: sectors that currently hold a player station
+      - edges:          the full topology [sector_a, sector_b, cost], so a client
+                        can recompute any distance it likes (per-station, etc.)
+      - distances_from_player: {sector_macro: jumps} — min over all player sectors
+    Sector names are not duplicated here; join sector_macro to the `sectors` key.
+    """
+    edge_rows = conn.execute(
+        "SELECT sector_a, sector_b, cost FROM sector_links").fetchall()
+
+    graph: dict[str, list[tuple[str, int]]] = {}
+    for r in edge_rows:
+        a, b, cost = r['sector_a'], r['sector_b'], r['cost']
+        graph.setdefault(a, []).append((b, cost))
+        graph.setdefault(b, []).append((a, cost))
+
+    player_sectors = [
+        r['sector_macro'] for r in conn.execute(
+            "SELECT DISTINCT sector_macro FROM stations "
+            "WHERE scan_id=? AND sector_macro IS NOT NULL", (scan_id,))
+    ]
+    distances = gm.distances_from(graph, player_sectors) if player_sectors else {}
+
+    return {
+        'player_sectors':        player_sectors,
+        'edges':                 [[r['sector_a'], r['sector_b'], r['cost']]
+                                  for r in edge_rows],
+        'distances_from_player': distances,
+    }
+
+
 # The ledger stores ABSOLUTE game_time_s (it spans many scans). "Seconds ago"
 # is relative to THIS scan's clock, so we compute it at export time.
 def _ago(game_time: float, trade_time: float) -> float:
@@ -207,6 +248,7 @@ def to_export(conn: sqlite3.Connection, scan_id: int | None = None) -> dict:
         },
         'reputation':            _reputation(conn, scan_id),
         'sectors':               _sectors(conn),
+        'galaxy_map':            _galaxy_map(conn, scan_id),
         'stations':              _stations(conn, scan_id),
         'ships':                 ships,
         'fleet_summary':         _fleet_summary(ships),
