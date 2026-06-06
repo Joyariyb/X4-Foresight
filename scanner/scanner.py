@@ -199,6 +199,13 @@ class Scanner:
             # All sector data is on the opening tag — no buffering needed.
             self._sector.on_sector(elem, ctx)
 
+        elif frame.cls == 'buildstorage' and frame.owner == 'player':
+            # Construction platforms are player-owned but are not production
+            # stations — they only accept incoming build materials. Tracked
+            # separately so the post-processor can identify station→buildstorage
+            # transfers as internal without pulling in their NPC purchases.
+            ctx.player_buildstorage_ids.add(frame.object_id)
+
     def _on_buffered_end(
         self, frame: ComponentFrame | None, elem, ctx: ScanContext
     ) -> None:

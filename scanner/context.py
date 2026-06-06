@@ -123,6 +123,15 @@ class ScanContext:
     # Needed to classify whether a trade involves a player station.
     player_station_ids: set[str] = field(default_factory=set)
 
+    # Scanner → post-processor
+    # Player-owned construction platforms (class="buildstorage"). These are NOT
+    # production stations and do not trade with the market, but energy cell sales
+    # from a player station module to a buildstorage are internal player transfers.
+    # Kept separate from player_station_ids so their NPC purchases (construction
+    # materials bought from despawned/NPC sellers) are not misclassified as player
+    # station "In" trades.
+    player_buildstorage_ids: set[str] = field(default_factory=set)
+
     # ShipHandler → TradeHandler
     # Needed to classify whether a transport ship is player-owned.
     player_ship_ids: set[str] = field(default_factory=set)

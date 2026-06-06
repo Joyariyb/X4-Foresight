@@ -55,8 +55,9 @@ class TradePostProcessor:
 
     def run(self, ctx) -> Counter:
         # ── Indexes from the finished scan ────────────────────────────────────
-        self.pstn_ids  = set(ctx.player_station_ids)
-        self.pship_ids = set(ctx.player_ship_ids)
+        self.pstn_ids      = set(ctx.player_station_ids)
+        self.pship_ids     = set(ctx.player_ship_ids)
+        self.pbuildstorage = set(ctx.player_buildstorage_ids)
         self.npc_stn   = ctx.npc_station_index               # id → NpcStation
         self.pstn_by_id = {s.object_id: s for s in ctx.stations if s.object_id}
         self.ship_by_id = {s.object_id: s for s in ctx.ships if s.object_id}
@@ -341,6 +342,13 @@ class TradePostProcessor:
             stats['internal'] += 1
             self._emit_internal(e)
             return
+        # A player station selling to its own construction platform (buildstorage).
+        # These are internal material transfers; the buildstorage never trades with
+        # the open market so its NPC purchases are excluded from player trade history.
+        if e['player_is_seller'] and e['buyer'] in self.pbuildstorage:
+            stats['internal'] += 1
+            self._emit_internal(e)
+            return
         if e['player_is_buyer'] and e['player_ship_is_seller']:
             # A player station buying from a player ship. If that ship is a
             # MINER, this is a mining delivery (miner → its home station), not a
@@ -500,8 +508,13 @@ class TradePostProcessor:
         ))
 
     def _emit_internal(self, e) -> None:
-        a_id = e['seller'] if e['player_is_seller'] else e['buyer']
-        b_id = e['buyer']  if e['player_is_buyer']  else e['seller']
+        # a is the player-station (or ship) that initiated the transfer;
+        # b is the other party. For buildstorage trades, player_is_buyer is
+        # False, so we can't use it to pick b — use direct buyer/seller instead.
+        if e['player_is_seller']:
+            a_id, b_id = e['seller'], e['buyer']
+        else:
+            a_id, b_id = e['buyer'], e['seller']
         a = self.pstn_by_id.get(a_id)
         b = self.pstn_by_id.get(b_id)
         ship_side = (e['buyer'] if e['player_ship_is_buyer']
