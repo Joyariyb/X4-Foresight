@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from .entities import (
-    Station, NpcStation, Ship, CrewMember, ReputationEntry, Sector,
+    Station, NpcStation, Ship, CrewMember, ReputationEntry, Sector, Gate,
     ActiveTrade, ActiveAutoTrade,
     TradeHistory, TradeHistoryMining, TradeHistoryInternal,
 )
@@ -106,6 +106,7 @@ class ScanContext:
     crew:                   list[CrewMember]            = field(default_factory=list)
     reputation:             list[ReputationEntry]       = field(default_factory=list)
     sectors:                list[Sector]                = field(default_factory=list)
+    gates:                  list[Gate]                  = field(default_factory=list)
     npc_stations:           list[NpcStation]            = field(default_factory=list)
     active_trades:          list[ActiveTrade]           = field(default_factory=list)
     active_auto_trades:     list[ActiveAutoTrade]       = field(default_factory=list)

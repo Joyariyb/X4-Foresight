@@ -11,6 +11,7 @@ from .handlers.trade       import TradeHandler
 from .handlers.economy     import EconomyHandler
 from .handlers.npc_station import NpcStationHandler
 from .handlers.sector      import SectorHandler
+from .handlers.gate        import GateHandler
 
 
 class Scanner:
@@ -64,6 +65,7 @@ class Scanner:
         self._economy = EconomyHandler()
         self._npc     = NpcStationHandler(texts)
         self._sector  = SectorHandler(sector_names)
+        self._gate    = GateHandler()
 
         # Stored for handlers that need them during scan (ship, station).
         self._sector_names = sector_names
@@ -123,6 +125,11 @@ class Scanner:
                             elif frame.cls in SHIP_CLASSES and frame.owner == 'player':
                                 # Player ships only. NPC ships are streamed with
                                 # top-level attributes — no subtree walk needed.
+                                buffer_depth = ctx.depth
+                            elif frame.cls == 'gate':
+                                # Gates carry their pairing connection ids as
+                                # children, not attributes — buffer the (tiny)
+                                # subtree so GateHandler.on_end() can read them.
                                 buffer_depth = ctx.depth
 
                         # Dispatch component start. When we are already inside
@@ -199,6 +206,11 @@ class Scanner:
             # All sector data is on the opening tag — no buffering needed.
             self._sector.on_sector(elem, ctx)
 
+        elif frame.cls == 'gate':
+            # Gate endpoint — capture attributes + sector now; the connection
+            # ids are read from the buffered subtree at on_end().
+            self._gate.on_start(elem, ctx)
+
         elif frame.cls == 'buildstorage' and frame.owner == 'player':
             # Construction platforms are player-owned but are not production
             # stations — they only accept incoming build materials. Tracked
@@ -230,6 +242,9 @@ class Scanner:
 
         elif frame.cls in SHIP_CLASSES and frame.owner == 'player':
             self._ship.on_end(elem, ctx)
+
+        elif frame.cls == 'gate':
+            self._gate.on_end(elem, ctx)
 
     def _on_element_start(
         self, tag: str, elem, ctx: ScanContext

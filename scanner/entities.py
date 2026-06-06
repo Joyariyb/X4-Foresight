@@ -68,6 +68,36 @@ class Sector:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+#  GATE  (one endpoint of a gate/accelerator pair — feeds the galaxy map graph)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@dataclass
+class Gate:
+    """
+    One gate endpoint sitting in a single sector.
+
+    A traversable connection between two sectors is represented in the save as a
+    PAIR of gate components — one endpoint in each sector. Each endpoint stores
+    its own "destination" connection id plus the partner endpoint's connection id
+    (reciprocal). The galaxy-map builder pairs them by matching conn_id across all
+    gates, producing one edge per sector-to-sector link.
+
+    Both jump gates and orbital accelerators count as a 1-jump hop in X4 (verified
+    against the in-game trade-range rules), so gate_type is informational only —
+    it is not used to weight distance. Superhighways are NOT gates; intra-cluster
+    (0-jump) movement is derived separately from shared cluster membership.
+    """
+    scan_id:         int
+    object_id:       str   # hex component ID e.g. "[0x48b8]"
+    code:            str   # display code e.g. "FYW-152"
+    macro:           str   # raw macro — e.g. "props_gates_anc_gate_macro"
+    gate_type:       str   # "gate" (jump gate) or "accelerator" — derived from macro
+    sector_macro:    str   # FK → sectors.sector_macro — the sector this endpoint is in
+    conn_id:         str   # this endpoint's own "destination" connection id (pairing key)
+    partner_conn_id: str   # the partner endpoint's connection id (resolves to the far sector)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 #  STATION
 # ─────────────────────────────────────────────────────────────────────────────
 
