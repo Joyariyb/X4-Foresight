@@ -17,9 +17,11 @@ wrap colour around the finished cell — never pad an already-coloured string.
 """
 from __future__ import annotations
 import os
+import re
 import sys
 from collections import Counter, defaultdict
 
+from scanner import galaxy_map as gm
 from scanner.ship_names import ship_display_name
 from data.wares import WARE_NAMES
 from data.production import (
@@ -312,6 +314,120 @@ def _npc_stations(ctx, sector_name: dict) -> None:
                     print(f"  {ind} {DIM}         {extra}{RESET}")
 
 
+# ── section: galaxy map (hex) ────────────────────────────────────────────────────
+#
+# Iteration 1: a honeycomb of hex tiles for every sector within 5 jumps of your
+# empire (X4's default autotrade range), grouped into jump-distance bands and
+# tinted by distance. Distance comes from galaxy_map's 0-1 BFS — gate/accelerator
+# hops cost 1, intra-cluster superhighway hops cost 0. Spatial geography and
+# connection lines between hexes are deferred to a later iteration; this first cut
+# establishes the hex rendering and the "how far is each sector" read.
+
+# Distance → colour, near (green) to far (grey).
+_DIST_COLOR = {0: GREEN, 1: CYAN, 2: BLUE, 3: MAGENTA, 4: YELLOW, 5: GREY}
+
+_HEX_W   = 7   # interior label width — a hex tile is _HEX_W + 2 chars wide
+_PER_ROW = 6   # hexes per honeycomb row (keeps the widest row within 78 cols)
+
+_ROMAN_RE = re.compile(r'^[IVXLCDM]+$')
+_JOINERS  = {'the', 'of', 'to', 'a', 'and'}
+
+
+def _abbrev(name: str, width: int = _HEX_W) -> str:
+    """
+    Shrink a sector name to <=width chars for a hex label, keeping it distinct.
+
+    A trailing roman numeral / number (which distinguishes sibling sectors like
+    "Grand Exchange I" vs "III") is preserved as a suffix. One significant word is
+    kept whole ("The Void" -> "Void"); several collapse to initials
+    ("Grand Exchange I" -> "GE I", "Black Hole Sun V" -> "BHS V").
+    """
+    tokens = name.split()
+    if not tokens:
+        return name[:width]
+
+    suffix = ''
+    if len(tokens) > 1 and (_ROMAN_RE.match(tokens[-1]) or tokens[-1].isdigit()):
+        suffix, tokens = tokens[-1], tokens[:-1]
+
+    significant = [t for t in tokens if t.lower() not in _JOINERS] or tokens
+    if len(significant) == 1:
+        core = significant[0]
+    else:
+        core = ''.join(t[0].upper() for t in significant)
+
+    abbr = f"{core} {suffix}".strip() if suffix else core
+    return abbr[:width] or name[:width]
+
+
+def _hex_tile(label: str, is_asset: bool, color: str) -> tuple[str, str, str]:
+    """Return the (top, middle, bottom) lines of one hex tile, already coloured."""
+    body = (f"*{label}" if is_asset else label).center(_HEX_W)[:_HEX_W]
+    top = " " + "_" * _HEX_W + " "
+    mid = f"/{body}\\"
+    bot = "\\" + "_" * _HEX_W + "/"
+    col = GREEN if is_asset else color
+    return (paint(top, col),
+            paint(f"{BOLD}{mid}" if is_asset else mid, col),
+            paint(bot, col))
+
+
+def _render_ring(cells: list[tuple[str, bool]], color: str, indent: int = 4) -> list[str]:
+    """
+    Lay a band of hex tiles out as honeycomb rows.
+
+    cells is (abbrev, is_asset). Rows hold up to _PER_ROW tiles; alternate rows
+    are nudged half a tile right so the tiles stagger like a honeycomb.
+    """
+    out: list[str] = []
+    for start in range(0, len(cells), _PER_ROW):
+        row = cells[start:start + _PER_ROW]
+        pad = " " * (indent + (5 if (start // _PER_ROW) % 2 else 0))
+        tops, mids, bots = [], [], []
+        for label, is_asset in row:
+            t, m, b = _hex_tile(label, is_asset, color)
+            tops.append(t); mids.append(m); bots.append(b)
+        out.append(pad + " ".join(tops))
+        out.append(pad + " ".join(mids))
+        out.append(pad + " ".join(bots))
+    return out
+
+
+def _galaxy_map(ctx, sector_name: dict) -> None:
+    if not ctx.gates:
+        return
+    asset_sectors = {s.sector_macro for s in ctx.stations if s.sector_macro}
+    if not asset_sectors:
+        return
+
+    graph = gm.build_graph(ctx.gates, ctx.sectors)
+    dist = gm.distances_from(graph, asset_sectors, max_jumps=5)
+    if not dist:
+        return
+
+    cluster_of = {s.sector_macro: s.cluster_macro for s in ctx.sectors}
+
+    print("\n" + LINE)
+    print(f"  {BOLD}GALAXY MAP — WITHIN 5 JUMPS OF YOUR EMPIRE{RESET}  ({len(dist)} sectors)")
+    key = "  ".join(paint(f"{d}█", _DIST_COLOR[d]) for d in range(6))
+    print(f"  {DIM}jumps{RESET} {key}    {paint('* = your assets', GREEN)}")
+
+    by_dist: dict[int, list[str]] = defaultdict(list)
+    for macro, d in dist.items():
+        by_dist[d].append(macro)
+
+    for d in range(6):
+        sectors = by_dist.get(d)
+        if not sectors:
+            continue
+        sectors.sort(key=lambda m: (cluster_of.get(m, ''), sector_name.get(m, m)))
+        head = f"{d} {'jump' if d == 1 else 'jumps'}" + (" · your empire" if d == 0 else "")
+        print(f"\n  {paint('◆', _DIST_COLOR[d])} {head}  ({len(sectors)})")
+        cells = [(_abbrev(sector_name.get(m, m)), m in asset_sectors) for m in sectors]
+        for line in _render_ring(cells, _DIST_COLOR[d]):
+            print(line)
+
+
 # ── section: reputation ─────────────────────────────────────────────────────────
 
 def _rep_color(value: float) -> str:
@@ -573,6 +689,7 @@ def display_report(ctx) -> None:
     _header(ctx)
     _stations(ctx, sector_name)
     _npc_stations(ctx, sector_name)
+    _galaxy_map(ctx, sector_name)
     _reputation(ctx)
     _fleet(ctx, sector_name)
     _npc_presence(ctx, sector_name)
