@@ -55,6 +55,17 @@ class EconomyHandler:
         # (job pools, missions, etc.).
         self._in_removed: bool = False
 
+        # Aidirector streaming state — capture mid-delivery NPC ships.
+        # Each <vars> block inside <aidirector><entity><script name="order.dock.wait">
+        # stores $thisship (ship component id), $destination (docking bay id), and
+        # $trading=1. When all three are present the ship is actively docked/docking
+        # at a station to complete a trade delivery. $destination is a docking bay;
+        # dockingbay_index resolves it to the parent station.
+        self._in_aidirector: bool = False
+        self._vars_ship:     str  = ''
+        self._vars_dest:     str  = ''
+        self._vars_trading:  bool = False
+
     # ── Trade rows ────────────────────────────────────────────────────────────
 
     def on_log(self, elem, ctx) -> None:
@@ -138,3 +149,50 @@ class EconomyHandler:
         code = elem.get('code', '')
         label = f'{name} [{code}]' if code else name
         ctx.removed_codes[norm_id(raw_id)] = label
+
+    # ── Aidirector: Faction Econ_Manager delivery destinations ───────────────
+
+    def on_aidirector_start(self, elem, ctx) -> None:
+        self._in_aidirector = True
+
+    def on_aidirector_end(self, elem, ctx) -> None:
+        self._in_aidirector = False
+
+    def on_vars_start(self, elem, ctx) -> None:
+        if self._in_aidirector:
+            self._vars_ship    = ''
+            self._vars_dest    = ''
+            self._vars_trading = False
+
+    def on_value(self, elem, ctx) -> None:
+        if not self._in_aidirector:
+            return
+        name = elem.get('name', '')
+        val  = elem.get('value', '')
+        if   name == '$thisship':    self._vars_ship    = val
+        elif name == '$destination': self._vars_dest    = val
+        elif name == '$trading':     self._vars_trading = (val == '1')
+
+    def on_vars_end(self, elem, ctx) -> None:
+        """
+        Commit an in-progress trade delivery to delivery_dest_index.
+
+        The order.dock.wait script stores $thisship, $destination (docking bay),
+        and $trading=1 when a ship is actively docking to complete a trade.
+        This captures ships that are mid-delivery but whose ship component ORDER
+        elements were not seen by the streaming handler (e.g. ships inside a
+        buffered NPC station subtree at save time).
+
+        $destination is a docking bay component id; dockingbay_index maps it to
+        the parent station. setdefault preserves any DockAt entry the streaming
+        parser already captured from the ship component hierarchy.
+        """
+        if not self._in_aidirector:
+            return
+        if not (self._vars_ship and self._vars_dest and self._vars_trading):
+            return
+        dest = ctx.dockingbay_index.get(self._vars_dest, self._vars_dest)
+        ctx.delivery_dest_index.setdefault(self._vars_ship, dest)
+        self._vars_ship    = ''
+        self._vars_dest    = ''
+        self._vars_trading = False

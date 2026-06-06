@@ -179,6 +179,16 @@ class ScanContext:
     #                         most direct evidence of where goods were delivered
     npc_docked_ships: dict[str, tuple] = field(default_factory=dict)
 
+    # StationHandler + NpcStationHandler → EconomyHandler (aidirector resolution)
+    # Maps every sub-component id found inside a buffered station subtree to the
+    # parent station's object_id — e.g. pier ids, docking bay ids.
+    #
+    # WHY THIS EXISTS: the Faction AI Econ_Manager stores its trade assignment's
+    # $destination as the specific docking bay component, not the station itself.
+    # This index lets EconomyHandler resolve that bay id to its parent station
+    # when populating delivery_dest_index from aidirector script vars.
+    dockingbay_index: dict[str, str] = field(default_factory=dict)
+
 
     # ── Stack helpers ─────────────────────────────────────────────────────────
 

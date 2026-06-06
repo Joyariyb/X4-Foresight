@@ -285,6 +285,21 @@ class Scanner:
             # the many other <object> elements elsewhere in the save.
             self._economy.on_object(elem, ctx)
 
+        elif tag == 'aidirector':
+            # Opening the AI director section — arm aidirector streaming in
+            # EconomyHandler so it can capture mid-delivery NPC ship destinations.
+            self._economy.on_aidirector_start(elem, ctx)
+
+        elif tag == 'vars':
+            # Start of a <vars> block inside the aidirector. Resets the
+            # per-block $thisship / $destination / $trading accumulators.
+            self._economy.on_vars_start(elem, ctx)
+
+        elif tag == 'value':
+            # A script variable inside a <vars> block. EconomyHandler picks out
+            # $thisship, $destination, and $trading; ignores everything else.
+            self._economy.on_value(elem, ctx)
+
         elif tag == 'order':
             # Order element streaming past — used by ShipHandler to detect an
             # active DockAt delivery on a non-buffered NPC ship. The handler
@@ -318,3 +333,11 @@ class Scanner:
         elif tag == 'removed':
             # Close the <economylog><removed> block.
             self._economy.on_removed_end(elem, ctx)
+
+        elif tag == 'aidirector':
+            self._economy.on_aidirector_end(elem, ctx)
+
+        elif tag == 'vars':
+            # Commit the accumulated $Ship/$destination/$Ware triple (if present)
+            # to delivery_dest_index.
+            self._economy.on_vars_end(elem, ctx)

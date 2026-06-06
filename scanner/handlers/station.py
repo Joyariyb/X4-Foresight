@@ -172,6 +172,15 @@ class StationHandler:
         # and trade orders appear after station definitions in the XML stream.
         ctx.player_station_ids.add(object_id)
 
+        # Index every sub-component id → this station so EconomyHandler can
+        # resolve Econ_Manager $destination (a docking bay) to its parent station.
+        for c in elem.iter('component'):
+            if c is elem:
+                continue
+            cid = c.get('id', '')
+            if cid:
+                ctx.dockingbay_index[cid] = object_id
+
         # ── Manager crew member ───────────────────────────────────────────────
         manager = self._parse_manager(elem, code, ctx)
         if manager:

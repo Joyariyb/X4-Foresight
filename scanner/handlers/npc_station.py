@@ -93,15 +93,19 @@ class NpcStationHandler:
         if not self._object_id:
             return
 
-        # ── Collect production module macros ──────────────────────────────────
-        # Used by resolve_station_type() to determine the factory category.
-        # elem.iter() includes the station element itself, but its class is
-        # "station" not "production", so it is naturally excluded.
-        prod_macros = [
-            c.get('macro', '')
-            for c in elem.iter('component')
-            if c.get('class') == 'production'
-        ]
+        # ── Single subtree walk: production macros + dockingbay index ────────
+        # Collect production module macros for type resolution AND register
+        # every child component id → this station for aidirector dest resolution.
+        prod_macros: list[str] = []
+        station_id = self._object_id
+        for c in elem.iter('component'):
+            if c is elem:
+                continue
+            cid = c.get('id', '')
+            if cid:
+                ctx.dockingbay_index[cid] = station_id
+            if c.get('class') == 'production':
+                prod_macros.append(c.get('macro', ''))
 
         # ── Station type (three paths) ────────────────────────────────────────
         type_name = (
