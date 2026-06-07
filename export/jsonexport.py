@@ -129,8 +129,8 @@ def _sectors(conn) -> list[dict]:
     # Reference table — latest-only, so no scan_id filter.
     return _rows(
         conn,
-        "SELECT sector_macro, sector_name, cluster_name, owner_id, owner_name, "
-        "sunlight FROM sectors ORDER BY sector_name")
+        "SELECT sector_macro, sector_name, cluster_macro, cluster_name, "
+        "owner_id, owner_name, sunlight FROM sectors ORDER BY sector_name")
 
 
 def _galaxy_map(conn, scan_id) -> dict:

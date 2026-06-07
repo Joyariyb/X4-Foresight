@@ -81,6 +81,21 @@
     .tab-panel { display: none; flex-direction: column; gap: 12px; }
     .tab-panel.active { display: flex; }
 
+    /* ── UNIVERSE TAB ── */
+    /* Negative margin cancels the 14px padding of #content so the map fills edge-to-edge. */
+    #tab-universe { flex: 1; min-height: 0; margin: -14px; gap: 0; }
+    .universe-filter-bar { height: 38px; padding: 0 14px; display: flex; align-items: center; gap: 8px; background: var(--bg-panel); border-bottom: 1px solid var(--border); flex-shrink: 0; font-family: var(--font-cond); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
+    #universe-map-wrap { flex: 1; min-height: 0; overflow: hidden; cursor: grab; position: relative; background: var(--bg); }
+    #universe-map-wrap.panning { cursor: grabbing; }
+    #universe-svg { width: 100%; height: 100%; display: block; }
+    /* SVG text labels — font set by CSS; opacity toggled via parent class flags */
+    .u-hex-label    { font-family: 'Barlow Condensed', sans-serif; font-weight: 500; letter-spacing: 0.04em; opacity: 0; pointer-events: none; }
+    .u-sector-hex   { opacity: 0; }
+    .u-sector-label { font-family: 'Barlow Condensed', sans-serif; opacity: 0; pointer-events: none; }
+    #universe-viewport.zoom-labels        .u-hex-label    { opacity: 1; }
+    #universe-viewport.zoom-sectors       .u-sector-hex   { opacity: 1; }
+    #universe-viewport.zoom-sector-labels .u-sector-label { opacity: 1; }
+
     /* ── SECTION HEADER ── */
     .sec-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
     .sec-title { font-family: var(--font-cond); font-weight: 600; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); white-space: nowrap; }
@@ -345,6 +360,7 @@
     <div class="nav-tab" onclick="switchTab('stations',this)"><i class="ti ti-building-factory-2"></i> Stations</div>
     <div class="nav-tab" onclick="switchTab('crew',this)"><i class="ti ti-users"></i> Crew</div>
     <div class="nav-tab" onclick="switchTab('diplomacy',this)"><i class="ti ti-world"></i> Diplomacy</div>
+    <div class="nav-tab" onclick="switchTab('universe',this); initUniverseView()"><i class="ti ti-planet"></i> Universe</div>
     <div class="nav-tab" onclick="switchTab('alerts',this)"><i class="ti ti-alert-triangle"></i> Alerts <span class="nav-badge warn" id="nav-alerts">0</span></div>
   </div>
 
@@ -527,6 +543,21 @@
             </thead>
             <tbody></tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- UNIVERSE TAB -->
+      <div class="tab-panel" id="tab-universe">
+        <div class="universe-filter-bar">
+          <i class="ti ti-filter" style="font-size:14px"></i>
+          <span>Overlays</span>
+          <span style="color:var(--border);margin:0 4px">·</span>
+          <span style="font-size:10px;color:var(--text-faint);text-transform:none;letter-spacing:0">coming soon</span>
+        </div>
+        <div id="universe-map-wrap">
+          <svg id="universe-svg" xmlns="http://www.w3.org/2000/svg">
+            <g id="universe-viewport"></g>
+          </svg>
         </div>
       </div>
 
@@ -2240,8 +2271,392 @@
       ? `<div class="alert green"><i class="ti ti-circle-check"></i> No alerts detected.</div>`
       : alerts.map(a => `<div class="alert ${a.cls}"><i class="ti ${a.icon}"></i> ${a.msg}</div>`).join("");
 
+    renderUniverseMap(data);
+
     document.getElementById("loading").style.display = "none";
     document.getElementById("shell").style.display   = "flex";
+  }
+
+  // ── Universe map ─────────────────────────────────────────────────────────────
+  // Flat-top hex grid of X4's galaxy. Cluster positions are static (derived from
+  // the game XML); sector data and ownership come from the JSON export at runtime.
+  //
+  // Zoom thresholds:
+  //   scale ≥ 0.55 → cluster name labels appear
+  //   scale ≥ 1.60 → sector sub-hexes appear within each cluster
+  //   scale ≥ 2.80 → sector name labels appear
+
+  // Axial (q,r) for every navigable cluster. Derived from qsna.eu/api/x4/map
+  // (cross-referenced 2026-06-07). hexSize = 10 000 km, STEP_X = 15 000 km.
+  // 127 clusters total across all DLCs including Timelines.
+  const CLUSTER_POS = {
+    // Vanilla / base game
+    "cluster_01_macro":[0,0],"cluster_02_macro":[1,1],"cluster_03_macro":[2,0],
+    "cluster_04_macro":[3,-3],"cluster_05_macro":[0,-1],"cluster_06_macro":[-2,1],
+    "cluster_07_macro":[-7,6],"cluster_08_macro":[-1,6],"cluster_09_macro":[4,2],
+    "cluster_10_macro":[5,-3],"cluster_11_macro":[-2,-3],"cluster_12_macro":[-4,-1],
+    "cluster_13_macro":[-5,2],"cluster_14_macro":[-6,5],"cluster_15_macro":[6,1],
+    "cluster_16_macro":[6,2],"cluster_17_macro":[5,3],"cluster_18_macro":[5,-1],
+    "cluster_19_macro":[7,-4],"cluster_20_macro":[9,-6],"cluster_21_macro":[9,-7],
+    "cluster_22_macro":[2,-4],"cluster_23_macro":[4,-7],"cluster_24_macro":[-3,-2],
+    "cluster_25_macro":[-6,-1],"cluster_26_macro":[-8,1],"cluster_27_macro":[-10,7],
+    "cluster_28_macro":[-11,7],"cluster_29_macro":[-4,6],"cluster_30_macro":[-6,7],
+    "cluster_31_macro":[-8,10],"cluster_32_macro":[-4,8],"cluster_33_macro":[-5,9],
+    "cluster_34_macro":[3,3],"cluster_35_macro":[-3,-4],"cluster_36_macro":[-4,-3],
+    "cluster_37_macro":[3,-5],"cluster_38_macro":[2,-5],"cluster_39_macro":[2,-1],
+    "cluster_40_macro":[-6,2],"cluster_41_macro":[-6,3],"cluster_42_macro":[8,-4],
+    "cluster_43_macro":[8,-3],"cluster_44_macro":[0,6],"cluster_45_macro":[-1,7],
+    "cluster_46_macro":[-6,8],"cluster_47_macro":[4,0],
+    "cluster_48_macro":[-10,8],"cluster_49_macro":[-8,3],"cluster_50_macro":[10,-7],
+    // Later base-game additions (v7+)
+    "cluster_709_macro":[4,-8],"cluster_710_macro":[7,-9],"cluster_711_macro":[8,-8],
+    "cluster_712_macro":[7,-7],"cluster_713_macro":[6,-5],"cluster_714_macro":[-4,-4],
+    "cluster_715_macro":[-8,0],"cluster_720_macro":[-10,4],"cluster_721_macro":[-14,11],
+    "cluster_722_macro":[-9,-1],"cluster_723_macro":[-2,-6],"cluster_724_macro":[-14,1],
+    "cluster_725_macro":[-2,0],"cluster_730_macro":[-10,5],"cluster_740_macro":[-3,1],
+    // Cradle of Humanity
+    "cluster_100_macro":[-13,7],"cluster_101_macro":[-14,8],"cluster_102_macro":[-15,9],
+    "cluster_104_macro":[-14,9],"cluster_106_macro":[-15,10],"cluster_107_macro":[-14,6],
+    "cluster_108_macro":[-15,6],"cluster_109_macro":[-16,6],"cluster_110_macro":[-15,5],
+    "cluster_111_macro":[-16,5],"cluster_112_macro":[-8,8],"cluster_113_macro":[-11,1],
+    "cluster_114_macro":[-12,1],"cluster_115_macro":[-13,2],"cluster_116_macro":[-17,5],
+    // Split Vendetta
+    "cluster_400_macro":[-7,12],"cluster_401_macro":[-3,9],"cluster_402_macro":[-3,10],
+    "cluster_403_macro":[-8,12],"cluster_404_macro":[2,8],"cluster_405_macro":[3,7],
+    "cluster_406_macro":[3,8],"cluster_407_macro":[8,2],"cluster_408_macro":[8,1],
+    "cluster_409_macro":[10,1],"cluster_410_macro":[11,1],"cluster_411_macro":[12,2],
+    "cluster_412_macro":[12,0],"cluster_413_macro":[13,0],"cluster_414_macro":[-3,11],
+    "cluster_415_macro":[-2,11],"cluster_416_macro":[6,5],"cluster_417_macro":[5,7],
+    "cluster_418_macro":[0,8],"cluster_419_macro":[2,6],"cluster_420_macro":[3,5],
+    "cluster_421_macro":[8,3],"cluster_422_macro":[-9,13],"cluster_423_macro":[-11,14],
+    "cluster_424_macro":[-12,15],"cluster_425_macro":[11,3],
+    // Timelines
+    "cluster_701_macro":[10,-4],"cluster_702_macro":[11,-5],"cluster_703_macro":[11,-6],
+    "cluster_704_macro":[1,3],"cluster_705_macro":[-8,6],"cluster_706_macro":[-7,5],
+    "cluster_708_macro":[-3,7],
+    // Tides of Avarice (502/503 restored — no collision with corrected vanilla positions)
+    "cluster_500_macro":[-1,2],"cluster_501_macro":[-2,4],"cluster_502_macro":[-3,4],
+    "cluster_503_macro":[-3,3],"cluster_504_macro":[12,-2],
+    // Kingdom End
+    "cluster_601_macro":[-10,11],"cluster_602_macro":[-11,11],"cluster_603_macro":[-12,11],
+    "cluster_604_macro":[-12,10],"cluster_605_macro":[-13,13],"cluster_606_macro":[-15,15],
+    "cluster_607_macro":[-16,15],"cluster_608_macro":[-15,14],"cluster_609_macro":[-16,14],
+  };
+
+  // Real display names sourced from qsna.eu/api/x4/map.
+  // Multiple macros share a name when they are sub-regions of the same star system.
+  const CLUSTER_NAMES = {
+    "cluster_01_macro":"Grand Exchange","cluster_02_macro":"Eighteen Billion",
+    "cluster_03_macro":"Memory of Profit","cluster_04_macro":"Nopileos' Fortune",
+    "cluster_05_macro":"Path to Profit","cluster_06_macro":"Black Hole Sun",
+    "cluster_07_macro":"The Reach","cluster_08_macro":"Silent Witness",
+    "cluster_09_macro":"Bright Promise","cluster_10_macro":"Unholy Retribution",
+    "cluster_11_macro":"Pontifex's Claim","cluster_12_macro":"True Sight",
+    "cluster_13_macro":"Second Contact","cluster_14_macro":"Argon Prime",
+    "cluster_15_macro":"Ianamus Zura","cluster_16_macro":"Matrix #451",
+    "cluster_17_macro":"Matrix #9","cluster_18_macro":"Trinity Sanctum",
+    "cluster_19_macro":"Hewa's Twin","cluster_20_macro":"Company Regard",
+    "cluster_21_macro":"Scale Plate Green","cluster_22_macro":"Pious Mists",
+    "cluster_23_macro":"Sacred Relic","cluster_24_macro":"Holy Vision",
+    "cluster_25_macro":"Faulty Logic","cluster_26_macro":"Atiya's Misfortune",
+    "cluster_27_macro":"The Void","cluster_28_macro":"Antigone Memorial",
+    "cluster_29_macro":"Hatikvah's Choice","cluster_30_macro":"Morning Star",
+    "cluster_31_macro":"Heretic's End","cluster_32_macro":"Tharka's Cascade",
+    "cluster_33_macro":"Matrix #79B","cluster_34_macro":"Profit Center Alpha",
+    "cluster_35_macro":"Lasting Vengeance","cluster_36_macro":"Cardinal's Redress",
+    "cluster_37_macro":"Pious Mists","cluster_38_macro":"Pious Mists",
+    "cluster_39_macro":"Memory of Profit","cluster_40_macro":"Second Contact",
+    "cluster_41_macro":"Second Contact","cluster_42_macro":"Hewa's Twin",
+    "cluster_43_macro":"Hewa's Twin","cluster_44_macro":"Silent Witness",
+    "cluster_45_macro":"Silent Witness","cluster_46_macro":"Morning Star",
+    "cluster_47_macro":"Trinity Sanctum","cluster_48_macro":"Getsu Fune",
+    "cluster_49_macro":"Frontier Edge","cluster_50_macro":"Turquoise Sea",
+    "cluster_709_macro":"Cardinal's Domain","cluster_710_macro":"Moo-Kye's Revenge",
+    "cluster_711_macro":"Mi Ton's Refuge","cluster_712_macro":"Loomanckstrat's Legacy",
+    "cluster_713_macro":"CEO's Doubt","cluster_714_macro":"Freedom's Reach",
+    "cluster_715_macro":"Mists of Artemis","cluster_720_macro":"Ore Belt",
+    "cluster_721_macro":"Adventure's Promise","cluster_722_macro":"Sanctum Verge",
+    "cluster_723_macro":"Tempting Fumes","cluster_724_macro":"Circle of Deceit",
+    "cluster_725_macro":"Void of Opportunity","cluster_730_macro":"Third Redemption",
+    "cluster_740_macro":"Scarlet Star",
+    "cluster_100_macro":"Sol","cluster_101_macro":"Sol","cluster_102_macro":"Sol",
+    "cluster_104_macro":"Sol","cluster_106_macro":"Sol","cluster_107_macro":"Sol",
+    "cluster_108_macro":"Sol","cluster_109_macro":"Sol","cluster_110_macro":"Sol",
+    "cluster_111_macro":"Sol","cluster_112_macro":"Savage Spur",
+    "cluster_113_macro":"Segaris","cluster_114_macro":"Gaian Prophecy",
+    "cluster_115_macro":"Brennan's Triumph","cluster_116_macro":"Sol",
+    "cluster_400_macro":"Wretched Skies","cluster_401_macro":"Family Zhin",
+    "cluster_402_macro":"Family Kritt","cluster_403_macro":"Wretched Skies",
+    "cluster_404_macro":"Zyarth's Dominion","cluster_405_macro":"Zyarth's Dominion",
+    "cluster_406_macro":"Zyarth's Dominion","cluster_407_macro":"Family Tkr",
+    "cluster_408_macro":"Thuruk's Demise","cluster_409_macro":"Tharka's Ravine",
+    "cluster_410_macro":"Tharka's Ravine","cluster_411_macro":"Heart of Acrimony",
+    "cluster_412_macro":"Tharka's Ravine","cluster_413_macro":"Tharka's Ravine",
+    "cluster_414_macro":"Rhy's Defiance","cluster_415_macro":"Matrix #598",
+    "cluster_416_macro":"Guiding Star","cluster_417_macro":"Eleventh Hour",
+    "cluster_418_macro":"Family Nhuut","cluster_419_macro":"Open Market",
+    "cluster_420_macro":"Two Grand","cluster_421_macro":"Fires of Defeat",
+    "cluster_422_macro":"Wretched Skies","cluster_423_macro":"Litany of Fury",
+    "cluster_424_macro":"Emperor's Pride","cluster_425_macro":"Heart of Acrimony",
+    "cluster_701_macro":"Mitsuno's Remembrance","cluster_702_macro":"Mitsuno's Remembrance",
+    "cluster_703_macro":"Mitsuno's Remembrance","cluster_704_macro":"President's End",
+    "cluster_705_macro":"Nopileos' Memorial","cluster_706_macro":"Hatikvah's Faith",
+    "cluster_708_macro":"Matrix #101",
+    "cluster_500_macro":"Avarice","cluster_501_macro":"Windfall",
+    "cluster_502_macro":"Windfall","cluster_503_macro":"Windfall",
+    "cluster_504_macro":"Unknown System",
+    "cluster_601_macro":"Watchful Gaze","cluster_602_macro":"Barren Shores",
+    "cluster_603_macro":"Great Reef","cluster_604_macro":"Ocean of Fantasy",
+    "cluster_605_macro":"Sanctuary of Darkness","cluster_606_macro":"Kingdom End",
+    "cluster_607_macro":"Rolk's Demise","cluster_608_macro":"Atreus' Clouds",
+    "cluster_609_macro":"Menelaus' Oasis",
+  };
+
+  // Relative offsets (as fraction of BASE_HEX) for sector sub-hexes within a cluster.
+  // Indexed by sector count minus one: SECTOR_OFFSETS[0] = 1 sector, etc.
+  const SECTOR_OFFSETS = [
+    [[0, 0]],
+    [[-0.38, 0], [0.38, 0]],
+    [[0, -0.40], [-0.35, 0.22], [0.35, 0.22]],
+    [[-0.35, -0.25], [0.35, -0.25], [-0.35, 0.25], [0.35, 0.25]],
+    [[0,-0.42],[-0.38,-0.13],[0.38,-0.13],[-0.25,0.35],[0.25,0.35]],
+    [[-0.35,-0.38],[0.35,-0.38],[-0.42,0.05],[0.42,0.05],[-0.20,0.38],[0.20,0.38]],
+  ];
+
+  let _universeBuilt    = false; // SVG elements created at least once
+  let _universeViewInited = false; // initial fit-to-view applied
+  let _universeTransform  = { x: 0, y: 0, scale: 1 };
+  let _uLabelEls    = [];
+  let _uSecLabelEls = [];
+
+  // Fit all clusters inside the map container, called on first tab open when
+  // the element has real dimensions (deferred via requestAnimationFrame).
+  function initUniverseView() {
+    if (_universeViewInited) return;
+    requestAnimationFrame(() => {
+      const wrap = document.getElementById('universe-map-wrap');
+      if (!wrap) return;
+      const W = wrap.clientWidth  || window.innerWidth  - 200;
+      const H = wrap.clientHeight || window.innerHeight - 150;
+      const BASE_HEX = 48;
+      const SQRT3    = Math.sqrt(3);
+      const centers  = Object.values(CLUSTER_POS).map(([q, r]) => ({
+        x:  BASE_HEX * 1.5 * q,
+        y: -BASE_HEX * SQRT3 * (r + q * 0.5),
+      }));
+      const xs = centers.map(c => c.x);
+      const ys = centers.map(c => c.y);
+      const pad  = BASE_HEX * 2;
+      const minX = Math.min(...xs) - pad, maxX = Math.max(...xs) + pad;
+      const minY = Math.min(...ys) - pad, maxY = Math.max(...ys) + pad;
+      const scale = Math.min(W / (maxX - minX), H / (maxY - minY), 1.0) * 0.92;
+      _universeTransform = {
+        scale,
+        x: W / 2 - ((minX + maxX) / 2) * scale,
+        y: H / 2 - ((minY + maxY) / 2) * scale,
+      };
+      _uApplyTransform(_universeTransform);
+      _universeViewInited = true;
+    });
+  }
+
+  function _uApplyTransform(t) {
+    const vp = document.getElementById('universe-viewport');
+    if (!vp) return;
+    vp.setAttribute('transform', `translate(${t.x},${t.y}) scale(${t.scale})`);
+    // Inverse-scale labels so they render at a constant pixel size at any zoom.
+    const inv = 1 / t.scale;
+    _uLabelEls.forEach(el    => el.setAttribute('font-size', 11 * inv));
+    _uSecLabelEls.forEach(el => el.setAttribute('font-size',  9 * inv));
+    vp.classList.toggle('zoom-labels',        t.scale >= 0.55);
+    vp.classList.toggle('zoom-sectors',       t.scale >= 1.60);
+    vp.classList.toggle('zoom-sector-labels', t.scale >= 2.80);
+  }
+
+  function renderUniverseMap(data) {
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const vp     = document.getElementById('universe-viewport');
+    if (!vp) return;
+
+    const BASE_HEX   = 48;
+    const SECTOR_SZ  = BASE_HEX * 0.30; // sub-hex radius
+    const SQRT3      = Math.sqrt(3);
+
+    // Flat-top axial → pixel center. Y is negated so the galaxy matches the
+    // in-game orientation (+z up in game space, +y down in SVG).
+    function hexCenter(q, r) {
+      return { x: BASE_HEX * 1.5 * q, y: -BASE_HEX * SQRT3 * (r + q * 0.5) };
+    }
+
+    // Six corner points of a flat-top hex (angles 0°,60°,…,300°).
+    function hexPoints(cx, cy, size) {
+      let pts = '';
+      for (let i = 0; i < 6; i++) {
+        const a = Math.PI / 3 * i;
+        pts += `${cx + size * Math.cos(a)},${cy + size * Math.sin(a)} `;
+      }
+      return pts.trim();
+    }
+
+    function el(tag, attrs) {
+      const e = document.createElementNS(SVG_NS, tag);
+      for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, String(v));
+      return e;
+    }
+
+    // ── Build cluster metadata from sector data ───────────────────────────────
+    const clusterInfo = {}; // macro → { name, owners:{id→count}, sectors[] }
+    (data.sectors || []).forEach(s => {
+      if (!s.cluster_macro) return;
+      const ci = clusterInfo[s.cluster_macro] ||
+                 (clusterInfo[s.cluster_macro] = { name: null, owners: {}, sectors: [] });
+      ci.sectors.push(s);
+      if (s.owner_id) ci.owners[s.owner_id] = (ci.owners[s.owner_id] || 0) + 1;
+      // Use cluster_name only when it's a real display name, not the raw macro.
+      if (s.cluster_name && s.cluster_name !== s.cluster_macro && !ci.name)
+        ci.name = s.cluster_name;
+    });
+
+    function clusterDisplayName(macro) {
+      // Static names from qsna.eu API take priority; sector-data cluster_name
+      // is used as a last resort since it may still be the raw macro string.
+      if (CLUSTER_NAMES[macro]) return CLUSTER_NAMES[macro];
+      const ci = clusterInfo[macro];
+      if (ci && ci.name) return ci.name;
+      return macro.replace(/_macro$/, '').replace(/_/g, ' ')
+                  .replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    // Pick the dominant-faction colour for a cluster.
+    function clusterColour(macro) {
+      const ci = clusterInfo[macro];
+      if (!ci || !Object.keys(ci.owners).length) return '#3d444d';
+      const sorted = Object.entries(ci.owners).sort((a, b) => b[1] - a[1]);
+      for (const [id] of sorted) {
+        const col = FACTION_COLOURS[id];
+        if (col) return col;
+      }
+      return '#3d444d';
+    }
+
+    // ── Render SVG ────────────────────────────────────────────────────────────
+    vp.innerHTML = '';
+    _uLabelEls    = [];
+    _uSecLabelEls = [];
+
+    for (const [macro, [q, r]] of Object.entries(CLUSTER_POS)) {
+      const { x: cx, y: cy } = hexCenter(q, r);
+      const colour   = clusterColour(macro);
+      const sectors  = (clusterInfo[macro] || {}).sectors || [];
+
+      const g = el('g', { class: 'u-cluster', 'data-macro': macro });
+
+      // Cluster hex body (inset by 1.5px for a visible gap between adjacent hexes)
+      g.appendChild(el('polygon', {
+        points:        hexPoints(cx, cy, BASE_HEX - 1.5),
+        fill:          hexToRgba(colour, 0.06),
+        stroke:        hexToRgba(colour, 0.50),
+        'stroke-width': '1',
+      }));
+
+      // Cluster name label — rendered at constant 11px regardless of zoom
+      const lbl = el('text', {
+        x: cx, y: cy,
+        class: 'u-hex-label',
+        'text-anchor':      'middle',
+        'dominant-baseline': 'middle',
+        'font-size':         11, // overwritten by _uApplyTransform
+        fill:                colour,
+        'fill-opacity':      '0.9',
+      });
+      lbl.textContent = clusterDisplayName(macro);
+      g.appendChild(lbl);
+      _uLabelEls.push(lbl);
+
+      // Sector sub-hexes (visible at zoom ≥ 1.60)
+      if (sectors.length > 0) {
+        const offsets = SECTOR_OFFSETS[Math.min(sectors.length, SECTOR_OFFSETS.length) - 1];
+        const sg      = el('g', { class: 'u-sector-hex' });
+
+        sectors.forEach((sec, i) => {
+          const [ox, oy] = offsets[i] || [0, 0];
+          const sx = cx + ox * BASE_HEX;
+          const sy = cy + oy * BASE_HEX;
+          const sc = FACTION_COLOURS[sec.owner_id] || '#6e7681';
+
+          sg.appendChild(el('polygon', {
+            points:        hexPoints(sx, sy, SECTOR_SZ - 0.5),
+            fill:          hexToRgba(sc, 0.20),
+            stroke:        hexToRgba(sc, 0.75),
+            'stroke-width': '0.8',
+          }));
+
+          // Sector name label — constant 9px
+          const sl = el('text', {
+            x: sx, y: sy,
+            class: 'u-sector-label',
+            'text-anchor':      'middle',
+            'dominant-baseline': 'middle',
+            'font-size':         9,
+            fill:                sc,
+            'fill-opacity':      '0.85',
+          });
+          sl.textContent = sec.sector_name || sec.sector_macro;
+          sg.appendChild(sl);
+          _uSecLabelEls.push(sl);
+        });
+
+        g.appendChild(sg);
+      }
+
+      vp.appendChild(g);
+    }
+
+    // ── Pan / zoom event handlers (attached once) ─────────────────────────────
+    if (!_universeBuilt) {
+      const wrap = document.getElementById('universe-map-wrap');
+
+      // Scroll-to-zoom centred on cursor position
+      wrap.addEventListener('wheel', function(e) {
+        e.preventDefault();
+        const factor   = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+        const rect     = wrap.getBoundingClientRect();
+        const mx       = e.clientX - rect.left;
+        const my       = e.clientY - rect.top;
+        const t        = _universeTransform;
+        const newScale = Math.max(0.10, Math.min(12, t.scale * factor));
+        _universeTransform = {
+          scale: newScale,
+          x: mx - (mx - t.x) * (newScale / t.scale),
+          y: my - (my - t.y) * (newScale / t.scale),
+        };
+        _uApplyTransform(_universeTransform);
+      }, { passive: false });
+
+      // Drag-to-pan
+      let _dragging = false, _dragOrigin = null;
+      wrap.addEventListener('mousedown', function(e) {
+        if (e.button !== 0) return;
+        _dragging   = true;
+        _dragOrigin = { x: e.clientX - _universeTransform.x, y: e.clientY - _universeTransform.y };
+        wrap.classList.add('panning');
+      });
+      window.addEventListener('mousemove', function(e) {
+        if (!_dragging) return;
+        _universeTransform.x = e.clientX - _dragOrigin.x;
+        _universeTransform.y = e.clientY - _dragOrigin.y;
+        _uApplyTransform(_universeTransform);
+      });
+      window.addEventListener('mouseup', function() {
+        if (!_dragging) return;
+        _dragging = false;
+        document.getElementById('universe-map-wrap')?.classList.remove('panning');
+      });
+
+      _universeBuilt = true;
+    }
+
+    _uApplyTransform(_universeTransform);
   }
 
   // Click on a pilot name in the fleet table → jump to their crew file
