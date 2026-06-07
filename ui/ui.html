@@ -85,7 +85,7 @@
     /* Negative margin cancels the 14px padding of #content so the map fills edge-to-edge. */
     #tab-universe { flex: 1; min-height: 0; margin: -14px; gap: 0; }
     .universe-filter-bar { height: 38px; padding: 0 14px; display: flex; align-items: center; gap: 8px; background: var(--bg-panel); border-bottom: 1px solid var(--border); flex-shrink: 0; font-family: var(--font-cond); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
-    #universe-map-wrap { flex: 1; min-height: 0; overflow: hidden; cursor: grab; position: relative; background: var(--bg); }
+    #universe-map-wrap { flex: 1; min-height: 0; overflow: hidden; cursor: grab; position: relative; background: var(--bg); user-select: none; }
     #universe-map-wrap.panning { cursor: grabbing; }
     #universe-svg { width: 100%; height: 100%; display: block; }
     /* SVG text labels — font set by CSS; opacity toggled via parent class flags */
@@ -95,6 +95,7 @@
     #universe-viewport.zoom-labels        .u-hex-label    { opacity: 1; }
     #universe-viewport.zoom-sectors       .u-sector-hex   { opacity: 1; }
     #universe-viewport.zoom-sector-labels .u-sector-label { opacity: 1; }
+    #universe-viewport.zoom-sector-labels .u-hex-label    { opacity: 0; }
 
     /* ── SECTION HEADER ── */
     .sec-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
