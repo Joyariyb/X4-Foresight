@@ -97,7 +97,8 @@
     #universe-viewport.zoom-sector-labels .u-sector-label { opacity: 1; }
     #universe-viewport.zoom-sector-labels .u-hex-label    { opacity: 0; }
     .u-conn-sector { opacity: 0; }
-    #universe-viewport.zoom-sectors .u-conn-sector { opacity: 1; }
+    #universe-viewport.zoom-sectors .u-conn-sector    { opacity: 1; }
+    #universe-viewport.zoom-sectors #u-conns-cluster  { opacity: 0; }
 
     /* ── SECTION HEADER ── */
     .sec-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
@@ -2728,16 +2729,28 @@
     // Blur filter — the wide glow stroke uses this; the core line does not.
     const _nf = document.createElementNS(SVG_NS, 'filter');
     _nf.id = 'u-neon';
-    _nf.setAttribute('x', '-100%'); _nf.setAttribute('y', '-100%');
-    _nf.setAttribute('width', '300%'); _nf.setAttribute('height', '300%');
+    // Tight margins — just enough for the 2.5-unit blur to expand without clipping.
+    // Applied to a group (not individual lines), so the bounding box is always 2D.
+    _nf.setAttribute('x', '-0.5%'); _nf.setAttribute('y', '-0.5%');
+    _nf.setAttribute('width', '101%'); _nf.setAttribute('height', '101%');
     const _gb = document.createElementNS(SVG_NS, 'feGaussianBlur');
     _gb.setAttribute('stdDeviation', '2.5');
     _nf.appendChild(_gb); defs.appendChild(_nf);
 
     // cgCluster is appended before the hex loop (behind hexes).
     // cgSector is appended after the hex loop (in front of hexes).
+    // Each is split into a glow sub-group (filter applied once to the whole group,
+    // so the bbox is never degenerate for axis-aligned lines) and a core sub-group.
     const cgCluster = el('g', { id: 'u-conns-cluster' });
+    const cgClGlow  = el('g', { filter: 'url(#u-neon)' });
+    const cgClCore  = el('g', {});
+    cgCluster.appendChild(cgClGlow);
+    cgCluster.appendChild(cgClCore);
     const cgSector  = el('g', { id: 'u-conns-sector', class: 'u-conn-sector' });
+    const cgSecGlow = el('g', { filter: 'url(#u-neon)' });
+    const cgSecCore = el('g', {});
+    cgSector.appendChild(cgSecGlow);
+    cgSector.appendChild(cgSecCore);
 
     // Gate positions scale: sector space ±300 km → SECTOR_SZ SVG units.
     const GATE_SCALE = SECTOR_SZ / 300;
@@ -2779,12 +2792,11 @@
         gc.appendChild(el('stop', { offset: '0%',   'stop-color': ca }));
         gc.appendChild(el('stop', { offset: '100%', 'stop-color': cb }));
         defs.appendChild(gc);
-        cgCluster.appendChild(el('line', {
+        cgClGlow.appendChild(el('line', {
           x1: a.cx, y1: a.cy, x2: b.cx, y2: b.cy,
-          stroke: `url(#${id}c)`, 'stroke-width': '6',
-          opacity: '0.28', filter: 'url(#u-neon)',
+          stroke: `url(#${id}c)`, 'stroke-width': '6', opacity: '0.28',
         }));
-        cgCluster.appendChild(el('line', {
+        cgClCore.appendChild(el('line', {
           x1: a.cx, y1: a.cy, x2: b.cx, y2: b.cy,
           stroke: `url(#${id}c)`, 'stroke-width': '1.2', opacity: '0.80',
         }));
@@ -2800,12 +2812,11 @@
       gs.appendChild(el('stop', { offset: '0%',   'stop-color': a.color }));
       gs.appendChild(el('stop', { offset: '100%', 'stop-color': b.color }));
       defs.appendChild(gs);
-      cgSector.appendChild(el('line', {
+      cgSecGlow.appendChild(el('line', {
         x1: ptA.x, y1: ptA.y, x2: ptB.x, y2: ptB.y,
-        stroke: `url(#${id}s)`, 'stroke-width': '3.5',
-        opacity: '0.35', filter: 'url(#u-neon)',
+        stroke: `url(#${id}s)`, 'stroke-width': '3.5', opacity: '0.35',
       }));
-      cgSector.appendChild(el('line', {
+      cgSecCore.appendChild(el('line', {
         x1: ptA.x, y1: ptA.y, x2: ptB.x, y2: ptB.y,
         stroke: `url(#${id}s)`, 'stroke-width': '0.7', opacity: '0.85',
       }));
