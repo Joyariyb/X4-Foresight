@@ -2420,6 +2420,151 @@
     "cluster_708_macro":"Matrix #101",
   };
 
+  // Jump gate positions within each sector, sourced from qsna.eu/api/x4/map (2026-06-07).
+  // Format: sector_macro → [[abs_x_km, abs_z_km, target_cluster_num], ...]
+  // abs_x/z are offset from sector center. Gate scale: SECTOR_SZ / 300 SVG units per km.
+  // Sectors with no gate data fall back to sub-hex center as line endpoint.
+  const GATE_POS = {
+    "cluster_01_sector001_macro":[[79,-25.34,4],[-191.49,34.01,5]],
+    "cluster_01_sector002_macro":[[-117.97,-79.71,6]],
+    "cluster_01_sector003_macro":[[19.08,80.48,2]],
+    "cluster_02_sector001_macro":[[-47.5,-78.06,1],[116.27,55.85,3],[-46.86,80.93,8],[-152.98,12.7,501]],
+    "cluster_03_sector001_macro":[[152.24,107.16,9],[-69.95,99.1,2],[-32.31,-42.87,39]],
+    "cluster_04_sector002_macro":[[-42.45,176.45,22],[-62.01,178.28,1]],
+    "cluster_05_sector001_macro":[[-15.64,94.91,1],[-133.53,-144.15,725]],
+    "cluster_06_sector001_macro":[[-88.43,66.92,13],[19.49,164.81,503]],
+    "cluster_06_sector002_macro":[[65.66,-145.47,725],[82.22,93.17,1]],
+    "cluster_07_sector001_macro":[[210.8,-16.84,14]],
+    "cluster_08_sector001_macro":[[27.58,103.26,44],[59.6,-15.42,34],[-162.16,-71.27,29],[-12.23,-152.37,2],[57.37,-173.01,704],[-114.75,-205.59,501]],
+    "cluster_09_sector001_macro":[[-20,50,34],[-20,-75,18],[148.86,132.94,15],[-137.72,-10.42,3]],
+    "cluster_10_sector001_macro":[[-73.27,8.11,22],[73.93,96.76,18]],
+    "cluster_11_sector001_macro":[[-44.59,87.51,24],[46.5,87.74,22]],
+    "cluster_12_sector001_macro":[[10,-90,24],[10,120,13]],
+    "cluster_13_sector001_macro":[[-20,-65,12],[-72.4,-23.21,27],[-64.91,-88.1,40],[103.35,-86.34,6],[40,85,14]],
+    "cluster_14_sector001_macro":[[50,-110,13],[-90.63,95.91,7],[-94.98,21.3,706],[50,120,29]],
+    "cluster_15_sector001_macro":[[181.27,11.5,701],[47.57,102.66,16],[-135.72,152.26,9]],
+    "cluster_15_sector002_macro":[[-129.62,83.13,408]],
+    "cluster_16_sector001_macro":[[-121.32,107.13,17],[93.71,117.95,407],[-112.46,-129.66,15]],
+    "cluster_17_sector001_macro":[[131.57,101.9,16],[137.87,176.73,421]],
+    "cluster_18_sector001_macro":[[158.27,19.16,19],[3.21,35.16,9],[-13.78,45.69,47],[3.15,-143.68,10]],
+    "cluster_19_sector001_macro":[[-122.47,103.21,18],[116.22,80.2,42]],
+    "cluster_19_sector002_macro":[[140.09,-41.45,20]],
+    "cluster_20_sector001_macro":[[-122.06,-112.87,21],[16.94,157.17,19],[113.88,7.53,50]],
+    "cluster_21_sector001_macro":[[170.16,197.84,20]],
+    "cluster_21_sector002_macro":[[165.75,138.97,50]],
+    "cluster_22_sector001_macro":[[126.59,56.45,10],[136.32,2.31,37],[19.17,-119.92,23],[-17.64,-119.92,38],[-19.06,151.74,4],[-158.12,-56.83,11]],
+    "cluster_23_sector001_macro":[[-1.35,146.09,22],[90.28,-59.74,709]],
+    "cluster_24_sector001_macro":[[-29.31,58.17,12],[-100.61,-135.92,25],[115.29,-148.96,11],[112.01,-183.9,36],[120.45,179.39,725]],
+    "cluster_25_sector001_macro":[[134.83,6.24,24]],
+    "cluster_25_sector002_macro":[[-129.55,-117.23,26]],
+    "cluster_26_sector001_macro":[[62.29,101.59,49]],
+    "cluster_26_sector002_macro":[[116.12,-110.09,25],[84.64,-132.34,715]],
+    "cluster_27_sector001_macro":[[-100.83,-76.21,28],[97.6,-67.13,13],[15.04,-194.5,49],[-14.11,297.49,48]],
+    "cluster_28_sector001_macro":[[20.52,-152.82,113],[102.95,143.8,27]],
+    "cluster_29_sector001_macro":[[-18.91,58.94,30],[182.53,227.65,32],[188.73,177.86,8],[-105.18,-128.63,14]],
+    "cluster_30_sector001_macro":[[17.54,108.51,46],[-116.5,15.88,31],[107.87,-92.42,29]],
+    "cluster_31_sector001_macro":[[-3.3,5.91,403],[-126.71,151.36,601],[133.71,-13.41,30]],
+    "cluster_32_sector001_macro":[[132.62,86.61,708],[93.3,86.6,401],[72.04,-109.49,29]],
+    "cluster_32_sector002_macro":[[-148.05,110.39,33]],
+    "cluster_33_sector001_macro":[[-123.63,-54.4,112],[138.28,-115.63,32]],
+    "cluster_34_sector001_macro":[[140.5,-75.24,9],[63.04,91.7,420],[-138.85,26.04,8]],
+    "cluster_35_sector001_macro":[[-154.65,22.7,36]],
+    "cluster_36_sector001_macro":[[-11.52,136.36,24],[41.41,-130.61,714],[114.36,-61.52,35]],
+    "cluster_37_sector001_macro":[[-28.4,-102.67,38],[-36.27,121.11,22]],
+    "cluster_38_sector001_macro":[[127.51,64.64,37],[-97.58,72.53,22]],
+    "cluster_39_sector001_macro":[[119.22,-140.7,713],[-65.22,141.85,3]],
+    "cluster_40_sector001_macro":[[129.77,88.01,13],[-93.73,147.64,41]],
+    "cluster_41_sector001_macro":[[-35.76,-151.57,40]],
+    "cluster_42_sector001_macro":[[-38.84,-107.25,19],[-1.87,142.17,43]],
+    "cluster_43_sector001_macro":[[28.25,-138.64,42]],
+    "cluster_44_sector001_macro":[[-38.83,142.85,45],[-102.27,-75.19,8]],
+    "cluster_45_sector001_macro":[[127.46,-128.6,44]],
+    "cluster_46_sector001_macro":[[-3.14,-176.81,30]],
+    "cluster_47_sector001_macro":[[124.79,-76.73,18]],
+    "cluster_48_sector001_macro":[[-39.19,-92.48,27],[-139.27,90.54,100],[-148.22,228.38,604],[215.01,107.8,112]],
+    "cluster_49_sector001_macro":[[50,-110,26],[-52.63,73.23,720],[50,120,27]],
+    "cluster_50_sector002_macro":[[-126.38,-141.37,21],[-78.53,121.96,20]],
+    "cluster_709_sector001_macro":[[-122.9,69.88,723],[4.7,151.17,23],[169.89,120.55,710]],
+    "cluster_710_sector001_macro":[[25.94,153.77,711],[-155.93,-155.89,709]],
+    "cluster_711_sector001_macro":[[-163,74.18,712],[-88.58,-171.59,710]],
+    "cluster_712_sector001_macro":[[-156.78,68.53,713],[127.94,-155.89,711]],
+    "cluster_713_sector001_macro":[[-169.71,71.31,39],[76.54,-166.94,712]],
+    "cluster_714_sector001_macro":[[11.69,156.13,36]],
+    "cluster_715_sector001_macro":[[40.52,152.64,26]],
+    "cluster_720_sector001_macro":[[0.87,156.98,730],[177.76,175.67,49],[145.99,-90.81,722],[-163.01,-87.5,721]],
+    "cluster_721_sector001_macro":[[40.52,237.1,608],[145.99,-90.81,720]],
+    "cluster_722_sector001_macro":[[-87.08,71.35,724],[40.52,152.64,720],[145.99,-90.81,723]],
+    "cluster_723_sector001_macro":[[-87.08,71.35,722],[177.76,175.67,709]],
+    "cluster_724_sector001_macro":[[40.52,152.64,115],[145.99,-125.97,722]],
+    "cluster_725_sector001_macro":[[-100,55,740],[40.52,152.64,6],[177.76,37.27,5],[-1.64,-158.06,24]],
+    "cluster_400_sector001_macro":[[-135.85,-66.27,403],[127.99,-35.32,401]],
+    "cluster_401_sector001_macro":[[139.19,31.45,418],[-155.74,31.45,400],[-18.12,144.04,402],[79.56,-152.93,32]],
+    "cluster_402_sector001_macro":[[-31.48,137.26,414],[81.59,-149.29,401]],
+    "cluster_403_sector001_macro":[[-120.7,44.55,422],[171.29,81.27,400],[87.57,-157.54,31]],
+    "cluster_404_sector001_macro":[[127.74,116.74,406],[-144.46,125.41,415],[20.14,-153.9,418]],
+    "cluster_405_sector001_macro":[[57.35,84.81,406],[57.35,-160.02,419]],
+    "cluster_406_sector001_macro":[[105.26,125.16,417],[-149.54,-126.75,404],[75.7,-167.66,405]],
+    "cluster_407_sector001_macro":[[144.08,101.9,409],[-1.26,147.32,421],[-153.56,-98.21,16],[69.11,-170.21,408]],
+    "cluster_408_sector001_macro":[[41.6,167.6,407],[-102.9,-97.7,15]],
+    "cluster_409_sector001_macro":[[-146.52,142.74,421],[151.17,23.95,410],[-128.14,-117.21,407]],
+    "cluster_410_sector001_macro":[[-153.58,-126.89,409],[-11.97,147.83,411],[109.38,-118.73,412]],
+    "cluster_411_sector001_macro":[[0.27,122.31,425],[0.27,-117.21,410]],
+    "cluster_412_sector001_macro":[[-154.17,121.84,410],[130.4,-10.3,413]],
+    "cluster_413_sector001_macro":[[-138.88,-65.22,412]],
+    "cluster_414_sector001_macro":[[163.4,133.58,415],[-18.59,-118.22,402]],
+    "cluster_415_sector001_macro":[[-132.56,-116.07,414],[169.52,-19.37,404]],
+    "cluster_416_sector001_macro":[[-136.33,-71.84,420]],
+    "cluster_416_sector002_macro":[[1.62,137.8,417]],
+    "cluster_417_sector001_macro":[[-144.39,99.49,406],[73.15,-159.51,416]],
+    "cluster_418_sector001_macro":[[-170.85,11.65,401],[23.81,155.14,404],[152.88,-84.13,419]],
+    "cluster_419_sector001_macro":[[-173.74,116.89,418],[-0.7,152.21,405],[124.76,-89.98,420]],
+    "cluster_420_sector001_macro":[[-148.27,102.29,419],[82.19,154.37,416],[126.85,-72.23,421],[-121.76,-152.69,34]],
+    "cluster_421_sector001_macro":[[-155,155.82,420],[-156.39,-54.66,17],[148.6,-46.73,409],[5.16,-166.25,407]],
+    "cluster_422_sector001_macro":[[-173.74,33.28,423],[151.58,-123.16,403]],
+    "cluster_423_sector001_macro":[[-155,119.06,424],[174.57,-10.09,422]],
+    "cluster_424_sector001_macro":[[88.64,-118.09,423]],
+    "cluster_425_sector001_macro":[[65.62,-162.49,411]],
+    "cluster_100_sector001_macro":[[-11.52,136.36,101],[114.36,-61.52,48],[41.41,-130.61,107]],
+    "cluster_101_sector001_macro":[[-132.5,131.85,102],[97.75,-150.66,100]],
+    "cluster_102_sector001_macro":[[105.19,-85.7,101],[-67.26,152.73,106],[125.49,89.92,104]],
+    "cluster_104_sector002_macro":[[-126.48,-125.89,102]],
+    "cluster_106_sector001_macro":[[-17.18,-125.21,102]],
+    "cluster_107_sector001_macro":[[131.87,127.11,100],[-67.51,-141.1,108]],
+    "cluster_108_sector001_macro":[[64.42,128.75,107],[-78.81,-140.99,109]],
+    "cluster_109_sector001_macro":[[125.38,-99.01,110],[138.36,151.05,108]],
+    "cluster_110_sector001_macro":[[-126.68,-92.14,111],[-138.19,137.31,109],[156.45,11.39,115]],
+    "cluster_111_sector001_macro":[[105.95,105.97,110],[-154.36,-137.82,116]],
+    "cluster_112_sector001_macro":[[153.57,151.6,33]],
+    "cluster_112_sector002_macro":[[-137.61,-62.73,48]],
+    "cluster_113_sector001_macro":[[11.21,160.55,28],[-137.61,-62.73,114]],
+    "cluster_114_sector001_macro":[[-139.51,29.03,115],[157.26,-85.19,113]],
+    "cluster_115_sector001_macro":[[-137.61,-62.73,110],[141.46,-100.77,114],[3.77,-289.09,724]],
+    "cluster_116_sector001_macro":[[31.97,155.35,111]],
+    "cluster_500_sector003_macro":[[-152.88,64.8,502]],
+    "cluster_501_sector001_macro":[[-0.57,139.49,8],[-138.21,-61.66,502],[129.6,-53.27,2]],
+    "cluster_502_sector001_macro":[[134.98,-38.83,500],[118.4,143.35,501],[-26.39,-182.82,503]],
+    "cluster_503_sector001_macro":[[8.12,193.18,502],[-64.89,-184.02,6]],
+    "cluster_601_sector001_macro":[[169.89,120.55,31],[-155.93,-155.89,602]],
+    "cluster_602_sector001_macro":[[-166.9,-111.84,603],[149.18,30.17,601]],
+    "cluster_603_sector001_macro":[[26.85,149.37,605],[177.2,106.73,602],[-49.35,-159.14,604]],
+    "cluster_604_sector001_macro":[[-12.42,159.94,603],[140.16,-150.07,48]],
+    "cluster_605_sector001_macro":[[-87.38,98.68,606],[87.88,-116.98,603]],
+    "cluster_606_sector002_macro":[[-148.03,-119.68,607]],
+    "cluster_606_sector003_macro":[[147.76,-3.24,605]],
+    "cluster_607_sector001_macro":[[59.17,155.44,606],[161.67,-9.79,608],[-85.56,-150.81,609]],
+    "cluster_608_sector001_macro":[[-110.51,156.69,607],[-163.41,-105.78,609],[126.97,-150.89,721]],
+    "cluster_609_sector001_macro":[[-65.61,186.39,607],[185.86,-30.02,608]],
+    "cluster_701_sector001_macro":[[-155.93,48.1,15],[135.88,-141.02,702]],
+    "cluster_702_sector001_macro":[[-155.93,43.23,701],[-1.91,-165.52,703]],
+    "cluster_703_sector001_macro":[[-1.31,158.98,702]],
+    "cluster_704_sector001_macro":[[-165.47,57.93,8]],
+    "cluster_705_sector001_macro":[[162.71,-34.38,706]],
+    "cluster_706_sector001_macro":[[-155.93,36.45,705],[162.71,30.11,14]],
+    "cluster_708_sector001_macro":[[-155.93,11.01,32]],
+    "cluster_730_sector001_macro":[[77.32,-151.95,720]],
+    "cluster_740_sector001_macro":[[225,-25,725]],
+  };
+
   // Relative offsets (as fraction of BASE_HEX) for sector sub-hexes within a cluster.
   // Indexed by sector count minus one: SECTOR_OFFSETS[0] = 1 sector, etc.
   const SECTOR_OFFSETS = [
@@ -2594,6 +2739,28 @@
     const cgCluster = el('g', { id: 'u-conns-cluster' });
     const cgSector  = el('g', { id: 'u-conns-sector', class: 'u-conn-sector' });
 
+    // Gate positions scale: sector space ±300 km → SECTOR_SZ SVG units.
+    const GATE_SCALE = SECTOR_SZ / 300;
+
+    // Extract the cluster number from a cluster_macro string (e.g. "cluster_401_macro" → 401).
+    function clusterNum(macro) {
+      const m = (macro || '').match(/cluster_0*(\d+)_macro/i);
+      return m ? parseInt(m[1], 10) : null;
+    }
+
+    // Return the SVG position of the gate in sectorMacro that connects to targetClusterMacro.
+    // Falls back to the sector sub-hex centre (fallbackX, fallbackY) when not found.
+    function gateXY(sectorMacro, targetClusterMacro, fallbackX, fallbackY) {
+      const tgt   = clusterNum(targetClusterMacro);
+      const gates = GATE_POS[(sectorMacro || '').toLowerCase()];
+      if (tgt && gates) {
+        const g = gates.find(entry => entry[2] === tgt);
+        if (g) return { x: fallbackX + g[0] * GATE_SCALE,
+                        y: fallbackY - g[1] * GATE_SCALE }; // negate z → SVG y
+      }
+      return { x: fallbackX, y: fallbackY };
+    }
+
     (data.galaxy_map?.edges || []).forEach((edge, i) => {
       const a = sectorPos[edge[0]];
       const b = sectorPos[edge[1]];
@@ -2623,21 +2790,23 @@
         }));
       }
 
-      // Sector-level: sub-hex to sub-hex (all edges including cost=0 intra-cluster).
+      // Sector-level: gate position → gate position (falls back to sub-hex centre).
+      const ptA = gateXY(edge[0], b.clusterMacro, a.sx, a.sy);
+      const ptB = gateXY(edge[1], a.clusterMacro, b.sx, b.sy);
       const gs = el('linearGradient', {
         id: id + 's', gradientUnits: 'userSpaceOnUse',
-        x1: a.sx, y1: a.sy, x2: b.sx, y2: b.sy,
+        x1: ptA.x, y1: ptA.y, x2: ptB.x, y2: ptB.y,
       });
       gs.appendChild(el('stop', { offset: '0%',   'stop-color': a.color }));
       gs.appendChild(el('stop', { offset: '100%', 'stop-color': b.color }));
       defs.appendChild(gs);
       cgSector.appendChild(el('line', {
-        x1: a.sx, y1: a.sy, x2: b.sx, y2: b.sy,
+        x1: ptA.x, y1: ptA.y, x2: ptB.x, y2: ptB.y,
         stroke: `url(#${id}s)`, 'stroke-width': '3.5',
         opacity: '0.35', filter: 'url(#u-neon)',
       }));
       cgSector.appendChild(el('line', {
-        x1: a.sx, y1: a.sy, x2: b.sx, y2: b.sy,
+        x1: ptA.x, y1: ptA.y, x2: ptB.x, y2: ptB.y,
         stroke: `url(#${id}s)`, 'stroke-width': '0.7', opacity: '0.85',
       }));
     });
