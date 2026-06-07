@@ -55,6 +55,22 @@ def _stations(conn, scan_id) -> list[dict]:
             conn,
             "SELECT macro, category, produces FROM station_modules "
             "WHERE scan_id=? AND station_id=?", (scan_id, sid))
+        # Comma-separated produced-ware display names for the Production tab.
+        # Display names (not ids) so they match WARE_COLOURS and read cleanly.
+        produced = sorted({m['produces'] for m in d['modules'] if m['produces']})
+        d['production'] = ','.join(produced)
+        # Nested budget object the Economy pie consumes: header totals plus the
+        # per-ware breakdown (ware_id surfaced as `ware`, with ware_name/amount/
+        # price/value/basis), biggest value first.
+        d['budget'] = {
+            'total':    d['budget_total'],
+            'sunlight': d['budget_sunlight'],
+            'lines': _rows(
+                conn,
+                "SELECT ware_id AS ware, ware_name, amount, price, value, basis "
+                "FROM station_budget_lines WHERE scan_id=? AND station_id=? "
+                "ORDER BY value DESC", (scan_id, sid)),
+        }
         out.append(d)
     return out
 

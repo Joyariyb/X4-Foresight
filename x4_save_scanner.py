@@ -17,6 +17,7 @@ import sys
 import time
 from pathlib import Path
 from datetime import datetime
+from typing import Callable
 
 ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
@@ -93,19 +94,37 @@ def select_save_file() -> Path:
 
 # ── Pipeline ───────────────────────────────────────────────────────────────────
 
-def run(save_path: Path) -> None:
+def run(save_path: Path, progress: Callable[[str], None] | None = None) -> None:
+    """Run the full pipeline: scan -> resolve trades -> write DB -> write JSON.
+
+    `progress`, when supplied, is called with a short status string at the start
+    of each phase. The GUI uses it to update its scan dialog; the CLI passes
+    None and relies on printed output instead. The single-pass scan can't be
+    subdivided, so it's reported as one (long) phase.
+    """
+    def step(msg: str) -> None:
+        if progress is not None:
+            progress(msg)
+
     print(f"\n  Scanning {save_path.name} ...")
     t0 = time.perf_counter()
 
+    step("Scanning save — extracting empire (this is the long part)…")
     scanner = Scanner(lang_path=LANG_FILE)
     ctx = scanner.scan(save_path, scan_id=1)   # scan_id is reassigned by the DB
+
+    step("Resolving trade counterparties…")
     TradePostProcessor().run(ctx)
 
+    step("Writing database…")
     conn = get_connection(DB_PATH)
     scan_id = write_scan(conn, ctx)
+
+    step("Writing JSON export…")
     write_export(conn, JSON_PATH)
     conn.close()
 
+    step("Finalising…")
     elapsed = time.perf_counter() - t0
     display_report(ctx)
     _footer(ctx, scan_id, elapsed)

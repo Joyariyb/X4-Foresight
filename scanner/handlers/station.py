@@ -161,6 +161,7 @@ class StationHandler:
             account_amount   = account_amount,
             budget_total     = budget['total'],
             budget_sunlight  = budget['sunlight'],
+            budget_lines     = budget['lines'],
             modules          = modules,
             inventory        = inventory,
         )

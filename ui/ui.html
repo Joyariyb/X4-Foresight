@@ -1614,17 +1614,77 @@
   }
 
   function populate(data) {
-    const ships    = data.ships || {};
-    const fleet    = ships.fleet_summary || {};
-    const players  = ships.player_ships  || [];
+    // ── Export shape adapter ──────────────────────────────────────────────
+    // The scanner export uses suffixed/flat field names (ship_order,
+    // hull_origin_name, sector_macro, skill_piloting, …) and a different
+    // top-level grouping than this UI was first written against. Rather than
+    // rename every read site, we augment each record IN PLACE with the alias
+    // fields the rendering code already expects. Originals are left intact.
+
+    const player = data.player || {};
+
+    // sector_macro → readable name (ships/crew only carry the macro).
+    const sectorName = {};
+    (data.sectors || []).forEach(s => { sectorName[s.sector_macro] = s.sector_name; });
+    const resolveSector = s => sectorName[s.sector_macro] || s.sector_name || s.sector_macro || null;
+
+    // Crew: nest the flat skill_* fields and add display aliases. Index by
+    // object_id so each ship's pilot_id can be joined to its crew record.
+    const crew = data.crew || [];
+    const crewById = {};
+    crew.forEach(c => {
+      crewById[c.object_id] = c;
+      c.skills = {
+        piloting:    c.skill_piloting,
+        management:  c.skill_management,
+        engineering: c.skill_engineering,
+        morale:      c.skill_morale,
+        boarding:    c.skill_boarding,
+      };
+      // assigned_type is "ship"/"station"; the asset code is shown separately.
+      c.assigned_to = c.assigned_type
+        ? c.assigned_type.charAt(0).toUpperCase() + c.assigned_type.slice(1)
+        : null;
+      c.sector = resolveSector(c);
+    });
+
+    const normShip = s => {
+      s.order       = s.ship_order;
+      s.hull_origin = s.hull_origin_name;
+      s.max_hull    = s.hull_max;
+      s.sector      = resolveSector(s);
+    };
+
+    const playerShips = data.ships || [];
+    playerShips.forEach(s => {
+      normShip(s);
+      const p = s.pilot_id ? crewById[s.pilot_id] : null;
+      s.pilot = p ? { name: p.name, skills: p.skills } : null;
+    });
+
+    const npcList = data.npc_ships || [];
+    npcList.forEach(s => { normShip(s); s.owner = s.owner_id; });
+
+    // Stations only need the resolved sector name here; the deeper economy /
+    // storage / production fields are a separate wiring pass (the card handles
+    // their absence gracefully — empty panels, not errors).
+    (data.stations || []).forEach(s => { s.sector = resolveSector(s); });
+
+    // Re-assemble the { fleet_summary, player_ships, npc_ships } object the
+    // rest of populate() reads as `ships`.
+    const ships    = { fleet_summary: data.fleet_summary || {},
+                       player_ships:  playerShips,
+                       npc_ships:     npcList };
+    const fleet    = ships.fleet_summary;
+    const players  = ships.player_ships;
     const stations  = data.stations       || [];
     const rep       = data.reputation     || [];
     const allTrades = data.station_trades || [];
 
     // Top bar
-    document.getElementById("tb-pilot").textContent    = data.player_name    || "—";
-    document.getElementById("tb-sector").textContent   = data.player_sector   || "—";
-    document.getElementById("tb-credits").textContent  = fmtCredits(data.player_credits);
+    document.getElementById("tb-pilot").textContent    = player.name    || "—";
+    document.getElementById("tb-sector").textContent   = player.sector  || "—";
+    document.getElementById("tb-credits").textContent  = fmtCredits(player.credits);
     document.getElementById("tb-ships").textContent    = fleet.total          || "—";
     document.getElementById("tb-stations").textContent = stations.length;
     document.getElementById("nav-ships").textContent   = fleet.total          || "—";
@@ -1656,7 +1716,7 @@
 
     // Summary cards
     const cards = [
-      { label:"Credits",       value: fmtCredits(data.player_credits), cls:"amber" },
+      { label:"Credits",       value: fmtCredits(player.credits), cls:"amber" },
       { label:"Total Ships",   value: fleet.total || "—",              cls:"" },
       { label:"Stations",      value: stations.length,                 cls:"" },
       { label:"Hostile Hulls", value: hostile.length,                  cls: hostile.length > 0 ? "red" : "green" },

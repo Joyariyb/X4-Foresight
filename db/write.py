@@ -118,6 +118,14 @@ def _write_stations(cur, scan_id, ctx) -> None:
             "INSERT INTO station_inventory VALUES(?,?,?,?,?)",
             [(scan_id, s.object_id, w, _ware_name(w), a) for w, a in s.inventory.items()],
         )
+        # Per-ware budget breakdown (drives the station Economy pie). The line's
+        # 'ware' id maps to the table's ware_id column.
+        cur.executemany(
+            "INSERT INTO station_budget_lines VALUES(?,?,?,?,?,?,?,?)",
+            [(scan_id, s.object_id, ln['ware'], ln['ware_name'],
+              ln['amount'], ln['price'], ln['value'], ln['basis'])
+             for ln in s.budget_lines],
+        )
 
 
 def _write_ships(cur, scan_id, ctx) -> None:
