@@ -294,6 +294,25 @@
                      white-space: nowrap; transition: color 0.12s, border-color 0.12s; }
     .cf-toggle-btn:hover { color: var(--text-dim); border-color: var(--text-faint); }
     .cf-toggle-btn.active { color: #5eead4; border-color: #5eead4; }
+    /* ── CASH FLOW SCRUBBER (X-axis zoom + pan) ── */
+    /* A thin resizable track rendered below each station's chart.
+       Drag the handle body to pan; drag either edge to zoom in/out. */
+    .cf-scrubber-track  { position:relative; height:10px; background:rgba(25,230,200,0.06);
+                          border:1px solid rgba(25,230,200,0.18); border-radius:2px;
+                          margin:5px 0 2px; user-select:none; flex-shrink:0; }
+    .cf-scrubber-handle { position:absolute; top:0; bottom:0;
+                          background:rgba(25,230,200,0.18); border:1px solid rgba(25,230,200,0.45);
+                          border-radius:2px; cursor:grab; min-width:4px; }
+    .cf-scrubber-handle:active { cursor:grabbing; }
+    /* Edge grip strips — width:8px, ew-resize cursor to signal resize affordance */
+    .cf-scrubber-resize { position:absolute; top:0; bottom:0; width:8px; cursor:ew-resize;
+                          background:rgba(25,230,200,0.30); }
+    .cf-scrubber-resize[data-side="left"]  { left:0;  border-radius:2px 0 0 2px; }
+    .cf-scrubber-resize[data-side="right"] { right:0; border-radius:0 2px 2px 0; }
+    /* Absolute labels at the track edges — purely decorative */
+    .cf-scrubber-label  { position:absolute; top:50%; transform:translateY(-50%);
+                          font-family:var(--font-mono); font-size:7px;
+                          color:rgba(95,233,212,0.35); pointer-events:none; }
 
     /* ── SORT DROPDOWN (NPC fleet panels) ── */
     /* Sits inline in the section header, right of the divider line */
@@ -807,6 +826,21 @@
   // Per-station hover lookup tables for the By-Ware chart, keyed by safeCode.
   // Each entry is an array of { fx, fy, vbx, vby, ware, colour, price, … }.
   const wareChartData = {};
+  // ── Scrubber zoom/pan state ────────────────────────────────────────────────
+  // Minimum and maximum visible window size (hours).  The full 24 h of history
+  // is always fetched; the window is just which slice is rendered.
+  const CF_MIN_HOURS = 3, CF_MAX_HOURS = 24;
+  // Per-station zoom state: { hours, offsetHours }.
+  //   hours       — width of the visible window (CF_MIN_HOURS … CF_MAX_HOURS)
+  //   offsetHours — how far the window's right edge is from "now" (0 = right at now)
+  // Initialised to full-range on first render; persists across tab switches and
+  // data refreshes so the user's zoom position is remembered.
+  const cfZoom = {};
+  // Station data cache so rebuildCfChart() can regenerate chart bodies without
+  // receiving the original goodsChartSvg() arguments a second time.
+  const cfStationCache = {};
+  // Active scrubber drag state — set on mousedown, cleared on mouseup.
+  let cfScrubDrag = null;
   const cfNiceStep = (range, target) => {
     const raw  = Math.max(range, 1) / target;
     const mag  = Math.pow(10, Math.floor(Math.log10(raw)));
@@ -822,32 +856,87 @@
   };
   const cfFmtCr = n => (n < 0 ? '−' : '+') + Math.abs(Math.round(n)).toLocaleString() + ' cr';
 
+  // Render the full cash-flow section for one station.
+  // Station data is cached so rebuildCfChart() can regenerate the bodies without
+  // needing the original call arguments (scrubber drag only knows safeCode).
   function goodsChartSvg(station, allTrades) {
-    const trades = allTrades.filter(t => t.station_code === station.code &&
-                                         t.time_ago_s / 3600 < HOURS);
-    if (trades.length === 0) {
+    const safeCode = station.code.replace(/[^a-z0-9]/gi, '');
+
+    cfStationCache[safeCode] = { station, allTrades };
+    if (!cfZoom[safeCode]) cfZoom[safeCode] = { hours: CF_MAX_HOURS, offsetHours: 0 };
+
+    // Net 24H total for the header — always over the full 24H window regardless
+    // of zoom so the readout stays stable as the user pans or resizes.
+    const allStation = allTrades.filter(t =>
+      t.station_code === station.code && t.time_ago_s / 3600 < CF_MAX_HOURS);
+    if (!allStation.length) {
       return `<div style="flex:1 1 360px;min-width:320px;padding:16px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No trade activity in the last 24h</div>`;
     }
+    const net24 = allStation.reduce((s, t) =>
+      s + (t.direction === 'Out' ? 1 : -1) * (t.total_cr || 0), 0);
 
-    // Shared SVG layout. The viewBox fixes the internal coordinate system; the
-    // SVG stretches to fill its flex column (width:100%), so this aspect ratio
-    // is what matters, not the pixel size.
+    return `
+      <div id="cf-${safeCode}" style="flex:1 1 360px;min-width:320px;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
+          <div style="display:flex;align-items:center;gap:6px;min-width:0">
+            <span style="font-family:var(--font-mono);font-size:8px;letter-spacing:0.18em;color:#5fe9d4;text-transform:uppercase;white-space:nowrap">Cash Flow · 24h</span>
+            <button class="cf-toggle-btn active" data-mode="hourly" onclick="setCashflowMode('${safeCode}','hourly')">Hourly</button>
+            <button class="cf-toggle-btn"        data-mode="trade"  onclick="setCashflowMode('${safeCode}','trade')">By Trade</button>
+            <button class="cf-toggle-btn"        data-mode="ware"   onclick="setCashflowMode('${safeCode}','ware')">By Ware</button>
+          </div>
+          <span style="font-family:var(--font-mono);font-size:10px;color:${net24 >= 0 ? '#19e6c8' : '#ef5350'};white-space:nowrap">${cfFmtCr(net24)}</span>
+        </div>
+        <div id="cf-bodies-${safeCode}">${buildCfBodiesHtml(safeCode)}</div>
+      </div>`;
+  }
+
+  // Build only the three chart-mode divs + scrubber for one station.
+  // Called by goodsChartSvg() on first render and by rebuildCfChart() whenever
+  // the scrubber changes the zoom window.
+  // Requires cfStationCache[safeCode] and cfZoom[safeCode] to be set first.
+  function buildCfBodiesHtml(safeCode) {
+    const { station, allTrades } = cfStationCache[safeCode];
+    const { hours: windowHours, offsetHours } = cfZoom[safeCode];
+    // numHours = hourly buckets needed to cover the window (ceil covers partial hours).
+    const numHours = Math.ceil(windowHours);
+
+    // Shared SVG layout constants — same viewBox as always; scales to flex column width.
     const svgW = 560, svgH = 320;
     const ml = 56, mr = 14, mt = 12, mb = 30;
     const pw = svgW - ml - mr, ph = svgH - mt - mb;
-    const xOf = h => ml + (HOURS - h) / HOURS * pw;  // h=0 → right edge (now)
-    const safeCode = station.code.replace(/[^a-z0-9]/gi, '');
 
-    // Shared vertical hour gridlines + x labels every 6 h.
-    const xTicksHtml = [0, 6, 12, 18, 24].map(h => {
-      const x = xOf(h).toFixed(1);
-      const label = h === 0 ? 'NOW' : `-${h}H`;
-      return `<line x1="${x}" y1="${mt}" x2="${x}" y2="${mt + ph}" stroke="#19e6c8" stroke-opacity="0.08" stroke-width="0.6"/>
-              <text x="${x}" y="${mt + ph + 13}" text-anchor="middle" fill="#5fe9d4" fill-opacity="0.7"
-                    style="font-family:var(--font-mono);font-size:8px;letter-spacing:0.06em">${label}</text>`;
-    }).join('');
+    // Maps hours-ago to SVG X coordinate within the current zoom window.
+    // h = offsetHours            → right edge (x = ml+pw, the "recent" side)
+    // h = offsetHours+windowHours → left edge  (x = ml,   the "oldest" side)
+    const xOf = h => ml + (offsetHours + windowHours - h) / windowHours * pw;
 
-    // Reusable y-axis (grid + labels) for a given axis range.
+    // Filter trades to the visible window for this station.
+    const trades = allTrades.filter(t => {
+      const hAgo = t.time_ago_s / 3600;
+      return t.station_code === station.code &&
+             hAgo >= offsetHours &&
+             hAgo < offsetHours + windowHours;
+    });
+
+    // X-axis tick interval adapts to window size so labels never crowd.
+    const tickStep = windowHours <= 3 ? 0.5 : windowHours <= 6 ? 1 : windowHours <= 12 ? 2 : 6;
+    const xTicksHtml = (() => {
+      const out = [];
+      // First tick at or after the left (oldest) edge of the window.
+      const first = Math.ceil(offsetHours / tickStep) * tickStep;
+      for (let h = first; h <= offsetHours + windowHours + 0.001; h += tickStep) {
+        const x = xOf(h).toFixed(1);
+        const label = h === 0 ? 'NOW'
+          : h < 1  ? `-${Math.round(h * 60)}M`
+          : `-${h % 1 !== 0 ? h.toFixed(1) : Math.round(h)}H`;
+        out.push(`<line x1="${x}" y1="${mt}" x2="${x}" y2="${mt + ph}" stroke="#19e6c8" stroke-opacity="0.08" stroke-width="0.6"/>
+          <text x="${x}" y="${mt + ph + 13}" text-anchor="middle" fill="#5fe9d4" fill-opacity="0.7"
+                style="font-family:var(--font-mono);font-size:8px;letter-spacing:0.06em">${label}</text>`);
+      }
+      return out.join('');
+    })();
+
+    // Reusable y-axis (grid lines + credit labels) for any axis range.
     const yAxisHtml = (yOf, axBot, axTop, step) => {
       const ticks = [];
       for (let v = axBot; v <= axTop + 0.5; v += step) ticks.push(v);
@@ -864,11 +953,12 @@
       return grid + labels;
     };
 
-    // Net per hour (for header readout + hourly body).
-    const net    = new Array(HOURS).fill(0);
-    const detail = Array.from({ length: HOURS }, () => ({}));
+    // Hourly net buckets. Bucket index 0 = most recent hour of the window.
+    const net    = new Array(numHours).fill(0);
+    const detail = Array.from({ length: numHours }, () => ({}));
     trades.forEach(t => {
-      const i = Math.floor(t.time_ago_s / 3600);
+      const i = Math.floor(t.time_ago_s / 3600 - offsetHours);
+      if (i < 0 || i >= numHours) return;
       const cr = t.total_cr || 0;
       net[i] += (t.direction === 'Out' ? 1 : -1) * cr;
       const w = t.ware_name || 'Unknown';
@@ -876,7 +966,17 @@
       if (t.direction === 'Out') { d.soldU += t.amount; d.soldCr += cr; }
       else                       { d.boughtU += t.amount; d.boughtCr += cr; }
     });
-    const net24 = net.reduce((a, b) => a + b, 0);
+
+    // If the zoom window contains no trades show a lightweight empty state for all
+    // three modes so the scrubber remains visible and interactive.
+    if (!trades.length) {
+      const empty = `<div style="padding:16px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No trades in this window</div>`;
+      return `
+        <div data-cfmode="hourly" style="display:block">${empty}</div>
+        <div data-cfmode="trade"  style="display:none">${empty}</div>
+        <div data-cfmode="ware"   style="display:none">${empty}</div>
+        ${buildScrubberHtml(safeCode)}`;
+    }
 
     // ── Hourly body ──────────────────────────────────────────────────────────
     const hourlyBody = (() => {
@@ -888,16 +988,19 @@
       const zeroY = yOf(0), zeroFrac = ((zeroY - mt) / ph).toFixed(4);
       const glowId = `holo-glow-${safeCode}-h`, fillId = `cashfill-${safeCode}-h`;
 
+      // Bucket centres are arranged right→left (bucket 0 = rightmost = most recent).
       const ordered = [];
-      for (let i = HOURS - 1; i >= 0; i--) ordered.push([xOf(i + 0.5), net[i]]);
+      for (let i = numHours - 1; i >= 0; i--) {
+        ordered.push([xOf(offsetHours + i + 0.5), net[i]]);
+      }
       const linePts = ordered.map(([x, v]) => `${x.toFixed(1)},${yOf(v).toFixed(1)}`).join(' ');
       const areaPath = `M ${ordered[0][0].toFixed(1)} ${zeroY.toFixed(1)} ` +
                        ordered.map(([x, v]) => `L ${x.toFixed(1)} ${yOf(v).toFixed(1)}`).join(' ') +
                        ` L ${ordered[ordered.length - 1][0].toFixed(1)} ${zeroY.toFixed(1)} Z`;
 
-      const colW = pw / HOURS;
+      const colW = pw / numHours;
       const markers = [], hitCols = [];
-      for (let i = 0; i < HOURS; i++) {
+      for (let i = 0; i < numHours; i++) {
         const rows = [];
         Object.keys(detail[i]).forEach(w => {
           const d = detail[i][w], col = WARE_COLOURS[w] || '#5eead4';
@@ -906,12 +1009,14 @@
         });
         if (!rows.length) continue;
         rows.sort((a, b) => Math.abs(b.cr) - Math.abs(a.cr));
-        const cx = xOf(i + 0.5).toFixed(1), cy = yOf(net[i]).toFixed(1);
+        const cx = xOf(offsetHours + i + 0.5).toFixed(1), cy = yOf(net[i]).toFixed(1);
         const dotCol = net[i] >= 0 ? '#5eead4' : '#ef5350';
         markers.push(`<circle cx="${cx}" cy="${cy}" r="2.6" fill="${dotCol}" filter="url(#${glowId})"/>
                       <circle cx="${cx}" cy="${cy}" r="2.2" fill="${dotCol}"/>`);
-        const tip = encodeURIComponent(JSON.stringify({ hAgo: i, net: net[i], rows }));
-        hitCols.push(`<rect class="cf-col" x="${xOf(i + 1).toFixed(1)}" y="${mt}" width="${colW.toFixed(1)}" height="${ph}" data-cashflow-tip="${tip}"></rect>`);
+        // hAgo = absolute hours-ago for the bucket start (rounded to nearest hour).
+        const tipHAgo = Math.round(offsetHours + i);
+        const tip = encodeURIComponent(JSON.stringify({ hAgo: tipHAgo, net: net[i], rows }));
+        hitCols.push(`<rect class="cf-col" x="${xOf(offsetHours + i + 1).toFixed(1)}" y="${mt}" width="${colW.toFixed(1)}" height="${ph}" data-cashflow-tip="${tip}"></rect>`);
       }
 
       return `
@@ -1030,7 +1135,7 @@
     const byWareBody = (() => {
       const sellTrades = trades.filter(t => t.direction === 'Out');
       if (!sellTrades.length) {
-        return `<div style="flex:1 1 360px;min-width:320px;padding:16px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No sell activity in the last 24h</div>`;
+        return `<div style="padding:16px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No sell activity in this window</div>`;
       }
 
       // Group sells by ware name, sort ware names alphabetically for a stable order.
@@ -1091,7 +1196,7 @@
           });
         });
 
-        // Build the SVG step path left-to-right (oldest = left, now = right).
+        // Build the SVG step path left-to-right (oldest = left, right edge = most recent).
         // Each segment holds the previous trade's price until the next trade's x,
         // then jumps vertically to the new price.
         const pts = wt.map(t => ({ x: xOf(t.time_ago_s / 3600), y: yOfP(t.price_cr) }));
@@ -1099,7 +1204,9 @@
         for (let i = 1; i < pts.length; i++) {
           stepD += ` H ${pts[i].x.toFixed(1)} V ${pts[i].y.toFixed(1)}`;
         }
-        stepD += ` H ${xOf(0).toFixed(1)}`; // extend last price to NOW
+        // Extend the last price level to the right edge of the current window
+        // (xOf(offsetHours) = ml+pw, the "most recent" edge of the chart).
+        stepD += ` H ${xOf(offsetHours).toFixed(1)}`;
 
         // Area fill: close the step path back along the bottom of the chart.
         const bY    = (mt + ph).toFixed(1);
@@ -1172,22 +1279,44 @@
         </div>`;
     })();
 
-    // ── Section wrapper with the Hourly / By-Trade toggle ──────────────────────
     return `
-      <div id="cf-${safeCode}" style="flex:1 1 360px;min-width:320px;display:flex;flex-direction:column">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
-          <div style="display:flex;align-items:center;gap:6px;min-width:0">
-            <span style="font-family:var(--font-mono);font-size:8px;letter-spacing:0.18em;color:#5fe9d4;text-transform:uppercase;white-space:nowrap">Cash Flow · 24h</span>
-            <button class="cf-toggle-btn active" data-mode="hourly" onclick="setCashflowMode('${safeCode}','hourly')">Hourly</button>
-            <button class="cf-toggle-btn"        data-mode="trade"  onclick="setCashflowMode('${safeCode}','trade')">By Trade</button>
-            <button class="cf-toggle-btn"        data-mode="ware"   onclick="setCashflowMode('${safeCode}','ware')">By Ware</button>
-          </div>
-          <span style="font-family:var(--font-mono);font-size:10px;color:${net24 >= 0 ? '#19e6c8' : '#ef5350'};white-space:nowrap">${cfFmtCr(net24)}</span>
-        </div>
-        <div data-cfmode="hourly" style="display:block">${hourlyBody}</div>
-        <div data-cfmode="trade"  style="display:none">${detailBody}</div>
-        <div data-cfmode="ware"   style="display:none">${byWareBody}</div>
-      </div>`;
+      <div data-cfmode="hourly" style="display:block">${hourlyBody}</div>
+      <div data-cfmode="trade"  style="display:none">${detailBody}</div>
+      <div data-cfmode="ware"   style="display:none">${byWareBody}</div>
+      ${buildScrubberHtml(safeCode)}`;
+  }
+
+  // Build the scrubber track HTML for one station's zoom control.
+  // Track left = 24H ago, track right = NOW.
+  // Handle left % = (24 - offsetHours - hours) / 24 × 100
+  // Handle width % = hours / 24 × 100
+  function buildScrubberHtml(safeCode) {
+    const { hours, offsetHours } = cfZoom[safeCode] || { hours: CF_MAX_HOURS, offsetHours: 0 };
+    const hLeft  = ((CF_MAX_HOURS - offsetHours - hours) / CF_MAX_HOURS * 100).toFixed(2);
+    const hWidth = (hours / CF_MAX_HOURS * 100).toFixed(2);
+    return `<div class="cf-scrubber-track" data-scrubber="${safeCode}">
+      <div class="cf-scrubber-handle" style="left:${hLeft}%;width:${hWidth}%">
+        <div class="cf-scrubber-resize" data-side="left"></div>
+        <div class="cf-scrubber-resize" data-side="right"></div>
+      </div>
+      <span class="cf-scrubber-label" style="left:3px">-24H</span>
+      <span class="cf-scrubber-label" style="right:3px">NOW</span>
+    </div>`;
+  }
+
+  // Replace the bodies container of one station's cash-flow section with a
+  // freshly built version at the current zoom window, then restore the active
+  // chart tab. Called by the scrubber drag handler on every cfZoom change.
+  function rebuildCfChart(safeCode) {
+    if (!cfStationCache[safeCode]) return;
+    const bodiesEl = document.getElementById('cf-bodies-' + safeCode);
+    if (!bodiesEl) return;
+    // Read the active mode from the toggle buttons BEFORE touching the DOM.
+    const sec = document.getElementById('cf-' + safeCode);
+    const activeBtn = sec && sec.querySelector('.cf-toggle-btn.active');
+    const activeMode = activeBtn ? activeBtn.dataset.mode : 'hourly';
+    bodiesEl.innerHTML = buildCfBodiesHtml(safeCode);
+    setCashflowMode(safeCode, activeMode);
   }
 
   // Toggle between the Hourly, By-Trade, and By-Ware cash-flow views for one station.
@@ -3552,6 +3681,93 @@
       tip.style.top  = y + 'px';
     });
     document.addEventListener('mouseleave', function() { tip.style.display = 'none'; });
+
+    // ── Scrubber zoom + pan drag handler ──────────────────────────────────────
+    // Mousedown on the handle body starts a pan; on either edge grip starts a
+    // resize.  mousemove / mouseup are on the document so drags that leave the
+    // element are not interrupted.
+    (function() {
+      document.addEventListener('mousedown', function(e) {
+        const resizeEl = e.target.closest('.cf-scrubber-resize[data-side]');
+        const handleEl = !resizeEl && e.target.closest('.cf-scrubber-handle');
+        const trackEl  = e.target.closest('[data-scrubber]');
+        // Only act when the click was inside a known scrubber part.
+        if (!trackEl || (!resizeEl && !handleEl)) return;
+
+        const safeCode = trackEl.dataset.scrubber;
+        if (!cfZoom[safeCode]) return;
+        const { hours, offsetHours } = cfZoom[safeCode];
+
+        cfScrubDrag = {
+          safeCode,
+          // 'pan' moves both edges; 'resize-left'/'resize-right' moves one edge.
+          mode:       resizeEl ? (resizeEl.dataset.side === 'left' ? 'resize-left' : 'resize-right') : 'pan',
+          startX:     e.clientX,
+          startHours: hours,
+          startOff:   offsetHours,
+          trackW:     trackEl.getBoundingClientRect().width,
+          _raf:       false,
+        };
+        e.preventDefault(); // prevent text selection during drag
+      });
+
+      document.addEventListener('mousemove', function(e) {
+        if (!cfScrubDrag) return;
+        const { safeCode, mode, startX, startHours, startOff, trackW } = cfScrubDrag;
+        // Convert mouse delta (px) to hours using the track's current width.
+        const dH = (e.clientX - startX) / trackW * CF_MAX_HOURS;
+
+        let newH = startHours, newOff = startOff;
+        if (mode === 'pan') {
+          // Both edges shift by the same amount.
+          // Dragging right → toward NOW → offset decreases.
+          newOff = startOff - dH;
+        } else if (mode === 'resize-left') {
+          // Left edge moves, right edge (= offsetHours) is fixed.
+          // Dragging right → window shrinks; left → grows.
+          newH = startHours - dH;
+        } else {
+          // resize-right: right edge moves, left edge position is fixed.
+          // Fixed left = startOff + startHours, so offset = leftFixed - newH.
+          newH   = startHours  + dH;
+          newOff = startOff    - dH;
+        }
+
+        // Clamp window width and offset so nothing goes out of range.
+        newH   = Math.max(CF_MIN_HOURS, Math.min(CF_MAX_HOURS, newH));
+        newOff = Math.max(0, Math.min(CF_MAX_HOURS - newH, newOff));
+        cfZoom[safeCode] = { hours: newH, offsetHours: newOff };
+
+        // Fast-path: update the handle geometry immediately so the track feels
+        // responsive even before the full rAF chart rebuild completes.
+        const track = document.querySelector(`[data-scrubber="${safeCode}"]`);
+        if (track) {
+          const handle = track.querySelector('.cf-scrubber-handle');
+          if (handle) {
+            handle.style.left  = ((CF_MAX_HOURS - newOff - newH) / CF_MAX_HOURS * 100).toFixed(2) + '%';
+            handle.style.width = (newH / CF_MAX_HOURS * 100).toFixed(2) + '%';
+          }
+        }
+
+        // Throttle chart rebuilds to one per animation frame so intermediate
+        // mouse events don't pile up and cause jank.
+        if (!cfScrubDrag._raf) {
+          cfScrubDrag._raf = true;
+          requestAnimationFrame(function() {
+            if (cfScrubDrag) { cfScrubDrag._raf = false; rebuildCfChart(safeCode); }
+          });
+        }
+      });
+
+      document.addEventListener('mouseup', function() {
+        if (cfScrubDrag) {
+          // One final rebuild on release to guarantee the chart matches the
+          // handle's resting position even if the last rAF fired early.
+          rebuildCfChart(cfScrubDrag.safeCode);
+          cfScrubDrag = null;
+        }
+      });
+    })();
   })();
 
   // Primary data path: the Qt QWebChannel bridge exposed by main_ui.py.
