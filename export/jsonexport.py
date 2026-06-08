@@ -133,6 +133,29 @@ def _sectors(conn) -> list[dict]:
         "owner_id, owner_name, sunlight FROM sectors ORDER BY sector_name")
 
 
+def _npc_station_counts(conn, scan_id) -> dict:
+    """
+    Returns {sector_macro: [{owner_id, owner_name, count}, ...]} for all NPC
+    stations seen in this scan, sorted per sector by count descending.
+    Used by the galaxy map hover panel to show faction presence per sector.
+    """
+    rows = conn.execute(
+        "SELECT sector_macro, owner_id, owner_name, COUNT(*) AS count "
+        "FROM npc_stations WHERE last_scan_id = ? AND sector_macro IS NOT NULL "
+        "GROUP BY sector_macro, owner_id "
+        "ORDER BY sector_macro, count DESC",
+        (scan_id,),
+    ).fetchall()
+    result: dict = {}
+    for r in rows:
+        result.setdefault(r['sector_macro'], []).append({
+            'owner_id':   r['owner_id'],
+            'owner_name': r['owner_name'],
+            'count':      r['count'],
+        })
+    return result
+
+
 def _galaxy_map(conn, scan_id) -> dict:
     """
     Galaxy connectivity for this scan's player empire.
@@ -265,6 +288,7 @@ def to_export(conn: sqlite3.Connection, scan_id: int | None = None) -> dict:
         'reputation':            _reputation(conn, scan_id),
         'sectors':               _sectors(conn),
         'galaxy_map':            _galaxy_map(conn, scan_id),
+        'npc_stations_by_sector': _npc_station_counts(conn, scan_id),
         'stations':              _stations(conn, scan_id),
         'ships':                 ships,
         'fleet_summary':         _fleet_summary(ships),

@@ -90,15 +90,35 @@
     #universe-svg { width: 100%; height: 100%; display: block; }
     /* SVG text labels — font set by CSS; opacity toggled via parent class flags */
     .u-hex-label    { font-family: 'Barlow Condensed', sans-serif; font-weight: 500; letter-spacing: 0.04em; opacity: 0; pointer-events: none; }
-    .u-sector-hex   { opacity: 0; }
+    .u-sector-hex   { opacity: 0; pointer-events: none; }
     .u-sector-label { font-family: 'Barlow Condensed', sans-serif; opacity: 0; pointer-events: none; }
     #universe-viewport.zoom-labels        .u-hex-label    { opacity: 1; }
-    #universe-viewport.zoom-sectors       .u-sector-hex   { opacity: 1; }
+    #universe-viewport.zoom-sectors       .u-sector-hex   { opacity: 1; pointer-events: all; }
     #universe-viewport.zoom-sector-labels .u-sector-label { opacity: 1; }
     #universe-viewport.zoom-sector-labels .u-hex-label    { opacity: 0; }
     .u-conn-sector { opacity: 0; }
     #universe-viewport.zoom-sectors .u-conn-sector    { opacity: 1; }
     #universe-viewport.zoom-sectors #u-conns-cluster  { opacity: 0; }
+
+    /* ── UNIVERSE HOVER PANEL ── */
+    #u-hover-panel {
+      position: fixed; pointer-events: none; z-index: 200;
+      background: rgba(22,27,34,0.94); border: 1px solid var(--border);
+      border-radius: 5px; padding: 9px 11px; min-width: 150px;
+      font-family: var(--font-cond); font-size: 12px; line-height: 1.4;
+      display: none; backdrop-filter: blur(6px);
+    }
+    #u-hover-panel.visible { display: block; }
+    .uhp-name  { font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: 0.03em; }
+    .uhp-owner { font-size: 11px; margin-top: 1px; }
+    .uhp-sep   { border-top: 1px solid var(--border); margin: 6px 0; }
+    .uhp-nearest { display: flex; justify-content: space-between; gap: 12px; color: var(--text-dim); font-size: 11px; }
+    .uhp-nearest .uhp-stname { color: var(--text); }
+    .uhp-nearest .uhp-jumps  { color: var(--teal); white-space: nowrap; }
+    .uhp-faction-row { display: flex; align-items: center; gap: 6px; margin: 2px 0; }
+    .uhp-fdot  { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .uhp-fcode { flex: 1; color: var(--text); font-size: 11px; letter-spacing: 0.05em; }
+    .uhp-fcount{ color: var(--text-dim); font-size: 11px; font-family: var(--font-mono); }
 
     /* ── SECTION HEADER ── */
     .sec-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
@@ -2580,8 +2600,11 @@
   let _universeBuilt    = false; // SVG elements created at least once
   let _universeViewInited = false; // initial fit-to-view applied
   let _universeTransform  = { x: 0, y: 0, scale: 1 };
-  let _uLabelEls    = [];
-  let _uSecLabelEls = [];
+  let _uLabelEls      = [];
+  let _uSecLabelEls   = [];
+  let _nearestStation = {}; // {sector_macro → {name, jumps}} — nearest player station
+  let _sectorInfoMap  = {}; // {sector_macro → sector row from data.sectors}
+  let _npcBySector    = {}; // {sector_macro → [{owner_id, owner_name, count}]}
 
   // Fit all clusters inside the map container, called on first tab open when
   // the element has real dimensions (deferred via requestAnimationFrame).
@@ -2865,10 +2888,11 @@
           const sc = FACTION_COLOURS[sec.owner_id] || '#6e7681';
 
           sg.appendChild(el('polygon', {
-            points:        hexPoints(sx, sy, SECTOR_SZ - 0.5),
-            fill:          hexToRgba(sc, 0.20),
-            stroke:        hexToRgba(sc, 0.75),
+            points:         hexPoints(sx, sy, SECTOR_SZ - 0.5),
+            fill:           hexToRgba(sc, 0.20),
+            stroke:         hexToRgba(sc, 0.75),
             'stroke-width': '0.8',
+            'data-sector':  sec.sector_macro,
           }));
 
           // Sector name label — constant 9px
@@ -2893,6 +2917,44 @@
     }
 
     vp.appendChild(cgSector); // in front of hex polygons
+
+    // ── Hover panel data (rebuilt every render in case data changes) ──────────
+    _sectorInfoMap = {};
+    for (const s of (data.sectors || [])) _sectorInfoMap[s.sector_macro] = s;
+
+    _npcBySector = data.npc_stations_by_sector || {};
+
+    // Dijkstra from each player station sector to find the nearest named station
+    // for every sector on the map. O(stations × sectors²) but the galaxy is small.
+    _nearestStation = {};
+    const _stations = data.stations || [];
+    if (_stations.length) {
+      const _g = new Map();
+      for (const [a, b, cost] of (data.galaxy_map?.edges || [])) {
+        if (!_g.has(a)) _g.set(a, []);
+        if (!_g.has(b)) _g.set(b, []);
+        _g.get(a).push([b, cost]);
+        _g.get(b).push([a, cost]);
+      }
+      for (const st of _stations) {
+        if (!st.sector_macro) continue;
+        const dist = new Map([[st.sector_macro, 0]]);
+        const pq   = [[0, st.sector_macro]];
+        while (pq.length) {
+          pq.sort((x, y) => x[0] - y[0]);
+          const [d, u] = pq.shift();
+          if (d > (dist.get(u) ?? Infinity)) continue;
+          for (const [v, w] of (_g.get(u) || [])) {
+            const nd = d + w;
+            if (nd < (dist.get(v) ?? Infinity)) { dist.set(v, nd); pq.push([nd, v]); }
+          }
+        }
+        for (const [sec, d] of dist) {
+          const cur = _nearestStation[sec];
+          if (!cur || d < cur.jumps) _nearestStation[sec] = { name: st.name, jumps: d };
+        }
+      }
+    }
 
     // ── Pan / zoom event handlers (attached once) ─────────────────────────────
     if (!_universeBuilt) {
@@ -2935,10 +2997,73 @@
         document.getElementById('universe-map-wrap')?.classList.remove('panning');
       });
 
+      // Sector hover panel — delegated to the map so we only attach one listener.
+      // e.clientX/Y from SVG element events can return SVG user-space coordinates
+      // e.clientX/Y are physical pixels in QtWebEngine; style.left/top are in
+      // zoomed CSS pixels. Divide by zoom to put the panel in the right space.
+      wrap.addEventListener('mousemove', function(e) {
+        if (_dragging) { _hideUHoverPanel(); return; }
+        const hex = e.target.closest('[data-sector]');
+        if (hex) {
+          const _z = parseFloat(document.documentElement.style.zoom) || 1;
+          _showUHoverPanel(hex.dataset.sector, e.clientX / _z + 14, e.clientY / _z + 14);
+        } else {
+          _hideUHoverPanel();
+        }
+      });
+      wrap.addEventListener('mouseleave', _hideUHoverPanel);
+
       _universeBuilt = true;
     }
 
     _uApplyTransform(_universeTransform);
+  }
+
+  function _showUHoverPanel(sectorMacro, clientX, clientY) {
+    const panel = document.getElementById('u-hover-panel');
+    if (!panel) return;
+
+    const sec  = _sectorInfoMap[sectorMacro];
+    const near = _nearestStation[sectorMacro];
+    const facs = _npcBySector[sectorMacro] || [];
+
+    const secName   = sec?.sector_name  || sectorMacro;
+    // Strip the [ABR] bracket prefix that FACTION_NAMES includes (e.g. "[TEL] Teladi")
+    const ownRaw    = sec?.owner_name   || '';
+    const ownName   = ownRaw.replace(/^\[\w+\]\s*/, '') || 'Unclaimed';
+    const ownColor  = FACTION_COLOURS[sec?.owner_id] || 'var(--text-dim)';
+
+    let html = `<div class="uhp-name">${secName}</div>
+<div class="uhp-owner" style="color:${ownColor}">${ownName}</div>`;
+
+    if (near) {
+      const jLabel = near.jumps === 0 ? 'here' : `${near.jumps} jump${near.jumps !== 1 ? 's' : ''}`;
+      html += `<div class="uhp-sep"></div>
+<div class="uhp-nearest"><span class="uhp-stname">${near.name}</span><span class="uhp-jumps">${jLabel}</span></div>`;
+    }
+
+    if (facs.length) {
+      const rows = facs.map(f => {
+        const m     = f.owner_name.match(/^\[(\w+)\]/);
+        const short = m ? m[1] : f.owner_name.slice(0, 3).toUpperCase();
+        const color = FACTION_COLOURS[f.owner_id] || '#6e7681';
+        return `<div class="uhp-faction-row">
+  <span class="uhp-fdot" style="background:${color}"></span>
+  <span class="uhp-fcode">${short}</span>
+  <span class="uhp-fcount">${f.count}</span>
+</div>`;
+      }).join('');
+      html += `<div class="uhp-sep"></div><div>${rows}</div>`;
+    }
+
+    panel.innerHTML = html;
+    panel.style.left = clientX + 'px';
+    panel.style.top  = clientY + 'px';
+    panel.classList.add('visible');
+  }
+
+  function _hideUHoverPanel() {
+    document.getElementById('u-hover-panel')?.classList.remove('visible');
   }
 
   // Click on a pilot name in the fleet table → jump to their crew file
@@ -3225,5 +3350,6 @@
   window.addEventListener('resize', updateZoom);
 </script>
 
+<div id="u-hover-panel"></div>
 </body>
 </html>
