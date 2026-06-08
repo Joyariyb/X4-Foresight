@@ -291,11 +291,16 @@
     .cf-toggle-btn:hover { color: var(--text-dim); border-color: var(--text-faint); }
     .cf-toggle-btn.active { color: #5eead4; border-color: #5eead4; }
 
-    /* ── SORT DROPDOWN ── */
+    /* ── SORT DROPDOWN (NPC fleet panels) ── */
     /* Sits inline in the section header, right of the divider line */
     .sort-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); flex-shrink: 0; }
     .sort-select { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 6px; border-radius: 2px; border: 1px solid var(--border); background: var(--bg-card); color: var(--teal); cursor: pointer; outline: none; flex-shrink: 0; }
     .sort-select:hover { border-color: var(--teal); }
+
+    /* ── SORTABLE COLUMN HEADERS (player fleet table) ── */
+    #fleet-table th[data-sort-key] { cursor: pointer; user-select: none; }
+    #fleet-table th[data-sort-key]:hover { color: var(--teal); }
+    #fleet-table th.sort-active { color: var(--teal); }
 
     /* ── FLEET SUB-TABS ── */
     /* Badge style — matches the hull-type chips in the ship tables */
@@ -471,29 +476,18 @@
           <div class="sec-header">
             <div class="sec-title">Player Fleet</div>
             <div class="sec-line"></div>
-            <span class="sort-label">Sort</span>
-            <!-- sort-indicator shows the active sort key and direction arrow.
-                 The select resets to "" after every pick so re-selecting the
-                 same option always fires onchange and toggles direction. -->
-            <span id="sort-indicator" style="font-family:var(--font-mono);font-size:10px;color:var(--teal);flex-shrink:0">Role ↑</span>
-            <select class="sort-select" id="sort-select" onchange="setSort(this.value)">
-              <option value="" disabled selected hidden>Change…</option>
-              <option value="role">Role</option>
-              <option value="name">Name</option>
-              <option value="size">Size</option>
-              <option value="order">Order</option>
-              <option value="sector">Sector</option>
-              <option value="hull_origin">Hull Origin</option>
-              <option value="pilot">Pilot</option>
-              <option value="health">Health</option>
-            </select>
           </div>
           <div class="panel" style="overflow:auto; max-height: calc(100vh - 200px);">
             <table class="data-table" id="fleet-table">
               <thead>
                 <tr>
-                  <th>Code / Name</th><th>Size</th><th>Hull Type</th><th>HP</th>
-                  <th>Order</th><th>Sector</th><th>Pilot</th>
+                  <th data-sort-key="name"   onclick="setSort('name')">Code / Name</th>
+                  <th data-sort-key="size"   onclick="setSort('size')">Size</th>
+                  <th data-sort-key="role"   onclick="setSort('role')">Hull Type</th>
+                  <th data-sort-key="health" onclick="setSort('health')">HP</th>
+                  <th data-sort-key="order"  onclick="setSort('order')">Order</th>
+                  <th data-sort-key="sector" onclick="setSort('sector')">Sector</th>
+                  <th data-sort-key="pilot"  onclick="setSort('pilot')">Pilot</th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -1210,9 +1204,10 @@
   // String keys return lowercase strings. Null/missing values are pushed
   // to the end of the list regardless of sort direction (handled in renderFleet).
   function sortValue(ship, key) {
-    if (key === 'pilot')  return (ship.pilot && ship.pilot.name) ? ship.pilot.name : null;
+    if (key === 'pilot')  return (ship.pilot && ship.pilot.skills && ship.pilot.skills.piloting != null) ? ship.pilot.skills.piloting : null;
     if (key === 'size')   return { S: 0, M: 1, L: 2, XL: 3 }[ship.size] ?? null;
     if (key === 'health') return (ship.hull_pct !== null && ship.hull_pct !== undefined) ? ship.hull_pct : null;
+    if (key === 'name')   return (ship.display_name || ship.name || '').toLowerCase();
     return (ship[key] || '').toString().toLowerCase();
   }
 
@@ -1237,9 +1232,7 @@
       const oCol    = ORDER_COLOURS[s.order] || "var(--text-dim)";
       const sCol    = SIZE_COLOURS[s.size]   || "var(--text-dim)";
       const oIcon   = ORDER_ICONS[s.order]   || "ti-circle";
-      // s.name is always a string after the ship_scanner.py fix. The || "—"
-      // is a safety net for any edge case where it's still null or empty.
-      const nameStr = s.name || "—";
+      const nameStr = s.display_name || s.name || "—";
       // piloting pts from the scanner (null if pilot has no skills data)
       const plt = (s.pilot && s.pilot.skills && s.pilot.skills.piloting != null)
         ? s.pilot.skills.piloting : null;
@@ -1274,29 +1267,33 @@
     }).join("");
   }
 
-  // Called when the sort dropdown changes.
-  // If the same key is picked again, the direction is reversed (toggle).
-  // If a new key is picked, direction resets: health defaults to descending
-  // (highest first), all other fields default to ascending.
+  // Called when a column header is clicked.
+  // Clicking the active column toggles direction; clicking a new column resets
+  // direction to ascending, except health and pilot skill which default to
+  // descending (highest first).
   function setSort(key) {
     if (key === currentSortKey) {
-      currentSortDir *= -1;               // same key — flip direction
+      currentSortDir *= -1;
     } else {
       currentSortKey = key;
-      currentSortDir = key === 'health' ? -1 : 1;  // health: high→low first
+      currentSortDir = (key === 'health' || key === 'pilot') ? -1 : 1;
     }
-
-    // Reset the select back to its placeholder so the user can pick the
-    // same option again next time and onchange will fire.
-    document.getElementById('sort-select').value = '';
-
-    // Update the indicator label next to the dropdown
-    const LABELS = { role:'Role', name:'Name', size:'Size', order:'Order',
-                     sector:'Sector', hull_origin:'Hull Origin', pilot:'Pilot', health:'Health' };
-    const arrow = currentSortDir === 1 ? '↑' : '↓';
-    document.getElementById('sort-indicator').textContent = `${LABELS[key] || key} ${arrow}`;
-
+    updateFleetSortHeaders();
     renderFleet(allPlayerShips, currentSortKey, currentSortDir);
+  }
+
+  // Highlights the active sort column and shows the direction arrow in its header.
+  function updateFleetSortHeaders() {
+    document.querySelectorAll('#fleet-table th[data-sort-key]').forEach(th => {
+      const key      = th.dataset.sortKey;
+      const isActive = key === currentSortKey;
+      th.classList.toggle('sort-active', isActive);
+      // Cache the original label text on first call so we can restore it cleanly.
+      if (!th.dataset.label) th.dataset.label = th.textContent.trim();
+      th.textContent = isActive
+        ? `${th.dataset.label} ${currentSortDir === 1 ? '↑' : '↓'}`
+        : th.dataset.label;
+    });
   }
 
 
@@ -1815,6 +1812,7 @@
 
     allPlayerShips = players;
     renderFleet(allPlayerShips, currentSortKey, currentSortDir);
+    updateFleetSortHeaders();
     document.getElementById('ft-count-player').textContent = players.length;
 
     const crewCounts = { manager: 0, pilot: 0, service: 0, marine: 0 };

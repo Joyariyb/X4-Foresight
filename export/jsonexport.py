@@ -21,6 +21,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 from scanner import galaxy_map as gm
+from scanner.ship_names import ship_display_name
 
 
 def _rows(conn, sql, params=()) -> list[dict]:
@@ -76,8 +77,16 @@ def _stations(conn, scan_id) -> list[dict]:
 
 
 def _ships(conn, scan_id) -> list[dict]:
-    return [_drop(dict(r), 'scan_id')
-            for r in conn.execute("SELECT * FROM ships WHERE scan_id=?", (scan_id,))]
+    out = []
+    for r in conn.execute("SELECT * FROM ships WHERE scan_id=?", (scan_id,)):
+        d = _drop(dict(r), 'scan_id')
+        # Resolve the human-readable name the same way the CLI does — prefers the
+        # player's custom name; falls back to the macro-derived type name (e.g.
+        # "Magnetar Vanguard" or "Argon L Freighter (B)"). Stored as display_name
+        # so the UI can show it without re-implementing resolution logic.
+        d['display_name'] = ship_display_name(d.get('macro') or '', d.get('name'))
+        out.append(d)
+    return out
 
 
 def _fleet_summary(ships: list[dict]) -> dict:
