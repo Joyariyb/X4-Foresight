@@ -798,6 +798,15 @@
   // Per-station point arrays for the By-Trade view's nearest-point hover,
   // keyed by safeCode. Populated as the detail chart is built.
   const cashflowDetailData = {};
+  // Ware price bands from the export — { wareKey: { min, average, max } }.
+  // Populated in populate() from data.ware_prices.
+  let warePrices = {};
+  // Per-station ware visibility for the By-Ware chart — { safeCode: { wareName: bool } }.
+  // Persists across re-renders so toggle state survives a mode switch.
+  const wareVisibility = {};
+  // Per-station hover lookup tables for the By-Ware chart, keyed by safeCode.
+  // Each entry is an array of { fx, fy, vbx, vby, ware, colour, price, … }.
+  const wareChartData = {};
   const cfNiceStep = (range, target) => {
     const raw  = Math.max(range, 1) / target;
     const mag  = Math.pow(10, Math.floor(Math.log10(raw)));
@@ -1012,6 +1021,157 @@
         </div>`;
     })();
 
+    // ── By-Ware body ───────────────────────────────────────────────────────────
+    // One step-line per sell ware, each normalised to its own min/avg/max price
+    // band so wares with very different absolute prices are visually comparable
+    // on a shared Y-axis (bottom = min, centre = avg, top = max).
+    // Hover snaps to the nearest trade point by Euclidean distance so the cursor
+    // naturally locks on to whichever ware line is closest.
+    const byWareBody = (() => {
+      const sellTrades = trades.filter(t => t.direction === 'Out');
+      if (!sellTrades.length) {
+        return `<div style="flex:1 1 360px;min-width:320px;padding:16px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No sell activity in the last 24h</div>`;
+      }
+
+      // Group sells by ware name, sort ware names alphabetically for a stable order.
+      const byWare = {};
+      sellTrades.forEach(t => { (byWare[t.ware_name] = byWare[t.ware_name] || []).push(t); });
+      const wareNames = Object.keys(byWare).sort();
+
+      // Seed visibility for any new wares not yet tracked for this station.
+      if (!wareVisibility[safeCode]) wareVisibility[safeCode] = {};
+      wareNames.forEach(w => {
+        if (wareVisibility[safeCode][w] === undefined) wareVisibility[safeCode][w] = true;
+      });
+
+      const glowId   = `holo-glow-${safeCode}-w`;
+      const storeWare = []; // hover lookup table — one entry per trade dot
+      const wareGroupHtml = [];
+
+      // Process each ware: compute price band, build SVG paths, and populate the
+      // hover store. We do this in one loop so band/yOfP only need computing once.
+      wareNames.forEach(wareName => {
+        const col     = WARE_COLOURS[wareName] || '#5eead4';
+        // Normalise ware display name to the key format used in WARE_PRICES
+        // e.g. "Energy Cells" → "energycells"
+        const wareKey = wareName.toLowerCase().replace(/\s+/g, '');
+        const band    = warePrices[wareKey];
+
+        // Sort this ware's trades oldest → newest (largest time_ago_s first).
+        const wt = byWare[wareName].slice().sort((a, b) => b.time_ago_s - a.time_ago_s);
+
+        // Price band: prefer static game data; fall back to observed min/max.
+        let pMin, pAvg, pMax;
+        if (band) {
+          pMin = band.min; pAvg = band.average; pMax = band.max;
+        } else {
+          const ps = wt.map(t => t.price_cr);
+          pMin = Math.min(...ps); pMax = Math.max(...ps);
+          pAvg = (pMin + pMax) / 2;
+        }
+        const pRange = pMax - pMin || 1; // guard against zero-range
+
+        // Map a credit price to a Y coordinate on the chart.
+        // pMin → bottom (mt+ph), pMax → top (mt). Clamped to [0,1] for safety.
+        const yOfP = p => mt + ph - Math.max(0, Math.min(1, (p - pMin) / pRange)) * ph;
+
+        // Populate the hover store. fx/fy are fractions of the plot area (0–1)
+        // so they can be compared directly against mouse position fractions.
+        wt.forEach(t => {
+          const x = xOf(t.time_ago_s / 3600);
+          const y = yOfP(t.price_cr);
+          storeWare.push({
+            fx: (x - ml) / pw, fy: (y - mt) / ph,
+            vbx: +x.toFixed(1), vby: +y.toFixed(1),
+            ware: wareName, colour: col,
+            price: t.price_cr, amount: t.amount,
+            hAgo: t.time_ago_s / 3600,
+            ship: t.ship_code || '', counterparty: t.counterparty || '',
+            pMin, pAvg, pMax,
+          });
+        });
+
+        // Build the SVG step path left-to-right (oldest = left, now = right).
+        // Each segment holds the previous trade's price until the next trade's x,
+        // then jumps vertically to the new price.
+        const pts = wt.map(t => ({ x: xOf(t.time_ago_s / 3600), y: yOfP(t.price_cr) }));
+        let stepD = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+        for (let i = 1; i < pts.length; i++) {
+          stepD += ` H ${pts[i].x.toFixed(1)} V ${pts[i].y.toFixed(1)}`;
+        }
+        stepD += ` H ${xOf(0).toFixed(1)}`; // extend last price to NOW
+
+        // Area fill: close the step path back along the bottom of the chart.
+        const bY    = (mt + ph).toFixed(1);
+        const areaD = stepD + ` V ${bY} H ${pts[0].x.toFixed(1)} Z`;
+
+        const groupId = `ware-group-${safeCode}-${wareKey}`;
+        const visible = wareVisibility[safeCode][wareName];
+        wareGroupHtml.push(`<g id="${groupId}" style="display:${visible ? 'block' : 'none'}">
+          <path d="${areaD}" fill="${col}" fill-opacity="0.10" stroke="none"/>
+          <path d="${stepD}" fill="none" stroke="${col}" stroke-width="3"   stroke-linejoin="round" opacity="0.25" filter="url(#${glowId})"/>
+          <path d="${stepD}" fill="none" stroke="${col}" stroke-width="1.5" stroke-linejoin="round"/>
+          ${pts.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2" fill="${col}" opacity="0.85"/>`).join('')}
+        </g>`);
+      });
+
+      // Commit the lookup table so the mousemove handler can find it by safeCode.
+      wareChartData[safeCode] = storeWare;
+
+      // Y-axis: three fixed reference lines for MIN / AVG / MAX.
+      // Because each ware is normalised independently, these labels apply equally
+      // to every line on the chart — a point at mid-height is always at that
+      // ware's average price, regardless of what the absolute number is.
+      const yMax = mt, yAvg = mt + ph / 2, yMin = mt + ph;
+      const yAxisWare = `
+        <line x1="${ml}" y1="${yMax.toFixed(1)}" x2="${(ml+pw).toFixed(1)}" y2="${yMax.toFixed(1)}" stroke="#19e6c8" stroke-opacity="0.10" stroke-width="0.6"/>
+        <line x1="${ml}" y1="${yAvg.toFixed(1)}" x2="${(ml+pw).toFixed(1)}" y2="${yAvg.toFixed(1)}" stroke="#19e6c8" stroke-opacity="0.28" stroke-width="1" stroke-dasharray="4 3"/>
+        <line x1="${ml}" y1="${yMin.toFixed(1)}" x2="${(ml+pw).toFixed(1)}" y2="${yMin.toFixed(1)}" stroke="#19e6c8" stroke-opacity="0.10" stroke-width="0.6"/>
+        <text x="${ml-6}" y="${yMax.toFixed(1)}" text-anchor="end" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.70" style="font-family:var(--font-mono);font-size:8px">MAX</text>
+        <text x="${ml-6}" y="${yAvg.toFixed(1)}" text-anchor="end" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.90" style="font-family:var(--font-mono);font-size:8px">AVG</text>
+        <text x="${ml-6}" y="${yMin.toFixed(1)}" text-anchor="end" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.70" style="font-family:var(--font-mono);font-size:8px">MIN</text>`;
+
+      // Legend chips — badge style matching the role/crew chips elsewhere in the UI.
+      // Only shown when By Ware is active; clicking a chip toggles that ware's line.
+      const chips = wareNames.map(wareName => {
+        const col     = WARE_COLOURS[wareName] || '#5eead4';
+        const wareKey = wareName.toLowerCase().replace(/\s+/g, '');
+        const on      = wareVisibility[safeCode][wareName];
+        return `<span id="ware-chip-${safeCode}-${wareKey}"
+                      onclick="toggleWare('${safeCode}','${wareName}')"
+                      style="cursor:pointer;opacity:${on ? '1' : '0.35'};
+                             display:inline-flex;align-items:center;
+                             padding:2px 7px;border-radius:2px;
+                             border:1px solid ${col}44;background:${col}22;
+                             color:${col};font-family:var(--font-mono);
+                             font-size:10px;white-space:nowrap;letter-spacing:0.04em;
+                             user-select:none">${wareName}</span>`;
+      }).join('');
+
+      return `
+        <div style="background:#030d14;border:1px solid rgba(25,230,200,0.18);border-radius:3px;box-shadow:inset 0 0 24px rgba(25,230,200,0.05);padding:4px">
+          <svg viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:auto">
+            <defs>
+              <filter id="${glowId}" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.5"/></filter>
+            </defs>
+            <rect x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="#020a10"/>
+            ${yAxisWare}
+            ${xTicksHtml}
+            ${wareGroupHtml.join('')}
+            <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt+ph}" stroke="#19e6c8" stroke-opacity="0.35" stroke-width="1"/>
+            <text x="9" y="${mt + ph/2}" text-anchor="middle" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.6"
+                  style="font-family:var(--font-mono);font-size:8px;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph/2})">PRICE · BAND</text>
+            <!-- Highlight ring — stroke colour set dynamically to match the hovered ware -->
+            <circle class="cf-ware-marker" r="4" fill="none" stroke="#ffffff" stroke-width="1.5" style="display:none;pointer-events:none"/>
+            <!-- Transparent overlay that captures mouse events for nearest-point hover -->
+            <rect data-cfware="${safeCode}" x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="transparent" style="cursor:crosshair"/>
+          </svg>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;padding:6px 2px 2px">
+          ${chips}
+        </div>`;
+    })();
+
     // ── Section wrapper with the Hourly / By-Trade toggle ──────────────────────
     return `
       <div id="cf-${safeCode}" style="flex:1 1 360px;min-width:320px;display:flex;flex-direction:column">
@@ -1020,15 +1180,17 @@
             <span style="font-family:var(--font-mono);font-size:8px;letter-spacing:0.18em;color:#5fe9d4;text-transform:uppercase;white-space:nowrap">Cash Flow · 24h</span>
             <button class="cf-toggle-btn active" data-mode="hourly" onclick="setCashflowMode('${safeCode}','hourly')">Hourly</button>
             <button class="cf-toggle-btn"        data-mode="trade"  onclick="setCashflowMode('${safeCode}','trade')">By Trade</button>
+            <button class="cf-toggle-btn"        data-mode="ware"   onclick="setCashflowMode('${safeCode}','ware')">By Ware</button>
           </div>
           <span style="font-family:var(--font-mono);font-size:10px;color:${net24 >= 0 ? '#19e6c8' : '#ef5350'};white-space:nowrap">${cfFmtCr(net24)}</span>
         </div>
         <div data-cfmode="hourly" style="display:block">${hourlyBody}</div>
         <div data-cfmode="trade"  style="display:none">${detailBody}</div>
+        <div data-cfmode="ware"   style="display:none">${byWareBody}</div>
       </div>`;
   }
 
-  // Toggle between the Hourly and By-Trade cash-flow views for one station card.
+  // Toggle between the Hourly, By-Trade, and By-Ware cash-flow views for one station.
   function setCashflowMode(code, mode) {
     const sec = document.getElementById('cf-' + code);
     if (!sec) return;
@@ -1038,6 +1200,19 @@
     sec.querySelectorAll('.cf-toggle-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.mode === mode);
     });
+  }
+
+  // Toggle a single ware's line on/off in the By-Ware chart.
+  // Updates both the SVG group visibility and the legend chip opacity.
+  function toggleWare(safeCode, wareName) {
+    const vis = wareVisibility[safeCode];
+    if (!vis) return;
+    vis[wareName] = !vis[wareName];
+    const wareKey = wareName.toLowerCase().replace(/\s+/g, '');
+    const group   = document.getElementById(`ware-group-${safeCode}-${wareKey}`);
+    const chip    = document.getElementById(`ware-chip-${safeCode}-${wareKey}`);
+    if (group) group.style.display   = vis[wareName] ? 'block' : 'none';
+    if (chip)  chip.style.opacity    = vis[wareName] ? '1'     : '0.35';
   }
 
   const ROLE_ICONS = {
@@ -1740,6 +1915,7 @@
     const stations  = data.stations       || [];
     const rep       = data.reputation     || [];
     const allTrades = data.station_trades || [];
+    warePrices      = data.ware_prices    || {};
 
     // Top bar
     document.getElementById("tb-pilot").textContent    = player.name    || "—";
@@ -3208,6 +3384,50 @@
       </div>`;
     }
 
+    function wareChartTipHtml(d) {
+      // By-Ware hover: the sold ware, its exact price, where that price sits in
+      // the game's min–avg–max band, the quantity, and the trade's counterparty.
+      const fmtU = n => Math.round(n).toLocaleString();
+      const ago  = d.hAgo < 1
+        ? Math.round(d.hAgo * 60) + 'm ago'
+        : d.hAgo.toFixed(1).replace(/\.0$/, '') + 'h ago';
+
+      // Express the price relative to the ware's average: +12% above or −5% below.
+      const diff    = d.price - d.pAvg;
+      const diffPct = d.pAvg > 0 ? Math.round(Math.abs(diff) / d.pAvg * 100) : 0;
+      const diffCol = diff >= 0 ? '#19e6c8' : '#ef5350';
+      const diffStr = diff === 0
+        ? 'at avg'
+        : `${diff > 0 ? '+' : '−'}${diffPct}% vs avg`;
+
+      const isRawId = s => /^\[?0x[0-9a-f]+\]?$/i.test(String(s).trim());
+      const shipResolved = d.ship && !isRawId(d.ship);
+
+      const row = (label, value, colour) => `
+        <div style="display:flex;justify-content:space-between;gap:12px;padding:1px 0">
+          <span style="color:var(--text-faint);font-size:10px">${label}</span>
+          <span style="color:${colour || 'var(--text-dim)'};font-family:var(--font-mono);font-size:10px;text-align:right">${value}</span>
+        </div>`;
+
+      return `<div style="min-width:220px;padding:2px 0">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+                    margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid var(--border)">
+          <span style="color:${d.colour};font-size:11px;letter-spacing:0.05em;text-transform:uppercase;
+                       white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px">
+            <span style="color:#19e6c8">▲ SOLD</span> ${d.ware}
+          </span>
+        </div>` +
+        row('Price',      `${fmtU(d.price)} Cr`) +
+        row('vs Average', diffStr, diffCol) +
+        row('Band',       `${fmtU(d.pMin)} – ${fmtU(d.pMax)} Cr`) +
+        row('Amount',     `${fmtU(d.amount)} units`) +
+        (d.counterparty ? row('Buyer', d.counterparty) : '') +
+        (shipResolved   ? row('Ship',  d.ship)         : '') +
+        `<div style="margin-top:5px;padding-top:4px;border-top:1px solid var(--border);
+                     text-align:right;font-size:10px;color:var(--text-faint)">${ago}</div>
+      </div>`;
+    }
+
     function storageTipHtml(types) {
       // Renders each storage type as a label + % row followed by a fill bar.
       // Label, percentage, and m³ text all use the category's fixed accent colour.
@@ -3238,11 +3458,11 @@
     }
 
     document.addEventListener('mousemove', function(e) {
-      // The By-Trade chart's highlight ring is shown only while hovering that
-      // chart; clear any visible ones each move, then re-show below if needed.
-      document.querySelectorAll('.cf-detail-marker').forEach(m => { m.style.display = 'none'; });
+      // Clear all chart highlight rings at the start of each move; whichever
+      // chart the cursor is over will re-show its own ring below.
+      document.querySelectorAll('.cf-detail-marker,.cf-ware-marker').forEach(m => { m.style.display = 'none'; });
 
-      const el = e.target.closest('[data-hull-tip],[data-pilot-skills],[data-storage-tip],[data-modules-tip],[data-budget-tip],[data-cashflow-tip],[data-cfdetail]');
+      const el = e.target.closest('[data-hull-tip],[data-pilot-skills],[data-storage-tip],[data-modules-tip],[data-budget-tip],[data-cashflow-tip],[data-cfdetail],[data-cfware]');
       if (!el) { tip.style.display = 'none'; return; }
 
       if (el.dataset.cfdetail) {
@@ -3260,6 +3480,34 @@
         const svg = el.closest('svg');
         const mk = svg && svg.querySelector('.cf-detail-marker');
         if (mk) { mk.setAttribute('cx', best.vbx); mk.setAttribute('cy', best.vby); mk.style.display = 'block'; }
+      } else if (el.dataset.cfware) {
+        // By-Ware chart: find the nearest visible trade dot by Euclidean distance
+        // so the cursor naturally locks on to whichever ware line it is closest to.
+        const sc  = el.dataset.cfware;
+        const arr = wareChartData[sc];
+        if (!arr || !arr.length) { tip.style.display = 'none'; return; }
+        const r  = el.getBoundingClientRect();
+        const fx = (e.clientX - r.left) / r.width;
+        const fy = (e.clientY - r.top)  / r.height;
+        let best = null, bd = Infinity;
+        for (const p of arr) {
+          // Skip points belonging to wares the user has toggled off.
+          if (wareVisibility[sc] && wareVisibility[sc][p.ware] === false) continue;
+          const dd = (p.fx - fx) ** 2 + (p.fy - fy) ** 2;
+          if (dd < bd) { bd = dd; best = p; }
+        }
+        if (!best) { tip.style.display = 'none'; return; }
+        tip.innerHTML = wareChartTipHtml(best);
+        tip.style.color = '';
+        tip.style.whiteSpace = 'normal';
+        const svg = el.closest('svg');
+        const mk  = svg && svg.querySelector('.cf-ware-marker');
+        if (mk) {
+          mk.setAttribute('cx', best.vbx);
+          mk.setAttribute('cy', best.vby);
+          mk.setAttribute('stroke', best.colour);
+          mk.style.display = 'block';
+        }
       } else if (el.dataset.cashflowTip) {
         // Cash-flow chart: one hour's per-ware trade breakdown
         tip.innerHTML = cashflowTipHtml(JSON.parse(decodeURIComponent(el.dataset.cashflowTip)));

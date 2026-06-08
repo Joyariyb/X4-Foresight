@@ -22,6 +22,7 @@ from pathlib import Path
 
 from scanner import galaxy_map as gm
 from scanner.ship_names import ship_display_name
+from data.ware_prices import WARE_PRICES
 
 
 def _rows(conn, sql, params=()) -> list[dict]:
@@ -312,6 +313,10 @@ def to_export(conn: sqlite3.Connection, scan_id: int | None = None) -> dict:
         # TradeHandler not implemented yet — kept for shape stability.
         'active_trades':         [],
         'in_progress_deliveries': [],
+        # Static game price bands — min/average/max per ware ID.
+        # Passed through here so the UI can normalise trade prices without
+        # needing the data hardcoded in JS or stored in the DB.
+        'ware_prices':           WARE_PRICES,
     }
 
 
