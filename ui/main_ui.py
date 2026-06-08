@@ -28,6 +28,7 @@ import sys
 if any(arg.startswith('--type=') for arg in sys.argv[1:]):
     sys.exit(0)
 
+import json
 import os
 import shutil
 import traceback
@@ -70,7 +71,14 @@ else:
 # The scanner module owns the canonical paths + the run() pipeline. Reusing its
 # constants means the UI and the CLI always read/write the same files.
 import x4_save_scanner as scanner
-from x4_save_scanner import JSON_PATH, LANG_FILE, ROOT_SAVE, _find_game_saves_dir
+from x4_save_scanner import DB_PATH, JSON_PATH, LANG_FILE, ROOT_SAVE, _find_game_saves_dir
+
+# The bridge now serves the dashboard straight from the SQLite DB rather than the
+# on-disk JSON: to_export() is already a pure DB-read that produces the exact
+# export shape the page consumes, so the file is no longer in the UI's read path.
+# (scanner.run() still writes the JSON for the AI consumer + dev browser fallback.)
+from db.connection import get_connection
+from export.jsonexport import to_export
 
 
 # ── Language file setup ───────────────────────────────────────────────────────
@@ -313,16 +321,43 @@ class ScanProgressDialog(QDialog):
 class EmpireBridge(QObject):
     """The single object the page reaches through QWebChannel.
 
-    Returns the export JSON as a string, read fresh from disk on each call so a
-    re-scan is reflected without restarting. The page owns the parse.
+    Builds the export FROM the database on each call (via to_export), so a re-scan
+    — or switching to an older scan_id — is reflected without restarting and
+    without touching the JSON file. A fresh read-only connection is opened per
+    call: WAL mode lets these reads run alongside a concurrent scan write, and
+    sqlite connections aren't safe to share across the threads Qt may dispatch
+    slots on. The page owns the parse.
     """
 
-    @pyqtSlot(result=str)
-    def get_empire_data(self) -> str:
+    @pyqtSlot(int, result=str)
+    def get_empire_data(self, scan_id: int = -1) -> str:
+        """Return the export JSON for `scan_id`; -1 (the JS default) = latest scan."""
         try:
-            return JSON_PATH.read_text(encoding="utf-8")
-        except OSError as e:
-            return f'{{"error": "Could not read {JSON_PATH.name}: {e}"}}'
+            conn = get_connection(DB_PATH)
+            try:
+                data = to_export(conn, None if scan_id < 0 else scan_id)
+            finally:
+                conn.close()
+            return json.dumps(data, ensure_ascii=False)
+        except Exception as e:
+            return json.dumps({"error": f"Could not read empire data from DB: {e}"})
+
+    @pyqtSlot(result=str)
+    def list_scans(self) -> str:
+        """Scan history for the picker: newest first, as a JSON array of
+        {scan_id, scanned_at, save_file, game_time_s}. Empty array if none."""
+        try:
+            conn = get_connection(DB_PATH)
+            try:
+                rows = conn.execute(
+                    "SELECT scan_id, scanned_at, save_file, game_time_s "
+                    "FROM scans ORDER BY scan_id DESC"
+                ).fetchall()
+            finally:
+                conn.close()
+            return json.dumps([dict(r) for r in rows])
+        except Exception as e:
+            return json.dumps({"error": f"Could not list scans: {e}"})
 
 
 # ── Main window ───────────────────────────────────────────────────────────────

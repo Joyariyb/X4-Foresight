@@ -48,6 +48,10 @@
     .tb-field .val { font-family: var(--font-mono); font-size: 13px; color: var(--text); margin-top: 1px; }
     .tb-field .val.teal  { color: var(--teal); }
     .tb-field .val.amber { color: var(--amber); }
+    /* Scan-history picker — pushed to the far right of the bar. */
+    .tb-field.tb-scan { margin-left: auto; }
+    #tb-scan { background: var(--bg-panel); color: var(--text); border: 1px solid var(--border); border-radius: 4px; font-family: var(--font-mono); font-size: 12px; padding: 3px 6px; margin-top: 1px; cursor: pointer; }
+    #tb-scan:hover { border-color: var(--teal); }
 
     /* ── NAV ── */
     #nav { display: flex; background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 0 12px; flex-shrink: 0; }
@@ -380,6 +384,10 @@
     <div class="tb-field">
       <div class="lbl"><i class="ti ti-building-factory-2" style="font-size:10px;vertical-align:-1px"></i> Stations</div>
       <div class="val" id="tb-stations">—</div>
+    </div>
+    <div class="tb-field tb-scan" id="tb-scan-field" style="display:none">
+      <div class="lbl"><i class="ti ti-history" style="font-size:10px;vertical-align:-1px"></i> Scan</div>
+      <select id="tb-scan" onchange="loadScan(parseInt(this.value,10))"></select>
     </div>
   </div>
 
@@ -1959,11 +1967,23 @@
       // Build per-type storage breakdown for the hover tooltip.
       // Fixed accent colour per storage category — matches the in-game cargo display.
       // The Total row is computed from the combined values and always shown last.
+      //
+      // The DB-read export delivers per-type storage as a cargo_by_type list
+      // ({cargo_type, m3, max_m3, pct}); we index it by type and emit the three
+      // categories in fixed order so the tooltip rows stay stable. (The legacy
+      // export carried flat cargo_<type>_* fields instead — reading those here is
+      // what silently dropped this tooltip after the switch to the DB export.)
+      const cargoByType = {};
+      (s.cargo_by_type || []).forEach(c => { cargoByType[c.cargo_type] = c; });
       const allStorageTypes = [
-        { label: 'Container', pct: s.cargo_container_adj_pct, m3: s.cargo_container_adj_m3 || 0, max: s.cargo_container_max || 0, color: 'var(--teal)'   },
-        { label: 'Solid',     pct: s.cargo_solid_adj_pct,     m3: s.cargo_solid_adj_m3     || 0, max: s.cargo_solid_max     || 0, color: 'var(--amber)'  },
-        { label: 'Liquid',    pct: s.cargo_liquid_adj_pct,    m3: s.cargo_liquid_adj_m3    || 0, max: s.cargo_liquid_max    || 0, color: 'var(--purple)' },
-      ];
+        { label: 'Container', type: 'container', color: 'var(--teal)'   },
+        { label: 'Solid',     type: 'solid',     color: 'var(--amber)'  },
+        { label: 'Liquid',    type: 'liquid',    color: 'var(--purple)' },
+      ].map(t => {
+        const c = cargoByType[t.type] || {};
+        return { label: t.label, color: t.color,
+                 pct: c.pct, m3: c.m3 || 0, max: c.max_m3 || 0 };
+      });
       const storageTipTypes = allStorageTypes.filter(t => t.max > 0);
       if (storageTipTypes.length > 0) {
         // Sum across all three types so the Total denominator includes every bay,
@@ -3305,17 +3325,56 @@
       });
   }
 
+  // The live bridge, once the QWebChannel handshake completes. The scan picker
+  // reaches back through it to re-query the DB for a different scan_id.
+  let _bridge = null;
+
+  // Fetch one scan's export from the DB (via the bridge) and render it. -1 asks
+  // the bridge for the latest scan. Re-running populate() swaps the whole view;
+  // its render paths clear their containers first, so this is safe to call on
+  // every picker change without a page reload.
+  function loadScan(scanId) {
+    if (!_bridge) return;
+    _bridge.get_empire_data(scanId, function(jsonStr) {
+      try {
+        populate(JSON.parse(jsonStr));
+      } catch(e) {
+        document.getElementById("loading").textContent = "Error parsing data: " + e;
+      }
+    });
+  }
+
+  // Fill the top-bar dropdown from the scan history (newest first). The first
+  // option is the latest scan and is selected by default. Hidden when only one
+  // scan exists — there's nothing to switch between.
+  function populateScanPicker(scans) {
+    const field = document.getElementById("tb-scan-field");
+    const sel   = document.getElementById("tb-scan");
+    if (!Array.isArray(scans) || scans.length < 2) { field.style.display = "none"; return; }
+    sel.innerHTML = "";
+    scans.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s.scan_id;
+      const save = (s.save_file || "").replace(/\.xml(\.gz)?$/, "");
+      const when = (s.scanned_at || "").replace("T", " ").slice(0, 16);
+      opt.textContent = "#" + s.scan_id + "  ·  " + save + (when ? "  ·  " + when : "");
+      sel.appendChild(opt);
+    });
+    sel.value = scans[0].scan_id;   // newest
+    field.style.display = "";
+  }
+
   if (typeof qt !== 'undefined' && qt.webChannelTransport) {
     new QWebChannel(qt.webChannelTransport, function(channel) {
-      channel.objects.bridge.get_empire_data(function(jsonStr) {
-        try {
-          populate(JSON.parse(jsonStr));
-        } catch(e) {
-          document.getElementById("loading").textContent = "Error parsing data: " + e;
-        }
+      _bridge = channel.objects.bridge;
+      // Build the history picker, then render the latest scan.
+      _bridge.list_scans(function(jsonStr) {
+        try { populateScanPicker(JSON.parse(jsonStr)); } catch(e) { /* picker stays hidden */ }
       });
+      loadScan(-1);
     });
   } else {
+    // Plain-browser dev mode: no bridge, no history — fall back to the JSON file.
     loadFromJsonFile();
   }
 </script>
