@@ -402,9 +402,11 @@ class StationHandler:
                         amount = float(ware_elem.get('amount', 0))
                     except (ValueError, TypeError):
                         amount = 0.0
-                    current_m3 += amount * WARE_VOLUME.get(ware_id, 1.0)
+                    vol = amount * WARE_VOLUME.get(ware_id, 1.0)
+                    current_m3 += vol
                     if amount > 0:
-                        inventory[ware_id] = inventory.get(ware_id, 0) + int(amount)
+                        prev_units, prev_vol = inventory.get(ware_id, (0, 0.0))
+                        inventory[ware_id] = (prev_units + int(amount), prev_vol + vol)
 
             if type_key:
                 acc[type_key][0] += current_m3

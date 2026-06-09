@@ -89,6 +89,7 @@ CREATE TABLE IF NOT EXISTS station_inventory (
     ware_id     TEXT    NOT NULL,
     ware_name   TEXT,
     amount      INTEGER,
+    volume_m3   REAL,
     PRIMARY KEY (scan_id, station_id, ware_id)
 );
 

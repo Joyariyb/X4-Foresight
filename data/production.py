@@ -4,9 +4,28 @@
 #  Add further production helpers here as the economy tab grows.
 # ─────────────────────────────────────────────────────────────────────────────
 
+import re
+
 from data.production_stats import PRODUCTION_STATS
 from data.sector_stats import SECTOR_SUNLIGHT
 from data.wares import WARE_NAMES
+
+# Matches production module macros: prod_{faction}_{ware}_macro
+# e.g. prod_gen_refinedmetals_macro, prod_tel_hullparts_macro
+_PROD_MACRO_RE = re.compile(r'^prod_(\w+?)_(\w+)_macro$', re.IGNORECASE)
+
+# Maps the faction token in a module macro to its recipe method in PRODUCTION_STATS.
+# Faction modules can use different input recipes (e.g. Teladi uses teladianium
+# instead of refined metals). Falls back to 'default' for unknown tokens.
+_FACTION_METHOD: dict[str, str] = {
+    "gen": "default",
+    "arg": "argon",
+    "tel": "teladi",
+    "par": "paranid",
+    "spl": "split",
+    "ter": "terran",
+    "bor": "boron",
+}
 
 # Inverted lookup: display name → ware_id  (e.g. "Energy Cells" → "energycells")
 _DISPLAY_TO_ID: dict[str, str] = {v: k for k, v in WARE_NAMES.items()}
@@ -80,3 +99,42 @@ def inputs_per_cycle(ware_id: str, count: int = 1) -> dict[str, int]:
         return {}
     raw = stats["methods"].get("default", {})
     return {WARE_NAMES.get(iid, iid): qty * count for iid, qty in raw.items()}
+
+
+def consumption_rates_from_modules(modules: list[dict]) -> dict[str, float]:
+    """Returns {ware_display_name: units_per_hour_consumed_internally} for a station.
+
+    Walks every production module (identified by its macro) and sums up how many
+    units of each INPUT ware all the modules collectively consume per hour. Result
+    is keyed by display name so the UI can look up by the same name used in
+    production_rates.
+
+    `modules` is the list of dicts with at least a 'macro' key, as stored in
+    station_modules / the export's d['modules'].
+
+    Example: a station with 3 hull-parts modules and 2 energy-cell modules would
+    return {'Energy Cells': X, 'Graphene': Y, 'Refined Metals': Z} — the combined
+    internal demand from both module types.
+    """
+    consumed: dict[str, float] = {}  # ware_id → units/hr
+
+    for m in modules:
+        match = _PROD_MACRO_RE.match(m.get('macro', ''))
+        if not match:
+            continue
+        faction, ware = match.group(1).lower(), match.group(2).lower()
+        stats = PRODUCTION_STATS.get(ware)
+        if not stats or not stats['time']:
+            continue
+
+        # Pick the faction-specific recipe if one exists, fall back to default.
+        method = _FACTION_METHOD.get(faction, 'default')
+        inputs = stats['methods'].get(method) or stats['methods'].get('default', {})
+        cycles_per_hr = 3600.0 / stats['time']
+
+        for in_ware, in_amt in inputs.items():
+            consumed[in_ware] = consumed.get(in_ware, 0.0) + in_amt * cycles_per_hr
+
+    # Convert ware IDs to display names for the UI. Unknown IDs are dropped
+    # (they'd have no WARE_COLOURS entry and the UI can't use them anyway).
+    return {WARE_NAMES[w]: v for w, v in consumed.items() if w in WARE_NAMES}

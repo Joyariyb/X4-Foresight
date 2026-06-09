@@ -22,7 +22,9 @@ from pathlib import Path
 
 from scanner import galaxy_map as gm
 from scanner.ship_names import ship_display_name
+from data.production import consumption_rates_from_modules, display_name_to_id, units_per_hour
 from data.ware_prices import WARE_PRICES
+from data.wares import WARE_TRANSPORT
 
 
 def _rows(conn, sql, params=()) -> list[dict]:
@@ -42,10 +44,19 @@ def _stations(conn, scan_id) -> list[dict]:
     for s in conn.execute("SELECT * FROM stations WHERE scan_id=?", (scan_id,)):
         d = _drop(dict(s), 'scan_id')
         sid = d['object_id']
+        # Inventory keyed by ware_id. Each entry carries:
+        #   amount     — units currently in storage
+        #   volume_m3  — total m³ occupied (amount × per-unit volume from the scanner)
+        #   cargo_type — "container" | "solid" | "liquid" (from WARE_TRANSPORT lookup)
+        # The UI uses volume_m3 / cargo_by_type[cargo_type].max_m3 for the storage bar.
         d['inventory'] = {
-            r['ware_id']: r['amount']
+            r['ware_id']: {
+                'amount':     r['amount'],
+                'volume_m3':  r['volume_m3'],
+                'cargo_type': WARE_TRANSPORT.get(r['ware_id'], 'container'),
+            }
             for r in conn.execute(
-                "SELECT ware_id, amount FROM station_inventory "
+                "SELECT ware_id, amount, volume_m3 FROM station_inventory "
                 "WHERE scan_id=? AND station_id=? ORDER BY amount DESC",
                 (scan_id, sid))
         }
@@ -61,6 +72,24 @@ def _stations(conn, scan_id) -> list[dict]:
         # Display names (not ids) so they match WARE_COLOURS and read cleanly.
         produced = sorted({m['produces'] for m in d['modules'] if m['produces']})
         d['production'] = ','.join(produced)
+
+        # Total units/hour per ware, calculated from module count × PRODUCTION_STATS
+        # rate (accounting for sector sunlight on energy cells). Keyed by display name
+        # to match WARE_COLOURS and the production string above.
+        sector = d.get('sector_macro', '')
+        module_counts: dict[str, int] = {}
+        for m in d['modules']:
+            if m['produces']:
+                module_counts[m['produces']] = module_counts.get(m['produces'], 0) + 1
+        d['production_rates'] = {
+            name: units_per_hour(display_name_to_id(name), sector) * count
+            for name, count in module_counts.items()
+            if display_name_to_id(name)   # skip wares not in PRODUCTION_STATS (e.g. mineables)
+        }
+        # Units/hour consumed internally by all production modules, keyed by the
+        # INPUT ware's display name. Used by the UI's second bar to show what
+        # fraction of a ware's output is consumed by other modules here.
+        d['consumption_rates'] = consumption_rates_from_modules(d['modules'])
         # Nested budget object the Economy pie consumes: header totals plus the
         # per-ware breakdown (ware_id surfaced as `ware`, with ware_name/amount/
         # price/value/basis), biggest value first.

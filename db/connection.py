@@ -36,4 +36,12 @@ def apply_schema(conn: sqlite3.Connection) -> None:
     """Run schema.sql. Every statement is CREATE ... IF NOT EXISTS, so this is
     idempotent and safe to call on every connection."""
     conn.executescript(SCHEMA_PATH.read_text(encoding='utf-8'))
+    _migrate(conn)
     conn.commit()
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Apply additive migrations that schema.sql's CREATE IF NOT EXISTS can't handle."""
+    existing = {row[1] for row in conn.execute('PRAGMA table_info(station_inventory)')}
+    if 'volume_m3' not in existing:
+        conn.execute('ALTER TABLE station_inventory ADD COLUMN volume_m3 REAL')

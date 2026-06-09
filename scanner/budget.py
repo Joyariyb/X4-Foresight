@@ -321,5 +321,19 @@ def estimate_station_budget(station_elem, sector_name: str) -> dict:
             "basis":     basis,
         })
 
+    # Output-only wares (produced but not in candidates) carry no supply cost
+    # because the station sells them rather than buying them. They still need
+    # budget lines so the Production tab can read their 2h output → hourly rate.
+    # Price and value are 0 so the total budget figure is unaffected.
+    for ware in sorted(produced - candidates):
+        lines.append({
+            "ware":      ware,
+            "ware_name": WARE_NAMES.get(ware, ware.replace('_', ' ').title()),
+            "amount":    produced_2h[ware],
+            "price":     0,
+            "value":     0,
+            "basis":     "auto: 2h production",
+        })
+
     total = sum(line["value"] for line in lines)
     return {"total": total, "sunlight": sunlight, "lines": lines}

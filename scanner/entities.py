@@ -142,12 +142,12 @@ class Station:
     budget_total:    float | None   # estimated supply budget in credits
     budget_sunlight: float | None   # sunlight multiplier used in budget calculation
     modules:         list[StationModule] = field(default_factory=list)
-    inventory:       dict[str, int]      = field(default_factory=dict)
+    inventory:       dict[str, tuple[int, float]] = field(default_factory=dict)  # ware_id → (units, volume_m3)
     # Per-ware supply-budget breakdown from estimate_station_budget()['lines'];
     # each dict carries ware, ware_name, amount, price, value, basis. Drives the
     # station Economy pie in the UI.
     budget_lines:    list[dict]          = field(default_factory=list)
-    # inventory    → own table: station_inventory     (scan_id, station_id, ware_id, ware_name, amount)
+    # inventory    → own table: station_inventory     (scan_id, station_id, ware_id, ware_name, amount, volume_m3)
     # modules      → own table: station_modules       (scan_id, station_id, macro, category, produces)
     # budget lines → own table: station_budget_lines  (scan_id, station_id, ware_id, ware_name, amount, price, value, basis)
 

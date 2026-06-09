@@ -115,8 +115,8 @@ def _write_stations(cur, scan_id, ctx) -> None:
             [(scan_id, s.object_id, m.macro, m.category, m.produces) for m in s.modules],
         )
         cur.executemany(
-            "INSERT INTO station_inventory VALUES(?,?,?,?,?)",
-            [(scan_id, s.object_id, w, _ware_name(w), a) for w, a in s.inventory.items()],
+            "INSERT INTO station_inventory VALUES(?,?,?,?,?,?)",
+            [(scan_id, s.object_id, w, _ware_name(w), a, v) for w, (a, v) in s.inventory.items()],
         )
         # Per-ware budget breakdown (drives the station Economy pie). The line's
         # 'ware' id maps to the table's ware_id column.

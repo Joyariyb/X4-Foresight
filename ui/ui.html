@@ -298,7 +298,7 @@
     /* A thin resizable track rendered below each station's chart.
        Drag the handle body to pan; drag either edge to zoom in/out.
        Burnt-orange accent (#d4540a) to visually separate it from the teal charts. */
-    .cf-scrubber-track  { position:relative; height:10px; background:rgba(212,84,10,0.09);
+    .cf-scrubber-track  { position:relative; height:20px; background:rgba(212,84,10,0.09);
                           border:1px solid rgba(212,84,10,0.28); border-radius:2px;
                           margin:5px 0 2px; user-select:none; flex-shrink:0; }
     .cf-scrubber-handle { position:absolute; top:0; bottom:0;
@@ -2402,17 +2402,54 @@
          </div>`;
 
       // ── PRODUCTION TAB ─────────────────────────────────────────────────────
-      // Fill % and rates require scanner work — bars show placeholder until added.
+      // Two bars per ware, each taking half the available width:
+      //   Bar 1 (left)  — storage fill: ware's volume_m3 / max_m3 for its cargo type
+      //   Bar 2 (right) — internal usage: how much of the hourly output is consumed
+      //                   by other production modules at this station
+      // Rate text on the right shows the hourly production figure from production_rates
+      // (module count × PRODUCTION_STATS rate, computed server-side in jsonexport.py).
       const wares = s.production ? s.production.split(',').map(w => w.trim()).filter(Boolean) : [];
+
+      // Lookup: cargo type → total bay capacity in m³ for this station.
+      const cargoMaxByType = {};
+      (s.cargo_by_type || []).forEach(c => { cargoMaxByType[c.cargo_type] = c.max_m3 || 0; });
+
+      // Pre-computed units/hour per ware from the export (exact, not budget-derived).
+      const prodRates = s.production_rates || {};
+
+      // Pre-computed units/hour consumed internally by other modules at this station.
+      // E.g. for a station with solar panels + hull parts modules, Energy Cells will
+      // have a consumption_rate equal to what the hull parts modules burn per hour.
+      const consRates = s.consumption_rates || {};
+
       const prodRows = wares.length === 0
         ? `<div style="padding:12px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No production modules</div>`
         : wares.map(w => {
-            const wareCol = WARE_COLOURS[w] || 'var(--text-dim)';
-            return `<div style="display:flex;align-items:center;gap:10px;padding:5px 14px;border-bottom:1px solid var(--border)">
+            const wareCol  = WARE_COLOURS[w] || 'var(--text-dim)';
+            // ware_id key matches the inventory dict: "Energy Cells" → "energycells"
+            const wareKey  = w.toLowerCase().replace(/\s+/g, '');
+            const inv      = (s.inventory || {})[wareKey] || {};
+            const volM3    = inv.volume_m3  ?? 0;
+            const cargType = inv.cargo_type || 'container';
+            const maxM3    = cargoMaxByType[cargType] || 0;
+            // Bar 1: how much of this cargo type's total bay the ware currently fills
+            const storagePct = maxM3 > 0 ? Math.min(100, volM3 / maxM3 * 100) : 0;
+            // Bar 2: what fraction of hourly output is consumed internally
+            const prodHr   = prodRates[w] ?? null;
+            const consHr   = consRates[w] ?? 0;
+            const usagePct = prodHr > 0 ? Math.min(100, consHr / prodHr * 100) : 0;
+            const rateLabel = prodHr != null ? Math.round(prodHr).toLocaleString() + '/hr' : '—/hr';
+            return `<div style="display:flex;align-items:center;gap:8px;padding:5px 14px;border-bottom:1px solid var(--border)">
                <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:${wareCol};min-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${w.toUpperCase()}</span>
-               <div style="flex:1;height:3px;background:${wareCol}30;border-radius:2px"></div>
-               <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);min-width:28px;text-align:right">—</span>
-               <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);min-width:54px;text-align:right">—/hr</span>
+               <div style="flex:1;display:flex;gap:4px;align-items:center">
+                 <div style="flex:1;height:6px;background:${wareCol}30;border-radius:2px;overflow:hidden" title="Storage: ${storagePct.toFixed(1)}% of ${cargType} bay">
+                   <div style="height:100%;width:${storagePct.toFixed(1)}%;background:${wareCol};border-radius:2px"></div>
+                 </div>
+                 <div style="flex:1;height:6px;background:${wareCol}30;border-radius:2px;overflow:hidden" title="Internal use: ${usagePct.toFixed(1)}% of output consumed internally">
+                   <div style="height:100%;width:${usagePct.toFixed(1)}%;background:${wareCol};border-radius:2px"></div>
+                 </div>
+               </div>
+               <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);min-width:54px;text-align:right">${rateLabel}</span>
              </div>`;
           }).join('');
 
@@ -2486,9 +2523,9 @@
 
       // ── ECONOMY PANEL (slider position 1) ──────────────────────────────────
       // Renders the reverse-engineered supply budget (scanner/budget.py): a total
-      // header, the sunlight multiplier that scales energy-cell output, then one
-      // row per budgeted ware showing amount × price = value and the basis tag
-      // (which rule set the figure). Mirrors the validated console breakdown.
+      // header, then one row per budgeted ware showing amount × price = value and
+      // the basis tag (which rule set the figure). Sunlight is shown in Overview.
+      // Mirrors the validated console breakdown.
       const bud      = s.budget || {};
       const budLines = bud.lines || [];
       const fmtCr    = n => n == null ? '—' : Math.round(n).toLocaleString();
@@ -2499,15 +2536,11 @@
         'trade (max price)':     'Trade · max',
         'buy order (unverified)':'Buy order',
       };
-      // Compact sunlight strip above the interactive pie. The budget total lives
-      // in the donut centre, and per-ware figures appear on slice hover.
+      // Pie (interactive budget breakdown). The budget total lives in the donut
+      // centre; per-ware figures appear on slice hover.
       const econRows = budLines.length === 0
         ? `<div style="padding:12px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No economy data</div>`
-        : `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 14px;background:var(--bg-panel);border-bottom:1px solid var(--border)">
-             <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-faint)">Sunlight</span>
-             <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">${bud.sunlight != null ? Math.round(bud.sunlight*100)+'%' : '—'}</span>
-           </div>
-           <!-- Pie (budget breakdown) and goods history chart side by side;
+        : `<!-- Pie (budget breakdown) and goods history chart side by side;
                 wraps to stacked on narrow windows. -->
            <div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px;padding:8px 10px;background:#040e18">
              <div style="flex:0 0 auto">${economyPieSvg(bud)}</div>
@@ -2594,6 +2627,8 @@
              The three-position header slider (setStationSlider) swaps this whole
              region for the Economy panel (1) or the placeholder (2). -->
         <div class="station-slider-panel" data-slider="0" style="display:block">
+        <!-- Sunlight strip — Overview only; one-liner below the sector name. -->
+        ${bud.sunlight != null ? `<div style="padding:4px 14px;border-bottom:1px solid var(--border);background:var(--bg-panel)"><span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-faint)">Sunlight </span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">${Math.round(bud.sunlight*100)}%</span></div>` : ''}
         <!-- Hull + Shields health bars -->
         <div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
           <div style="padding:7px 14px;border-right:1px solid var(--border)">

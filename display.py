@@ -216,7 +216,9 @@ def _stations(ctx, sector_name: dict) -> None:
             # ── Production: per ware, with rate / inputs / stock runtime ──────
             # runtime_minutes() keys inventory by DISPLAY name; our store is keyed
             # by ware_id, so convert once per station before the loop.
-            inv_by_name = {WARE_NAMES.get(w, w): a for w, a in s.inventory.items()}
+            # inventory values are now (amount, volume_m3) tuples; runtime_minutes
+            # only needs the unit count, so unpack just the first element.
+            inv_by_name = {WARE_NAMES.get(w, w): amt for w, (amt, _vol) in s.inventory.items()}
             prod = Counter(m.produces for m in s.modules if m.produces)
             for idx, (ware, count) in enumerate(sorted(prod.items())):
                 lbl = 'Produces' if idx == 0 else '        '
@@ -253,12 +255,14 @@ def _stations(ctx, sector_name: dict) -> None:
                       f"({paint(f'{pct:.0f}%', col)}) {DIM}[total]{RESET}")
 
             # ── Inventory: all, wrapped 4 per row ────────────────────────────
+            # inventory values are (amount, volume_m3) tuples; sort and display
+            # by unit count only.
             if s.inventory:
-                items = sorted(s.inventory.items(), key=lambda x: -x[1])
+                items = sorted(s.inventory.items(), key=lambda x: -x[1][0])
                 for r0 in range(0, len(items), 4):
                     row = items[r0:r0 + 4]
                     lbl = 'Inventory' if r0 == 0 else '         '
-                    content = "  ·  ".join(f"{a:,} {w}" for w, a in row)
+                    content = "  ·  ".join(f"{amt:,} {w}" for w, (amt, _vol) in row)
                     print(f"  {ind} {DIM}{lbl}: {content}{RESET}")
 
             # ── Docked ships ─────────────────────────────────────────────────
