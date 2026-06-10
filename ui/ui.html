@@ -91,6 +91,11 @@
     .universe-filter-bar { height: 38px; padding: 0 14px; display: flex; align-items: center; gap: 8px; background: var(--bg-panel); border-bottom: 1px solid var(--border); flex-shrink: 0; font-family: var(--font-cond); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
     #universe-map-wrap { flex: 1; min-height: 0; overflow: hidden; cursor: grab; position: relative; background: var(--bg); user-select: none; }
     #universe-map-wrap.panning { cursor: grabbing; }
+    /* The HTML div that pan/zoom gestures animate (see comment in the markup).
+       will-change keeps it on its own GPU layer so per-frame transform updates
+       are a cheap composite; transform-origin 0 0 makes the gesture-delta maths
+       in _uApplyTransform line up with the committed <g> translate/scale. */
+    #universe-zoom-layer { width: 100%; height: 100%; will-change: transform; transform-origin: 0 0; }
     #universe-svg { width: 100%; height: 100%; display: block; }
     /* SVG text labels — font set by CSS; opacity toggled via parent class flags */
     #universe-viewport { --u-label-font: 11px; --u-sector-label-font: 9px; }
@@ -609,9 +614,16 @@
           <span style="font-size:10px;color:var(--text-faint);text-transform:none;letter-spacing:0">coming soon</span>
         </div>
         <div id="universe-map-wrap">
-          <svg id="universe-svg" xmlns="http://www.w3.org/2000/svg">
-            <g id="universe-viewport"></g>
-          </svg>
+          <!-- zoom-layer is an HTML div on purpose: browsers GPU-composite CSS
+               transforms on HTML elements but NOT on SVG content (the whole SVG
+               re-rasterises every frame). Pan/zoom gestures animate this div;
+               the final transform is committed into the <g> when the gesture
+               settles. See _uApplyTransform. -->
+          <div id="universe-zoom-layer">
+            <svg id="universe-svg" xmlns="http://www.w3.org/2000/svg">
+              <g id="universe-viewport"></g>
+            </svg>
+          </div>
         </div>
       </div>
 
@@ -3128,6 +3140,8 @@
   let _universeTransform  = { x: 0, y: 0, scale: 1 };
   let _uTransformRaf    = 0;
   let _uPendingTransform = null;
+  let _uCommitted   = null; // transform currently baked into the <g> attribute
+  let _uCommitTimer = 0;    // idle timer that bakes the gesture once input stops
   let _uLabelEls      = [];
   let _uSecLabelEls   = [];
   let _nearestStation = {}; // {sector_macro → {name, jumps}} — nearest player station
@@ -3165,6 +3179,15 @@
     });
   }
 
+  // Pan/zoom uses a gesture/commit split because browsers never GPU-composite
+  // transforms on SVG content — changing the <g>'s transform re-rasterises all
+  // ~1500 map nodes (incl. the u-neon blur groups) every frame, which measured
+  // 30-110ms/frame vs the 16.7ms (60fps) budget. So while a gesture is active
+  // we animate #universe-zoom-layer (an HTML div, which DOES composite) with
+  // the *delta* from the last committed state, then once input goes quiet we
+  // bake the full transform into the <g> attribute — one expensive repaint per
+  // gesture instead of per frame. The map scales as a GPU texture mid-gesture
+  // (labels grow/blur slightly) and snaps crisp on commit, like web map apps.
   function _uApplyTransform(t) {
     _uPendingTransform = { x: t.x, y: t.y, scale: t.scale };
     if (_uTransformRaf) return;
@@ -3174,19 +3197,48 @@
       const t = _uPendingTransform || _universeTransform;
       _uPendingTransform = null;
 
-      const vp = document.getElementById('universe-viewport');
-      if (!vp) return;
-      vp.setAttribute('transform', `translate(${t.x},${t.y}) scale(${t.scale})`);
-      // Inverse-scale labels so they render at a constant pixel size at any zoom.
-      // Updating two CSS variables is much cheaper than rewriting every text
-      // node on each wheel tick, which was causing visible stutter/flicker.
-      const inv = 1 / t.scale;
-      vp.style.setProperty('--u-label-font', `${11 * inv}px`);
-      vp.style.setProperty('--u-sector-label-font', `${9 * inv}px`);
-      vp.classList.toggle('zoom-labels',        t.scale >= 0.55);
-      vp.classList.toggle('zoom-sectors',       t.scale >= 1.60);
-      vp.classList.toggle('zoom-sector-labels', t.scale >= 2.80);
+      const layer = document.getElementById('universe-zoom-layer');
+      const vp    = document.getElementById('universe-viewport');
+      if (!layer || !vp) return;
+
+      // First call (initial fit) has no committed state yet — bake directly.
+      if (!_uCommitted) { _uCommitTransform(t); return; }
+
+      // Express t as a delta on top of the committed transform so the div's
+      // CSS transform composes to exactly the same mapping as the <g> would:
+      //   screen = ds·(committed·p) + (dx,dy)  ≡  t.scale·p + (t.x,t.y)
+      const ds = t.scale / _uCommitted.scale;
+      const dx = t.x - ds * _uCommitted.x;
+      const dy = t.y - ds * _uCommitted.y;
+      layer.style.transform = `translate(${dx}px,${dy}px) scale(${ds})`;
+
+      // Commit once the gesture has been quiet for a beat (wheel ticks and
+      // drag moves keep pushing this back while the user is still going).
+      clearTimeout(_uCommitTimer);
+      _uCommitTimer = setTimeout(() => _uCommitTransform(_universeTransform), 180);
     });
+  }
+
+  // Bake the transform into the SVG <g> (the expensive full repaint) and reset
+  // the gesture layer. Label sizing + zoom-level classes also live here so the
+  // big style recalcs they trigger happen once per gesture, not per frame.
+  function _uCommitTransform(t) {
+    const layer = document.getElementById('universe-zoom-layer');
+    const vp    = document.getElementById('universe-viewport');
+    if (!layer || !vp) return;
+    vp.setAttribute('transform', `translate(${t.x},${t.y}) scale(${t.scale})`);
+    layer.style.transform = 'none';
+    _uCommitted = { x: t.x, y: t.y, scale: t.scale };
+
+    // Inverse-scale labels so they render at a constant pixel size at any zoom.
+    // Updating two CSS variables is much cheaper than rewriting every text
+    // node, which was causing visible stutter/flicker.
+    const inv = 1 / t.scale;
+    vp.style.setProperty('--u-label-font', `${11 * inv}px`);
+    vp.style.setProperty('--u-sector-label-font', `${9 * inv}px`);
+    vp.classList.toggle('zoom-labels',        t.scale >= 0.55);
+    vp.classList.toggle('zoom-sectors',       t.scale >= 1.60);
+    vp.classList.toggle('zoom-sector-labels', t.scale >= 2.80);
   }
 
   function renderUniverseMap(data) {
