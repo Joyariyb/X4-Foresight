@@ -2422,6 +2422,18 @@
       // have a consumption_rate equal to what the hull parts modules burn per hour.
       const consRates = s.consumption_rates || {};
 
+      // Runtime data keyed by produced-ware display name. Each entry has:
+      //   minutes      — float time remaining, or null if no inputs needed
+      //   limiting_ware — display name of the bottleneck input, or null
+      const runtimes = s.production_runtimes || {};
+
+      // Formats a runtime in minutes to a compact human-readable string.
+      const fmtRuntime = mins => {
+        if (mins < 60) return Math.round(mins) + 'm';
+        const h = Math.floor(mins / 60), m = Math.round(mins % 60);
+        return m > 0 ? `${h}h ${m}m` : `${h}h`;
+      };
+
       const prodRows = wares.length === 0
         ? `<div style="padding:12px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No production modules</div>`
         : wares.map(w => {
@@ -2439,6 +2451,31 @@
             const consHr   = consRates[w] ?? 0;
             const usagePct = prodHr > 0 ? Math.min(100, consHr / prodHr * 100) : 0;
             const rateLabel = prodHr != null ? Math.round(prodHr).toLocaleString() + '/hr' : '—/hr';
+
+            // Runtime label: time until this ware's production stops due to a depleted
+            // input. null minutes = no inputs needed (e.g. energy cells) → show nothing.
+            const rt = runtimes[w];
+            let rtLabel = '', rtColor = 'var(--text-faint)', rtTitle = '';
+            if (rt && rt.minutes !== null) {
+              rtTitle = rt.limiting_ware ? `Limiting input: ${rt.limiting_ware}` : '';
+              if (rt.minutes === 0) {
+                rtLabel = 'OUT';
+                rtColor = 'var(--red)';
+              } else if (rt.minutes < 60) {    // < 1 h → red
+                rtLabel = fmtRuntime(rt.minutes);
+                rtColor = 'var(--red)';
+              } else if (rt.minutes < 120) {   // 1 h – 2 h → amber
+                rtLabel = fmtRuntime(rt.minutes);
+                rtColor = 'var(--amber)';
+              } else {
+                rtLabel = fmtRuntime(rt.minutes);
+                // > 2 h — all the same faint colour, not urgent
+              }
+            }
+            const rtSpan = rtLabel
+              ? `<span style="font-family:var(--font-mono);font-size:10px;color:${rtColor};min-width:52px;text-align:right" title="${rtTitle}">${rtLabel}</span>`
+              : `<span style="min-width:52px"></span>`;
+
             return `<div style="display:flex;align-items:center;gap:8px;padding:5px 14px;border-bottom:1px solid var(--border)">
                <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:${wareCol};min-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${w.toUpperCase()}</span>
                <div style="flex:1;display:flex;gap:4px;align-items:center">
@@ -2450,6 +2487,7 @@
                  </div>
                </div>
                <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);min-width:54px;text-align:right">${rateLabel}</span>
+               ${rtSpan}
              </div>`;
           }).join('');
 

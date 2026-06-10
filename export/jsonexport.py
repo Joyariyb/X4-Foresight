@@ -23,8 +23,9 @@ from pathlib import Path
 from scanner import galaxy_map as gm
 from scanner.ship_names import ship_display_name
 from data.production import consumption_rates_from_modules, display_name_to_id, units_per_hour
+from data.production_stats import PRODUCTION_STATS
 from data.ware_prices import WARE_PRICES
-from data.wares import WARE_TRANSPORT
+from data.wares import WARE_NAMES, WARE_TRANSPORT
 
 
 def _rows(conn, sql, params=()) -> list[dict]:
@@ -90,6 +91,46 @@ def _stations(conn, scan_id) -> list[dict]:
         # INPUT ware's display name. Used by the UI's second bar to show what
         # fraction of a ware's output is consumed by other modules here.
         d['consumption_rates'] = consumption_rates_from_modules(d['modules'])
+
+        # How long each produced ware can keep running before its limiting input
+        # runs out, given current inventory. Keyed by produced-ware display name
+        # (same keys as production_rates) so the UI can look up per-row.
+        #   minutes      — float, or None if the ware needs no inputs (energy cells)
+        #   limiting_ware — display name of the bottleneck input, or None
+        # Uses the default recipe; faction-specific modules are a small minority
+        # and the default is a good approximation for planning purposes.
+        production_runtimes: dict[str, dict] = {}
+        for display_name, count in module_counts.items():
+            ware_id = display_name_to_id(display_name)
+            stats   = PRODUCTION_STATS.get(ware_id) if ware_id else None
+            if not stats:
+                production_runtimes[display_name] = {'minutes': None, 'limiting_ware': None}
+                continue
+
+            inputs = stats['methods'].get('default', {})
+            if not inputs:
+                # No raw inputs needed (e.g. energy cells run on sunlight).
+                production_runtimes[display_name] = {'minutes': None, 'limiting_ware': None}
+                continue
+
+            cycles_per_hr = 3600.0 / stats['time']
+            min_runtime_hrs = float('inf')
+            limiting_ware   = None
+
+            for input_id, qty_per_module in inputs.items():
+                consumption_per_hr = qty_per_module * count * cycles_per_hr
+                stock = (d['inventory'].get(input_id) or {}).get('amount') or 0
+                runtime_hrs = stock / consumption_per_hr  # safe: consumption_per_hr > 0
+                if runtime_hrs < min_runtime_hrs:
+                    min_runtime_hrs = runtime_hrs
+                    limiting_ware   = WARE_NAMES.get(input_id, input_id)
+
+            production_runtimes[display_name] = {
+                'minutes':       min_runtime_hrs * 60.0,
+                'limiting_ware': limiting_ware,
+            }
+
+        d['production_runtimes'] = production_runtimes
         # Nested budget object the Economy pie consumes: header totals plus the
         # per-ware breakdown (ware_id surfaced as `ware`, with ware_name/amount/
         # price/value/basis), biggest value first.
