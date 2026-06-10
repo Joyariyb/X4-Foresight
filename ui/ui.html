@@ -93,9 +93,10 @@
     #universe-map-wrap.panning { cursor: grabbing; }
     #universe-svg { width: 100%; height: 100%; display: block; }
     /* SVG text labels — font set by CSS; opacity toggled via parent class flags */
-    .u-hex-label    { font-family: 'Barlow Condensed', sans-serif; font-weight: 500; letter-spacing: 0.04em; opacity: 0; pointer-events: none; }
+    #universe-viewport { --u-label-font: 11px; --u-sector-label-font: 9px; }
+    .u-hex-label    { font-family: 'Barlow Condensed', sans-serif; font-weight: 500; letter-spacing: 0.04em; font-size: var(--u-label-font); opacity: 0; pointer-events: none; }
     .u-sector-hex   { opacity: 0; pointer-events: none; }
-    .u-sector-label { font-family: 'Barlow Condensed', sans-serif; opacity: 0; pointer-events: none; }
+    .u-sector-label { font-family: 'Barlow Condensed', sans-serif; font-size: var(--u-sector-label-font); opacity: 0; pointer-events: none; }
     #universe-viewport.zoom-labels        .u-hex-label    { opacity: 1; }
     #universe-viewport.zoom-sectors       .u-sector-hex   { opacity: 1; pointer-events: all; }
     #universe-viewport.zoom-sector-labels .u-sector-label { opacity: 1; }
@@ -3125,6 +3126,8 @@
   let _universeBuilt    = false; // SVG elements created at least once
   let _universeViewInited = false; // initial fit-to-view applied
   let _universeTransform  = { x: 0, y: 0, scale: 1 };
+  let _uTransformRaf    = 0;
+  let _uPendingTransform = null;
   let _uLabelEls      = [];
   let _uSecLabelEls   = [];
   let _nearestStation = {}; // {sector_macro → {name, jumps}} — nearest player station
@@ -3163,16 +3166,27 @@
   }
 
   function _uApplyTransform(t) {
-    const vp = document.getElementById('universe-viewport');
-    if (!vp) return;
-    vp.setAttribute('transform', `translate(${t.x},${t.y}) scale(${t.scale})`);
-    // Inverse-scale labels so they render at a constant pixel size at any zoom.
-    const inv = 1 / t.scale;
-    _uLabelEls.forEach(el    => el.setAttribute('font-size', 11 * inv));
-    _uSecLabelEls.forEach(el => el.setAttribute('font-size',  9 * inv));
-    vp.classList.toggle('zoom-labels',        t.scale >= 0.55);
-    vp.classList.toggle('zoom-sectors',       t.scale >= 1.60);
-    vp.classList.toggle('zoom-sector-labels', t.scale >= 2.80);
+    _uPendingTransform = { x: t.x, y: t.y, scale: t.scale };
+    if (_uTransformRaf) return;
+
+    _uTransformRaf = requestAnimationFrame(() => {
+      _uTransformRaf = 0;
+      const t = _uPendingTransform || _universeTransform;
+      _uPendingTransform = null;
+
+      const vp = document.getElementById('universe-viewport');
+      if (!vp) return;
+      vp.setAttribute('transform', `translate(${t.x},${t.y}) scale(${t.scale})`);
+      // Inverse-scale labels so they render at a constant pixel size at any zoom.
+      // Updating two CSS variables is much cheaper than rewriting every text
+      // node on each wheel tick, which was causing visible stutter/flicker.
+      const inv = 1 / t.scale;
+      vp.style.setProperty('--u-label-font', `${11 * inv}px`);
+      vp.style.setProperty('--u-sector-label-font', `${9 * inv}px`);
+      vp.classList.toggle('zoom-labels',        t.scale >= 0.55);
+      vp.classList.toggle('zoom-sectors',       t.scale >= 1.60);
+      vp.classList.toggle('zoom-sector-labels', t.scale >= 2.80);
+    });
   }
 
   function renderUniverseMap(data) {
