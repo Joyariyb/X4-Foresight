@@ -126,6 +126,25 @@ def _write_stations(cur, scan_id, ctx) -> None:
               ln['amount'], ln['price'], ln['value'], ln['basis'])
              for ln in s.budget_lines],
         )
+        # Per-produced-ware production analytics (rates, surplus, cap time, runtime).
+        # Explicit column list is required here: ALTER TABLE appends new columns at
+        # the physical end of the table regardless of where they sit in schema.sql,
+        # so positional VALUES(?,?...) would silently map values to the wrong columns
+        # on databases that were migrated rather than created fresh.
+        cur.executemany(
+            "INSERT INTO station_production_analytics"
+            "(scan_id, station_id, ware_id, ware_name,"
+            " production_rate, consumption_rate, surplus_rate, time_to_cap_hours,"
+            " runtime_minutes, limiting_ware_id, limiting_ware_name)"
+            " VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+            [(scan_id, s.object_id,
+              pa['ware_id'], pa['ware_name'],
+              pa['production_rate'], pa['consumption_rate'], pa['surplus_rate'],
+              pa['time_to_cap_hours'],
+              pa['runtime_minutes'],
+              pa['limiting_ware_id'], pa['limiting_ware_name'])
+             for pa in s.production_analytics],
+        )
 
 
 def _write_ships(cur, scan_id, ctx) -> None:

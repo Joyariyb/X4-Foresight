@@ -94,6 +94,49 @@ def select_save_file() -> Path:
 
 # ── Pipeline ───────────────────────────────────────────────────────────────────
 
+def _resolve_ship_homebases(ctx) -> None:
+    """Resolve homebase_id to a player station object_id for all player ships.
+
+    Both _parse_homebase() (traders) and _parse_commander() (all other types)
+    return sub-component connection references, NOT the station's own object_id.
+    For example, a freighter's TradeRoutine `range` param gives [0x1b6f8], and
+    its commander connection gives [0x1ca1f] — both are connection elements on
+    the station, not the station root.
+
+    dockingbay_index maps every sub-element id on a player station → that
+    station's object_id (now built from elem.iter() so <connection> elements
+    are included alongside <component> elements).  We resolve both homebase_id
+    and commander_id through this index:
+
+      1. If homebase_id is already set (from _parse_homebase) but is a
+         sub-component ref rather than a station object_id, resolve it.
+      2. If homebase_id is unset, try commander_id (miners, fighters, etc.).
+
+    The player_station_ids guard ensures we only accept player stations —
+    ships commanded by NPC stations or capital ships are left unresolved.
+    """
+    player_stations = ctx.player_station_ids
+    for ship in ctx.ships:
+        # Already a direct station object_id — nothing to do.
+        if ship.homebase_id in player_stations:
+            continue
+
+        # Try each candidate ref in priority order:
+        #   1. homebase_id set by _parse_homebase (TradeRoutine range / Middleman supplier)
+        #   2. commander_id set by _parse_commander (miners, fighters, etc.)
+        # Both are sub-component connection refs, so we look each up in
+        # dockingbay_index which maps every sub-element id → parent station id.
+        # We try homebase_id first so traders get the most-specific attribution;
+        # if that lookup fails we fall through to commander_id as a fallback.
+        for ref in (ship.homebase_id, ship.commander_id):
+            if not ref:
+                continue
+            resolved = ctx.dockingbay_index.get(ref)
+            if resolved and resolved in player_stations:
+                ship.homebase_id = resolved
+                break
+
+
 def run(save_path: Path, progress: Callable[[str], None] | None = None) -> None:
     """Run the full pipeline: scan -> resolve trades -> write DB -> write JSON.
 
@@ -115,6 +158,9 @@ def run(save_path: Path, progress: Callable[[str], None] | None = None) -> None:
 
     step("Resolving trade counterparties…")
     TradePostProcessor().run(ctx)
+
+    step("Resolving ship homebases…")
+    _resolve_ship_homebases(ctx)
 
     step("Writing database…")
     conn = get_connection(DB_PATH)

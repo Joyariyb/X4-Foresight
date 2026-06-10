@@ -311,6 +311,9 @@
     .cf-scrubber-resize[data-side="left"]  { left:0;  border-radius:2px 0 0 2px; }
     .cf-scrubber-resize[data-side="right"] { right:0; border-radius:0 2px 2px 0; }
     /* Absolute labels at the track edges — purely decorative */
+    /* Ware legend chips: transition opacity so changes run on the GPU compositor
+       and don't trigger a repaint of the pie chart's drop-shadow filter layer. */
+    [id^="ware-chip-"] { transition: opacity 0.06s ease-out; }
     .cf-scrubber-label  { position:absolute; top:50%; transform:translateY(-50%);
                           font-family:var(--font-mono); font-size:7px;
                           color:rgba(94,234,212,0.50); pointer-events:none; }
@@ -363,9 +366,12 @@
     .file-empty { display: flex; align-items: center; justify-content: center; height: 160px; font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; }
     /* Selected row highlight in the crew roster table */
     .crew-row-active td { background: var(--teal-dim) !important; }
-    /* Clickable pilot names in the fleet table — hover turns amber + underlines */
+    /* Clickable elements in the fleet table — hover turns amber + underlines */
     .crew-link { cursor: pointer; }
     .crew-link:hover { color: var(--amber) !important; text-decoration: underline; }
+    /* Station code links — teal base, same amber hover as crew-link */
+    .stn-link { cursor: pointer; color: var(--teal); font-family: var(--font-mono); font-size: 11px; font-weight: 700; }
+    .stn-link:hover { color: var(--amber) !important; text-decoration: underline; }
 
     /* ── SCROLLBAR ── */
     ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -514,8 +520,9 @@
                   <th data-sort-key="role"   onclick="setSort('role')">Hull Type</th>
                   <th data-sort-key="health" onclick="setSort('health')">HP</th>
                   <th data-sort-key="order"  onclick="setSort('order')">Order</th>
-                  <th data-sort-key="sector" onclick="setSort('sector')">Sector</th>
-                  <th data-sort-key="pilot"  onclick="setSort('pilot')">Pilot</th>
+                  <th data-sort-key="sector"  onclick="setSort('sector')">Sector</th>
+                  <th data-sort-key="station" onclick="setSort('station')">Station</th>
+                  <th data-sort-key="pilot"   onclick="setSort('pilot')">Pilot</th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -1204,7 +1211,6 @@
         if (wareVisibility[safeCode][w] === undefined) wareVisibility[safeCode][w] = true;
       });
 
-      const glowId    = `holo-glow-${safeCode}-w`;
       const storeWare = []; // hover lookup table — one entry per trade dot
       const wareGroupHtml = [];
 
@@ -1264,7 +1270,7 @@
         const visible = wareVisibility[safeCode][wareName];
         wareGroupHtml.push(`<g id="${groupId}" style="display:${visible ? 'block' : 'none'}">
           <path d="${areaD}" fill="${col}" fill-opacity="0.10" stroke="none"/>
-          <path d="${stepD}" fill="none" stroke="${col}" stroke-width="3"   stroke-linejoin="round" opacity="0.25" filter="url(#${glowId})"/>
+          <path d="${stepD}" fill="none" stroke="${col}" stroke-width="3"   stroke-linejoin="round" opacity="0.18"/>
           <path d="${stepD}" fill="none" stroke="${col}" stroke-width="1.5" stroke-linejoin="round"/>
           ${pts.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2" fill="${col}" opacity="0.85"/>`).join('')}
         </g>`);
@@ -1303,9 +1309,6 @@
       return `
         <div style="background:#030d14;border:1px solid rgba(25,230,200,0.18);border-radius:3px;box-shadow:inset 0 0 24px rgba(25,230,200,0.05);padding:4px">
           <svg viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:auto">
-            <defs>
-              <filter id="${glowId}" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.5"/></filter>
-            </defs>
             <rect x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="#020a10"/>
             ${yAxisWare}
             ${xTicksHtml}
@@ -1322,7 +1325,7 @@
             ${wareToggleFO}
           </svg>
         </div>
-        <div style="display:flex;flex-wrap:wrap;gap:5px;padding:6px 2px 2px">
+        <div style="display:flex;flex-wrap:wrap;gap:5px;padding:6px 2px 2px;will-change:transform">
           ${chips}
         </div>`;
     })();
@@ -1538,7 +1541,9 @@
   // Builds the inner HTML for the pilot skills hover tooltip.
   // Renders each skill as a labelled row of stars with the raw point value dim beside it.
   // Only skills present in the data are shown — boarding is rare, morale is always there.
-  function pilotTipHtml(skills) {
+  // The optional `name` parameter adds the pilot's name as a teal header at the top,
+  // which is how the pilot cell shows the name now that it's been moved off the row.
+  function pilotTipHtml(skills, name) {
     const SKILL_ORDER = [
       ['piloting',    'Piloting'],
       ['management',  'Management'],
@@ -1547,8 +1552,13 @@
       ['boarding',    'Boarding'],
     ];
     const rows = SKILL_ORDER.filter(([key]) => skills[key] != null);
-    if (!rows.length) return '—';
-    return rows.map(([key, label]) => {
+    const nameHeader = name
+      ? `<div style="color:var(--teal);font-weight:700;margin-bottom:${rows.length ? 6 : 0}px;` +
+        `${rows.length ? 'padding-bottom:5px;border-bottom:1px solid var(--border);' : ''}` +
+        `white-space:nowrap">${name}</div>`
+      : '';
+    if (!rows.length) return nameHeader || '—';
+    return nameHeader + rows.map(([key, label]) => {
       const pts = skills[key];
       return `<div style="display:flex;align-items:center;gap:8px">` +
              `<span style="min-width:82px;letter-spacing:0.06em;text-transform:uppercase">${label}</span>` +
@@ -1572,10 +1582,13 @@
   // String keys return lowercase strings. Null/missing values are pushed
   // to the end of the list regardless of sort direction (handled in renderFleet).
   function sortValue(ship, key) {
-    if (key === 'pilot')  return (ship.pilot && ship.pilot.skills && ship.pilot.skills.piloting != null) ? ship.pilot.skills.piloting : null;
-    if (key === 'size')   return { S: 0, M: 1, L: 2, XL: 3 }[ship.size] ?? null;
-    if (key === 'health') return (ship.hull_pct !== null && ship.hull_pct !== undefined) ? ship.hull_pct : null;
-    if (key === 'name')   return (ship.display_name || ship.name || '').toLowerCase();
+    if (key === 'pilot')   return (ship.pilot && ship.pilot.skills && ship.pilot.skills.piloting != null) ? ship.pilot.skills.piloting : null;
+    if (key === 'size')    return { S: 0, M: 1, L: 2, XL: 3 }[ship.size] ?? null;
+    if (key === 'health')  return (ship.hull_pct !== null && ship.hull_pct !== undefined) ? ship.hull_pct : null;
+    if (key === 'name')    return (ship.display_name || ship.name || '').toLowerCase();
+    // Unassigned ships (null homebase_code) sort to the bottom — same null-push
+    // logic as other keys, handled by the null checks in renderFleet's sort().
+    if (key === 'station') return ship.homebase_code ? ship.homebase_code.toLowerCase() : null;
     return (ship[key] || '').toString().toLowerCase();
   }
 
@@ -1596,26 +1609,55 @@
     });
 
     document.querySelector("#fleet-table tbody").innerHTML = sorted.map(s => {
-      const pilot   = (s.pilot && s.pilot.name) ? s.pilot.name : "—";
       const oCol    = ORDER_COLOURS[s.order] || "var(--text-dim)";
       const sCol    = SIZE_COLOURS[s.size]   || "var(--text-dim)";
       const oIcon   = ORDER_ICONS[s.order]   || "ti-circle";
       const nameStr = s.display_name || s.name || "—";
-      // piloting pts from the scanner (null if pilot has no skills data)
-      const plt = (s.pilot && s.pilot.skills && s.pilot.skills.piloting != null)
-        ? s.pilot.skills.piloting : null;
-      // Stars glyphs without the tooltip attribute — the tooltip is placed on
-      // the outer wrapper span below so it covers both the name and the stars.
-      const starsGlyphs = plt !== null
-        ? ` <span style="letter-spacing:-1px;vertical-align:middle;font-size:13px">${skillStars(plt)}</span>`
-        : '';
-      // Link the pilot name to their crew file if they exist in the crew data.
-      const pilotCrewIdx = (pilot !== '—')
-        ? allCrewData.findIndex(c => c.name === pilot && c.role === 'pilot')
-        : -1;
-      const pilotNameSpan = pilotCrewIdx >= 0
-        ? `<span class="crew-link" data-crew-idx="${pilotCrewIdx}">${pilot}</span>`
-        : pilot;
+
+      // ── Pilot cell ────────────────────────────────────────────────────────
+      // The pilot's name is no longer shown as text in the row — it lives in
+      // the tooltip that appears when hovering the skill stars, saving space
+      // for the new Station column.
+      let pilotEl;
+      const hasPilot = s.pilot && s.pilot.name;
+      if (!hasPilot) {
+        // No crew assigned — dim italic placeholder so the column stays readable.
+        pilotEl = `<span style="color:var(--text-dim);font-style:italic;font-size:11px">Unassigned</span>`;
+      } else {
+        const pilotName = s.pilot.name;
+        const plt = (s.pilot.skills && s.pilot.skills.piloting != null)
+          ? s.pilot.skills.piloting : null;
+        // plt === null means the pilot exists but has no recorded skill data —
+        // show 5 empty stars (skillStars(0)) so the column is never blank.
+        const starsHtml = `<span style="letter-spacing:-1px;vertical-align:middle;font-size:13px">${skillStars(plt !== null ? plt : 0)}</span>`;
+        const skills    = s.pilot.skills || {};
+        // Escape single-quotes so the JSON is safe inside a single-quoted attribute.
+        const skillsAttr = JSON.stringify(skills).replace(/'/g, '&#39;');
+        // Escape the pilot name for use inside an HTML attribute value.
+        const nameAttr   = pilotName.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+        const crewIdx    = allCrewData.findIndex(c => c.name === pilotName && c.role === 'pilot');
+        if (crewIdx >= 0) {
+          // Clickable stars — same crew-file navigation as the old pilot name link.
+          // data-pilot-skills drives the hover tooltip; data-pilot-name is rendered
+          // as a header inside that tooltip by pilotTipHtml().
+          pilotEl = `<span class="crew-link" data-crew-idx="${crewIdx}"` +
+                    ` data-pilot-skills='${skillsAttr}'` +
+                    ` data-pilot-name="${nameAttr}">${starsHtml}</span>`;
+        } else {
+          // Pilot not in crew data — show stars with name-in-tooltip but no click.
+          pilotEl = `<span data-pilot-skills='${skillsAttr}'` +
+                    ` data-pilot-name="${nameAttr}" style="cursor:default">${starsHtml}</span>`;
+        }
+      }
+
+      // ── Station cell ──────────────────────────────────────────────────────
+      // homebase_code comes from the LEFT JOIN in _ships() and is the station's
+      // display code (e.g. "TDD"). Clicking it switches to the Stations tab and
+      // scrolls directly to that station's card.
+      const stationEl = s.homebase_code
+        ? `<span class="stn-link" data-stn-code="${s.homebase_code}">${s.homebase_code}</span>`
+        : `<span style="color:var(--text-faint)">—</span>`;
+
       return `<tr data-code="${s.code}">
         <td style="white-space:nowrap">
           <span class="ship-name">${nameStr}</span>
@@ -1626,11 +1668,8 @@
         <td>${hullBar(s.hull_pct, s.hull_hp, s.max_hull)}</td>
         <td><i class="ti ${oIcon}" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:${oCol}"></i><span style="color:${oCol}">${s.order}</span></td>
         <td style="color:var(--text-dim)"><i class="ti ti-map-pin" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:var(--text-faint)"></i>${s.sector}</td>
-        <td style="color:var(--text-faint);white-space:nowrap"><i class="ti ti-user" style="font-size:12px;vertical-align:-2px;margin-right:4px"></i>${
-          (s.pilot && s.pilot.skills && Object.keys(s.pilot.skills).length)
-            ? `<span data-pilot-skills='${JSON.stringify(s.pilot.skills)}' style="cursor:default">${pilotNameSpan}${starsGlyphs}</span>`
-            : pilotNameSpan
-        }</td>
+        <td style="white-space:nowrap">${stationEl}</td>
+        <td style="color:var(--text-faint);white-space:nowrap"><i class="ti ti-user" style="font-size:12px;vertical-align:-2px;margin-right:4px"></i>${pilotEl}</td>
       </tr>`;
     }).join("");
   }
@@ -1964,6 +2003,16 @@
     const pnl = card.querySelector(`.station-tab-panel[data-tab="${tab}"]`);
     if (btn) btn.classList.add('active');
     if (pnl) pnl.style.display = 'block';
+  }
+
+  // Switches to the Stations tab and scrolls to the card for `code`.
+  // Called from .stn-link clicks in the fleet table so the user can jump
+  // straight from a ship row to its home station.
+  function goToStation(code) {
+    const stationsTab = document.querySelector('.nav-tab[onclick*="\'stations\'"]');
+    switchTab('stations', stationsTab);
+    const card = document.getElementById('station-' + code);
+    if (card) card.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }
 
   // Moves the three-position slider thumb to pos (0=Left, 1=Mid, 2=Right) for
@@ -2319,8 +2368,32 @@
 
       // Stats
       const dockedShips  = s.docked_ships || [];
-      const shipCount    = dockedShips.length;
       const modCount     = s.module_count != null ? s.module_count : '—';
+
+      // Assigned fleet: ships whose homebase is this station (from export).
+      // Distinct from docked ships, which are physically present right now.
+      const af        = s.assigned_fleet || {};
+      const afTotal   = af.total   || 0;
+      const afColor   = afTotal > 0 ? 'var(--teal)' : 'var(--text-faint)';
+      // Build tooltip rows for each non-zero bucket, falling back to "None assigned".
+      const afBuckets = [
+        { label: 'Traders', val: af.traders || 0, color: 'var(--teal)'   },
+        { label: 'Miners',  val: af.miners  || 0, color: 'var(--amber)'  },
+        { label: 'Combat',  val: af.combat  || 0, color: 'var(--red)'    },
+        { label: 'Other',   val: af.other   || 0, color: 'var(--text-dim)'},
+      ];
+      const afTipRows = afBuckets
+        .filter(b => b.val > 0)
+        .map(b => `<div style="display:flex;justify-content:space-between;gap:16px;padding:2px 0">
+           <span style="color:${b.color}">${b.label}</span>
+           <span style="font-weight:600;color:${b.color}">${b.val}</span>
+         </div>`)
+        .join('');
+      const afTipHtml = afTipRows
+        ? `<div style="font-family:var(--font-mono);font-size:11px;min-width:110px">${afTipRows}</div>`
+        : `<div style="font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">None assigned</div>`;
+      const afTipAttr = `data-fleet-tip="${encodeURIComponent(afTipHtml)}"`;
+
       const storageRaw   = s.cargo_adj_pct;
       const storageStr   = storageRaw != null ? Math.round(storageRaw) + '%' : '—';
       const storageColor = storageRaw != null ? (storageRaw > 90 ? 'var(--red)' : storageRaw > 70 ? 'var(--amber)' : 'var(--teal)') : 'var(--text-faint)';
@@ -2686,13 +2759,13 @@
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px;background:var(--bg-panel);border-bottom:1px solid var(--border)">
           ${sc('Modules', modCount, 'var(--text)',                                      false, moduleTipAttr, 'ti-building-community')}
           ${sc('Crew',    '—',      'var(--text-faint)',                               false, '',             'ti-users')}
-          ${sc('Ships',   shipCount, shipCount > 0 ? 'var(--teal)' : 'var(--text-faint)', false, '',          'ti-ship')}
+          ${sc('Ships',   afTotal,   afColor,                                             false, afTipAttr,  'ti-ship')}
           ${sc('Storage', storageStr, storageColor,                                   true,  storageTipAttr, 'ti-box')}
         </div>
         <!-- Tab bar -->
         <div style="display:flex;gap:4px;padding:6px 10px;border-bottom:1px solid var(--border);background:var(--bg-panel)">
           <button class="station-tab-btn active" data-tab="production" onclick="switchStationTab('${s.code}','production')"><i class="ti ti-settings" style="font-size:11px;vertical-align:-1px;margin-right:4px"></i>Production</button>
-          <button class="station-tab-btn" data-tab="docked" onclick="switchStationTab('${s.code}','docked')"><i class="ti ti-ship" style="font-size:11px;vertical-align:-1px;margin-right:4px"></i>Docked${shipCount > 0 ? ' · ' + shipCount : ''}</button>
+          <button class="station-tab-btn" data-tab="docked" onclick="switchStationTab('${s.code}','docked')"><i class="ti ti-ship" style="font-size:11px;vertical-align:-1px;margin-right:4px"></i>Docked${dockedShips.length > 0 ? ' · ' + dockedShips.length : ''}</button>
         </div>
         <!-- Tab panels -->
         <div class="station-tab-panel" data-tab="production" style="display:block">${prodRows}</div>
@@ -3518,13 +3591,25 @@
     document.getElementById('u-hover-panel')?.classList.remove('visible');
   }
 
-  // Click on a pilot name in the fleet table → jump to their crew file
+  // Click handlers for the fleet table:
+  //   .crew-link  → jump to that pilot's crew file
+  //   .stn-link   → switch to Stations tab and scroll to that station's card
   document.getElementById('fleet-table').addEventListener('click', function(e) {
-    const link = e.target.closest('.crew-link');
-    if (!link) return;
-    e.stopPropagation();
-    const allIdx = parseInt(link.dataset.crewIdx, 10);
-    if (!isNaN(allIdx) && allIdx >= 0) jumpToCrew(allIdx);
+    // Crew file navigation (pilot stars)
+    const crewLink = e.target.closest('.crew-link');
+    if (crewLink) {
+      e.stopPropagation();
+      const allIdx = parseInt(crewLink.dataset.crewIdx, 10);
+      if (!isNaN(allIdx) && allIdx >= 0) jumpToCrew(allIdx);
+      return;
+    }
+    // Station navigation (homebase code)
+    const stnLink = e.target.closest('.stn-link');
+    if (stnLink) {
+      e.stopPropagation();
+      const code = stnLink.dataset.stnCode;
+      if (code) goToStation(code);
+    }
   });
 
   // Shared hover tooltip — used for hull bars, pilot skills, and storage breakdowns.
@@ -3721,7 +3806,7 @@
       // chart the cursor is over will re-show its own ring below.
       document.querySelectorAll('.cf-detail-marker,.cf-ware-marker').forEach(m => { m.style.display = 'none'; });
 
-      const el = e.target.closest('[data-hull-tip],[data-pilot-skills],[data-storage-tip],[data-modules-tip],[data-budget-tip],[data-cashflow-tip],[data-cfdetail],[data-cfware]');
+      const el = e.target.closest('[data-hull-tip],[data-pilot-skills],[data-storage-tip],[data-modules-tip],[data-fleet-tip],[data-budget-tip],[data-cashflow-tip],[data-cfdetail],[data-cfware]');
       if (!el) { tip.style.display = 'none'; return; }
 
       if (el.dataset.cfdetail) {
@@ -3778,8 +3863,9 @@
         tip.style.color      = '';
         tip.style.whiteSpace = 'normal';
       } else if (el.dataset.pilotSkills) {
-        // Pilot skills: multi-line stars per skill
-        tip.innerHTML = pilotTipHtml(JSON.parse(el.dataset.pilotSkills));
+        // Pilot skills: name header + per-skill star rows.
+        // data-pilot-name is the pilot's display name (moved off the row).
+        tip.innerHTML = pilotTipHtml(JSON.parse(el.dataset.pilotSkills), el.dataset.pilotName || '');
         tip.style.color      = '';
         tip.style.whiteSpace = 'nowrap';
       } else if (el.dataset.storageTip) {
@@ -3790,6 +3876,11 @@
       } else if (el.dataset.modulesTip) {
         // Module list: grouped by category with counts
         tip.innerHTML = moduleTipHtml(JSON.parse(decodeURIComponent(el.dataset.modulesTip)));
+        tip.style.color      = '';
+        tip.style.whiteSpace = 'normal';
+      } else if (el.dataset.fleetTip) {
+        // Assigned fleet breakdown: pre-rendered HTML encoded into the attribute
+        tip.innerHTML = decodeURIComponent(el.dataset.fleetTip);
         tip.style.color      = '';
         tip.style.whiteSpace = 'normal';
       } else {

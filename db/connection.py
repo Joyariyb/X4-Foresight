@@ -37,6 +37,8 @@ def apply_schema(conn: sqlite3.Connection) -> None:
     idempotent and safe to call on every connection."""
     conn.executescript(SCHEMA_PATH.read_text(encoding='utf-8'))
     _migrate(conn)
+    _populate_ware_metadata(conn)
+    _populate_ware_prices(conn)
     conn.commit()
 
 
@@ -45,3 +47,49 @@ def _migrate(conn: sqlite3.Connection) -> None:
     existing = {row[1] for row in conn.execute('PRAGMA table_info(station_inventory)')}
     if 'volume_m3' not in existing:
         conn.execute('ALTER TABLE station_inventory ADD COLUMN volume_m3 REAL')
+
+    # time_to_cap_hours added when overproduction detector was implemented.
+    # ALTER TABLE appends the column at the physical end of the table on old DBs,
+    # even though schema.sql declares it between surplus_rate and runtime_minutes.
+    # write.py uses an explicit column-name INSERT to cope with this — positional
+    # VALUES(?) would map values to the wrong columns on migrated databases.
+    # Old rows will have NULL for this column until the station is re-scanned.
+    spa_cols = {row[1] for row in conn.execute('PRAGMA table_info(station_production_analytics)')}
+    if 'time_to_cap_hours' not in spa_cols:
+        conn.execute('ALTER TABLE station_production_analytics ADD COLUMN time_to_cap_hours REAL')
+
+
+def _populate_ware_metadata(conn: sqlite3.Connection) -> None:
+    """Write static ware properties from data/wares.py into ware_metadata.
+
+    Uses INSERT OR IGNORE so this is safe to call on every connection — existing
+    rows are never touched. The full set of wares is the union of WARE_NAMES,
+    WARE_TRANSPORT, and WARE_VOLUME (some wares appear in only one or two of
+    the three dicts, so we take the union to ensure complete coverage).
+    """
+    from data.wares import WARE_NAMES, WARE_TRANSPORT, WARE_VOLUME
+    all_ids = set(WARE_NAMES) | set(WARE_TRANSPORT) | set(WARE_VOLUME)
+    rows = [
+        (
+            ware_id,
+            WARE_NAMES.get(ware_id, ware_id),      # fall back to raw id if unnamed
+            WARE_TRANSPORT.get(ware_id),
+            WARE_VOLUME.get(ware_id),
+        )
+        for ware_id in sorted(all_ids)
+    ]
+    conn.executemany("INSERT OR IGNORE INTO ware_metadata VALUES(?,?,?,?)", rows)
+
+
+def _populate_ware_prices(conn: sqlite3.Connection) -> None:
+    """Write market price bands from data/ware_prices.py into ware_prices.
+
+    Uses INSERT OR IGNORE so re-running on an existing DB is a no-op. Each ware
+    gets the min/average/max price band extracted from the game's wares.xml.
+    """
+    from data.ware_prices import WARE_PRICES
+    rows = [
+        (ware_id, p['min'], p['average'], p['max'])
+        for ware_id, p in sorted(WARE_PRICES.items())
+    ]
+    conn.executemany("INSERT OR IGNORE INTO ware_prices VALUES(?,?,?,?)", rows)

@@ -146,10 +146,15 @@ class Station:
     # Per-ware supply-budget breakdown from estimate_station_budget()['lines'];
     # each dict carries ware, ware_name, amount, price, value, basis. Drives the
     # station Economy pie in the UI.
-    budget_lines:    list[dict]          = field(default_factory=list)
-    # inventory    → own table: station_inventory     (scan_id, station_id, ware_id, ware_name, amount, volume_m3)
-    # modules      → own table: station_modules       (scan_id, station_id, macro, category, produces)
-    # budget lines → own table: station_budget_lines  (scan_id, station_id, ware_id, ware_name, amount, price, value, basis)
+    budget_lines:         list[dict] = field(default_factory=list)
+    # Per-produced-ware analytics from production_analytics_from_modules():
+    # production_rate, consumption_rate, surplus_rate, runtime_minutes,
+    # limiting_ware_id, limiting_ware_name. Stored in station_production_analytics.
+    production_analytics: list[dict] = field(default_factory=list)
+    # inventory             → own table: station_inventory             (scan_id, station_id, ware_id, ware_name, amount, volume_m3)
+    # modules               → own table: station_modules               (scan_id, station_id, macro, category, produces)
+    # budget_lines          → own table: station_budget_lines          (scan_id, station_id, ware_id, ware_name, amount, price, value, basis)
+    # production_analytics  → own table: station_production_analytics  (scan_id, station_id, ware_id, ...)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

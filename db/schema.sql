@@ -321,6 +321,46 @@ CREATE TABLE IF NOT EXISTS npc_station_wares (
     PRIMARY KEY (station_id, ware_id)
 );
 
+-- Static ware properties sourced from libraries/wares.xml. Written once from
+-- data/wares.py at connection time; never changes between game versions without
+-- a generator re-run. Provides a single queryable source for name, cargo type,
+-- and volume so the export layer can eventually avoid all Python-dict imports.
+CREATE TABLE IF NOT EXISTS ware_metadata (
+    ware_id        TEXT PRIMARY KEY,
+    name           TEXT NOT NULL,
+    transport_type TEXT,   -- container / solid / liquid
+    volume_m3      REAL
+);
+
+-- Market price bands sourced from libraries/wares.xml. Written once from
+-- data/ware_prices.py at connection time. Replaces the static WARE_PRICES dict
+-- in the export layer so price data is queryable alongside other ware fields.
+CREATE TABLE IF NOT EXISTS ware_prices (
+    ware_id    TEXT PRIMARY KEY,
+    price_min  INTEGER NOT NULL,
+    price_avg  INTEGER NOT NULL,
+    price_max  INTEGER NOT NULL
+);
+
+-- Per-scan production analytics for each ware a station produces. Computed
+-- during scanning (in scanner/handlers/station.py) so the export layer is a
+-- pure DB read. Enables cross-scan trend analysis later.
+CREATE TABLE IF NOT EXISTS station_production_analytics (
+    scan_id            INTEGER NOT NULL REFERENCES scans(scan_id) ON DELETE CASCADE,
+    station_id         TEXT    NOT NULL,
+    ware_id            TEXT    NOT NULL,
+    ware_name          TEXT,              -- display name of the produced ware
+    production_rate    REAL,              -- units/hr produced (all modules combined)
+    consumption_rate   REAL,              -- units/hr consumed internally by other modules
+    surplus_rate       REAL,              -- production_rate − consumption_rate
+    time_to_cap_hours  REAL,             -- hrs until cargo bay fills at current surplus rate;
+                                         --   NULL = no surplus (consuming ≥ producing)
+    runtime_minutes    REAL,              -- NULL = no inputs needed (e.g. energy cells)
+    limiting_ware_id   TEXT,             -- ware_id of the input that runs out first
+    limiting_ware_name TEXT,             -- display name of that input
+    PRIMARY KEY (scan_id, station_id, ware_id)
+);
+
 -- Galaxy connectivity graph: one row per undirected sector-to-sector link.
 --   cost 1 = a gate / orbital accelerator hop (counts toward jump range)
 --   cost 0 = an intra-cluster superhighway hop (free — same "big hex")

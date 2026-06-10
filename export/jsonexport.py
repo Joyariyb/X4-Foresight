@@ -22,10 +22,6 @@ from pathlib import Path
 
 from scanner import galaxy_map as gm
 from scanner.ship_names import ship_display_name
-from data.production import consumption_rates_from_modules, display_name_to_id, units_per_hour
-from data.production_stats import PRODUCTION_STATS
-from data.ware_prices import WARE_PRICES
-from data.wares import WARE_NAMES, WARE_TRANSPORT
 
 
 def _rows(conn, sql, params=()) -> list[dict]:
@@ -40,7 +36,75 @@ def _drop(d: dict, *keys) -> dict:
 
 # ── Section builders ───────────────────────────────────────────────────────────
 
+def _fleet_by_station(conn, scan_id) -> dict[str, dict]:
+    """Returns {station_id: {total, traders, miners, combat, other}} for this scan.
+
+    homebase_id in the ships table is set by _resolve_ship_homebases() in
+    x4_save_scanner.py after the full parse.  That function resolves both the
+    TradeRoutine `range` param (traders) and the commander connection ref (all
+    other ship types) through dockingbay_index, so homebase_id is a reliable
+    player-station object_id for every assigned ship type by DB write time.
+
+    Role buckets (matched against extract_role() output — see scanner/ship_names.py):
+      traders — Freighter, Transport
+      miners  — any role starting with "Miner" (catches Miner (Solid) etc.)
+      combat  — Fighter, Heavy Fighter, Corvette, Frigate, Destroyer, Carrier, Bomber
+      other   — Builder, Resupplier, Scout, Unknown, anything else
+    """
+    # Simple GROUP BY — homebase_id is already a station object_id by the time
+    # data is written to the DB, no further resolution needed here.
+    rows = conn.execute(
+        "SELECT homebase_id, role, COUNT(*) AS count "
+        "FROM ships WHERE scan_id=? AND homebase_id IS NOT NULL "
+        "GROUP BY homebase_id, role",
+        (scan_id,),
+    ).fetchall()
+
+    result: dict[str, dict] = {}
+    for r in rows:
+        sid  = r['homebase_id']
+        cnt  = r['count']
+        role = r['role'] or ''
+        if sid not in result:
+            result[sid] = {'total': 0, 'traders': 0, 'miners': 0, 'combat': 0, 'other': 0}
+        result[sid]['total'] += cnt
+        # Role strings come from extract_role() in scanner/ship_names.py.
+        # Use prefix matching so "Miner (Solid)" etc. all fall into miners,
+        # and "Heavy Fighter" falls into combat alongside plain "Fighter".
+        if role in ('Freighter', 'Transport'):
+            result[sid]['traders'] += cnt
+        elif role.startswith('Miner'):
+            result[sid]['miners']  += cnt
+        elif any(role.startswith(r) for r in ('Fighter', 'Heavy Fighter', 'Corvette',
+                                               'Frigate', 'Destroyer', 'Carrier', 'Bomber')):
+            result[sid]['combat']  += cnt
+        else:
+            result[sid]['other']   += cnt
+    return result
+
+
+def _station_transport_types(conn) -> dict[str, str]:
+    """Load ware_id → transport_type from the DB for all wares.
+
+    Used by _stations() to tag each inventory entry with its cargo category
+    ('container' | 'solid' | 'liquid') without any Python-dict import.
+    Falls back to 'container' for any ware that lacks an explicit transport type
+    (same default the old WARE_TRANSPORT.get() call used).
+    """
+    rows = conn.execute(
+        "SELECT ware_id, transport_type FROM ware_metadata "
+        "WHERE transport_type IS NOT NULL"
+    ).fetchall()
+    return {r['ware_id']: r['transport_type'] for r in rows}
+
+
 def _stations(conn, scan_id) -> list[dict]:
+    # Load both lookups once up front — avoids repeated queries inside the loop.
+    transport    = _station_transport_types(conn)
+    fleet_by_stn = _fleet_by_station(conn, scan_id)
+
+    _EMPTY_FLEET = {'total': 0, 'traders': 0, 'miners': 0, 'combat': 0, 'other': 0}
+
     out = []
     for s in conn.execute("SELECT * FROM stations WHERE scan_id=?", (scan_id,)):
         d = _drop(dict(s), 'scan_id')
@@ -48,13 +112,13 @@ def _stations(conn, scan_id) -> list[dict]:
         # Inventory keyed by ware_id. Each entry carries:
         #   amount     — units currently in storage
         #   volume_m3  — total m³ occupied (amount × per-unit volume from the scanner)
-        #   cargo_type — "container" | "solid" | "liquid" (from WARE_TRANSPORT lookup)
+        #   cargo_type — "container" | "solid" | "liquid" (from ware_metadata DB table)
         # The UI uses volume_m3 / cargo_by_type[cargo_type].max_m3 for the storage bar.
         d['inventory'] = {
             r['ware_id']: {
                 'amount':     r['amount'],
                 'volume_m3':  r['volume_m3'],
-                'cargo_type': WARE_TRANSPORT.get(r['ware_id'], 'container'),
+                'cargo_type': transport.get(r['ware_id'], 'container'),
             }
             for r in conn.execute(
                 "SELECT ware_id, amount, volume_m3 FROM station_inventory "
@@ -69,68 +133,37 @@ def _stations(conn, scan_id) -> list[dict]:
             conn,
             "SELECT macro, category, produces FROM station_modules "
             "WHERE scan_id=? AND station_id=?", (scan_id, sid))
-        # Comma-separated produced-ware display names for the Production tab.
-        # Display names (not ids) so they match WARE_COLOURS and read cleanly.
-        produced = sorted({m['produces'] for m in d['modules'] if m['produces']})
-        d['production'] = ','.join(produced)
 
-        # Total units/hour per ware, calculated from module count × PRODUCTION_STATS
-        # rate (accounting for sector sunlight on energy cells). Keyed by display name
-        # to match WARE_COLOURS and the production string above.
-        sector = d.get('sector_macro', '')
-        module_counts: dict[str, int] = {}
-        for m in d['modules']:
-            if m['produces']:
-                module_counts[m['produces']] = module_counts.get(m['produces'], 0) + 1
-        d['production_rates'] = {
-            name: units_per_hour(display_name_to_id(name), sector) * count
-            for name, count in module_counts.items()
-            if display_name_to_id(name)   # skip wares not in PRODUCTION_STATS (e.g. mineables)
-        }
-        # Units/hour consumed internally by all production modules, keyed by the
-        # INPUT ware's display name. Used by the UI's second bar to show what
-        # fraction of a ware's output is consumed by other modules here.
-        d['consumption_rates'] = consumption_rates_from_modules(d['modules'])
+        # Production analytics — computed during scanning and stored per-scan so
+        # the export is a pure DB read with no Python-side recalculation.
+        analytics = _rows(
+            conn,
+            "SELECT ware_name, production_rate, consumption_rate, surplus_rate, "
+            "time_to_cap_hours, runtime_minutes, limiting_ware_name "
+            "FROM station_production_analytics "
+            "WHERE scan_id=? AND station_id=?",
+            (scan_id, sid))
 
-        # How long each produced ware can keep running before its limiting input
-        # runs out, given current inventory. Keyed by produced-ware display name
-        # (same keys as production_rates) so the UI can look up per-row.
-        #   minutes      — float, or None if the ware needs no inputs (energy cells)
-        #   limiting_ware — display name of the bottleneck input, or None
-        # Uses the default recipe; faction-specific modules are a small minority
-        # and the default is a good approximation for planning purposes.
-        production_runtimes: dict[str, dict] = {}
-        for display_name, count in module_counts.items():
-            ware_id = display_name_to_id(display_name)
-            stats   = PRODUCTION_STATS.get(ware_id) if ware_id else None
-            if not stats:
-                production_runtimes[display_name] = {'minutes': None, 'limiting_ware': None}
-                continue
+        # Produced-ware names for the UI's production string and WARE_COLOURS lookup.
+        d['production'] = ','.join(sorted(
+            r['ware_name'] for r in analytics if r['ware_name']))
 
-            inputs = stats['methods'].get('default', {})
-            if not inputs:
-                # No raw inputs needed (e.g. energy cells run on sunlight).
-                production_runtimes[display_name] = {'minutes': None, 'limiting_ware': None}
-                continue
-
-            cycles_per_hr = 3600.0 / stats['time']
-            min_runtime_hrs = float('inf')
-            limiting_ware   = None
-
-            for input_id, qty_per_module in inputs.items():
-                consumption_per_hr = qty_per_module * count * cycles_per_hr
-                stock = (d['inventory'].get(input_id) or {}).get('amount') or 0
-                runtime_hrs = stock / consumption_per_hr  # safe: consumption_per_hr > 0
-                if runtime_hrs < min_runtime_hrs:
-                    min_runtime_hrs = runtime_hrs
-                    limiting_ware   = WARE_NAMES.get(input_id, input_id)
-
-            production_runtimes[display_name] = {
-                'minutes':       min_runtime_hrs * 60.0,
-                'limiting_ware': limiting_ware,
+        # Flat dicts keyed by produced-ware display name, matching the shape the
+        # UI's production tab expects for each row.
+        d['production_rates']   = {r['ware_name']: r['production_rate']  for r in analytics if r['ware_name']}
+        d['consumption_rates']  = {r['ware_name']: r['consumption_rate'] for r in analytics if r['ware_name']}
+        d['production_runtimes'] = {
+            r['ware_name']: {
+                'minutes':          r['runtime_minutes'],
+                'limiting_ware':    r['limiting_ware_name'],
+                'time_to_cap_hours': r['time_to_cap_hours'],
             }
+            for r in analytics if r['ware_name']
+        }
+        # Ships that call this station home, bucketed by role.  The UI shows the
+        # total in the Ships stat cell and the breakdown on hover.
+        d['assigned_fleet'] = fleet_by_stn.get(sid, _EMPTY_FLEET)
 
-        d['production_runtimes'] = production_runtimes
         # Nested budget object the Economy pie consumes: header totals plus the
         # per-ware breakdown (ware_id surfaced as `ware`, with ware_name/amount/
         # price/value/basis), biggest value first.
@@ -149,7 +182,18 @@ def _stations(conn, scan_id) -> list[dict]:
 
 def _ships(conn, scan_id) -> list[dict]:
     out = []
-    for r in conn.execute("SELECT * FROM ships WHERE scan_id=?", (scan_id,)):
+    # LEFT JOIN stations so each ship carries its homebase station code directly.
+    # homebase_id is a station object_id (e.g. "[0x1ca1c]"); the JOIN resolves it
+    # to the human-readable code (e.g. "TDD") without any Python-side lookup.
+    # Ships with no homebase get homebase_code = NULL → the UI shows "—".
+    for r in conn.execute(
+        "SELECT s.*, st.code AS homebase_code "
+        "FROM ships s "
+        "LEFT JOIN stations st "
+        "    ON st.scan_id = s.scan_id AND st.object_id = s.homebase_id "
+        "WHERE s.scan_id = ?",
+        (scan_id,),
+    ):
         d = _drop(dict(r), 'scan_id')
         # Resolve the human-readable name the same way the CLI does — prefers the
         # player's custom name; falls back to the macro-derived type name (e.g.
@@ -384,9 +428,16 @@ def to_export(conn: sqlite3.Connection, scan_id: int | None = None) -> dict:
         'active_trades':         [],
         'in_progress_deliveries': [],
         # Static game price bands — min/average/max per ware ID.
-        # Passed through here so the UI can normalise trade prices without
-        # needing the data hardcoded in JS or stored in the DB.
-        'ware_prices':           WARE_PRICES,
+        # Read from the ware_prices DB table (populated at connection time from
+        # data/ware_prices.py) so no Python dict import is needed here.
+        'ware_prices': {
+            r['ware_id']: {
+                'min':     r['price_min'],
+                'average': r['price_avg'],
+                'max':     r['price_max'],
+            }
+            for r in conn.execute("SELECT * FROM ware_prices ORDER BY ware_id")
+        },
     }
 
 

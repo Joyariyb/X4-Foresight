@@ -41,33 +41,12 @@ STATION BUY PRICE comes from the station's own <trade><prices>: the player
 use the max market price instead.
 """
 
-import re
-
+from data.production import FACTION_METHOD as _FACTION_METHOD, PROD_MACRO_RE as _PROD_MACRO_RE
 from data.production_stats import PRODUCTION_STATS
 from data.ware_prices import WARE_PRICES
 from data.sector_stats import SECTOR_SUNLIGHT
 from data.wares import WARE_NAMES
 from .xml_utils import iter_station_components as _iter_components
-
-# Production module macros look like prod_{faction}_{ware}_macro, e.g.
-# prod_gen_refinedmetals_macro. Group 1 is the faction token, group 2 the ware.
-# Non-economy production modules (e.g. the HQ research landmark) don't match and
-# are ignored — exactly what we want.
-_PROD_MACRO_RE = re.compile(r'^prod_(\w+?)_(\w+)_macro$', re.IGNORECASE)
-
-# Maps the faction token in a production macro to the recipe method id used in
-# PRODUCTION_STATS. Determines which input list a module consumes — most modules
-# are "gen" (generic) and use the default recipe; faction modules can differ
-# (e.g. Teladi hull parts use teladianium instead of refined metals).
-_FACTION_METHOD = {
-    "gen": "default",
-    "arg": "argon",
-    "tel": "teladi",
-    "par": "paranid",
-    "spl": "split",
-    "ter": "terran",
-    "bor": "boron",
-}
 
 # Two real-game hours, in seconds — the window X4 budgets supply for.
 _BUDGET_WINDOW_SECONDS = 2 * 3600

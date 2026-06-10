@@ -1,6 +1,7 @@
 from __future__ import annotations
 import re
 from data.factions import FACTION_NAMES
+from data.production import production_analytics_from_modules
 from data.wares import WARE_NAMES, WARE_VOLUME, WARE_TRANSPORT
 from data.station_stats import STATION_STATS
 from ..entities import Station, StationModule, CargoStorage, CrewMember
@@ -164,6 +165,16 @@ class StationHandler:
             budget_lines     = budget['lines'],
             modules          = modules,
             inventory        = inventory,
+            production_analytics = production_analytics_from_modules(
+                modules, inventory, self._sector_macro,
+                # Pass per-type cargo storage so time_to_cap_hours can be
+                # calculated without a second pass over the inventory.
+                cargo={
+                    'container': cargo_container,
+                    'solid':     cargo_solid,
+                    'liquid':    cargo_liquid,
+                },
+            ),
         )
 
         ctx.stations.append(station)
@@ -173,9 +184,14 @@ class StationHandler:
         # and trade orders appear after station definitions in the XML stream.
         ctx.player_station_ids.add(object_id)
 
-        # Index every sub-component id → this station so EconomyHandler can
-        # resolve Econ_Manager $destination (a docking bay) to its parent station.
-        for c in elem.iter('component'):
+        # Index every sub-element id → this station so EconomyHandler can resolve
+        # Econ_Manager $destination (a docking bay) and so _resolve_ship_homebases
+        # can map a ship's commander connection ref to its parent station.
+        # Previously this only iterated <component> elements, which missed
+        # <connection> elements — the station's <connection connection="subordinates"
+        # id="[0xREF]"> is what ship commander blocks point at, so we need its id
+        # in the index too.
+        for c in elem.iter():
             if c is elem:
                 continue
             cid = c.get('id', '')
