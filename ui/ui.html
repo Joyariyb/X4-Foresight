@@ -56,8 +56,20 @@
     .tb-field .val.amber { color: var(--amber); }
     /* Scan-history picker — pushed to the far right of the bar. */
     .tb-field.tb-scan { margin-left: auto; }
-    #tb-scan { background: var(--bg-panel); color: var(--text); border: 1px solid var(--border); border-radius: 4px; font-family: var(--font-mono); font-size: 12px; padding: 3px 6px; margin-top: 1px; cursor: pointer; }
-    #tb-scan:hover { border-color: var(--teal); }
+    .scan-picker { position: relative; margin-top: 1px; }
+    .scan-picker-btn { background: var(--bg-panel); color: var(--text); border: 1px solid var(--border); border-radius: 4px; font-family: var(--font-mono); font-size: 12px; padding: 3px 8px; cursor: pointer; display: flex; align-items: center; gap: 3px; white-space: nowrap; }
+    .scan-picker-btn:hover { border-color: var(--teal); }
+    .scan-picker-caret { font-size: 9px; color: var(--text-dim); margin-left: 1px; }
+    .scan-picker-menu { position: absolute; top: calc(100% + 4px); right: 0; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px; min-width: 300px; box-shadow: 0 6px 18px rgba(0,0,0,0.5); z-index: 9999; overflow: hidden; }
+    .scan-picker-row { display: flex; align-items: center; padding: 7px 10px; cursor: pointer; border-bottom: 1px solid var(--border); gap: 10px; }
+    .scan-picker-row:last-child { border-bottom: none; }
+    .scan-picker-row:hover { background: var(--bg-card); }
+    .scan-picker-row.active { background: var(--teal-dim); }
+    .scan-picker-info { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+    .scan-picker-num { font-family: var(--font-mono); font-size: 12px; color: var(--teal); }
+    .scan-picker-detail { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
+    .scan-picker-del { background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 3px 5px; border-radius: 3px; line-height: 1; flex-shrink: 0; }
+    .scan-picker-del:hover { color: var(--red); background: var(--red-dim); }
 
     /* ── NAV ── */
     #nav { display: flex; background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 0 12px; flex-shrink: 0; }
@@ -445,7 +457,10 @@
     </div>
     <div class="tb-field tb-scan" id="tb-scan-field" style="display:none">
       <div class="lbl"><i class="ti ti-history" style="font-size:10px;vertical-align:-1px"></i> Scan</div>
-      <select id="tb-scan" onchange="loadScan(parseInt(this.value,10))"></select>
+      <div class="scan-picker" id="scan-picker">
+        <button class="scan-picker-btn" id="scan-picker-btn" type="button" onclick="toggleScanPicker(event)">#<span id="scan-picker-label">—</span><span class="scan-picker-caret">▾</span></button>
+        <div class="scan-picker-menu" id="scan-picker-menu" style="display:none"></div>
+      </div>
     </div>
   </div>
 
@@ -2478,6 +2493,13 @@
     // top-level grouping than this UI was first written against. Rather than
     // rename every read site, we augment each record IN PLACE with the alias
     // fields the rendering code already expects. Originals are left intact.
+
+    // Keep the picker button label in sync whenever a scan loads.
+    if (data.meta && data.meta.scan_id != null) {
+      _currentScanId = data.meta.scan_id;
+      const label = document.getElementById('scan-picker-label');
+      if (label) label.textContent = _currentScanId;
+    }
 
     const player = data.player || {};
 
@@ -4660,6 +4682,9 @@
   // The live bridge, once the QWebChannel handshake completes. The scan picker
   // reaches back through it to re-query the DB for a different scan_id.
   let _bridge = null;
+  // Tracks which scan is currently rendered so the picker highlights it and the
+  // button label stays correct after populate() reads data.meta.scan_id.
+  let _currentScanId = null;
 
   // Fetch one scan's export from the DB (via the bridge) and render it. -1 asks
   // the bridge for the latest scan. Re-running populate() swaps the whole view;
@@ -4676,24 +4701,75 @@
     });
   }
 
-  // Fill the top-bar dropdown from the scan history (newest first). The first
-  // option is the latest scan and is selected by default. Hidden when only one
-  // scan exists — there's nothing to switch between.
+  // Open/close the custom scan picker menu. Clicking outside auto-closes it.
+  function toggleScanPicker(e) {
+    e.stopPropagation();
+    const menu = document.getElementById('scan-picker-menu');
+    const open = menu.style.display !== 'none';
+    menu.style.display = open ? 'none' : '';
+    if (!open) document.addEventListener('click', _closeScanPicker, { once: true });
+  }
+
+  function _closeScanPicker() {
+    document.getElementById('scan-picker-menu').style.display = 'none';
+  }
+
+  // Fill the top-bar picker from the scan history (newest first).
+  // Shows whenever there is at least one scan so the user can always delete.
   function populateScanPicker(scans) {
-    const field = document.getElementById("tb-scan-field");
-    const sel   = document.getElementById("tb-scan");
-    if (!Array.isArray(scans) || scans.length < 2) { field.style.display = "none"; return; }
-    sel.innerHTML = "";
+    const field = document.getElementById('tb-scan-field');
+    const menu  = document.getElementById('scan-picker-menu');
+    const label = document.getElementById('scan-picker-label');
+    if (!Array.isArray(scans) || scans.length === 0) { field.style.display = 'none'; return; }
+
+    // Keep button label in sync with whatever scan is currently loaded.
+    const current = scans.find(s => s.scan_id == _currentScanId) || scans[0];
+    label.textContent = current.scan_id;
+
+    menu.innerHTML = '';
     scans.forEach(s => {
-      const opt = document.createElement("option");
-      opt.value = s.scan_id;
-      const save = (s.save_file || "").replace(/\.xml(\.gz)?$/, "");
-      const when = (s.scanned_at || "").replace("T", " ").slice(0, 16);
-      opt.textContent = "#" + s.scan_id + "  ·  " + save + (when ? "  ·  " + when : "");
-      sel.appendChild(opt);
+      const save = (s.save_file || '').replace(/\.xml(\.gz)?$/, '');
+      const when = (s.scanned_at || '').replace('T', ' ').slice(0, 16);
+      const row = document.createElement('div');
+      row.className = 'scan-picker-row' + (s.scan_id == _currentScanId ? ' active' : '');
+      row.innerHTML = `
+        <div class="scan-picker-info">
+          <span class="scan-picker-num">#${s.scan_id}</span>
+          <span class="scan-picker-detail">${save}${when ? '  ·  ' + when : ''}</span>
+        </div>
+        <button class="scan-picker-del" title="Delete this scan" onclick="event.stopPropagation(); deleteScan(${s.scan_id})"><i class="ti ti-trash" style="font-size:13px"></i></button>
+      `;
+      row.addEventListener('click', () => {
+        _currentScanId = s.scan_id;
+        loadScan(s.scan_id);
+        document.getElementById('scan-picker-menu').style.display = 'none';
+      });
+      menu.appendChild(row);
     });
-    sel.value = scans[0].scan_id;   // newest
-    field.style.display = "";
+
+    field.style.display = '';
+  }
+
+  // Delete a scan from the DB then refresh the picker. If the deleted scan was
+  // currently loaded, automatically loads the next newest remaining scan.
+  function deleteScan(scanId) {
+    if (!_bridge) return;
+    _bridge.delete_scan(scanId, function() {
+      _bridge.list_scans(function(jsonStr) {
+        try {
+          const scans = JSON.parse(jsonStr);
+          if (scanId == _currentScanId) {
+            if (scans.length > 0) {
+              _currentScanId = scans[0].scan_id;
+              loadScan(_currentScanId);
+            } else {
+              _currentScanId = null;
+            }
+          }
+          populateScanPicker(scans);
+        } catch(e) { /* silent */ }
+      });
+    });
   }
 
   if (typeof qt !== 'undefined' && qt.webChannelTransport) {

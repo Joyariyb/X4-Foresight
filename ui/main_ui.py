@@ -359,6 +359,27 @@ class EmpireBridge(QObject):
         except Exception as e:
             return json.dumps({"error": f"Could not list scans: {e}"})
 
+    @pyqtSlot(int, result=str)
+    def delete_scan(self, scan_id: int) -> str:
+        """Delete a scan and all its cascaded child rows (foreign_keys = ON handles cascade).
+        Returns JSON {"ok": true} on success or {"error": "..."} on failure."""
+        try:
+            conn = get_connection(DB_PATH)
+            try:
+                conn.execute("DELETE FROM scans WHERE scan_id = ?", (scan_id,))
+                # If the table is now empty, reset the AUTOINCREMENT counter so
+                # the next scan starts from 1 again instead of continuing from
+                # the highest ever-used id.
+                remaining = conn.execute("SELECT COUNT(*) FROM scans").fetchone()[0]
+                if remaining == 0:
+                    conn.execute("DELETE FROM sqlite_sequence WHERE name = 'scans'")
+                conn.commit()
+            finally:
+                conn.close()
+            return json.dumps({"ok": True})
+        except Exception as e:
+            return json.dumps({"error": f"Could not delete scan: {e}"})
+
 
 # ── Main window ───────────────────────────────────────────────────────────────
 
