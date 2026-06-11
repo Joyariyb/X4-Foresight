@@ -97,6 +97,12 @@
     .universe-filter-bar { height: 38px; padding: 0 14px; display: flex; align-items: center; gap: 8px; background: var(--bg-panel); border-bottom: 1px solid var(--border); flex-shrink: 0; font-family: var(--font-cond); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
     #universe-map-wrap { flex: 1; min-height: 0; overflow: hidden; cursor: grab; position: relative; background: var(--bg); user-select: none; }
     #universe-map-wrap.panning { cursor: grabbing; }
+    /* The "almost 3D" tilt: the map plane leans away from the camera like a
+       chart table. The rotateX/perspective values are applied from JS (U_TILT_*
+       constants) so the label-projection maths always matches the CSS. The tilt
+       sits OUTSIDE the zoom layer, so pan/zoom gestures just play out on a
+       tilted plane; labels live OUTSIDE the tilt (see #universe-labels). */
+    #universe-tilt { position: absolute; inset: 0; transform-origin: 50% 50%; }
     /* The HTML div that pan/zoom gestures animate (see comment in the markup).
        will-change keeps it on its own GPU layer so per-frame transform updates
        are a cheap composite; transform-origin 0 0 makes the gesture-delta maths
@@ -107,15 +113,22 @@
        actual offset via offsetLeft/Top, so only this rule defines the amount. */
     #universe-zoom-layer { position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; will-change: transform; transform-origin: 0 0; }
     #universe-svg { width: 100%; height: 100%; display: block; }
-    /* SVG text labels — font set by CSS; opacity toggled via parent class flags */
-    #universe-viewport { --u-label-font: 11px; --u-sector-label-font: 9px; }
-    .u-hex-label    { font-family: 'Barlow Condensed', sans-serif; font-weight: 500; letter-spacing: 0.04em; font-size: var(--u-label-font); opacity: 0; pointer-events: none; }
+    /* Map labels are plain HTML OUTSIDE the tilted plane: anything rasterised
+       inside a 3D transform is stretched from a fixed-resolution texture and
+       goes blurry, but a flat overlay renders as normal crisp text. JS projects
+       each label's map position through the same tilt maths on every commit.
+       They can't cheaply follow per-frame gestures, so they fade out while a
+       gesture is active and pop back when it settles (like web map apps). */
+    #universe-labels { position: absolute; inset: 0; overflow: hidden; pointer-events: none; transition: opacity 0.15s; }
+    #universe-labels.u-gesturing { opacity: 0; }
+    #universe-labels span { position: absolute; left: 0; top: 0; white-space: nowrap; font-family: 'Barlow Condensed', sans-serif; display: none; }
+    #universe-labels .u-hex-label    { font-weight: 500; letter-spacing: 0.04em; font-size: 11px; opacity: 0.9; }
+    #universe-labels .u-sector-label { font-size: 9px; opacity: 0.85; }
+    #universe-labels.show-clusters .u-hex-label    { display: block; }
+    #universe-labels.show-sectors  .u-sector-label { display: block; }
+    #universe-labels.show-sectors  .u-hex-label    { display: none; }
     .u-sector-hex   { opacity: 0; pointer-events: none; }
-    .u-sector-label { font-family: 'Barlow Condensed', sans-serif; font-size: var(--u-sector-label-font); opacity: 0; pointer-events: none; }
-    #universe-viewport.zoom-labels        .u-hex-label    { opacity: 1; }
-    #universe-viewport.zoom-sectors       .u-sector-hex   { opacity: 1; pointer-events: all; }
-    #universe-viewport.zoom-sector-labels .u-sector-label { opacity: 1; }
-    #universe-viewport.zoom-sector-labels .u-hex-label    { opacity: 0; }
+    #universe-viewport.zoom-sectors .u-sector-hex { opacity: 1; pointer-events: all; }
     .u-conn-sector { opacity: 0; }
     #universe-viewport.zoom-sectors .u-conn-sector    { opacity: 1; }
     #universe-viewport.zoom-sectors #u-conns-cluster  { opacity: 0; }
@@ -631,11 +644,19 @@
                re-rasterises every frame). Pan/zoom gestures animate this div;
                the final transform is committed into the <g> when the gesture
                settles. See _uApplyTransform. -->
-          <div id="universe-zoom-layer">
-            <svg id="universe-svg" xmlns="http://www.w3.org/2000/svg">
-              <g id="universe-viewport"></g>
-            </svg>
+          <!-- tilt sits between the wrap and the zoom layer: it owns the static
+               3D lean, while the zoom layer inside it keeps doing flat 2D
+               pan/zoom exactly as before. -->
+          <div id="universe-tilt">
+            <div id="universe-zoom-layer">
+              <svg id="universe-svg" xmlns="http://www.w3.org/2000/svg">
+                <g id="universe-viewport"></g>
+              </svg>
+            </div>
           </div>
+          <!-- Crisp HTML name labels, projected onto the tilted plane by JS.
+               Sits AFTER (above) the tilt so text never enters the 3D texture. -->
+          <div id="universe-labels"></div>
         </div>
       </div>
 
@@ -3265,6 +3286,34 @@
   let _uPendingTransform = null;
   let _uCommitted   = null; // transform currently baked into the <g> attribute
   let _uCommitTimer = 0;    // idle timer that bakes the gesture once input stops
+
+  // ── Tilt ("almost 3D") constants ─────────────────────────────────────────
+  // Applied to the DOM from here (not hardcoded in CSS) so the projection
+  // maths below can never drift out of sync with what the GPU renders.
+  // Set U_TILT_DEG to 0 to switch the whole effect off.
+  const U_TILT_DEG   = 35;   // lean of the map plane, degrees
+  const U_TILT_PERSP = 1200; // CSS perspective distance, px (smaller = deeper)
+  const _uTiltSin = Math.sin(U_TILT_DEG * Math.PI / 180);
+  const _uTiltCos = Math.cos(U_TILT_DEG * Math.PI / 180);
+
+  // Flat map space (what _universeTransform works in) → on-screen position
+  // after the tilt. rotateX about the wrap centre maps a flat point (u,v) to
+  // (u, v·cos, v·sin) and CSS perspective then scales by d/(d−z); w is that
+  // scale factor (≈ how "near" the point is — used as a label depth cue).
+  function _uTiltProject(x, y, W, H) {
+    const u = x - W / 2, v = y - H / 2;
+    const w = U_TILT_PERSP / (U_TILT_PERSP - v * _uTiltSin);
+    return { x: W / 2 + u * w, y: H / 2 + v * _uTiltCos * w, w };
+  }
+
+  // Inverse of _uTiltProject: cursor position → flat map space, so wheel-zoom
+  // anchors exactly under the cursor and drags stay glued to the grab point.
+  function _uTiltUnproject(X, Y, W, H) {
+    const Yr = Y - H / 2;
+    const v  = Yr * U_TILT_PERSP / (U_TILT_PERSP * _uTiltCos + Yr * _uTiltSin);
+    const w  = U_TILT_PERSP / (U_TILT_PERSP - v * _uTiltSin);
+    return { x: W / 2 + (X - W / 2) / w, y: H / 2 + v };
+  }
   let _uLabelEls      = [];
   let _uSecLabelEls   = [];
   let _nearestStation = {}; // {sector_macro → {name, jumps}} — nearest player station
@@ -3341,6 +3390,10 @@
       const dy = t.y - ds * (_uCommitted.y + _uCommitted.oy) + oyNow;
       layer.style.transform = `translate(${dx}px,${dy}px) scale(${ds})`;
 
+      // The flat label overlay can't follow per-frame gestures (it would need
+      // a re-projection per label per frame), so it fades out until commit.
+      document.getElementById('universe-labels')?.classList.add('u-gesturing');
+
       // Commit once the gesture has been quiet for a beat (wheel ticks and
       // drag moves keep pushing this back while the user is still going).
       clearTimeout(_uCommitTimer);
@@ -3365,15 +3418,34 @@
     layer.style.transform = 'none';
     _uCommitted = { x: t.x, y: t.y, scale: t.scale, ox, oy };
 
-    // Inverse-scale labels so they render at a constant pixel size at any zoom.
-    // Updating two CSS variables is much cheaper than rewriting every text
-    // node, which was causing visible stutter/flicker.
-    const inv = 1 / t.scale;
-    vp.style.setProperty('--u-label-font', `${11 * inv}px`);
-    vp.style.setProperty('--u-sector-label-font', `${9 * inv}px`);
-    vp.classList.toggle('zoom-labels',        t.scale >= 0.55);
-    vp.classList.toggle('zoom-sectors',       t.scale >= 1.60);
-    vp.classList.toggle('zoom-sector-labels', t.scale >= 2.80);
+    vp.classList.toggle('zoom-sectors', t.scale >= 1.60);
+
+    // Reposition the crisp HTML labels: flat map position → tilt projection.
+    // Runs once per gesture (not per frame), so looping every label is cheap.
+    const labels = document.getElementById('universe-labels');
+    if (labels) {
+      const wrap = labels.parentElement;
+      const W = wrap.clientWidth, H = wrap.clientHeight;
+      labels.classList.remove('u-gesturing');
+      labels.classList.toggle('show-clusters', t.scale >= 0.55);
+      labels.classList.toggle('show-sectors',  t.scale >= 2.80);
+      const place = ({ el, wx, wy }) => {
+        const p = _uTiltProject(t.x + t.scale * wx, t.y + t.scale * wy, W, H);
+        // w ≤ 0 means the point projects behind the camera (possible when far
+        // off-screen at deep zoom) — park those out of sight instead of letting
+        // the mirrored coordinates land somewhere visible.
+        if (p.w <= 0.05 || p.x < -200 || p.x > W + 200 || p.y < -200 || p.y > H + 200) {
+          el.style.transform = 'translate3d(-9999px,0,0)';
+          return;
+        }
+        // scale(w) shrinks far labels and grows near ones — the depth cue that
+        // makes flat text read as lying on the tilted plane.
+        el.style.transform = `translate3d(${p.x.toFixed(1)}px,${p.y.toFixed(1)}px,0) scale(${p.w.toFixed(3)}) translate(-50%,-50%)`;
+      };
+      // Only the set that is actually visible at this zoom needs placing.
+      if (t.scale >= 0.55 && t.scale < 2.80) _uLabelEls.forEach(place);
+      if (t.scale >= 2.80) _uSecLabelEls.forEach(place);
+    }
   }
 
   function renderUniverseMap(data) {
@@ -3447,6 +3519,11 @@
 
     // ── Render SVG ────────────────────────────────────────────────────────────
     vp.innerHTML = '';
+    // Labels are HTML in the flat overlay, not SVG (see #universe-labels CSS).
+    // Each entry stores the element plus its position in map world units so
+    // _uCommitTransform can re-project it after every gesture.
+    const labelsEl = document.getElementById('universe-labels');
+    if (labelsEl) labelsEl.innerHTML = '';
     _uLabelEls    = [];
     _uSecLabelEls = [];
 
@@ -3593,19 +3670,16 @@
         'stroke-width': '1',
       }));
 
-      // Cluster name label — rendered at constant 11px regardless of zoom
-      const lbl = el('text', {
-        x: cx, y: cy,
-        class: 'u-hex-label',
-        'text-anchor':      'middle',
-        'dominant-baseline': 'middle',
-        'font-size':         11, // overwritten by _uApplyTransform
-        fill:                colour,
-        'fill-opacity':      '0.9',
-      });
-      lbl.textContent = clusterDisplayName(macro);
-      g.appendChild(lbl);
-      _uLabelEls.push(lbl);
+      // Cluster name label — crisp HTML in the flat overlay, repositioned by
+      // _uCommitTransform; wx/wy are the hex centre in map world units.
+      if (labelsEl) {
+        const lbl = document.createElement('span');
+        lbl.className = 'u-hex-label';
+        lbl.style.color = colour;
+        lbl.textContent = clusterDisplayName(macro);
+        labelsEl.appendChild(lbl);
+        _uLabelEls.push({ el: lbl, wx: cx, wy: cy });
+      }
 
       // Sector sub-hexes (visible at zoom ≥ 1.60).
       // Must use the same layout/position formulas as the sectorPos loop above
@@ -3629,19 +3703,16 @@
             'data-sector':  sec.sector_macro,
           }));
 
-          // Sector name label — constant 9px
-          const sl = el('text', {
-            x: sx, y: sy,
-            class: 'u-sector-label',
-            'text-anchor':      'middle',
-            'dominant-baseline': 'middle',
-            'font-size':         9,
-            fill:                sc,
-            'fill-opacity':      '0.85',
-          });
-          sl.textContent = sec.sector_name || sec.sector_macro;
-          sg.appendChild(sl);
-          _uSecLabelEls.push(sl);
+          // Sector name label — crisp HTML in the flat overlay, like the
+          // cluster labels above.
+          if (labelsEl) {
+            const sl = document.createElement('span');
+            sl.className = 'u-sector-label';
+            sl.style.color = sc;
+            sl.textContent = sec.sector_name || sec.sector_macro;
+            labelsEl.appendChild(sl);
+            _uSecLabelEls.push({ el: sl, wx: sx, wy: sy });
+          }
         });
 
         g.appendChild(sg);
@@ -3694,35 +3765,52 @@
     if (!_universeBuilt) {
       const wrap = document.getElementById('universe-map-wrap');
 
+      // Apply the tilt from the JS constants — single source of truth, so the
+      // projection helpers can never disagree with what the GPU renders.
+      wrap.style.perspective = U_TILT_DEG ? `${U_TILT_PERSP}px` : 'none';
+      const tiltEl = document.getElementById('universe-tilt');
+      if (tiltEl) tiltEl.style.transform = U_TILT_DEG ? `rotateX(${U_TILT_DEG}deg)` : 'none';
+
+      // Cursor → flat map space: undo the page zoom (clientX is visual px but
+      // the map transform works in layout px), then undo the tilt projection.
+      // Gives exact zoom-to-cursor and drag-follows-grab on the tilted plane.
+      function cursorToMap(e) {
+        const rect = wrap.getBoundingClientRect();
+        const z = parseFloat(document.documentElement.style.zoom) || 1;
+        return _uTiltUnproject((e.clientX - rect.left) / z, (e.clientY - rect.top) / z,
+                               wrap.clientWidth, wrap.clientHeight);
+      }
+
       // Scroll-to-zoom centred on cursor position
       wrap.addEventListener('wheel', function(e) {
         e.preventDefault();
         const factor   = e.deltaY < 0 ? 1.12 : 1 / 1.12;
-        const rect     = wrap.getBoundingClientRect();
-        const mx       = e.clientX - rect.left;
-        const my       = e.clientY - rect.top;
+        const m        = cursorToMap(e);
         const t        = _universeTransform;
         const newScale = Math.max(0.10, Math.min(12, t.scale * factor));
         _universeTransform = {
           scale: newScale,
-          x: mx - (mx - t.x) * (newScale / t.scale),
-          y: my - (my - t.y) * (newScale / t.scale),
+          x: m.x - (m.x - t.x) * (newScale / t.scale),
+          y: m.y - (m.y - t.y) * (newScale / t.scale),
         };
         _uApplyTransform(_universeTransform);
       }, { passive: false });
 
-      // Drag-to-pan
+      // Drag-to-pan — anchored in map space so the grabbed point stays glued
+      // to the cursor even though the plane is tilted.
       let _dragging = false, _dragOrigin = null;
       wrap.addEventListener('mousedown', function(e) {
         if (e.button !== 0) return;
+        const m     = cursorToMap(e);
         _dragging   = true;
-        _dragOrigin = { x: e.clientX - _universeTransform.x, y: e.clientY - _universeTransform.y };
+        _dragOrigin = { x: m.x - _universeTransform.x, y: m.y - _universeTransform.y };
         wrap.classList.add('panning');
       });
       window.addEventListener('mousemove', function(e) {
         if (!_dragging) return;
-        _universeTransform.x = e.clientX - _dragOrigin.x;
-        _universeTransform.y = e.clientY - _dragOrigin.y;
+        const m = cursorToMap(e);
+        _universeTransform.x = m.x - _dragOrigin.x;
+        _universeTransform.y = m.y - _dragOrigin.y;
         _uApplyTransform(_universeTransform);
       });
       window.addEventListener('mouseup', function() {
