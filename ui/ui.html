@@ -71,9 +71,8 @@
     .scan-picker-del { background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 3px 5px; border-radius: 3px; line-height: 1; flex-shrink: 0; }
     .scan-picker-del:hover { color: var(--red); background: var(--red-dim); }
 
-    /* ── NAV ── */
-    #nav { display: flex; background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 0 12px; flex-shrink: 0; }
-    .nav-tab { padding: 0 16px; height: 38px; display: flex; align-items: center; gap: 6px; font-family: var(--font-cond); font-weight: 500; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); cursor: pointer; border-bottom: 2px solid transparent; position: relative; top: 1px; transition: color 0.15s; user-select: none; }
+    /* ── NAV (tabs now live inside #topbar) ── */
+    .nav-tab { padding: 0 16px; display: flex; align-items: center; gap: 6px; font-family: var(--font-cond); font-weight: 500; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); cursor: pointer; border-bottom: 2px solid transparent; position: relative; top: 1px; transition: color 0.15s; user-select: none; }
     .nav-tab:hover { color: var(--text); }
     .nav-tab.active { color: var(--teal); border-bottom-color: var(--teal); }
     .nav-tab i { font-size: 16px; }
@@ -435,36 +434,6 @@
 
   <div id="topbar">
     <div class="tb-logo"><i class="ti ti-radar-2"></i> X4 · EMPIRE INTELLIGENCE</div>
-    <div class="tb-field">
-      <div class="lbl"><i class="ti ti-user" style="font-size:10px;vertical-align:-1px"></i> Pilot</div>
-      <div class="val" id="tb-pilot">—</div>
-    </div>
-    <div class="tb-field">
-      <div class="lbl"><i class="ti ti-map-pin" style="font-size:10px;vertical-align:-1px"></i> Sector</div>
-      <div class="val teal" id="tb-sector">—</div>
-    </div>
-    <div class="tb-field">
-      <div class="lbl"><i class="ti ti-coin" style="font-size:10px;vertical-align:-1px"></i> Credits</div>
-      <div class="val amber" id="tb-credits">—</div>
-    </div>
-    <div class="tb-field">
-      <div class="lbl"><i class="ti ti-rocket" style="font-size:10px;vertical-align:-1px"></i> Ships</div>
-      <div class="val" id="tb-ships">—</div>
-    </div>
-    <div class="tb-field">
-      <div class="lbl"><i class="ti ti-building-factory-2" style="font-size:10px;vertical-align:-1px"></i> Stations</div>
-      <div class="val" id="tb-stations">—</div>
-    </div>
-    <div class="tb-field tb-scan" id="tb-scan-field" style="display:none">
-      <div class="lbl"><i class="ti ti-history" style="font-size:10px;vertical-align:-1px"></i> Scan</div>
-      <div class="scan-picker" id="scan-picker">
-        <button class="scan-picker-btn" id="scan-picker-btn" type="button" onclick="toggleScanPicker(event)">#<span id="scan-picker-label">—</span><span class="scan-picker-caret">▾</span></button>
-        <div class="scan-picker-menu" id="scan-picker-menu" style="display:none"></div>
-      </div>
-    </div>
-  </div>
-
-  <div id="nav">
     <div class="nav-tab active" onclick="switchTab('overview',this)"><i class="ti ti-layout-dashboard"></i> Overview</div>
     <div class="nav-tab" onclick="switchTab('fleet',this)"><i class="ti ti-rocket"></i> Fleets <span class="nav-badge" id="nav-ships">—</span></div>
     <div class="nav-tab" onclick="switchTab('stations',this)"><i class="ti ti-building-factory-2"></i> Stations</div>
@@ -472,6 +441,13 @@
     <div class="nav-tab" onclick="switchTab('diplomacy',this)"><i class="ti ti-world"></i> Diplomacy</div>
     <div class="nav-tab" onclick="switchTab('universe',this); initUniverseView()"><i class="ti ti-planet"></i> Universe</div>
     <div class="nav-tab" onclick="switchTab('alerts',this)"><i class="ti ti-alert-triangle"></i> Alerts <span class="nav-badge warn" id="nav-alerts">0</span></div>
+    <div class="tb-field tb-scan" id="tb-scan-field" style="display:none">
+      <div class="lbl"><i class="ti ti-history" style="font-size:10px;vertical-align:-1px"></i> Scan</div>
+      <div class="scan-picker" id="scan-picker">
+        <button class="scan-picker-btn" id="scan-picker-btn" type="button" onclick="toggleScanPicker(event)">#<span id="scan-picker-label">—</span><span class="scan-picker-caret">▾</span></button>
+        <div class="scan-picker-menu" id="scan-picker-menu" style="display:none"></div>
+      </div>
+    </div>
   </div>
 
   <div id="main">
@@ -511,6 +487,11 @@
 
       <!-- OVERVIEW TAB -->
       <div class="tab-panel active" id="tab-overview">
+
+        <div style="display:flex; align-items:baseline; gap:10px; padding-bottom:2px">
+          <div style="font-family:var(--font-cond); font-weight:600; font-size:18px; color:var(--teal)" id="ov-pilot">—</div>
+          <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-dim)">PILOT</div>
+        </div>
 
         <div>
           <div class="sec-header"><div class="sec-title">Empire Snapshot</div><div class="sec-line"></div></div>
@@ -2562,13 +2543,8 @@
     const allTrades = data.station_trades || [];
     warePrices      = data.ware_prices    || {};
 
-    // Top bar
-    document.getElementById("tb-pilot").textContent    = player.name    || "—";
-    document.getElementById("tb-sector").textContent   = player.sector  || "—";
-    document.getElementById("tb-credits").textContent  = fmtCredits(player.credits);
-    document.getElementById("tb-ships").textContent    = fleet.total          || "—";
-    document.getElementById("tb-stations").textContent = stations.length;
-    document.getElementById("nav-ships").textContent   = fleet.total          || "—";
+    document.getElementById("ov-pilot").textContent  = player.name || "—";
+    document.getElementById("nav-ships").textContent = fleet.total || "—";
     document.getElementById("sb-ships").textContent    = fleet.total          || "—";
 
     // Derived counts
