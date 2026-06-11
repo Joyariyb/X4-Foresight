@@ -85,6 +85,16 @@
     /* ── SIDEBAR ── */
     #sidebar { width: 190px; background: var(--bg-panel); border-right: 1px solid var(--border); padding: 10px 0; overflow-y: auto; flex-shrink: 0; }
     .sb-heading { font-size: 10px; font-family: var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-faint); padding: 8px 14px 3px; }
+    /* Back button — sits right-justified on the Views heading row, revealed only
+       after a cross-tab jump (pilot/ship/station link). Sheared parallelogram +
+       burnt-orange (matches the scrubber accent) with bright text, for a HUD feel. */
+    .nav-back-btn { font-family: var(--font-cond); font-weight: 700; font-size: 10px;
+                    letter-spacing: 0.12em; text-transform: uppercase; color: #ffe9d6;
+                    background: #d4540a; border: none; padding: 3px 10px 3px 11px; cursor: pointer;
+                    clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
+                    transition: background 0.12s, color 0.12s; }
+    .nav-back-btn:hover  { background: #ff6f1a; color: #fff; }
+    .nav-back-btn:active { background: #b8470a; }
     .sb-item { display: flex; align-items: center; gap: 7px; justify-content: space-between; padding: 6px 14px; font-size: 12px; font-family: var(--font-cond); letter-spacing: 0.03em; color: var(--text-dim); cursor: pointer; border-left: 2px solid transparent; transition: background 0.1s, color 0.1s; }
     .sb-item:hover { background: var(--bg-card); color: var(--text); }
     .sb-item.active { background: var(--teal-dim); color: var(--teal); border-left-color: var(--teal); }
@@ -452,7 +462,10 @@
 
   <div id="main">
     <div id="sidebar">
-      <div class="sb-heading">Views</div>
+      <div class="sb-heading" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <span>Views</span>
+        <button id="nav-back-btn" class="nav-back-btn" onclick="goBack()" style="display:none">‹ Back</button>
+      </div>
       <div class="sb-item active" onclick="switchTab('overview',null)">
         <span class="sb-item-label"><i class="ti ti-layout-dashboard"></i> Overview</span>
       </div>
@@ -942,7 +955,7 @@
       <div id="cf-${safeCode}" style="flex:1 1 360px;min-width:320px;display:flex;flex-direction:column">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
           <div style="display:flex;align-items:center;gap:6px;min-width:0">
-            <span style="font-family:var(--font-mono);font-size:8px;letter-spacing:0.18em;color:#5fe9d4;text-transform:uppercase;white-space:nowrap">Cash Flow · 24h</span>
+            <span style="font-family:var(--font-mono);font-size:8px;letter-spacing:0.18em;color:#5fe9d4;text-transform:uppercase;white-space:nowrap">Cash Flow</span>
             <button class="cf-toggle-btn active" data-mode="hourly"   onclick="setCashflowMode('${safeCode}','hourly')">Hourly</button>
             <button class="cf-toggle-btn"        data-mode="trade"    onclick="setCashflowMode('${safeCode}','trade')">By Trade</button>
             <button class="cf-toggle-btn"        data-mode="ware"     onclick="setCashflowMode('${safeCode}','ware')">By Ware</button>
@@ -2173,7 +2186,56 @@
     }).join('');
   }
 
+  // ── Back-navigation history ────────────────────────────────────────────────
+  // Cross-tab jumps (pilot/ship/station links) are otherwise one-way. Each jump
+  // records where it came from (tab + sub-tab + scroll) so the orange Back button
+  // on the Views heading can return there. A manual tab switch clears the trail.
+  const _navStack = [];
+  let   _navGuard = false; // true while a jump/goBack drives switchTab, so the
+                           // clear-on-manual-nav rule doesn't wipe the trail.
+
+  function _navSnapshot() {
+    const panel   = document.querySelector('.tab-panel.active');
+    const content = document.getElementById('content');
+    return {
+      tab:          panel ? panel.id.replace(/^tab-/, '') : 'overview',
+      scrollTop:    content ? content.scrollTop : 0,
+      fleetFaction: document.querySelector('.fleet-subtab[data-faction].active')?.dataset.faction || null,
+      crewRole:     document.querySelector('#crew-subtabs .fleet-subtab.active')?.dataset.role || null,
+    };
+  }
+  function _navRecord() {            // start of a jump: remember where we are now
+    _navStack.push(_navSnapshot());
+    if (_navStack.length > 25) _navStack.shift();
+    _navGuard = true;
+  }
+  function _navAfterJump() {         // right after the jump's switchTab call
+    _navGuard = false;
+    _updateBackBtn();
+  }
+  function _updateBackBtn() {
+    const btn = document.getElementById('nav-back-btn');
+    if (btn) btn.style.display = _navStack.length ? '' : 'none';
+  }
+  function goBack() {
+    const s = _navStack.pop();
+    if (!s) return;
+    _navGuard = true;
+    const navTab = document.querySelector(`.nav-tab[onclick*="'${s.tab}'"]`);
+    switchTab(s.tab, navTab);
+    // Restore the sub-view too so you land exactly where you left.
+    if (s.tab === 'fleet' && s.fleetFaction) switchFleetTab(s.fleetFaction);
+    if (s.tab === 'crew'  && s.crewRole)     switchCrewRole(s.crewRole);
+    _navGuard = false;
+    const content = document.getElementById('content');
+    // Scroll restores after the panel is laid out (it was display:none).
+    requestAnimationFrame(() => { if (content) content.scrollTop = s.scrollTop; });
+    _updateBackBtn();
+  }
+
   function switchTab(name, clickedEl) {
+    // A manual tab switch (not driven by a jump or goBack) ends the back trail.
+    if (!_navGuard) { _navStack.length = 0; _updateBackBtn(); }
     document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
     document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
     document.getElementById("tab-" + name).classList.add("active");
@@ -2366,8 +2428,10 @@
   // Navigate from a fleet-table pilot name to that pilot's crew file.
   // Switches to the Crew tab, filters to Pilots, selects the row, and scrolls it into view.
   function jumpToCrew(allCrewIdx) {
+    _navRecord();
     const crewNavTab = document.querySelector('.nav-tab[onclick*="\'crew\'"]');
     switchTab('crew', crewNavTab);
+    _navAfterJump();
     switchCrewRole('pilot', document.querySelector('#crew-subtabs [data-role="pilot"]'));
     const filteredIdx = filteredCrewData.indexOf(allCrewData[allCrewIdx]);
     if (filteredIdx === -1) return;
@@ -2394,8 +2458,10 @@
   // Called from .stn-link clicks in the fleet table so the user can jump
   // straight from a ship row to its home station.
   function goToStation(code) {
+    _navRecord();
     const stationsTab = document.querySelector('.nav-tab[onclick*="\'stations\'"]');
     switchTab('stations', stationsTab);
+    _navAfterJump();
     const card = document.getElementById('station-' + code);
     if (card) card.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }
@@ -2438,9 +2504,11 @@
   // colour so the user can spot it instantly.
   // faction defaults to 'player'; pass a faction id (e.g. 'civilian') for NPC ships.
   function jumpToShip(code, faction) {
+    _navRecord();
     faction = faction || 'player';
     const fleetNavTab = document.querySelector('.nav-tab[onclick*="\'fleet\'"]');
     switchTab('fleet', fleetNavTab);
+    _navAfterJump();
     switchFleetTab(faction, document.querySelector(`.fleet-subtab[data-faction="${faction}"]`));
 
     // Player ships live in #fleet-table; NPC ships live in their own per-faction table.
