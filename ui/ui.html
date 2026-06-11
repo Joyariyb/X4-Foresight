@@ -463,37 +463,40 @@
   <div id="main">
     <div id="sidebar">
       <div class="sb-heading" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <span>Views</span>
+        <span>Files</span>
         <button id="nav-back-btn" class="nav-back-btn" onclick="goBack()" style="display:none">‹ Back</button>
       </div>
-      <div class="sb-item active" onclick="switchTab('overview',null)">
-        <span class="sb-item-label"><i class="ti ti-layout-dashboard"></i> Overview</span>
+      <div class="sb-item" onclick="requestNewScan()">
+        <span class="sb-item-label"><i class="ti ti-radar-2"></i> New Scan</span>
       </div>
       <div class="sb-item" onclick="switchTab('fleet',null)">
-        <span class="sb-item-label"><i class="ti ti-rocket"></i> All Ships</span>
-        <span class="sb-count" id="sb-ships">—</span>
+        <span class="sb-item-label"><i class="ti ti-rocket"></i> Fleet Designs</span>
       </div>
       <div class="sb-divider"></div>
-      <div class="sb-heading">Fleet</div>
+      <div class="sb-heading">Advisors</div>
       <div class="sb-item" id="sb-military">
         <span class="sb-item-label"><i class="ti ti-sword"></i> Military</span>
-        <span class="sb-count">—</span>
       </div>
       <div class="sb-item" id="sb-traders">
         <span class="sb-item-label"><i class="ti ti-package"></i> Traders</span>
-        <span class="sb-count">—</span>
       </div>
       <div class="sb-item" id="sb-miners">
         <span class="sb-item-label"><i class="ti ti-shovel"></i> Miners</span>
-        <span class="sb-count">—</span>
       </div>
-      <div class="sb-item warn" id="sb-hostile">
-        <span class="sb-item-label"><i class="ti ti-alert-triangle"></i> Hostile Hulls</span>
-        <span class="sb-count">—</span>
+      <div class="sb-item" id="sb-hostile">
+        <span class="sb-item-label"><i class="ti ti-alert-triangle"></i> Economic</span>
       </div>
       <div class="sb-divider"></div>
-      <div class="sb-heading">Stations</div>
-      <div id="sb-stations-list"></div>
+      <div class="sb-heading">JSON Exports</div>
+      <div class="sb-item">
+        <span class="sb-item-label"><i class="ti ti-database-export"></i> Economy</span>
+      </div>
+      <div class="sb-item">
+        <span class="sb-item-label"><i class="ti ti-database-export"></i> Ship</span>
+      </div>
+      <div class="sb-item">
+        <span class="sb-item-label"><i class="ti ti-database-export"></i> Station</span>
+      </div>
     </div>
 
     <div id="content">
@@ -2613,27 +2616,10 @@
 
     document.getElementById("ov-pilot").textContent  = player.name || "—";
     document.getElementById("nav-ships").textContent = fleet.total || "—";
-    document.getElementById("sb-ships").textContent    = fleet.total          || "—";
 
-    // Derived counts
+    // Derived counts (used for alerts badge)
     const hostile  = players.filter(s => HOSTILE_ORIGINS.has(s.hull_origin));
-    const military = players.filter(s => MILITARY_ROLES.has(s.role));
-    const traders  = players.filter(s => s.role === "Freighter" || s.role === "Frigate");
-    const miners   = players.filter(s => MINER_ROLES.has(s.role));
     const waiting  = players.filter(s => s.order === "Waiting");
-
-    // Sidebar counts
-    document.getElementById("sb-military").innerHTML = `<span class="sb-item-label"><i class="ti ti-sword"></i> Military</span><span class="sb-count">${military.length}</span>`;
-    document.getElementById("sb-traders").innerHTML  = `<span class="sb-item-label"><i class="ti ti-package"></i> Traders</span><span class="sb-count">${traders.length}</span>`;
-    document.getElementById("sb-miners").innerHTML   = `<span class="sb-item-label"><i class="ti ti-shovel"></i> Miners</span><span class="sb-count">${miners.length}</span>`;
-    document.getElementById("sb-hostile").innerHTML  = `<span class="sb-item-label"><i class="ti ti-alert-triangle"></i> Hostile Hulls</span><span class="sb-count">${hostile.length}</span>`;
-
-    // Sidebar stations
-    const bySector = {};
-    stations.forEach(s => { bySector[s.sector] = (bySector[s.sector]||0)+1; });
-    document.getElementById("sb-stations-list").innerHTML = Object.entries(bySector).map(([sec,c]) =>
-      `<div class="sb-item"><span class="sb-item-label"><i class="ti ti-building-factory-2"></i> ${sec}</span><span class="sb-count">${c}</span></div>`
-    ).join("");
 
     // Alerts badge
     const alertCount = (hostile.length > 0 ? 1 : 0) + (waiting.length > 0 ? 1 : 0);
@@ -4742,6 +4728,23 @@
       } catch(e) {
         document.getElementById("loading").textContent = "Error parsing data: " + e;
       }
+    });
+  }
+
+  // Ask the Python backend to show the save-picker and run a fresh scan.
+  // When the scan completes the picker and data are refreshed automatically.
+  function requestNewScan() {
+    if (!_bridge) return;
+    _bridge.trigger_scan(function(jsonStr) {
+      try {
+        const result = JSON.parse(jsonStr);
+        if (result.ok) {
+          _bridge.list_scans(function(scansStr) {
+            try { populateScanPicker(JSON.parse(scansStr)); } catch(e) {}
+          });
+          loadScan(-1);
+        }
+      } catch(e) {}
     });
   }
 

@@ -329,6 +329,21 @@ class EmpireBridge(QObject):
     slots on. The page owns the parse.
     """
 
+    def __init__(self, window=None):
+        super().__init__()
+        self._window = window
+
+    @pyqtSlot(result=str)
+    def trigger_scan(self) -> str:
+        """Show the save-picker and run the scan pipeline on the main thread.
+        Returns {"ok": true} on success or {"ok": false, "cancelled": true} if
+        the user dismissed the dialog without scanning."""
+        try:
+            success = run_scan(self._window)
+            return json.dumps({"ok": success, "cancelled": not success})
+        except Exception as e:
+            return json.dumps({"ok": False, "error": str(e)})
+
     @pyqtSlot(int, result=str)
     def get_empire_data(self, scan_id: int = -1) -> str:
         """Return the export JSON for `scan_id`; -1 (the JS default) = latest scan."""
@@ -392,7 +407,7 @@ class EmpireWindow(QMainWindow):
 
         self.view    = QWebEngineView()
         self.channel = QWebChannel()
-        self.bridge  = EmpireBridge()
+        self.bridge  = EmpireBridge(self)
         self.channel.registerObject("bridge", self.bridge)
         self.view.page().setWebChannel(self.channel)
         self.setCentralWidget(self.view)
