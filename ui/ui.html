@@ -37,7 +37,13 @@
 
     html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: 14px; overflow: hidden; }
 
-    #shell { display: flex; flex-direction: column; height: 100vh; }
+    /* height:100% (not 100vh): with the CSS zoom updateZoom() puts on <html>,
+       Chromium computes 100vh larger than the real viewport, so the shell
+       overflowed <body> and scrollIntoView (crew/station/ship jump links)
+       could scroll the overflow:hidden body — pushing the top bars off-screen
+       with no way to scroll back. 100% chains through html/body, which are
+       zoom-aware, so the shell always exactly fits and body never scrolls. */
+    #shell { display: flex; flex-direction: column; height: 100%; }
 
     /* ── TOP BAR ── */
     #topbar { display: flex; align-items: stretch; background: var(--bg-panel); border-bottom: 1px solid var(--border); height: 48px; flex-shrink: 0; }
@@ -324,16 +330,12 @@
                           font-family:var(--font-mono); font-size:7px;
                           color:rgba(94,234,212,0.50); pointer-events:none; }
 
-    /* ── SORT DROPDOWN (NPC fleet panels) ── */
-    /* Sits inline in the section header, right of the divider line */
-    .sort-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); flex-shrink: 0; }
-    .sort-select { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 6px; border-radius: 2px; border: 1px solid var(--border); background: var(--bg-card); color: var(--teal); cursor: pointer; outline: none; flex-shrink: 0; }
-    .sort-select:hover { border-color: var(--teal); }
-
-    /* ── SORTABLE COLUMN HEADERS (player fleet table) ── */
-    #fleet-table th[data-sort-key] { cursor: pointer; user-select: none; }
-    #fleet-table th[data-sort-key]:hover { color: var(--teal); }
-    #fleet-table th.sort-active { color: var(--teal); }
+    /* ── SORTABLE COLUMN HEADERS ── */
+    /* Shared by the player fleet, NPC fleet and crew tables so every table
+       sorts the same way: click a header to sort, click again to reverse. */
+    .data-table th[data-sort-key] { cursor: pointer; user-select: none; }
+    .data-table th[data-sort-key]:hover { color: var(--teal); }
+    .data-table th.sort-active { color: var(--teal); }
 
     /* ── FLEET SUB-TABS ── */
     /* Badge style — matches the hull-type chips in the ship tables */
@@ -580,7 +582,13 @@
           <div class="crew-roster panel">
             <table class="data-table" id="crew-table">
               <thead>
-                <tr><th>Name</th><th>Role</th><th>Primary Skill</th><th>Assigned To</th><th>Sector</th></tr>
+                <tr>
+                  <th data-sort-key="name"     onclick="setCrewSort('name')">Name</th>
+                  <th data-sort-key="role"     onclick="setCrewSort('role')">Role</th>
+                  <th data-sort-key="skill"    onclick="setCrewSort('skill')">Primary Skill</th>
+                  <th data-sort-key="assigned" onclick="setCrewSort('assigned')">Assigned To</th>
+                  <th data-sort-key="sector"   onclick="setCrewSort('sector')">Sector</th>
+                </tr>
               </thead>
               <tbody></tbody>
             </table>
@@ -1364,6 +1372,7 @@
         <div class="cf-scrubber-resize" data-side="right"></div>
       </div>
       <span class="cf-scrubber-label" style="left:3px">-24H</span>
+      <span class="cf-scrubber-label" style="left:50%;transform:translate(-50%,-50%)">DRAG &amp; RESIZE</span>
       <span class="cf-scrubber-label" style="right:3px">NOW</span>
     </div>`;
   }
@@ -1702,18 +1711,24 @@
     renderFleet(allPlayerShips, currentSortKey, currentSortDir);
   }
 
-  // Highlights the active sort column and shows the direction arrow in its header.
-  function updateFleetSortHeaders() {
-    document.querySelectorAll('#fleet-table th[data-sort-key]').forEach(th => {
-      const key      = th.dataset.sortKey;
-      const isActive = key === currentSortKey;
+  // Highlights the active sort column and shows the direction arrow in its
+  // header. Shared by the player fleet, NPC fleet and crew tables — pass the
+  // table's selector plus that table's own sort state. activeKey may be null
+  // (crew table before any header is clicked) — every header just shows plain.
+  function updateSortHeaders(tableSelector, activeKey, dir) {
+    document.querySelectorAll(`${tableSelector} th[data-sort-key]`).forEach(th => {
+      const isActive = th.dataset.sortKey === activeKey;
       th.classList.toggle('sort-active', isActive);
       // Cache the original label text on first call so we can restore it cleanly.
       if (!th.dataset.label) th.dataset.label = th.textContent.trim();
       th.textContent = isActive
-        ? `${th.dataset.label} ${currentSortDir === 1 ? '↑' : '↓'}`
+        ? `${th.dataset.label} ${dir === 1 ? '↑' : '↓'}`
         : th.dataset.label;
     });
+  }
+
+  function updateFleetSortHeaders() {
+    updateSortHeaders('#fleet-table', currentSortKey, currentSortDir);
   }
 
 
@@ -1798,11 +1813,8 @@
   const npcSortState  = {};  // { factionId: { key, dir } }
   const npcShipsCache = {};  // { factionId: [...ships] }
 
-  const NPC_SORT_LABELS = {
-    name: 'Name', role: 'Role', size: 'Size',
-    order: 'Order', sector: 'Sector', hull_origin: 'Hull Origin',
-  };
-
+  // Same toggle behaviour as the player table's setSort(): clicking the active
+  // column reverses direction, clicking a new column starts ascending.
   function setNpcSort(factionId, key) {
     const state = npcSortState[factionId];
     if (key === state.key) {
@@ -1811,10 +1823,6 @@
       state.key = key;
       state.dir = 1;
     }
-    document.getElementById(`npc-sort-select-${factionId}`).value = '';
-    const arrow = state.dir === 1 ? '↑' : '↓';
-    document.getElementById(`npc-sort-indicator-${factionId}`).textContent =
-      `${NPC_SORT_LABELS[key] || key} ${arrow}`;
     renderNpcFleet(npcShipsCache[factionId], factionId);
   }
 
@@ -1822,6 +1830,7 @@
     const tbody = document.querySelector(`#npc-table-${factionId} tbody`);
     if (!tbody) return;
     const state  = npcSortState[factionId] || { key: 'role', dir: 1 };
+    updateSortHeaders(`#npc-table-${factionId}`, state.key, state.dir);
     const sorted = [...ships].sort((a, b) => {
       const av = sortValue(a, state.key);
       const bv = sortValue(b, state.key);
@@ -1906,10 +1915,58 @@
     renderCrewRoster();
   }
 
+  // Crew column sort. crewSortKey starts null = keep the save-file order until
+  // a header is clicked, so the roster looks the same as before this feature.
+  let crewSortKey = null;
+  let crewSortDir = 1;
+
+  // Comparable value per crew member and sort key (same null-to-bottom contract
+  // as the fleet tables' sortValue()).
+  function crewSortValue(c, key) {
+    if (key === 'skill') {
+      // Sort by each member's PRIMARY skill — the one their roster row displays.
+      const primaryKey = ROLE_PRIMARY[c.role] || 'piloting';
+      return c.skills ? (c.skills[primaryKey] ?? null) : null;
+    }
+    if (key === 'assigned') return c.assigned_to ? c.assigned_to.toLowerCase() : null;
+    if (key === 'sector')   return c.sector ? c.sector.toLowerCase() : null;
+    return (c[key] || '').toString().toLowerCase();
+  }
+
+  function setCrewSort(key) {
+    if (key === crewSortKey) {
+      crewSortDir *= -1;
+    } else {
+      crewSortKey = key;
+      // Skill defaults to descending — best crew first, like the player
+      // table's pilot column.
+      crewSortDir = key === 'skill' ? -1 : 1;
+    }
+    renderCrewRoster();
+  }
+
   function renderCrewRoster() {
     filteredCrewData = crewRoleFilter === 'all'
       ? allCrewData
       : allCrewData.filter(c => c.role === crewRoleFilter);
+
+    // Sort a COPY — when the filter is 'all', filteredCrewData aliases
+    // allCrewData, and sorting that in place would silently reorder it,
+    // breaking the data-crew-idx indexes stored in the fleet table's rows.
+    if (crewSortKey) {
+      filteredCrewData = [...filteredCrewData].sort((a, b) => {
+        const av = crewSortValue(a, crewSortKey);
+        const bv = crewSortValue(b, crewSortKey);
+        // Nulls always sink to the bottom regardless of direction.
+        if (av === null && bv === null) return 0;
+        if (av === null) return 1;
+        if (bv === null) return -1;
+        if (av < bv) return -1 * crewSortDir;
+        if (av > bv) return  1 * crewSortDir;
+        return 0;
+      });
+    }
+    updateSortHeaders('#crew-table', crewSortKey, crewSortDir);
 
     document.querySelector('#crew-table tbody').innerHTML = filteredCrewData.map((c, i) => {
       const primaryKey = ROLE_PRIMARY[c.role] || 'piloting';
@@ -2303,25 +2360,22 @@
       panel.id = 'fleet-panel-' + factionId;
       npcSortState[factionId]  = { key: 'role', dir: 1 };
       npcShipsCache[factionId] = fShips;
+      // Headers are clickable sorters, same interaction as the player table
+      // (the old sort dropdown predates sortable headers and is gone).
       panel.innerHTML = `
         <div class="sec-header">
           <div class="sec-title">${fullName} Ships</div>
           <div class="sec-line"></div>
-          <span class="sort-label">Sort</span>
-          <span id="npc-sort-indicator-${factionId}" style="font-family:var(--font-mono);font-size:10px;color:var(--teal);flex-shrink:0">Role ↑</span>
-          <select class="sort-select" id="npc-sort-select-${factionId}" onchange="setNpcSort('${factionId}', this.value)">
-            <option value="" disabled selected hidden>Change…</option>
-            <option value="role">Role</option>
-            <option value="name">Name</option>
-            <option value="size">Size</option>
-            <option value="order">Order</option>
-            <option value="sector">Sector</option>
-            <option value="hull_origin">Hull Origin</option>
-          </select>
         </div>
         <div class="panel" style="overflow:auto; max-height: calc(100vh - 200px);">
           <table class="data-table" id="npc-table-${factionId}">
-            <thead><tr><th>Name / Code</th><th>Size</th><th>Hull Type</th><th>Order</th><th>Sector</th></tr></thead>
+            <thead><tr>
+              <th data-sort-key="name"   onclick="setNpcSort('${factionId}','name')">Name / Code</th>
+              <th data-sort-key="size"   onclick="setNpcSort('${factionId}','size')">Size</th>
+              <th data-sort-key="role"   onclick="setNpcSort('${factionId}','role')">Hull Type</th>
+              <th data-sort-key="order"  onclick="setNpcSort('${factionId}','order')">Order</th>
+              <th data-sort-key="sector" onclick="setNpcSort('${factionId}','sector')">Sector</th>
+            </tr></thead>
             <tbody></tbody>
           </table>
         </div>`;
@@ -2981,7 +3035,8 @@
 
   // Jump gate positions within each sector, sourced from qsna.eu/api/x4/map (2026-06-07).
   // Format: sector_macro → [[abs_x_km, abs_z_km, target_cluster_num], ...]
-  // abs_x/z are offset from sector center. Gate scale: SECTOR_SZ / 300 SVG units per km.
+  // abs_x/z are offset from sector center, scaled per cluster: ±300 km maps to
+  // that cluster's sub-hex radius (which depends on its sector count).
   // Sectors with no gate data fall back to sub-hex center as line endpoint.
   const GATE_POS = {
     "cluster_01_sector001_macro":[[79,-25.34,4],[-191.49,34.01,5]],
@@ -3124,15 +3179,24 @@
     "cluster_740_sector001_macro":[[225,-25,725]],
   };
 
-  // Relative offsets (as fraction of BASE_HEX) for sector sub-hexes within a cluster.
-  // Indexed by sector count minus one: SECTOR_OFFSETS[0] = 1 sector, etc.
-  const SECTOR_OFFSETS = [
-    [[0, 0]],
-    [[-0.38, 0], [0.38, 0]],
-    [[0, -0.40], [-0.35, 0.22], [0.35, 0.22]],
-    [[-0.35, -0.25], [0.35, -0.25], [-0.35, 0.25], [0.35, 0.25]],
-    [[0,-0.42],[-0.38,-0.13],[0.38,-0.13],[-0.25,0.35],[0.25,0.35]],
-    [[-0.35,-0.38],[0.35,-0.38],[-0.42,0.05],[0.42,0.05],[-0.20,0.38],[0.20,0.38]],
+  // Sector sub-hex layouts within a cluster, indexed by sector count minus one.
+  // Each entry is { r, offs }: `r` is the sub-hex radius and `offs` the centre
+  // offsets, both as fractions of the drawn cluster hex radius. Sized so the
+  // sectors FILL the cluster: a lone sector covers the whole cluster hex, and
+  // multi-sector layouts are exact honeycomb fragments — sub-hexes share edges
+  // with each other and their outer vertices land exactly on the cluster
+  // boundary (flat-top axial geometry: edge-adjacent centres sit √3·r apart
+  // along (±1.5r, ±(√3/2)r) or (0, ±√3·r)).
+  const SECTOR_LAYOUTS = [
+    { r: 1.000, offs: [[0, 0]] },
+    // 2 sectors: each half-size hex is the cluster hex scaled by 0.5 toward an
+    // opposite corner (upper-left / lower-right), so it nests flush against two
+    // outline edges and the inner tips meet at the cluster centre.
+    { r: 0.500, offs: [[-0.25, -0.433], [0.25, 0.433]] },
+    { r: 0.500, offs: [[-0.5, 0], [0.25, -0.433], [0.25, 0.433]] },
+    { r: 0.400, offs: [[-0.30, -0.5196], [-0.30, 0.1732], [0.30, -0.1732], [0.30, 0.5196]] },
+    { r: 0.333, offs: [[0, 0], [-0.5, -0.2887], [0.5, -0.2887], [-0.5, 0.2887], [0.5, 0.2887]] },
+    { r: 0.333, offs: [[0, -0.5774], [-0.5, -0.2887], [0.5, -0.2887], [-0.5, 0.2887], [0.5, 0.2887], [0, 0.5774]] },
   ];
 
   let _universeBuilt    = false; // SVG elements created at least once
@@ -3247,7 +3311,10 @@
     if (!vp) return;
 
     const BASE_HEX   = 48;
-    const SECTOR_SZ  = BASE_HEX * 0.30; // sub-hex radius
+    // Sub-hexes are sized relative to the *drawn* cluster body (BASE_HEX - 1.5
+    // inset) so a single-sector cluster's sub-hex exactly overlaps the cluster
+    // outline instead of poking past it.
+    const HEX_BODY   = BASE_HEX - 1.5;
     const SQRT3      = Math.sqrt(3);
 
     // Flat-top axial → pixel center. Y is negated so the galaxy matches the
@@ -3320,14 +3387,17 @@
       const { x: _cx, y: _cy } = hexCenter(_q, _r);
       const _secs = (clusterInfo[_m] || {}).sectors || [];
       if (!_secs.length) continue;
-      const _offs = SECTOR_OFFSETS[Math.min(_secs.length, SECTOR_OFFSETS.length) - 1];
+      const _lay = SECTOR_LAYOUTS[Math.min(_secs.length, SECTOR_LAYOUTS.length) - 1];
       _secs.forEach((sec, i) => {
-        const [ox, oy] = _offs[i] || [0, 0];
+        const [ox, oy] = _lay.offs[i] || [0, 0];
         sectorPos[sec.sector_macro] = {
           clusterMacro: _m,
           cx: _cx, cy: _cy,
-          sx: _cx + ox * BASE_HEX,
-          sy: _cy + oy * BASE_HEX,
+          sx: _cx + ox * HEX_BODY,
+          sy: _cy + oy * HEX_BODY,
+          // Gate positions are ±300 km in sector space; scale them to this
+          // cluster's sub-hex radius (which varies with sector count).
+          gateScale: (_lay.r * HEX_BODY) / 300,
           color: FACTION_COLOURS[sec.owner_id] || '#6e7681',
         };
       });
@@ -3366,9 +3436,6 @@
     cgSector.appendChild(cgSecGlow);
     cgSector.appendChild(cgSecCore);
 
-    // Gate positions scale: sector space ±300 km → SECTOR_SZ SVG units.
-    const GATE_SCALE = SECTOR_SZ / 300;
-
     // Extract the cluster number from a cluster_macro string (e.g. "cluster_401_macro" → 401).
     function clusterNum(macro) {
       const m = (macro || '').match(/cluster_0*(\d+)_macro/i);
@@ -3376,14 +3443,16 @@
     }
 
     // Return the SVG position of the gate in sectorMacro that connects to targetClusterMacro.
+    // gateScale converts ±300 km sector space to that sector's sub-hex radius
+    // (per-sector because sub-hex size now depends on the cluster's sector count).
     // Falls back to the sector sub-hex centre (fallbackX, fallbackY) when not found.
-    function gateXY(sectorMacro, targetClusterMacro, fallbackX, fallbackY) {
+    function gateXY(sectorMacro, targetClusterMacro, fallbackX, fallbackY, gateScale) {
       const tgt   = clusterNum(targetClusterMacro);
       const gates = GATE_POS[(sectorMacro || '').toLowerCase()];
       if (tgt && gates) {
         const g = gates.find(entry => entry[2] === tgt);
-        if (g) return { x: fallbackX + g[0] * GATE_SCALE,
-                        y: fallbackY - g[1] * GATE_SCALE }; // negate z → SVG y
+        if (g) return { x: fallbackX + g[0] * gateScale,
+                        y: fallbackY - g[1] * gateScale }; // negate z → SVG y
       }
       return { x: fallbackX, y: fallbackY };
     }
@@ -3417,8 +3486,8 @@
       }
 
       // Sector-level: gate position → gate position (falls back to sub-hex centre).
-      const ptA = gateXY(edge[0], b.clusterMacro, a.sx, a.sy);
-      const ptB = gateXY(edge[1], a.clusterMacro, b.sx, b.sy);
+      const ptA = gateXY(edge[0], b.clusterMacro, a.sx, a.sy, a.gateScale);
+      const ptB = gateXY(edge[1], a.clusterMacro, b.sx, b.sy, b.gateScale);
       const gs = el('linearGradient', {
         id: id + 's', gradientUnits: 'userSpaceOnUse',
         x1: ptA.x, y1: ptA.y, x2: ptB.x, y2: ptB.y,
@@ -3467,19 +3536,22 @@
       g.appendChild(lbl);
       _uLabelEls.push(lbl);
 
-      // Sector sub-hexes (visible at zoom ≥ 1.60)
+      // Sector sub-hexes (visible at zoom ≥ 1.60).
+      // Must use the same layout/position formulas as the sectorPos loop above
+      // so gate connection line endpoints match the drawn hexes exactly.
       if (sectors.length > 0) {
-        const offsets = SECTOR_OFFSETS[Math.min(sectors.length, SECTOR_OFFSETS.length) - 1];
-        const sg      = el('g', { class: 'u-sector-hex' });
+        const layout = SECTOR_LAYOUTS[Math.min(sectors.length, SECTOR_LAYOUTS.length) - 1];
+        const subR   = layout.r * HEX_BODY;
+        const sg     = el('g', { class: 'u-sector-hex' });
 
         sectors.forEach((sec, i) => {
-          const [ox, oy] = offsets[i] || [0, 0];
-          const sx = cx + ox * BASE_HEX;
-          const sy = cy + oy * BASE_HEX;
+          const [ox, oy] = layout.offs[i] || [0, 0];
+          const sx = cx + ox * HEX_BODY;
+          const sy = cy + oy * HEX_BODY;
           const sc = FACTION_COLOURS[sec.owner_id] || '#6e7681';
 
           sg.appendChild(el('polygon', {
-            points:         hexPoints(sx, sy, SECTOR_SZ - 0.5),
+            points:         hexPoints(sx, sy, subR - 0.5),
             fill:           hexToRgba(sc, 0.20),
             stroke:         hexToRgba(sc, 0.75),
             'stroke-width': '0.8',
