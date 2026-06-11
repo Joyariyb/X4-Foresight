@@ -101,7 +101,11 @@
        will-change keeps it on its own GPU layer so per-frame transform updates
        are a cheap composite; transform-origin 0 0 makes the gesture-delta maths
        in _uApplyTransform line up with the committed <g> translate/scale. */
-    #universe-zoom-layer { width: 100%; height: 100%; will-change: transform; transform-origin: 0 0; }
+    /* Overscan: the layer paints 50% beyond each edge of the wrap (200% size,
+       offset -50%) so that mid-gesture pans reveal already-painted map instead
+       of blank space. The wrap's overflow:hidden clips the excess. JS reads the
+       actual offset via offsetLeft/Top, so only this rule defines the amount. */
+    #universe-zoom-layer { position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; will-change: transform; transform-origin: 0 0; }
     #universe-svg { width: 100%; height: 100%; display: block; }
     /* SVG text labels — font set by CSS; opacity toggled via parent class flags */
     #universe-viewport { --u-label-font: 11px; --u-sector-label-font: 9px; }
@@ -1020,16 +1024,20 @@
       const glowId = `holo-glow-${safeCode}-h`, fillId = `cashfill-${safeCode}-h`;
 
       // Bucket centres are arranged right→left (bucket 0 = rightmost = most recent).
+      // The scrubber produces fractional windows (e.g. 4.37h → 5 buckets), so the
+      // oldest bucket is usually cut off by the left edge. Plot it at the centre
+      // of its *visible* span — min(i+1, windowHours) caps the bucket end at the
+      // window edge — otherwise its vertex lands left of the y-axis.
+      const bucketCentre = i => offsetHours + (i + Math.min(i + 1, windowHours)) / 2;
       const ordered = [];
       for (let i = numHours - 1; i >= 0; i--) {
-        ordered.push([xOf(offsetHours + i + 0.5), net[i]]);
+        ordered.push([xOf(bucketCentre(i)), net[i]]);
       }
       const linePts = ordered.map(([x, v]) => `${x.toFixed(1)},${yOf(v).toFixed(1)}`).join(' ');
       const areaPath = `M ${ordered[0][0].toFixed(1)} ${zeroY.toFixed(1)} ` +
                        ordered.map(([x, v]) => `L ${x.toFixed(1)} ${yOf(v).toFixed(1)}`).join(' ') +
                        ` L ${ordered[ordered.length - 1][0].toFixed(1)} ${zeroY.toFixed(1)} Z`;
 
-      const colW = pw / numHours;
       const markers = [], hitCols = [];
       for (let i = 0; i < numHours; i++) {
         const rows = [];
@@ -1040,14 +1048,18 @@
         });
         if (!rows.length) continue;
         rows.sort((a, b) => Math.abs(b.cr) - Math.abs(a.cr));
-        const cx = xOf(offsetHours + i + 0.5).toFixed(1), cy = yOf(net[i]).toFixed(1);
+        const cx = xOf(bucketCentre(i)).toFixed(1), cy = yOf(net[i]).toFixed(1);
         const dotCol = net[i] >= 0 ? '#5eead4' : '#ef5350';
         markers.push(`<circle cx="${cx}" cy="${cy}" r="2.6" fill="${dotCol}" filter="url(#${glowId})"/>
                       <circle cx="${cx}" cy="${cy}" r="2.2" fill="${dotCol}"/>`);
         // hAgo = absolute hours-ago for the bucket start (rounded to nearest hour).
         const tipHAgo = Math.round(offsetHours + i);
         const tip = encodeURIComponent(JSON.stringify({ hAgo: tipHAgo, net: net[i], rows }));
-        hitCols.push(`<rect class="cf-col" x="${xOf(offsetHours + i + 1).toFixed(1)}" y="${mt}" width="${colW.toFixed(1)}" height="${ph}" data-cashflow-tip="${tip}"></rect>`);
+        // Hover column spans the bucket's visible hours exactly — the oldest
+        // bucket is capped at the window edge so the rect never leaves the plot.
+        const colX1 = xOf(offsetHours + Math.min(i + 1, windowHours));
+        const colX2 = xOf(offsetHours + i);
+        hitCols.push(`<rect class="cf-col" x="${colX1.toFixed(1)}" y="${mt}" width="${(colX2 - colX1).toFixed(1)}" height="${ph}" data-cashflow-tip="${tip}"></rect>`);
       }
 
       return `
@@ -1061,14 +1073,19 @@
                 <stop offset="${zeroFrac}" stop-color="#ef5350" stop-opacity="0.05"/>
                 <stop offset="1"           stop-color="#ef5350" stop-opacity="0.30"/>
               </linearGradient>
+              <clipPath id="cfclip-${safeCode}-h"><rect x="${ml}" y="${mt}" width="${pw}" height="${ph}"/></clipPath>
             </defs>
             <rect x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="#020a10"/>
             ${yAxisHtml(yOf, axBot, axTop, step)}
             ${xTicksHtml}
-            <path d="${areaPath}" fill="url(#${fillId})" stroke="none"/>
-            <polyline points="${linePts}" fill="none" stroke="#2dd4bf" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" opacity="0.35" filter="url(#${glowId})"/>
-            <polyline points="${linePts}" fill="none" stroke="#5eead4" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
-            ${markers.join('')}
+            <!-- Data layer is clipped to the plot rect so strokes/glow can never
+                 spill past the axes, whatever the zoom window does. -->
+            <g clip-path="url(#cfclip-${safeCode}-h)">
+              <path d="${areaPath}" fill="url(#${fillId})" stroke="none"/>
+              <polyline points="${linePts}" fill="none" stroke="#2dd4bf" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" opacity="0.35" filter="url(#${glowId})"/>
+              <polyline points="${linePts}" fill="none" stroke="#5eead4" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+              ${markers.join('')}
+            </g>
             <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="#19e6c8" stroke-opacity="0.35" stroke-width="1"/>
             <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.6"
                   style="font-family:var(--font-mono);font-size:8px;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">CREDITS/HR</text>
@@ -1135,14 +1152,18 @@
                 <stop offset="${zeroFrac}" stop-color="#ef5350" stop-opacity="0.04"/>
                 <stop offset="1"           stop-color="#ef5350" stop-opacity="0.45"/>
               </linearGradient>
+              <clipPath id="cfclip-${safeCode}-d"><rect x="${ml}" y="${mt}" width="${pw}" height="${ph}"/></clipPath>
             </defs>
             <rect x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="#020a10"/>
             ${yAxisHtml(yOf, axBot, axTop, step)}
             ${xTicksHtml}
-            <path d="${areaPath}" fill="url(#${fillId})" stroke="none"/>
-            <polyline points="${linePts}" fill="none" stroke="#2dd4bf" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" opacity="0.45" filter="url(#${glowId})"/>
-            <polyline points="${linePts}" fill="none" stroke="#7af5e4" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
-            ${dots}
+            <!-- Clipped like the hourly chart — see comment there. -->
+            <g clip-path="url(#cfclip-${safeCode}-d)">
+              <path d="${areaPath}" fill="url(#${fillId})" stroke="none"/>
+              <polyline points="${linePts}" fill="none" stroke="#2dd4bf" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" opacity="0.45" filter="url(#${glowId})"/>
+              <polyline points="${linePts}" fill="none" stroke="#7af5e4" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+              ${dots}
+            </g>
             <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="#19e6c8" stroke-opacity="0.35" stroke-width="1"/>
             <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.6"
                   style="font-family:var(--font-mono);font-size:8px;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">TRADE SIZE · CR</text>
@@ -1330,10 +1351,16 @@
       return `
         <div style="background:#030d14;border:1px solid rgba(25,230,200,0.18);border-radius:3px;box-shadow:inset 0 0 24px rgba(25,230,200,0.05);padding:4px">
           <svg viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:auto">
+            <defs>
+              <clipPath id="cfclip-${safeCode}-w"><rect x="${ml}" y="${mt}" width="${pw}" height="${ph}"/></clipPath>
+            </defs>
             <rect x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="#020a10"/>
             ${yAxisWare}
             ${xTicksHtml}
-            ${wareGroupHtml.join('')}
+            <!-- Clipped like the hourly chart — see comment there. -->
+            <g clip-path="url(#cfclip-${safeCode}-w)">
+              ${wareGroupHtml.join('')}
+            </g>
             <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt+ph}" stroke="#19e6c8" stroke-opacity="0.35" stroke-width="1"/>
             <text x="9" y="${mt + ph/2}" text-anchor="middle" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.6"
                   style="font-family:var(--font-mono);font-size:8px;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph/2})">PRICE · BAND</text>
@@ -2542,11 +2569,13 @@
          </div>`;
 
       // ── PRODUCTION TAB ─────────────────────────────────────────────────────
-      // Two bars per ware, each taking half the available width:
-      //   Bar 1 (left)  — storage fill: ware's volume_m3 / max_m3 for its cargo type
-      //   Bar 2 (right) — internal usage: how much of the hourly output is consumed
-      //                   by other production modules at this station
-      // Rate text on the right shows the hourly production figure from production_rates
+      // Each ware row is a 1fr/1fr grid — the same split as the Hull/Shields row
+      // above it — so the seam between the two bars runs down the card centre:
+      //   Left half  — ware name + STOCKPILE bar: ware's volume_m3 / max_m3 for
+      //                its cargo type
+      //   Right half — INTERNAL USE bar (how much of the hourly output is consumed
+      //                by other production modules at this station) + rate + runtime
+      // Rate text shows the hourly production figure from production_rates
       // (module count × PRODUCTION_STATS rate, computed server-side in jsonexport.py).
       const wares = s.production ? s.production.split(',').map(w => w.trim()).filter(Boolean) : [];
 
@@ -2592,6 +2621,15 @@
             const usagePct = prodHr > 0 ? Math.min(100, consHr / prodHr * 100) : 0;
             const rateLabel = prodHr != null ? Math.round(prodHr).toLocaleString() + '/hr' : '—/hr';
 
+            // Numbers overlaid on the bars: the bar FILL shows the proportion,
+            // the text shows the actual quantity (units in stock / units per
+            // hour consumed internally). 0/hr rows stay blank — a column of
+            // zeros on empty bars is noise, a blank bar already reads as "none".
+            const stockLabel = Math.round(inv.amount ?? 0).toLocaleString();
+            const consLabel  = consHr > 0 ? Math.round(consHr).toLocaleString() + '/hr' : '';
+            // Double shadow punches the text out of the bright fill behind it.
+            const barTextStyle = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:9px;color:var(--text);text-shadow:0 0 3px rgba(2,8,14,0.95),0 0 3px rgba(2,8,14,0.95);pointer-events:none';
+
             // Runtime label: time until this ware's production stops due to a depleted
             // input. null minutes = no inputs needed (e.g. energy cells) → show nothing.
             const rt = runtimes[w];
@@ -2616,20 +2654,41 @@
               ? `<span style="font-family:var(--font-mono);font-size:10px;color:${rtColor};min-width:52px;text-align:right" title="${rtTitle}">${rtLabel}</span>`
               : `<span style="min-width:52px"></span>`;
 
-            return `<div style="display:flex;align-items:center;gap:8px;padding:5px 14px;border-bottom:1px solid var(--border)">
-               <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:${wareCol};min-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${w.toUpperCase()}</span>
-               <div style="flex:1;display:flex;gap:4px;align-items:center">
-                 <div style="flex:1;height:6px;background:${wareCol}30;border-radius:2px;overflow:hidden" title="Storage: ${storagePct.toFixed(1)}% of ${cargType} bay">
+            return `<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border)">
+               <div style="display:flex;align-items:center;gap:8px;padding:5px 14px;border-right:1px solid var(--border)">
+                 <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:${wareCol};min-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${w.toUpperCase()}</span>
+                 <div style="flex:1;height:13px;background:${wareCol}30;border-radius:2px;overflow:hidden;position:relative" title="Stockpile: ${stockLabel} units · ${storagePct.toFixed(1)}% of ${cargType} bay">
                    <div style="height:100%;width:${storagePct.toFixed(1)}%;background:${wareCol};border-radius:2px"></div>
-                 </div>
-                 <div style="flex:1;height:6px;background:${wareCol}30;border-radius:2px;overflow:hidden" title="Internal use: ${usagePct.toFixed(1)}% of output consumed internally">
-                   <div style="height:100%;width:${usagePct.toFixed(1)}%;background:${wareCol};border-radius:2px"></div>
+                   <span style="${barTextStyle}">${stockLabel}</span>
                  </div>
                </div>
-               <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);min-width:54px;text-align:right">${rateLabel}</span>
-               ${rtSpan}
+               <div style="display:flex;align-items:center;gap:8px;padding:5px 14px">
+                 <div style="flex:1;height:13px;background:${wareCol}30;border-radius:2px;overflow:hidden;position:relative" title="Internal use: ${usagePct.toFixed(1)}% of output consumed internally">
+                   <div style="height:100%;width:${usagePct.toFixed(1)}%;background:${wareCol};border-radius:2px"></div>
+                   <span style="${barTextStyle}">${consLabel}</span>
+                 </div>
+                 <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);min-width:54px;text-align:right">${rateLabel}</span>
+                 ${rtSpan}
+               </div>
              </div>`;
           }).join('');
+
+      // Column titles for the production rows — built with the same grid and
+      // flex slots as the rows themselves so each title sits exactly over its
+      // column. Only shown when there are rows to label.
+      const prodHdrStyle = 'font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-faint)';
+      const prodHeader = wares.length === 0 ? '' :
+        `<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border);background:var(--bg-panel)">
+           <div style="display:flex;gap:8px;padding:4px 14px;border-right:1px solid var(--border)">
+             <span style="${prodHdrStyle};min-width:160px">Ware</span>
+             <span style="${prodHdrStyle};flex:1">Stockpile</span>
+           </div>
+           <div style="display:flex;gap:8px;padding:4px 14px">
+             <span style="${prodHdrStyle};flex:1">Internal Use</span>
+             <span style="${prodHdrStyle};min-width:54px;text-align:right">Rate</span>
+             <span style="${prodHdrStyle};min-width:52px;text-align:right">Runtime</span>
+           </div>
+         </div>`;
 
       // ── DOCKED SHIPS TAB ───────────────────────────────────────────────────
       const dockedRows = dockedShips.length === 0
@@ -2835,7 +2894,7 @@
           <button class="station-tab-btn" data-tab="docked" onclick="switchStationTab('${s.code}','docked')"><i class="ti ti-ship" style="font-size:11px;vertical-align:-1px;margin-right:4px"></i>Docked${dockedShips.length > 0 ? ' · ' + dockedShips.length : ''}</button>
         </div>
         <!-- Tab panels -->
-        <div class="station-tab-panel" data-tab="production" style="display:block">${prodRows}</div>
+        <div class="station-tab-panel" data-tab="production" style="display:block">${prodHeader}${prodRows}</div>
         <div class="station-tab-panel" data-tab="docked"     style="display:none">${dockedRows}</div>
         </div>
         <!-- Slider panel 1: Economy — reverse-engineered supply budget breakdown -->
@@ -3271,9 +3330,15 @@
       // Express t as a delta on top of the committed transform so the div's
       // CSS transform composes to exactly the same mapping as the <g> would:
       //   screen = ds·(committed·p) + (dx,dy)  ≡  t.scale·p + (t.x,t.y)
+      // The overscan offset enters twice: the committed <g> transform has the
+      // commit-time offset baked in (_uCommitted.ox/oy), and the layer's own
+      // top-left sits at -offset relative to the wrap (read fresh in case the
+      // window was resized mid-gesture). Both terms cancel to zero when ds=1.
       const ds = t.scale / _uCommitted.scale;
-      const dx = t.x - ds * _uCommitted.x;
-      const dy = t.y - ds * _uCommitted.y;
+      const oxNow = -layer.offsetLeft;
+      const oyNow = -layer.offsetTop;
+      const dx = t.x - ds * (_uCommitted.x + _uCommitted.ox) + oxNow;
+      const dy = t.y - ds * (_uCommitted.y + _uCommitted.oy) + oyNow;
       layer.style.transform = `translate(${dx}px,${dy}px) scale(${ds})`;
 
       // Commit once the gesture has been quiet for a beat (wheel ticks and
@@ -3290,9 +3355,15 @@
     const layer = document.getElementById('universe-zoom-layer');
     const vp    = document.getElementById('universe-viewport');
     if (!layer || !vp) return;
-    vp.setAttribute('transform', `translate(${t.x},${t.y}) scale(${t.scale})`);
+    // The layer hangs 50% past the wrap on every side (overscan, see the CSS),
+    // so the SVG's origin is offset from the wrap's. Baking that offset into
+    // the <g> keeps _universeTransform itself wrap-relative — none of the
+    // mouse/zoom math needs to know about overscan.
+    const ox = -layer.offsetLeft;
+    const oy = -layer.offsetTop;
+    vp.setAttribute('transform', `translate(${t.x + ox},${t.y + oy}) scale(${t.scale})`);
     layer.style.transform = 'none';
-    _uCommitted = { x: t.x, y: t.y, scale: t.scale };
+    _uCommitted = { x: t.x, y: t.y, scale: t.scale, ox, oy };
 
     // Inverse-scale labels so they render at a constant pixel size at any zoom.
     // Updating two CSS variables is much cheaper than rewriting every text
