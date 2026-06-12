@@ -33,3 +33,7 @@ Thumbs.db
 # Throwaway test/temp scripts, caches, and fixtures
 scratch/
 .claude/
+
+# Graphify knowledge graph artifacts
+graphify-out/
+.graphifyignore
