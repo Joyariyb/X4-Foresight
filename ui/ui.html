@@ -395,6 +395,16 @@
     /* Diplomacy panels — own class so the fleet switcher can't toggle them. */
     .diplo-panel { display: none; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
     .diplo-panel.active { display: flex; }
+    /* Relations matrix grid. Sticky headers keep faction labels visible while
+       the ~21-column grid scrolls in both directions inside its .panel. */
+    .diplo-matrix { border-collapse: separate; border-spacing: 2px; font-family: var(--font-mono); font-size: 11px; }
+    .diplo-matrix th { font-family: var(--font-cond); font-weight: 600; font-size: 12px; letter-spacing: 0.04em; color: var(--text-dim); padding: 2px 5px; text-align: center; white-space: nowrap; }
+    .diplo-matrix thead th { position: sticky; top: 0; background: var(--bg-panel); z-index: 2; }
+    .diplo-matrix th.dm-row { position: sticky; left: 0; background: var(--bg-panel); text-align: right; padding-right: 9px; cursor: pointer; z-index: 1; }
+    .diplo-matrix thead th.dm-row { z-index: 3; cursor: default; } /* corner cell sits above both axes */
+    .diplo-matrix th.dm-row:hover { color: var(--teal); }
+    .diplo-matrix td { min-width: 40px; height: 24px; text-align: center; border-radius: 2px; }
+    .diplo-matrix td.dm-empty { background: rgba(255,255,255,0.02); color: var(--text-faint); }
 
     /* ── SHIP NAME SUBLINE ── */
     /* Displayed below the code in the fleet table Code cell */
@@ -2802,9 +2812,10 @@
     diploTabs.querySelectorAll('.fleet-subtab:not([data-faction="player"])').forEach(t => t.remove());
     diploPanels.innerHTML = '';
 
-    Object.keys(relByFaction)
-      .sort((a, b) => (repByFaction[b]?.value ?? -99) - (repByFaction[a]?.value ?? -99))
-      .forEach(factionId => {
+    const diploOrder = Object.keys(relByFaction)
+      .sort((a, b) => (repByFaction[b]?.value ?? -99) - (repByFaction[a]?.value ?? -99));
+
+    diploOrder.forEach(factionId => {
         const label    = tagMap[factionId]  || factionId.toUpperCase().slice(0, 3);
         const fullName = nameMap[factionId] || label;
         const color    = FACTION_COLOURS[factionId] || '#2dd4bf';
@@ -2871,6 +2882,64 @@
           </div>`;
         diploPanels.appendChild(panel);
       });
+
+    // Matrix sub-tab — the whole diplomatic web in one grid. Row = how that
+    // faction sees each column. Pure presentation: same rows the tabs use,
+    // with the symmetric pairing as fallback when only one side is stored.
+    if (diploOrder.length) {
+      const TIER_COLOURS = { Allied: '#3fb950', Friendly: '#2dd4bf', Neutral: '#8b949e', Hostile: '#d29922', 'At War': '#f85149' };
+      const matrixOrder = ['player', ...diploOrder];
+      const dmTag  = f => f === 'player' ? 'YOU' : (tagMap[f] || f.toUpperCase().slice(0, 3));
+      const dmName = f => f === 'player' ? (player.name || 'Player') : (nameMap[f] || dmTag(f));
+
+      // 'subject|target' → standing row, both stored directions.
+      const relLookup = {};
+      relRows.forEach(r => { relLookup[r.faction_id + '|' + r.other_id] = r; });
+      rep.forEach(r => { relLookup['player|' + r.faction_id] = r; });
+
+      let mhtml = '<table class="diplo-matrix"><thead><tr><th class="dm-row"></th>'
+        + matrixOrder.map(f => `<th title="${dmName(f)}">${dmTag(f)}</th>`).join('')
+        + '</tr></thead><tbody>';
+      matrixOrder.forEach(a => {
+        mhtml += `<tr><th class="dm-row" title="Open the ${dmName(a)} tab"
+                      onclick="switchDiploTab('${a}')">${dmTag(a)}</th>`;
+        matrixOrder.forEach(b => {
+          if (a === b) { mhtml += '<td class="dm-empty"></td>'; return; }
+          const r = relLookup[a + '|' + b] || relLookup[b + '|' + a];
+          if (!r) { mhtml += '<td class="dm-empty" title="No standing recorded in the save">·</td>'; return; }
+          const col = TIER_COLOURS[r.tier] || '#8b949e';
+          const v   = Math.round(r.value);
+          mhtml += `<td style="background:${hexToRgba(col, 0.15)};color:${col}"
+                        title="${dmName(a)} ↔ ${dmName(b)}: ${sign(r.value)} (${r.tier})">${v > 0 ? '+' + v : v}</td>`;
+        });
+        mhtml += '</tr>';
+      });
+      mhtml += '</tbody></table>';
+
+      const mtab = document.createElement('div');
+      mtab.className = 'fleet-subtab';
+      mtab.dataset.faction = 'matrix';
+      mtab.style.setProperty('--tab-color',  '#8b949e');
+      mtab.style.setProperty('--tab-bg',     'rgba(139,148,158,0.10)');
+      mtab.style.setProperty('--tab-border', 'rgba(139,148,158,0.3)');
+      mtab.innerHTML = '<i class="ti ti-grid-dots" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>Matrix';
+      mtab.onclick = () => switchDiploTab('matrix', mtab);
+      diploTabs.appendChild(mtab);
+
+      const mpanel = document.createElement('div');
+      mpanel.className = 'diplo-panel';
+      mpanel.id = 'diplo-panel-matrix';
+      mpanel.innerHTML = `
+        <div class="sec-header">
+          <div class="sec-title">Relations Matrix
+            <span style="font-size:11px;color:var(--text-dim);margin-left:8px;letter-spacing:0;text-transform:none">
+              row = how that faction sees each column · click a row label to open its tab</span>
+          </div>
+          <div class="sec-line"></div>
+        </div>
+        <div class="panel" style="overflow:auto; max-height: calc(100vh - 200px);">${mhtml}</div>`;
+      diploPanels.appendChild(mpanel);
+    }
 
     // Stations
     document.getElementById("stations-grid").innerHTML = stations.map(s => {

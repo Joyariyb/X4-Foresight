@@ -81,12 +81,11 @@ Backlog of intentionally-deferred items. The core pipeline
 
 ## Smaller / polish
 
-- [ ] **Diplomacy relations matrix view.** One grid: every faction down the
-      side, every faction across the top, cells coloured by tier. Pure UI on
-      top of the existing `faction_relations` export key (added 2026-06-12) —
-      no scanner/DB work. Add as a final "Matrix" sub-tab on the Diplomacy
-      strip; needs horizontal scroll + sticky row headers at ~21 factions, and
-      row-header click could jump to that faction's tab.
+- [x] **Diplomacy relations matrix view.** Done 2026-06-12 — final "Matrix"
+      sub-tab on the Diplomacy strip: 21×21 tier-coloured grid over the
+      `faction_relations` export key, sticky headers both axes, row-label
+      click jumps to that faction's tab, symmetric-pair fallback for
+      one-sided save entries.
 
 - [ ] **`docked_at` marker on `npc_ships` export.** Visiting (non-player) ships
       docked at a player station are captured and shown in the display's Docked
