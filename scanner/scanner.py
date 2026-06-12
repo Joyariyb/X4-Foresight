@@ -3,7 +3,7 @@ from pathlib import Path
 from lxml.etree import iterparse as lxml_iterparse
 
 from .context import ScanContext, ComponentFrame, STATION_CLASSES, SHIP_CLASSES
-from .language import open_save, load_sector_names, load_text_pages, resolve_sector_from_location
+from .language import open_save, load_language_root, load_sector_names, load_text_pages, resolve_sector_from_location
 from .handlers.station     import StationHandler
 from .handlers.ship        import ShipHandler
 from .handlers.reputation  import ReputationHandler
@@ -47,16 +47,17 @@ class Scanner:
     """
 
     def __init__(self, lang_path: Path | None = None) -> None:
-        # Load sector names once at startup. All handlers that need to resolve
-        # a sector macro to a human name receive the same pre-built dict.
-        # Defaults to the standard project-root location of the language file.
-        _lang_path   = lang_path or Path(__file__).resolve().parent.parent / '0001-l044.xml'
-        sector_names = load_sector_names(_lang_path)
+        # Load the language file once at startup. load_language_root() reads it
+        # straight from the game's .cat/.dat archives; a local file at
+        # lang_path (if one exists) acts as a manual override. Parsed a single
+        # time here — both loaders below share the same XML root.
+        lang_root    = load_language_root(lang_path)
+        sector_names = load_sector_names(lang_root)
 
         # Pages needed by NpcStationHandler (and later StationHandler):
         #   20102 — station basename text refs  e.g. "{20102,1301}" → "Advanced Electronics"
         #   20215 — factory category names used by resolve_station_type()
-        texts = load_text_pages(_lang_path, {20102, 20215})
+        texts = load_text_pages(lang_root, {20102, 20215})
 
         self._station = StationHandler(sector_names, texts)
         self._ship    = ShipHandler()
