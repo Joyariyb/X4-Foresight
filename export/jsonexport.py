@@ -248,6 +248,17 @@ def _reputation(conn, scan_id) -> list[dict]:
         "FROM reputation WHERE scan_id=? ORDER BY value DESC", (scan_id,))
 
 
+def _faction_relations(conn, scan_id) -> list[dict]:
+    # Flat list, ordered subject-then-standing so each Diplomacy tab's rows
+    # arrive display-ready (allies first). The UI groups by faction_id the
+    # same way it groups npc_ships by owner.
+    return _rows(
+        conn,
+        "SELECT faction_id, faction_name, other_id, other_name, value, tier, locked "
+        "FROM faction_relations WHERE scan_id=? ORDER BY faction_id, value DESC",
+        (scan_id,))
+
+
 def _sectors(conn) -> list[dict]:
     # Reference table — latest-only, so no scan_id filter.
     return _rows(
@@ -409,6 +420,7 @@ def to_export(conn: sqlite3.Connection, scan_id: int | None = None) -> dict:
             'credits': scan['player_credits'],
         },
         'reputation':            _reputation(conn, scan_id),
+        'faction_relations':     _faction_relations(conn, scan_id),
         'sectors':               _sectors(conn),
         'galaxy_map':            _galaxy_map(conn, scan_id),
         'npc_stations_by_sector': _npc_station_counts(conn, scan_id),

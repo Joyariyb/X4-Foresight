@@ -70,6 +70,7 @@ def write_scan(conn: sqlite3.Connection, ctx) -> int:
     scan_id = cur.lastrowid
 
     _write_reputation(cur, scan_id, ctx)
+    _write_faction_relations(cur, scan_id, ctx)
     _write_stations(cur, scan_id, ctx)
     _write_ships(cur, scan_id, ctx)
     _write_npc_ships(cur, scan_id, ctx)
@@ -89,6 +90,16 @@ def _write_reputation(cur, scan_id, ctx) -> None:
         "INSERT INTO reputation VALUES(?,?,?,?,?,?,?)",
         [(scan_id, r.faction_id, r.faction_name, r.value, r.base, r.booster, r.tier)
          for r in ctx.reputation],
+    )
+
+
+def _write_faction_relations(cur, scan_id, ctx) -> None:
+    # locked is stored as 0/1 — SQLite has no real boolean type.
+    cur.executemany(
+        "INSERT INTO faction_relations VALUES(?,?,?,?,?,?,?,?)",
+        [(scan_id, r.faction_id, r.faction_name, r.other_id, r.other_name,
+          r.value, r.tier, int(r.locked))
+         for r in ctx.faction_relations],
     )
 
 

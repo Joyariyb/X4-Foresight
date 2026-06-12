@@ -37,6 +37,21 @@ CREATE TABLE IF NOT EXISTS reputation (
     PRIMARY KEY (scan_id, faction_id)
 );
 
+-- NPC faction → faction standings (Diplomacy tabs). Base values only — NPC
+-- boosters exist in the save but are intentionally not stored. other_id may
+-- be "player": how that faction sees the player.
+CREATE TABLE IF NOT EXISTS faction_relations (
+    scan_id       INTEGER NOT NULL REFERENCES scans(scan_id) ON DELETE CASCADE,
+    faction_id    TEXT    NOT NULL,               -- subject e.g. "argon"
+    faction_name  TEXT,
+    other_id      TEXT    NOT NULL,               -- target e.g. "xenon" or "player"
+    other_name    TEXT,
+    value         REAL,                           -- scaled -30..+30 (in-game display)
+    tier          TEXT,                           -- "Allied", "Friendly", ...
+    locked        INTEGER NOT NULL DEFAULT 0,     -- 1 = game hard-locks these standings (Xenon, Kha'ak)
+    PRIMARY KEY (scan_id, faction_id, other_id)
+);
+
 CREATE TABLE IF NOT EXISTS stations (
     scan_id         INTEGER NOT NULL REFERENCES scans(scan_id) ON DELETE CASCADE,
     object_id       TEXT    NOT NULL,            -- hex component id e.g. "[0x1ca1c]"

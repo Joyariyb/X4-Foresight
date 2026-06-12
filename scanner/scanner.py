@@ -278,9 +278,15 @@ class Scanner:
                     pass
 
         elif tag == 'faction':
-            # Opening tag of a faction block — RepHandler checks if it's the
-            # player faction and starts collecting if so.
+            # Opening tag of a faction block — RepHandler collects the player
+            # faction (reputation) and known NPC factions (faction_relations);
+            # visitor stubs and role-label factions are ignored.
             self._rep.on_faction_start(elem, ctx)
+
+        elif tag == 'relations':
+            # Wrapper of a faction's standing entries — carries locked="1" on
+            # factions whose relations the game never changes (Xenon, Kha'ak).
+            self._rep.on_relations(elem, ctx)
 
         elif tag == 'relation':
             # Base standing entry inside a faction's <relations> block.

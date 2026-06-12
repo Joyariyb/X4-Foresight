@@ -392,6 +392,9 @@
     .ft-count { font-family: var(--font-mono); font-size: 10px; opacity: 0.6; }
     .fleet-panel { display: none; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
     .fleet-panel.active { display: flex; }
+    /* Diplomacy panels — own class so the fleet switcher can't toggle them. */
+    .diplo-panel { display: none; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
+    .diplo-panel.active { display: flex; }
 
     /* ── SHIP NAME SUBLINE ── */
     /* Displayed below the code in the fleet table Code cell */
@@ -638,15 +641,32 @@
 
       <!-- DIPLOMACY TAB -->
       <div class="tab-panel" id="tab-diplomacy">
-        <div class="sec-header"><div class="sec-title">Faction Standings</div><div class="sec-line"></div></div>
-        <div class="panel" style="overflow:auto;">
-          <table class="data-table" id="rep-table">
-            <thead>
-              <tr><th>Faction</th><th>Tier</th><th>Score</th><th>Bar</th><th>Base</th><th>Booster</th></tr>
-            </thead>
-            <tbody></tbody>
-          </table>
+
+        <!-- Sub-tab bar: Player tab is static; faction tabs are built by populate() -->
+        <div class="fleet-subtabs" id="diplo-subtabs">
+          <div class="fleet-subtab active" data-faction="player"
+               style="--tab-color:#2dd4bf;--tab-bg:rgba(45,212,191,0.12);--tab-border:rgba(45,212,191,0.3)"
+               onclick="switchDiploTab('player',this)">
+            Player
+          </div>
         </div>
+
+        <!-- Player standings panel (the original Diplomacy table, unchanged) -->
+        <div class="diplo-panel active" id="diplo-panel-player">
+          <div class="sec-header"><div class="sec-title">Faction Standings</div><div class="sec-line"></div></div>
+          <div class="panel" style="overflow:auto; max-height: calc(100vh - 200px);">
+            <table class="data-table" id="rep-table">
+              <thead>
+                <tr><th>Faction</th><th>Tier</th><th>Score</th><th>Bar</th><th>Base</th><th>Booster</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- NPC faction standings panels — built dynamically by populate() -->
+        <div id="diplo-npc-panels"></div>
+
       </div>
 
       <!-- UNIVERSE TAB -->
@@ -2133,10 +2153,19 @@
   }
 
   function switchFleetTab(faction, el) {
-    document.querySelectorAll('.fleet-subtab').forEach(t => t.classList.remove('active'));
+    // Scoped to the Naval strip — .fleet-subtab is shared by the Crew and
+    // Diplomacy strips, and an unscoped clear would wipe their active state.
+    document.querySelectorAll('#fleet-subtabs .fleet-subtab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.fleet-panel').forEach(p => p.classList.remove('active'));
-    (el || document.querySelector(`.fleet-subtab[data-faction="${faction}"]`)).classList.add('active');
+    (el || document.querySelector(`#fleet-subtabs [data-faction="${faction}"]`)).classList.add('active');
     document.getElementById('fleet-panel-' + faction).classList.add('active');
+  }
+
+  function switchDiploTab(faction, el) {
+    document.querySelectorAll('#diplo-subtabs .fleet-subtab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.diplo-panel').forEach(p => p.classList.remove('active'));
+    (el || document.querySelector(`#diplo-subtabs [data-faction="${faction}"]`)).classList.add('active');
+    document.getElementById('diplo-panel-' + faction).classList.add('active');
   }
 
   // Per-faction sort state and cached ship lists so setNpcSort() can re-render
@@ -2203,8 +2232,9 @@
     return {
       tab:          panel ? panel.id.replace(/^tab-/, '') : 'overview',
       scrollTop:    content ? content.scrollTop : 0,
-      fleetFaction: document.querySelector('.fleet-subtab[data-faction].active')?.dataset.faction || null,
+      fleetFaction: document.querySelector('#fleet-subtabs .fleet-subtab.active')?.dataset.faction || null,
       crewRole:     document.querySelector('#crew-subtabs .fleet-subtab.active')?.dataset.role || null,
+      diploFaction: document.querySelector('#diplo-subtabs .fleet-subtab.active')?.dataset.faction || null,
     };
   }
   function _navRecord() {            // start of a jump: remember where we are now
@@ -2229,6 +2259,7 @@
     // Restore the sub-view too so you land exactly where you left.
     if (s.tab === 'fleet' && s.fleetFaction) switchFleetTab(s.fleetFaction);
     if (s.tab === 'crew'  && s.crewRole)     switchCrewRole(s.crewRole);
+    if (s.tab === 'diplomacy' && s.diploFaction) switchDiploTab(s.diploFaction);
     _navGuard = false;
     const content = document.getElementById('content');
     // Scroll restores after the panel is laid out (it was display:none).
@@ -2754,6 +2785,92 @@
 
       renderNpcFleet(fShips, factionId);
     });
+
+    // Build Diplomacy faction sub-tabs and panels — same pattern as the Naval
+    // strip above. Tab order: the player's standing with each subject faction,
+    // descending, so allies come first and Xenon anchors the end.
+    const relRows = data.faction_relations || [];
+    const relByFaction = {};
+    relRows.forEach(r => { (relByFaction[r.faction_id] = relByFaction[r.faction_id] || []).push(r); });
+
+    // Player's standing per faction — used for tab ordering and mirrored rows.
+    const repByFaction = {};
+    rep.forEach(r => { repByFaction[r.faction_id] = r; });
+
+    const diploTabs   = document.getElementById('diplo-subtabs');
+    const diploPanels = document.getElementById('diplo-npc-panels');
+    diploTabs.querySelectorAll('.fleet-subtab:not([data-faction="player"])').forEach(t => t.remove());
+    diploPanels.innerHTML = '';
+
+    Object.keys(relByFaction)
+      .sort((a, b) => (repByFaction[b]?.value ?? -99) - (repByFaction[a]?.value ?? -99))
+      .forEach(factionId => {
+        const label    = tagMap[factionId]  || factionId.toUpperCase().slice(0, 3);
+        const fullName = nameMap[factionId] || label;
+        const color    = FACTION_COLOURS[factionId] || '#2dd4bf';
+        const locked   = relByFaction[factionId][0].locked === 1;
+
+        // Rows arrive pre-sorted value-descending from the export. A few
+        // factions store no player pairing on their side of the save —
+        // relations are symmetric, so mirror the player's own standing in.
+        let rows = relByFaction[factionId];
+        if (!rows.some(r => r.other_id === 'player') && repByFaction[factionId]) {
+          const pr = repByFaction[factionId];
+          rows = [...rows, { other_id: 'player', other_name: 'Player',
+                             value: pr.value, tier: pr.tier, mirrored: true }]
+            .sort((a, b) => b.value - a.value);
+        }
+
+        // Sub-tab
+        const tab = document.createElement('div');
+        tab.className = 'fleet-subtab';
+        tab.dataset.faction = factionId;
+        tab.style.setProperty('--tab-color',  color);
+        tab.style.setProperty('--tab-bg',     hexToRgba(color, 0.12));
+        tab.style.setProperty('--tab-border', hexToRgba(color, 0.3));
+        tab.innerHTML = locked
+          ? `${label} <i class="ti ti-lock" style="font-size:12px" title="Standings locked by the game"></i>`
+          : label;
+        tab.onclick = () => switchDiploTab(factionId, tab);
+        diploTabs.appendChild(tab);
+
+        // Panel — same table shape as the player standings, minus base/booster
+        // (NPC boosters are not extracted).
+        const lockNote = locked
+          ? `<span style="font-size:11px;color:var(--text-faint);margin-left:8px;letter-spacing:0;text-transform:none">
+               <i class="ti ti-lock" style="font-size:11px;vertical-align:-1px"></i> standings locked by the game</span>`
+          : '';
+        const panel = document.createElement('div');
+        panel.className = 'diplo-panel';
+        panel.id = 'diplo-panel-' + factionId;
+        panel.innerHTML = `
+          <div class="sec-header">
+            <div class="sec-title">${fullName} Standings${lockNote}</div>
+            <div class="sec-line"></div>
+          </div>
+          <div class="panel" style="overflow:auto; max-height: calc(100vh - 200px);">
+            <table class="data-table">
+              <thead><tr><th>Faction</th><th>Tier</th><th>Score</th><th>Bar</th></tr></thead>
+              <tbody>${rows.map(r => {
+                const col = { Allied:"var(--green)", Friendly:"var(--teal)", Neutral:"var(--text-dim)", Hostile:"var(--amber)", "At War":"var(--red)" }[r.tier] || "var(--text-dim)";
+                const isPlayer = r.other_id === 'player';
+                const hint = r.mirrored
+                  ? 'Mirrored from your own standings — this faction stores no player entry in the save'
+                  : 'How this faction sees you';
+                const name = isPlayer
+                  ? `<span style="color:#2dd4bf" title="${hint}">${player.name || 'Player'} (you)</span>`
+                  : r.other_name;
+                return `<tr${isPlayer ? ' style="background:rgba(45,212,191,0.07)"' : ''}>
+                  <td>${name}</td>
+                  <td>${tierBadge(r.tier)}</td>
+                  <td class="mono" style="color:${col}">${sign(r.value)}</td>
+                  <td>${repBar(r.value)}</td>
+                </tr>`;
+              }).join('')}</tbody>
+            </table>
+          </div>`;
+        diploPanels.appendChild(panel);
+      });
 
     // Stations
     document.getElementById("stations-grid").innerHTML = stations.map(s => {

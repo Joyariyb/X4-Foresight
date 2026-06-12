@@ -52,6 +52,31 @@ class ReputationEntry:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+#  FACTION RELATIONS  (NPC faction → other faction standings)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@dataclass
+class FactionRelationEntry:
+    """
+    One NPC faction's standing toward one other faction (or the player).
+
+    Mirrors ReputationEntry but for non-player subjects. No base/booster split:
+    NPC boosters exist in the save but are deliberately ignored — only the
+    permanent <relation> value is captured (decision: 2026-06-12).
+    """
+    scan_id:      int    # FK → scans table
+    faction_id:   str    # subject faction e.g. "argon" — whose standings these are
+    faction_name: str    # subject display name e.g. "[ARG] Argon Federation"
+    other_id:     str    # target faction e.g. "xenon", or "player"
+    other_name:   str    # target display name
+    value:        float  # scaled −30 to +30 (same scale as ReputationEntry)
+    tier:         str    # label e.g. "Friendly", "At War"
+    locked:       bool   # True when the save marks <relations locked="1"> —
+                         # the game never changes this faction's standings
+                         # (Xenon and Kha'ak in practice)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 #  SECTOR
 # ─────────────────────────────────────────────────────────────────────────────
 

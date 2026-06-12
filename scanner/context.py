@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 
 from .entities import (
     Station, NpcStation, Ship, CrewMember, ReputationEntry, Sector, Gate,
+    FactionRelationEntry,
     ActiveTrade, ActiveAutoTrade,
     TradeHistory, TradeHistoryMining, TradeHistoryInternal,
 )
@@ -105,6 +106,11 @@ class ScanContext:
     ships:                  list[Ship]                  = field(default_factory=list)
     crew:                   list[CrewMember]            = field(default_factory=list)
     reputation:             list[ReputationEntry]       = field(default_factory=list)
+    # ReputationHandler → db/export (Diplomacy faction tabs)
+    # NPC-faction standings toward every other known faction + the player.
+    # Grouped by subject faction, each group sorted value-descending — same
+    # display order as ctx.reputation.
+    faction_relations:      list[FactionRelationEntry]  = field(default_factory=list)
     sectors:                list[Sector]                = field(default_factory=list)
     gates:                  list[Gate]                  = field(default_factory=list)
     npc_stations:           list[NpcStation]            = field(default_factory=list)
