@@ -32,3 +32,4 @@ Thumbs.db
 
 # Throwaway test/temp scripts, caches, and fixtures
 scratch/
+.claude/
