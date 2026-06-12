@@ -62,8 +62,7 @@ class StationHandler:
       on_end()   — the full subtree is in memory; walks it to extract modules,
                    cargo, health, budget, account, and manager crew.
 
-    All logic is ported from v1's station_scanner.py, updated to produce
-    typed dataclasses instead of raw dicts.
+    All extraction emits typed dataclasses rather than raw dicts.
     """
 
     def __init__(self, sector_names: dict, texts: dict) -> None:

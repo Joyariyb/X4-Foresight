@@ -9,8 +9,8 @@ from .entities import (
 
 # Verified against save_001.xml.
 # All stations in the save use class="station". The additional values
-# ("factory", "headquarters", "complex") appear in v1's scanner and may occur
-# in saves with the player HQ or certain DLC content — kept for safety.
+# ("factory", "headquarters", "complex") may occur in saves with the player HQ
+# or certain DLC content — kept for safety.
 STATION_CLASSES: frozenset[str] = frozenset({"station", "factory", "headquarters", "complex"})
 
 # Verified against save_001.xml — exactly these four size classes exist.

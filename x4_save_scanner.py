@@ -1,12 +1,12 @@
 """
-v2/x4_save_scanner.py — command-line entry point.
+x4_save_scanner.py — command-line entry point.
 
-Runs the whole v2 pipeline from one command:
+Runs the whole pipeline from one command:
 
     select save  ->  scan  ->  resolve trades  ->  write to DB  ->  write JSON
 
-Unlike v1 there are no mode / ship-tier / NPC-station prompts: the v2 scanner is
-a single pass that extracts everything, so the only choice is which save to read.
+There are no mode / ship-tier / NPC-station prompts: the scanner is a single
+pass that extracts everything, so the only choice is which save to read.
 
 Usage:
     python x4_save_scanner.py                 # interactive save picker
@@ -30,14 +30,14 @@ from db.write import write_scan
 from export.jsonexport import write_export
 from display import display_report
 
-# Outputs and inputs live in the project root, alongside v1's.
+# Outputs and inputs live in the project root.
 LANG_FILE = ROOT / '0001-l044.xml'
 DB_PATH   = ROOT / 'x4_foresight.db'
 JSON_PATH = ROOT / 'x4_empire_state.json'
 ROOT_SAVE = ROOT / 'save_001.xml'
 
 
-# ── Save selection (ported from v1, .gz + root fallback) ───────────────────────
+# ── Save selection (.gz + root fallback) ───────────────────────────────────────
 
 def _find_game_saves_dir() -> Path | None:
     """Locate the X4 save directory under Documents\\Egosoft\\X4\\{steamid}\\save."""
@@ -187,7 +187,7 @@ def main() -> None:
         sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
     print("=" * 64)
-    print("  X4 FORESIGHT v2")
+    print("  X4 FORESIGHT")
     print("=" * 64)
 
     if not LANG_FILE.exists():

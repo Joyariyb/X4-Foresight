@@ -1,15 +1,13 @@
 """
-v2/scanner/ship_names.py
+scanner/ship_names.py
 
 Pure ship naming / classification helpers — macro string in, display data out.
 No handler state, no ScanContext, no XML. Shared by ShipHandler (extraction),
 TradePostProcessor (transport names on trade rows), and any display/export code,
 so there is ONE source of truth for "what do we call this ship".
 
-Resolution mirrors v1's resolve_ship_type(), but the display helper keeps v2's
-richer model: a ship's custom name and its type name stay distinct, and
-ship_display_name() chooses between them rather than overwriting one with the
-other.
+A ship's custom name and its type name stay distinct, and ship_display_name()
+chooses between them rather than overwriting one with the other.
 """
 from __future__ import annotations
 import re

@@ -1,6 +1,6 @@
-# X4 Foresight v2 — TODO / deferred work
+# X4 Foresight — TODO / deferred work
 
-Backlog of intentionally-deferred items from the v2 rewrite. The core pipeline
+Backlog of intentionally-deferred items. The core pipeline
 (scan → resolve → DB → JSON) is complete and runnable via `x4_save_scanner.py`.
 
 ## Near-term, well-scoped
@@ -19,7 +19,7 @@ Backlog of intentionally-deferred items from the v2 rewrite. The core pipeline
 
 - [ ] **Assemble `in_progress_deliveries`** in the export. We already have
       `ctx.delivery_dest_index` (ships mid-delivery); currently the export key is
-      `[]`. Build the list (ship + ware + destination station) like v1 did.
+      `[]`. Build the list (ship + ware + destination station).
 
 - [ ] **NPC-ship homebase (Middleman `supplier` param)** for the resolver's
       Step 3. Small coverage gain on the inferred tail; the streaming extractor
@@ -66,8 +66,8 @@ Backlog of intentionally-deferred items from the v2 rewrite. The core pipeline
       Suggested: emit a `events` export section (recent N per category, lang refs
       resolved, time_ago_s computed) + a `player_stats` block.
 
-- [ ] **UI wiring** (`ui/main_ui.py` → `ui.html`). Launch a v2 scan from the UI
-      and feed the dashboard the new JSON shape. Last piece for v1-equivalent UX.
+- [ ] **UI wiring** (`ui/main_ui.py` → `ui.html`). Launch a scan from the UI
+      and feed the dashboard the new JSON shape. Last piece for a complete UX.
 
 - [ ] **TradeHandler — active trades + active auto-trades.** Currently stubbed;
       export keys `active_trades` / `active_auto_trades` are `[]`. Reads live
@@ -94,4 +94,4 @@ Backlog of intentionally-deferred items from the v2 rewrite. The core pipeline
       (needs a ware-volume table). Hull/shield are done; cargo load is not.
 - [ ] **Station-docked NPC/civilian ships** — we extract player-owned docked
       ships from station subtrees; civilian visitors (e.g. 2 at GX HQ) are
-      skipped, matching v1. Revisit if their presence matters.
+      skipped. Revisit if their presence matters.

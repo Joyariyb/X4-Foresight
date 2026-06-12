@@ -1,5 +1,5 @@
 """
-v2/db/connection.py
+db/connection.py
 
 Opens (creating if needed) the X4 Foresight SQLite database and applies the
 schema. One entry point: get_connection().

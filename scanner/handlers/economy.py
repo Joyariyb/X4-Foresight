@@ -1,5 +1,5 @@
 """
-v2/scanner/handlers/economy.py
+scanner/handlers/economy.py
 
 EconomyHandler — harvests completed trades from the save's economy log.
 
@@ -85,7 +85,7 @@ class EconomyHandler:
         if buyer is None and seller is None:
             return
 
-        # Volume — skip zero/garbage rows (matches v1's amount > 0 guard).
+        # Volume — skip zero/garbage rows.
         try:
             amount = int(float(elem.get('v', 0)))
         except (ValueError, TypeError):

@@ -1,5 +1,5 @@
 """
-v2/scanner/trade_postprocess.py
+scanner/trade_postprocess.py
 
 TradePostProcessor — turns the raw economy-log rows harvested by EconomyHandler
 into resolved, typed TradeHistory / TradeHistoryInternal entities.
@@ -30,7 +30,7 @@ player-ship-dominated empire):
   - NPC-ship homebase chain (works once NPC homebase extraction lands)
   - internal-transfer classification
 Despawned-object labels (removed_codes) are used ONLY for the ship column.
-NPC free-trader visits + sector-ware inference (v1 Steps 4-5) are a later slice;
+NPC free-trader visits + sector-ware inference are a later slice;
 rows needing them currently end up provenance "unresolved".
 """
 from __future__ import annotations
@@ -171,7 +171,7 @@ class TradePostProcessor:
         Given a TRANSPORT ship id, find the counterparty STATION at the other end
         of its route. Returns (cp_id, cp_name, provenance) — cp_* None if unresolved.
 
-        Cascade order mirrors v1, strongest evidence first. Provenance records
+        Cascade order is strongest evidence first. Provenance records
         which rung resolved it so the UI can flag proven vs inferred:
 
           PLAYER ship   → only its live delivery destination is meaningful (its
@@ -273,7 +273,7 @@ class TradePostProcessor:
         return ship_id, ship_code, ship_name, cp_id, cp_name, prov
 
     # ──────────────────────────────────────────────────────────────────────────
-    #  Player-courier SELL-leg attribution  (v1 parity)
+    #  Player-courier SELL-leg attribution
     # ──────────────────────────────────────────────────────────────────────────
 
     def _attribute_sell_legs(self, rows) -> None:
@@ -424,8 +424,8 @@ class TradePostProcessor:
         PLAYER-STATION GUARD: if the counterparty resolves to one of OUR own
         stations, the transport is shuttling goods between player stations — an
         internal transfer, not a commercial sale. Emitting it as commercial with
-        a player-station 'counterparty' is wrong (and is what produced the
-        'v2=GX HQ' conflicts against v1). Route it to the internal ledger.
+        a player-station 'counterparty' would wrongly count our own shuttling
+        as sales to ourselves. Route it to the internal ledger.
         """
         if cp_id and cp_id in self.pstn_ids:
             stats['internal (counterparty is player station)'] += 1

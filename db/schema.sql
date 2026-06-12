@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────────────
---  X4 Foresight v2 — SQLite schema
+--  X4 Foresight — SQLite schema
 --
 --  THREE STORAGE CLASSES (see dataset plan):
 --    HISTORY   one row per entity PER SCAN  → trajectory of YOUR empire

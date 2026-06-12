@@ -1,5 +1,5 @@
 """
-v2/scanner/handlers/ship.py
+scanner/handlers/ship.py
 
 ShipHandler — extracts all player and NPC ships from the save.
 
@@ -644,14 +644,14 @@ class ShipHandler:
         # ── Streaming DockAt extraction for non-buffered NPC ships ─────────────
         # NPC ships are NOT buffered, so we can't walk their subtree in on_end().
         # Instead we extract the active delivery destination as their <order> and
-        # <param> children stream past. This mirrors v1's in_hb_ship machine.
+        # <param> children stream past.
         #
         # WHY THIS IS THE KEY RESOLVER: a free-trader's TradeRoutine range param
         # is a *sector*, not a station — useless for counterparty. But when the
         # ship is mid-delivery it carries an active DockAt order whose
         # destination IS the NPC station it is hauling to. The post-processor
         # applies that destination across all of the ship's logged trades, which
-        # is exactly how v1 resolves the bulk of NPC-ship counterparties.
+        # resolves the bulk of NPC-ship counterparties.
         self._npc_ship_id:  str  = ""    # object_id of the NPC ship being streamed
         self._npc_dockat:   bool = False  # inside an active trading DockAt order
         self._npc_dest:     str  = ""     # destination station id seen so far
@@ -708,8 +708,8 @@ class ShipHandler:
         and its internal silicon deliveries can't be classified.
 
         Reuses the same subtree walk as carrier-docked extraction; only
-        player-owned nested ships are taken (civilian visitors are left out, as
-        in v1). docked_at is set to the station's id.
+        player-owned nested ships are taken (civilian visitors are left out).
+        docked_at is set to the station's id.
         """
         _extract_docked_ships(station_elem, ctx.current_sector_macro, ctx)
 

@@ -1,5 +1,5 @@
 """
-v2/db/write.py
+db/write.py
 
 write_scan(conn, ctx) — persist one ScanContext to the database.
 

@@ -1,5 +1,5 @@
 """
-v2/export/jsonexport.py
+export/jsonexport.py
 
 Builds the JSON export (x4_empire_state.json) that the UI and AI consume.
 
@@ -8,8 +8,7 @@ scan_id (default = latest). This is the permanent export path — when cross-sca
 trends are added later they become extra queries here, with no rework, and the
 same function can already export any historical scan.
 
-Shape mirrors v1's top-level keys (stations / reputation / crew / station_trades
-/ ships) so an AI that knows v1's JSON reads this unchanged, plus v2 additions:
+Top-level keys: stations / reputation / crew / station_trades / ships, plus:
   - meta block (scan_id, timing)
   - resolution tag on every station trade (proven / inferred / unknown)
   - mining_deliveries and internal_transfers as their own keys
@@ -343,7 +342,7 @@ def _station_trades(conn, scan_id, game_time) -> list[dict]:
         'ship_code':     r['ship_code'],
         'ship_name':     r['ship_name'],
         'counterparty':  r['counterparty_name'],
-        # v2 addition: how the counterparty was resolved, so consumers can weight
+        # How the counterparty was resolved, so consumers can weight
         # confidence. PROVEN: direct/courier. INFERRED: homebase/visit/sector/
         # delivery. '' = unresolved (counterparty is null).
         'resolution':    r['resolution'],

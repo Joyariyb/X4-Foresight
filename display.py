@@ -1,8 +1,8 @@
 """
-v2/display.py — colored console intelligence report.
+display.py — colored console intelligence report.
 
-Renders a populated ScanContext to the terminal, matching v1's layout (sector-
-grouped tree, reputation bars, dynamic columns) and improving the colour:
+Renders a populated ScanContext to the terminal — a sector-grouped tree with
+reputation bars and dynamic columns, coloured to convey state at a glance:
 
   - hull / shield graded green→yellow→red by health
   - reputation bars tinted by standing
@@ -30,7 +30,7 @@ from data.production import (
 )
 
 
-# ── ANSI colour (ported from v1, expanded) ─────────────────────────────────────
+# ── ANSI colour (expanded) ─────────────────────────────────────────────────────
 
 def _enable_ansi() -> bool:
     if not sys.stdout.isatty():
@@ -126,7 +126,7 @@ def _health_str(pct, hp, mx) -> str:
 
 
 def _shield_str(pct, hp, mx) -> str:
-    """Shield reading — always blue (V1 convention), to set it apart from hull."""
+    """Shield reading — always blue, to set it apart from hull."""
     if pct is None:
         return paint("—", GREY)
     if pct >= 99.9:
@@ -174,7 +174,7 @@ LINE = "─" * 78
 def _header(ctx) -> None:
     print()
     print(paint(SEP, CYAN))
-    print(paint(f"  {BOLD}X4 FORESIGHT v2 — EMPIRE INTELLIGENCE", CYAN))
+    print(paint(f"  {BOLD}X4 FORESIGHT — EMPIRE INTELLIGENCE", CYAN))
     print(paint(SEP, CYAN))
     print(f"  Pilot    : {BOLD}{ctx.player_name or 'Unknown'}{RESET}")
     print(f"  Sector   : {ctx.player_sector or 'Unknown'}")
