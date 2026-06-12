@@ -138,7 +138,7 @@ class StationHandler:
         # ── Budget estimate ───────────────────────────────────────────────────
         # Reverse-engineered supply budget. Needs the resolved sector name for
         # the sunlight multiplier used in energy-cell production.
-        budget = estimate_station_budget(elem, self._sector_name)
+        budget = estimate_station_budget(elem, self._sector_macro)
 
         # ── Build Station dataclass ───────────────────────────────────────────
         station = Station(

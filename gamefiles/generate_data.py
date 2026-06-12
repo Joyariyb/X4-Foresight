@@ -425,6 +425,230 @@ def gen_ship_stats_py(ships) -> str:
 
 
 # ──────────────────────────────────────────────────────────────────────────
+#  station_stats.py — STATION_STATS
+# ──────────────────────────────────────────────────────────────────────────
+
+def gen_station_stats_py(idx: CatalogIndex) -> str:
+    """
+    Reads all station structure module XMLs and shield equipment XMLs,
+    building STATION_STATS keyed by lowercase macro name.
+
+    Structure macros  (assets/structures/*/macros/*.xml, base + DLC):
+      hull        → <hull max="N"/>
+      cargo       → <cargo max="N"/>   (storage modules)
+      produces    → <production><queue ware="..."/>  (production modules)
+
+    Shield equipment  (assets/equipment/shields/macros/*.xml, base + DLC):
+      max_shield  → <recharge max="N"/>
+
+    Only entries with at least one meaningful value are emitted — decorative
+    pieces and pure connection modules (no hull/shield/cargo/produces) are
+    dropped. This matches the scanner behaviour: STATION_STATS is used as a
+    filter; components missing from it are skipped during module parsing.
+    """
+    stats: dict[str, dict] = {}
+
+    # ── Structure modules ────────────────────────────────────────────────
+    struct_paths = (
+        idx.find("assets/structures/*/macros/*.xml") +
+        idx.find("extensions/*/assets/structures/*/macros/*.xml")
+    )
+    for vp in struct_paths:
+        root = ET.fromstring(idx.read(vp))
+        macro_el = root.find(".//macro")
+        if macro_el is None:
+            continue
+        macro_id = macro_el.get("name", "").lower()
+        if not macro_id:
+            continue
+
+        entry: dict = {}
+
+        hull_el = root.find(".//hull")
+        if hull_el is not None:
+            v = int(hull_el.get("max", 0) or 0)
+            if v > 0:
+                entry["max_hull"] = v
+
+        cargo_el = root.find(".//cargo")
+        if cargo_el is not None:
+            v = int(cargo_el.get("max", 0) or 0)
+            if v > 0:
+                entry["cargo_capacity"] = v
+
+        queue_el = root.find(".//production/queue")
+        if queue_el is not None:
+            ware = queue_el.get("ware", "")
+            if ware:
+                entry["produces"] = ware
+
+        if entry:
+            stats[macro_id] = entry
+
+    # ── Shield equipment ─────────────────────────────────────────────────
+    # Shields live under assets/props/surfaceelements/, not equipment/.
+    shield_paths = (
+        idx.find("assets/props/surfaceelements/macros/shield_*.xml") +
+        idx.find("extensions/*/assets/props/surfaceelements/macros/shield_*.xml")
+    )
+    for vp in shield_paths:
+        root = ET.fromstring(idx.read(vp))
+        macro_el = root.find(".//macro")
+        if macro_el is None:
+            continue
+        macro_id = macro_el.get("name", "").lower()
+        if not macro_id:
+            continue
+
+        recharge_el = root.find(".//recharge")
+        if recharge_el is not None:
+            v = int(recharge_el.get("max", 0) or 0)
+            if v > 0:
+                stats[macro_id] = {"max_shield": v}
+
+    # ── Format output ────────────────────────────────────────────────────
+    def _entry_str(e: dict) -> str:
+        lines = []
+        if "max_hull"       in e: lines.append(f"        'max_hull':       {e['max_hull']},")
+        if "max_shield"     in e: lines.append(f"        'max_shield':     {e['max_shield']},")
+        if "cargo_capacity" in e: lines.append(f"        'cargo_capacity': {e['cargo_capacity']},")
+        if "produces"       in e: lines.append(f"        'produces':       {repr(e['produces'])},")
+        return "\n".join(lines)
+
+    blocks = [f"    '{k}': {{\n{_entry_str(v)}\n    }},"
+              for k, v in sorted(stats.items())]
+
+    return (
+        GENERATED_BANNER +
+        "\n# Station module + shield equipment macro → static game stats.\n"
+        "#   max_hull       — base maximum hull HP (structure modules)\n"
+        "#   max_shield     — shield recharge capacity in HP (shield equipment)\n"
+        "#   cargo_capacity — maximum cargo volume in m³ (storage modules)\n"
+        "#   produces       — ware id produced by this module (production modules)\n"
+        "# Used by StationHandler._parse_modules() and ShipHandler for shield HP.\n"
+        "# Entries with no meaningful values (decorative, connection pieces) are omitted.\n"
+        "STATION_STATS = {\n" +
+        "\n".join(blocks) + "\n}\n"
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────────
+#  sector_stats.py — SECTOR_SUNLIGHT
+# ──────────────────────────────────────────────────────────────────────────
+
+# Classifies dataset macro strings from mapdefaults.xml.
+_SECTOR_CLASSIFY_RE  = re.compile(r'^Cluster_\d+_Sector\d+_macro$', re.IGNORECASE)
+_CLUSTER_CLASSIFY_RE = re.compile(r'^Cluster_\d+_macro$',            re.IGNORECASE)
+# Extracts cluster part from a lowercase sector macro: "cluster_601_sector001_macro" → "cluster_601"
+_SECTOR_PARENT_RE    = re.compile(r'^(cluster_\d+)_sector\d+_macro$')
+# Extracts cluster/sector numbers for page-20004 lang-ID calculation.
+_SECTOR_NUMS_RE      = re.compile(r'^cluster_(\d+)_sector(\d+)_macro$')
+# The lang-file sector-name pattern: "{20003,N}(Display Name)" — name is in parens.
+_SECTOR_NAME_PAREN_RE = re.compile(r'\(([^)]+)\)\s*$')
+
+
+def _sector_display_name(sector_macro: str, texts_20004: dict) -> str:
+    """Resolve a lowercase sector macro to its human-readable display name.
+
+    Page 20004 lang-ID formula (confirmed by scanner/language.py):
+      lang_id = str(cluster_num * 10) + str(sector_num * 10 + 1).zfill(3)
+    e.g. cluster_01_sector001_macro → cluster=1, sector=1
+         → "10" + "011" = "10011" → looks up {20004:10011}
+    """
+    m = _SECTOR_NUMS_RE.match(sector_macro)
+    if not m:
+        return ""
+    lang_id = str(int(m.group(1)) * 10) + str(int(m.group(2)) * 10 + 1).zfill(3)
+    raw = texts_20004.get(f"20004:{lang_id}", "")
+    nm = _SECTOR_NAME_PAREN_RE.search(raw)
+    return nm.group(1) if nm else ""
+
+
+def gen_sector_stats_py(idx: CatalogIndex, texts_20004: dict) -> str:
+    """
+    Generates SECTOR_SUNLIGHT keyed by lowercase sector macro.
+
+    Reads libraries/mapdefaults.xml (base + DLC). DLCs that ship a <diff>
+    patch are applied in catalog order; additive DLCs have their <dataset>
+    entries merged directly.
+
+    Boron DLC stores sunlight at the cluster level (Cluster_601_macro) rather
+    than on individual sectors. Sector sunlight is derived from the parent
+    cluster for any sector that lacks its own <area sunlight="..."/> entry.
+    """
+    # ── Merge mapdefaults ────────────────────────────────────────────────
+    base_root = ET.fromstring(idx.read("libraries/mapdefaults.xml"))
+    for vp in idx.find("extensions/*/libraries/mapdefaults.xml"):
+        dlc_root = ET.fromstring(idx.read(vp))
+        if dlc_root.tag == "diff":
+            apply_diff(base_root, dlc_root, source=vp)
+        else:
+            # Non-diff DLC: merge datasets into the base <defaults> block.
+            dst = base_root.find("defaults") or base_root
+            src = dlc_root.find("defaults") or dlc_root
+            for ds in src.findall("dataset"):
+                dst.append(ds)
+
+    defaults_el = base_root.find("defaults") or base_root
+
+    # ── Collect sunlights by macro type ──────────────────────────────────
+    cluster_sun: dict[str, float] = {}   # cluster macro → sunlight
+    sector_sun:  dict[str, float] = {}   # sector macro  → sunlight
+    all_sectors: set[str]         = set()  # every sector-like macro seen
+
+    for ds in defaults_el.findall("dataset"):
+        macro = ds.get("macro", "")
+        if _SECTOR_CLASSIFY_RE.match(macro):
+            all_sectors.add(macro.lower())
+        # Sunlight lives at <dataset><properties><area sunlight="..."/>
+        area = ds.find("properties/area")
+        sun_str = area.get("sunlight") if area is not None else None
+        if sun_str is None:
+            continue
+        sun = float(sun_str)
+        if _CLUSTER_CLASSIFY_RE.match(macro):
+            cluster_sun[macro.lower()] = sun
+        elif _SECTOR_CLASSIFY_RE.match(macro):
+            sector_sun[macro.lower()] = sun
+
+    # ── Resolve sunlight for every known sector ───────────────────────────
+    # Sectors with direct sunlight use it; others fall back to their parent
+    # cluster (Boron DLC pattern). Sectors with no resolution are omitted —
+    # the scanner falls back to 1.0 for any macro not in the table.
+    result: dict[str, float] = {}
+    for sm in sorted(all_sectors):
+        if sm in sector_sun:
+            result[sm] = sector_sun[sm]
+        else:
+            m_p = _SECTOR_PARENT_RE.match(sm)
+            if m_p:
+                parent = m_p.group(1) + "_macro"
+                if parent in cluster_sun:
+                    result[sm] = cluster_sun[parent]
+
+    # ── Format output ────────────────────────────────────────────────────
+    key_width = max((len(k) for k in result), default=30) + 2
+    lines = ["SECTOR_SUNLIGHT: dict[str, float] = {"]
+    for sm, sun in sorted(result.items()):
+        name    = _sector_display_name(sm, texts_20004)
+        comment = f"  # {name}" if name else ""
+        key_str = ('"' + sm + '":').ljust(key_width + 1)
+        lines.append(f"    {key_str} {repr(sun)},{comment}")
+    lines.append("}")
+
+    return (
+        GENERATED_BANNER +
+        "\n# Sector macro → sunlight multiplier (libraries/mapdefaults.xml + DLC).\n"
+        "# Keys are lowercase sector macros, matching what the save-file scanner reads.\n"
+        "# Sunlight affects energy cell production only:\n"
+        "#   effective_output = base_output * sunlight\n"
+        "# 1.0 = standard output; above 1.0 = more cells per cycle.\n"
+        "# Sectors absent from this table fall back to 1.0 in the scanner.\n" +
+        "\n".join(lines) + "\n"
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────────
 
 def main() -> int:
     game_dir = find_x4_install()
@@ -452,6 +676,10 @@ def main() -> int:
     ships = load_ship_data(idx, texts_ships)
     print(f"Found {len(ships)} ship macros")
 
+    # ── Station stats (structure modules + shields, page 20004 for sector names) ──
+    # Page 20004 is also used by gen_sector_stats_py for display-name comments.
+    texts_20004 = load_texts(idx, {"20004"})
+
     outputs = {
         "wares.py":            gen_wares_py(wares, group_textids, texts_20201),
         "ware_prices.py":      gen_ware_prices_py(wares),
@@ -459,6 +687,8 @@ def main() -> int:
         "station_names.py":    gen_station_names_py(wares, texts_20201),
         "ships.py":            gen_ships_py(ships),
         "ship_stats.py":       gen_ship_stats_py(ships),
+        "station_stats.py":    gen_station_stats_py(idx),
+        "sector_stats.py":     gen_sector_stats_py(idx, texts_20004),
     }
     for fname, content in outputs.items():
         path = DATA_DIR / fname

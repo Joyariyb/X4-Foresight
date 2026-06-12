@@ -218,7 +218,7 @@ def _two_hour_flows(modules: dict[str, list[str]], sunlight: float
     return produced_2h, consumed_2h
 
 
-def estimate_station_budget(station_elem, sector_name: str) -> dict:
+def estimate_station_budget(station_elem, sector_macro: str) -> dict:
     """
     Estimates the station's supply budget in credits.
 
@@ -233,11 +233,11 @@ def estimate_station_budget(station_elem, sector_name: str) -> dict:
     `basis` records which branch of the decision tree set the value, so the
     breakdown is auditable in the report and JSON.
     """
-    sunlight = SECTOR_SUNLIGHT.get(sector_name)
+    sunlight = SECTOR_SUNLIGHT.get(sector_macro)
     if sunlight is None:
         # A missing sector would silently under-budget energy production. Surface
-        # it instead of guessing quietly (see Generators/generate_sector_stats.py).
-        print(f"[Budget] WARNING: sector {sector_name!r} not in SECTOR_SUNLIGHT — "
+        # it instead of guessing quietly.
+        print(f"[Budget] WARNING: sector {sector_macro!r} not in SECTOR_SUNLIGHT — "
               f"using sunlight 1.0; energy-cell budget may be understated.")
         sunlight = 1.0
 

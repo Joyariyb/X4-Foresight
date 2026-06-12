@@ -224,8 +224,8 @@ def _stations(ctx, sector_name: dict) -> None:
                 lbl = 'Produces' if idx == 0 else '        '
                 wid = display_name_to_id(ware)
                 if wid:
-                    pc = count * units_per_cycle(wid, sector)
-                    ph = count * units_per_hour(wid, sector)
+                    pc = count * units_per_cycle(wid, s.sector_macro)
+                    ph = count * units_per_hour(wid, s.sector_macro)
                     rt, rtc = _runtime(runtime_minutes(wid, count, inv_by_name))
                     rt_str = f"  ·  {paint(rt, rtc)}" if rt else ""
                     print(f"  {ind} {lbl} : {paint(f'{ware:<22}', CYAN)} {count}x  "

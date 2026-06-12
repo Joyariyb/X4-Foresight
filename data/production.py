@@ -43,7 +43,7 @@ def display_name_to_id(display_name: str) -> str | None:
     return _DISPLAY_TO_ID.get(display_name)
 
 
-def units_per_cycle(ware_id: str, sector: str) -> float:
+def units_per_cycle(ware_id: str, sector_macro: str) -> float:
     """Returns effective units produced per cycle for one module.
 
     Energy cells apply the sector sunlight multiplier; all other wares are
@@ -56,16 +56,16 @@ def units_per_cycle(ware_id: str, sector: str) -> float:
     amount = stats["amount"]
     if ware_id == "energycells":
         # Game floors the per-cycle output to an integer before computing hourly rates.
-        amount = int(amount * SECTOR_SUNLIGHT.get(sector, 1.0))
+        amount = int(amount * SECTOR_SUNLIGHT.get(sector_macro, 1.0))
     return float(amount)
 
 
-def units_per_hour(ware_id: str, sector: str) -> float:
+def units_per_hour(ware_id: str, sector_macro: str) -> float:
     """Returns effective units produced per hour for one module."""
     stats = PRODUCTION_STATS.get(ware_id)
     if stats is None:
         return 0.0
-    return units_per_cycle(ware_id, sector) * (3600 / stats["time"])
+    return units_per_cycle(ware_id, sector_macro) * (3600 / stats["time"])
 
 
 def runtime_minutes(ware_id: str, module_count: int, inventory: dict[str, int]) -> float | None:
