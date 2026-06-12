@@ -29,21 +29,53 @@ def open_save(path: pathlib.Path):
             yield f
 
 
-def load_sector_names(lang_path: pathlib.Path) -> dict:
-    """Parses page ID 20004 from the language XML, returning {sector_id: name} dict."""
+def load_language_root(lang_path: pathlib.Path | None = None):
+    """
+    Returns the parsed root element of the X4 language file, or None.
+
+    Two sources, tried in order:
+      1. A local XML file (lang_path) — kept as a manual override so a
+         hand-extracted copy still works, e.g. for testing a modified file.
+      2. The game's own .cat/.dat archives via gamefiles.catalog — the normal
+         path. Reads t/0001-l044.xml directly out of the install; DLC and
+         patch text is already merged in by the catalog override rules, so
+         this single file contains everything.
+
+    Parsing happens HERE, once: the 6 MB file used to be parsed separately by
+    load_sector_names and load_text_pages — callers now share this root.
+    """
+    if lang_path is not None and lang_path.exists():
+        print(f"[Language] Loading {lang_path.name} (local file override)...")
+        return ET.parse(lang_path).getroot()
+
+    # Normal path: pull the file straight from the game's catalogs.
+    # Imported lazily so a missing gamefiles package (or weird install) can
+    # never break save scanning — names just degrade to raw macro IDs.
+    try:
+        from gamefiles.catalog import CatalogIndex, find_x4_install
+        game_dir = find_x4_install()
+        if game_dir is not None:
+            index = CatalogIndex.from_game_dir(game_dir)
+            raw = index.read('t/0001-l044.xml')
+            print(f"[Language] Loaded t/0001-l044.xml from game catalogs "
+                  f"({game_dir})")
+            return ET.fromstring(raw)
+        print("\n[Warning] No X4 installation found for the language file.")
+    except Exception as e:
+        print(f"\n[Warning] Could not read language file from game catalogs: {e}")
+
+    print("  Sector and station names will show as raw macro IDs.\n")
+    return None
+
+
+def load_sector_names(root) -> dict:
+    """Parses page ID 20004 from the language XML root, returning {sector_id: name}."""
     lookup = {}
 
-    if not lang_path.exists():
-        print(f"\n[Warning] Language file not found: {lang_path.name}")
-        print("  Sector names will show as macro IDs.")
-        print("  Extract 0001-l044.xml from X4's .cat files using X Tools (Steam).\n")
+    if root is None:
         return lookup
 
     try:
-        print(f"[Language] Loading sector names from {lang_path.name}...")
-        tree = ET.parse(lang_path)
-        root = tree.getroot()
-
         for page in root.findall('page'):
             if page.get('id') == '20004':
                 for t in page.findall('t'):
@@ -64,9 +96,9 @@ def load_sector_names(lang_path: pathlib.Path) -> dict:
     return lookup
 
 
-def load_text_pages(lang_path: pathlib.Path, page_ids: set) -> dict:
+def load_text_pages(root, page_ids: set) -> dict:
     """
-    Loads the requested pages from the language file.
+    Loads the requested pages from the parsed language XML root.
     Returns {"page:id": text} for every entry found on those pages.
 
     Used by scanners that need to resolve {page,id} text references that
@@ -74,11 +106,9 @@ def load_text_pages(lang_path: pathlib.Path, page_ids: set) -> dict:
     on page 20102).
     """
     texts = {}
-    if not lang_path.exists():
+    if root is None:
         return texts
     try:
-        tree      = ET.parse(lang_path)
-        root      = tree.getroot()
         remaining = {str(p) for p in page_ids}
         for page in root.findall('page'):
             pid = page.get('id', '')

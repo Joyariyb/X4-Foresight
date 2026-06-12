@@ -60,9 +60,9 @@ class SectorHandler:
         # Storing the macro as a usable fallback until that is verified.
         cluster_name = cluster_macro
 
-        # Sunlight is keyed by human-readable sector name. Default 1.0 is
+        # Sunlight is keyed by sector macro (lowercase). Default 1.0 is
         # standard output — only deviates for sectors near unusual stars.
-        sunlight = SECTOR_SUNLIGHT.get(sector_name, 1.0)
+        sunlight = SECTOR_SUNLIGHT.get(sector_macro, 1.0)
 
         # Keep context up to date so station/ship handlers know which sector
         # they are currently parsing — more reliable than walking the stack.
