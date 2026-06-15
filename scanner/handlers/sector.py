@@ -40,6 +40,11 @@ class SectorHandler:
         sector_macro = elem.get('macro', '')
         owner_id     = elem.get('owner', '')
 
+        # The save tags every map object the player has discovered with
+        # knownto="player" (absent = still fog-of-war). Drives the "Undiscovered"
+        # treatment in the UI. See reference: X4 save knownto attribute.
+        is_discovered = elem.get('knownto') == 'player'
+
         if not sector_macro:
             return
 
@@ -77,4 +82,5 @@ class SectorHandler:
             owner_id      = owner_id,
             owner_name    = FACTION_NAMES.get(owner_id, owner_id.title()),
             sunlight      = sunlight,
+            is_discovered = is_discovered,
         ))

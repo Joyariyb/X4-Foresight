@@ -259,12 +259,40 @@ def _faction_relations(conn, scan_id) -> list[dict]:
         (scan_id,))
 
 
+def _sector_resources(conn) -> dict[str, list[dict]]:
+    """
+    {sector_macro: [{ware, ware_name, yield_level, recharge_max, recharge_time}]}
+    for every sector with mineable resources, richest yield first. ware_name comes
+    from ware_metadata (falls back to the raw ware id when unnamed).
+    """
+    rows = _rows(
+        conn,
+        "SELECT sr.sector_macro, sr.ware, "
+        "       COALESCE(wm.name, sr.ware) AS ware_name, "
+        "       sr.yield_level, sr.recharge_max, sr.recharge_time "
+        "FROM sector_resources sr "
+        "LEFT JOIN ware_metadata wm ON wm.ware_id = sr.ware "
+        "ORDER BY sr.recharge_max DESC")
+    out: dict[str, list[dict]] = {}
+    for r in rows:
+        out.setdefault(r.pop('sector_macro'), []).append(r)
+    return out
+
+
 def _sectors(conn) -> list[dict]:
     # Reference table — latest-only, so no scan_id filter.
-    return _rows(
+    rows = _rows(
         conn,
         "SELECT sector_macro, sector_name, cluster_macro, cluster_name, "
-        "owner_id, owner_name, sunlight FROM sectors ORDER BY sector_name")
+        "owner_id, owner_name, sunlight, is_discovered FROM sectors "
+        "ORDER BY sector_name")
+    resources = _sector_resources(conn)
+    for r in rows:
+        # Stored as INTEGER 0/1 (and NULL on rows scanned before this column
+        # existed); expose a real bool so the UI can treat it directly.
+        r['is_discovered'] = bool(r['is_discovered'])
+        r['resources'] = resources.get(r['sector_macro'], [])
+    return rows
 
 
 def _npc_station_counts(conn, scan_id) -> dict:

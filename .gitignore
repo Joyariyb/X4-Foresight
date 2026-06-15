@@ -37,3 +37,4 @@ scratch/
 # Graphify knowledge graph artifacts
 graphify-out/
 .graphifyignore
+CLAUDE.md

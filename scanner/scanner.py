@@ -12,6 +12,7 @@ from .handlers.economy     import EconomyHandler
 from .handlers.npc_station import NpcStationHandler
 from .handlers.sector      import SectorHandler
 from .handlers.gate        import GateHandler
+from .handlers.resource    import ResourceHandler
 
 
 class Scanner:
@@ -67,6 +68,7 @@ class Scanner:
         self._npc     = NpcStationHandler(texts)
         self._sector  = SectorHandler(sector_names)
         self._gate    = GateHandler()
+        self._resource = ResourceHandler()
 
         # Stored for handlers that need them during scan (ship, station).
         self._sector_names = sector_names
@@ -256,6 +258,15 @@ class Scanner:
         is safe to always call through — unrecognised contexts are simply
         ignored by the handler.
         """
+        # Sector <resourceareas> subtree — a self-contained state machine. While
+        # active it owns every child tag (area/wares/ware/recharge/yields/yield),
+        # so short-circuit before the generic chain. resourceareas always closes
+        # before any of the sector's child components open, so this never eats
+        # tags meant for other handlers.
+        if tag == 'resourceareas' or self._resource.active:
+            self._resource.on_start(tag, elem, ctx)
+            return
+
         if tag == 'player' and not ctx.player_name:
             # <player name="..." location="..."> appears once near the top.
             ctx.player_name = elem.get('name', '')
@@ -356,6 +367,12 @@ class Scanner:
         data across multiple child elements and need to know when the parent
         closes — e.g. ReputationHandler waits for </faction> to build entries.
         """
+        # Resource subtree end events: section resets and the final flush on
+        # </resourceareas>. Mirrors the short-circuit in _on_element_start.
+        if tag == 'resourceareas' or self._resource.active:
+            self._resource.on_end(tag, elem, ctx)
+            return
+
         if tag == 'faction':
             self._rep.on_faction_end(elem, ctx)
 

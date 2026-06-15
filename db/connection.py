@@ -58,6 +58,14 @@ def _migrate(conn: sqlite3.Connection) -> None:
     if 'time_to_cap_hours' not in spa_cols:
         conn.execute('ALTER TABLE station_production_analytics ADD COLUMN time_to_cap_hours REAL')
 
+    # is_discovered added when sector fog-of-war (knownto="player") was surfaced.
+    # ALTER appends it at the table's physical end, which matches schema.sql
+    # declaring it as the last sectors column — so write.py's positional INSERT
+    # stays correct on both fresh and migrated databases.
+    sec_cols = {row[1] for row in conn.execute('PRAGMA table_info(sectors)')}
+    if 'is_discovered' not in sec_cols:
+        conn.execute('ALTER TABLE sectors ADD COLUMN is_discovered INTEGER')
+
 
 def _populate_ware_metadata(conn: sqlite3.Connection) -> None:
     """Write static ware properties from data/wares.py into ware_metadata.

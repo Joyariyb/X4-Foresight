@@ -79,6 +79,28 @@
     .nav-badge { font-size: 10px; font-family: var(--font-mono); background: var(--teal-dim); color: var(--teal); padding: 1px 5px; border-radius: 3px; }
     .nav-badge.warn { background: var(--red-dim); color: var(--red); }
 
+    /* ── NAV DROPDOWN (Universe → Map / Sectors) ──
+       The parent .nav-tab is a non-clickable label; the menu opens on hover.
+       Pure CSS :hover keeps a small invisible bridge so the cursor can travel
+       from the label into the menu without the gap closing it. */
+    .nav-dropdown { position: relative; }
+    .nav-dd-caret { font-size: 12px !important; opacity: 0.6; margin-left: -2px; }
+    .nav-dd-menu {
+      position: absolute; top: 100%; left: 0; min-width: 150px; z-index: 50;
+      background: var(--bg-panel); border: 1px solid var(--border); border-top: none;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+      display: none; flex-direction: column; padding: 4px 0;
+    }
+    .nav-dropdown:hover .nav-dd-menu { display: flex; }
+    .nav-dd-item {
+      display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+      font-family: var(--font-cond); font-size: 12px; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--text-dim); cursor: pointer;
+      white-space: nowrap; transition: background 0.12s, color 0.12s;
+    }
+    .nav-dd-item:hover { background: var(--bg); color: var(--teal); }
+    .nav-dd-item i { font-size: 15px; }
+
     /* ── MAIN AREA ── */
     #main { display: flex; flex: 1; overflow: hidden; }
 
@@ -173,6 +195,74 @@
     .uhp-fdot  { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
     .uhp-fcode { flex: 1; color: var(--text); font-size: 11px; letter-spacing: 0.05em; }
     .uhp-fcount{ color: var(--text-dim); font-size: 11px; font-family: var(--font-mono); }
+
+    /* ── SECTORS TAB ──
+       Master-detail: a cluster-grouped sector list on the left, the selected
+       sector's data on the right. Negative margin fills #content like the map. */
+    #tab-sectors { flex: 1; min-height: 0; margin: -14px; gap: 0; flex-direction: row; }
+    #sectors-list {
+      width: 260px; flex-shrink: 0; overflow-y: auto;
+      background: var(--bg-panel); border-right: 1px solid var(--border); padding: 8px 0;
+    }
+    .sectors-cluster-head {
+      display: flex; align-items: center; gap: 7px; padding: 8px 12px 4px;
+      font-family: var(--font-cond); font-size: 11px; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim);
+    }
+    .sectors-cluster-head .scl-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+    .sector-row {
+      display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 22px;
+      font-family: var(--font-cond); font-size: 13px; color: var(--text); cursor: pointer;
+      border-left: 2px solid transparent; transition: background 0.12s;
+    }
+    .sector-row:hover { background: var(--bg); }
+    .sector-row.active { background: var(--bg); border-left-color: var(--teal); color: var(--teal); }
+    .sector-row .sr-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .sector-row .sr-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    /* Count of the player's own stations in the sector. */
+    .sr-sta-badge { flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px; font-family: var(--font-mono); font-size: 10px; color: var(--teal); background: var(--teal-dim); padding: 1px 5px; border-radius: 3px; }
+    .sr-sta-badge i { font-size: 11px; }
+
+    #sectors-detail { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 24px; }
+    .sectors-empty { color: var(--text-dim); font-family: var(--font-cond); font-size: 14px; margin-top: 40px; text-align: center; }
+    .sd-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 2px; }
+    .sd-name { font-family: var(--font-cond); font-size: 22px; font-weight: 600; color: var(--text); letter-spacing: 0.02em; }
+    .sd-cluster { font-family: var(--font-cond); font-size: 12px; color: var(--text-dim); letter-spacing: 0.06em; text-transform: uppercase; }
+    .sd-owner { font-family: var(--font-cond); font-size: 14px; margin-bottom: 18px; }
+    .sd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 22px; }
+    .sd-stat { background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; padding: 9px 12px; }
+    .sd-stat-label { font-family: var(--font-cond); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 3px; }
+    .sd-stat-value { font-family: var(--font-mono); font-size: 16px; color: var(--text); }
+    .sd-section-title { font-family: var(--font-cond); font-weight: 600; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); margin: 0 0 8px; }
+    .sd-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 22px; }
+    .sd-conn-row, .sd-fac-row { display: flex; align-items: center; gap: 8px; font-family: var(--font-cond); font-size: 13px; color: var(--text); }
+    .sd-conn-row { cursor: pointer; padding: 3px 0; }
+    .sd-conn-row:hover .sd-conn-name { color: var(--teal); }
+    .sd-conn-row .sr-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .sd-conn-name { flex: 1; }
+    .sd-conn-cost { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
+    .sd-fac-row { padding: 2px 0; }
+    .sd-fac-row .sr-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .sd-fac-name { flex: 1; }
+    .sd-fac-count { font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); }
+
+    /* Resource rows: ware name · yield badge · capacity/refresh meta. */
+    .sd-res-row { display: flex; align-items: center; gap: 10px; padding: 3px 0; font-family: var(--font-cond); font-size: 13px; color: var(--text); }
+    .sd-res-name { flex: 1; }
+    .sd-res-yield { font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 1px 7px; border-radius: 3px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-dim); white-space: nowrap; }
+    /* Abundance ramp — low (red) → high (green), so richer sectors read at a glance. */
+    .sd-res-yield[data-yield="verylow"], .sd-res-yield[data-yield="low"]      { color: #f0883e; border-color: #f0883e55; }
+    .sd-res-yield[data-yield="lowplus"], .sd-res-yield[data-yield="medlow"]   { color: #e3b341; border-color: #e3b34155; }
+    .sd-res-yield[data-yield="medium"],  .sd-res-yield[data-yield="medplus"]  { color: #d2c84a; border-color: #d2c84a55; }
+    .sd-res-yield[data-yield="medhigh"], .sd-res-yield[data-yield="high"], .sd-res-yield[data-yield="veryhigh"] { color: #3fb950; border-color: #3fb95055; }
+    .sd-res-meta { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); white-space: nowrap; }
+
+    /* The player's own stations in a sector — clickable to the station card. */
+    .sd-sta-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-family: var(--font-cond); font-size: 13px; color: var(--text); cursor: pointer; }
+    .sd-sta-row i { font-size: 14px; color: var(--teal); flex-shrink: 0; }
+    .sd-sta-row:hover .sd-sta-name { color: var(--teal); }
+    .sd-sta-name { flex: 1; }
+    .sd-sta-code { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
 
     /* ── SECTION HEADER ── */
     .sec-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
@@ -470,7 +560,12 @@
     <div class="nav-tab" onclick="switchTab('stations',this)"><i class="ti ti-building-factory-2"></i> Stations</div>
     <div class="nav-tab" onclick="switchTab('crew',this)"><i class="ti ti-users"></i> Crew</div>
     <div class="nav-tab" onclick="switchTab('diplomacy',this)"><i class="ti ti-world"></i> Diplomacy</div>
-    <div class="nav-tab" onclick="switchTab('universe',this); initUniverseView()"><i class="ti ti-planet"></i> Universe</div>
+    <div class="nav-tab nav-dropdown" id="nav-universe"><i class="ti ti-planet"></i> Universe <i class="ti ti-chevron-down nav-dd-caret"></i>
+      <div class="nav-dd-menu">
+        <div class="nav-dd-item" onclick="switchTab('universe',document.getElementById('nav-universe')); initUniverseView()"><i class="ti ti-map-2"></i> Map</div>
+        <div class="nav-dd-item" onclick="switchTab('sectors',document.getElementById('nav-universe')); renderSectorsList()"><i class="ti ti-list"></i> Sectors</div>
+      </div>
+    </div>
     <div class="nav-tab" onclick="switchTab('alerts',this)"><i class="ti ti-alert-triangle"></i> Alerts <span class="nav-badge warn" id="nav-alerts">0</span></div>
     <div class="tb-field tb-scan" id="tb-scan-field" style="display:none">
       <div class="lbl"><i class="ti ti-history" style="font-size:10px;vertical-align:-1px"></i> Scan</div>
@@ -722,6 +817,14 @@
           <!-- Crisp HTML name labels, projected onto the tilted plane by JS.
                Sits AFTER (above) the tilt so text never enters the 3D texture. -->
           <div id="universe-labels"></div>
+        </div>
+      </div>
+
+      <!-- SECTORS TAB -->
+      <div class="tab-panel" id="tab-sectors">
+        <div id="sectors-list"></div>
+        <div id="sectors-detail">
+          <div class="sectors-empty">Select a sector to view its details.</div>
         </div>
       </div>
 
@@ -2322,7 +2425,10 @@
     const s = _navStack.pop();
     if (!s) return;
     _navGuard = true;
-    const navTab = document.querySelector(`.nav-tab[onclick*="'${s.tab}'"]`);
+    // Match either a flat nav-tab or a dropdown child (Universe → Map/Sectors),
+    // then resolve to the .nav-tab that should carry the active highlight.
+    const navHit = document.querySelector(`.nav-tab[onclick*="'${s.tab}'"], .nav-dd-item[onclick*="'${s.tab}'"]`);
+    const navTab = navHit ? navHit.closest('.nav-tab') : null;
     switchTab(s.tab, navTab);
     // Restore the sub-view too so you land exactly where you left.
     if (s.tab === 'fleet' && s.fleetFaction) switchFleetTab(s.fleetFaction);
@@ -3555,6 +3661,12 @@
       : alerts.map(a => `<div class="alert ${a.cls}"><i class="ti ${a.icon}"></i> ${a.msg}</div>`).join("");
 
     renderUniverseMap(data);
+    // renderUniverseMap repopulates the shared sector maps; if the Sectors tab
+    // is already open, rebuild it against the new scan (and refresh the detail).
+    if (document.getElementById('tab-sectors')?.classList.contains('active')) {
+      renderSectorsList();
+      if (_selectedSector) showSectorDetail(_selectedSector);
+    }
 
     document.getElementById("loading").style.display = "none";
     document.getElementById("shell").style.display   = "flex";
@@ -3906,6 +4018,8 @@
   let _nearestStation = {}; // {sector_macro → {name, jumps}} — nearest player station
   let _sectorInfoMap  = {}; // {sector_macro → sector row from data.sectors}
   let _npcBySector    = {}; // {sector_macro → [{owner_id, owner_name, count}]}
+  let _playerStaBySector = {}; // {sector_macro → [station, …]} — the player's own stations
+  let _sectorAdj      = {}; // {sector_macro → [{macro, cost}]} — gate/highway links
 
   // Fit all clusters inside the map container, called on first tab open when
   // the element has real dimensions (deferred via requestAnimationFrame).
@@ -4070,13 +4184,17 @@
     }
 
     // ── Build cluster metadata from sector data ───────────────────────────────
-    const clusterInfo = {}; // macro → { name, owners:{id→count}, sectors[] }
+    const clusterInfo = {}; // macro → { name, owners:{id→count}, sectors[], anyDiscovered }
     (data.sectors || []).forEach(s => {
       if (!s.cluster_macro) return;
       const ci = clusterInfo[s.cluster_macro] ||
-                 (clusterInfo[s.cluster_macro] = { name: null, owners: {}, sectors: [] });
+                 (clusterInfo[s.cluster_macro] = { name: null, owners: {}, sectors: [], anyDiscovered: false });
       ci.sectors.push(s);
-      if (s.owner_id) ci.owners[s.owner_id] = (ci.owners[s.owner_id] || 0) + 1;
+      if (s.is_discovered) ci.anyDiscovered = true;
+      // Fog-of-war: only DISCOVERED sectors contribute to the cluster's
+      // dominant-faction colour — you don't know who owns space you haven't
+      // explored. A cluster with no discovered sectors falls through to gray.
+      if (s.owner_id && s.is_discovered) ci.owners[s.owner_id] = (ci.owners[s.owner_id] || 0) + 1;
       // Use cluster_name only when it's a real display name, not the raw macro.
       if (s.cluster_name && s.cluster_name !== s.cluster_macro && !ci.name)
         ci.name = s.cluster_name;
@@ -4103,6 +4221,9 @@
       }
       return '#3d444d';
     }
+
+    // Neutral gray for sectors the player hasn't discovered yet.
+    const UNDISCOVERED_COLOUR = '#3d444d';
 
     // ── Render SVG ────────────────────────────────────────────────────────────
     vp.innerHTML = '';
@@ -4134,6 +4255,7 @@
           // cluster's sub-hex radius (which varies with sector count).
           gateScale: (_lay.r * HEX_BODY) / 300,
           color: FACTION_COLOURS[sec.owner_id] || '#6e7681',
+          discovered: !!sec.is_discovered,
         };
       });
     }
@@ -4196,6 +4318,9 @@
       const a = sectorPos[edge[0]];
       const b = sectorPos[edge[1]];
       if (!a || !b) return;
+      // Fog-of-war: never draw a jump-line that touches an undiscovered sector
+      // (applies to both the cluster-level and sector-level strands below).
+      if (!a.discovered || !b.discovered) return;
 
       const id = `ug${i}`;
 
@@ -4271,7 +4396,9 @@
       // Sector sub-hexes (visible at zoom ≥ 1.60).
       // Must use the same layout/position formulas as the sectorPos loop above
       // so gate connection line endpoints match the drawn hexes exactly.
-      if (sectors.length > 0) {
+      // Sub-hexes only render for clusters with at least one discovered sector;
+      // an entirely-undiscovered cluster shows nothing when zoomed in.
+      if (sectors.length > 0 && (clusterInfo[macro] || {}).anyDiscovered) {
         const layout = SECTOR_LAYOUTS[Math.min(sectors.length, SECTOR_LAYOUTS.length) - 1];
         const subR   = layout.r * HEX_BODY;
         const sg     = el('g', { class: 'u-sector-hex' });
@@ -4280,7 +4407,10 @@
           const [ox, oy] = layout.offs[i] || [0, 0];
           const sx = cx + ox * HEX_BODY;
           const sy = cy + oy * HEX_BODY;
-          const sc = FACTION_COLOURS[sec.owner_id] || '#6e7681';
+          // Undiscovered sectors draw gray; discovered ones use their owner colour.
+          const discovered = !!sec.is_discovered;
+          const sc = discovered ? (FACTION_COLOURS[sec.owner_id] || '#6e7681')
+                                : UNDISCOVERED_COLOUR;
 
           sg.appendChild(el('polygon', {
             points:         hexPoints(sx, sy, subR - 0.5),
@@ -4296,7 +4426,7 @@
             const sl = document.createElement('span');
             sl.className = 'u-sector-label';
             sl.style.color = sc;
-            sl.textContent = sec.sector_name || sec.sector_macro;
+            sl.textContent = discovered ? (sec.sector_name || sec.sector_macro) : 'Undiscovered';
             labelsEl.appendChild(sl);
             _uSecLabelEls.push({ el: sl, wx: sx, wy: sy });
           }
@@ -4315,6 +4445,22 @@
     for (const s of (data.sectors || [])) _sectorInfoMap[s.sector_macro] = s;
 
     _npcBySector = data.npc_stations_by_sector || {};
+
+    // The player's own stations grouped by sector (data.stations is player-only).
+    // Powers the per-sector station count + "Your Stations" list in the Sectors tab.
+    _playerStaBySector = {};
+    for (const st of (data.stations || [])) {
+      if (!st.sector_macro) continue;
+      (_playerStaBySector[st.sector_macro] || (_playerStaBySector[st.sector_macro] = [])).push(st);
+    }
+
+    // Sector adjacency for the Sectors-tab detail pane: each gate/highway edge
+    // is undirected, so record it both ways. cost 0 = intra-cluster highway.
+    _sectorAdj = {};
+    for (const [a, b, cost] of (data.galaxy_map?.edges || [])) {
+      (_sectorAdj[a] || (_sectorAdj[a] = [])).push({ macro: b, cost });
+      (_sectorAdj[b] || (_sectorAdj[b] = [])).push({ macro: a, cost });
+    }
 
     // Dijkstra from each player station sector to find the nearest named station
     // for every sector on the map. O(stations × sectors²) but the galaxy is small.
@@ -4473,6 +4619,172 @@
 
   function _hideUHoverPanel() {
     document.getElementById('u-hover-panel')?.classList.remove('visible');
+  }
+
+  // ── SECTORS TAB ────────────────────────────────────────────────────────────
+  // Master-detail view sharing the universe map's data: _sectorInfoMap (rows),
+  // _sectorAdj (links), _nearestStation (jumps) and _npcBySector (presence) are
+  // all populated by renderUniverseMap, which always runs before this view opens.
+  let _selectedSector = null;
+
+  // Cluster display name: same precedence the map uses — static API names first,
+  // then a real cluster_name from the export, finally a prettified macro string.
+  function _clusterName(macro, sec) {
+    if (CLUSTER_NAMES[macro]) return CLUSTER_NAMES[macro];
+    if (sec && sec.cluster_name && sec.cluster_name !== macro) return sec.cluster_name;
+    return (macro || '').replace(/_macro$/, '').replace(/_/g, ' ')
+                        .replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  // Strip the "[TEL] " bracket prefix the export puts on faction display names.
+  function _ownerLabel(name) { return (name || '').replace(/^\[\w+\]\s*/, '') || 'Unclaimed'; }
+
+  // Compact number for resource capacities: 7805 → 7.8k, 9.6M, 1.45B.
+  function _fmtCompact(n) {
+    n = Number(n) || 0;
+    if (n >= 1e9) return (n / 1e9).toFixed(2).replace(/\.?0+$/, '') + 'B';
+    if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'k';
+    return String(n);
+  }
+
+  function renderSectorsList() {
+    const listEl = document.getElementById('sectors-list');
+    if (!listEl) return;
+
+    // Group sectors by cluster from the same map already in memory. Undiscovered
+    // sectors are skipped entirely, so a cluster with none never gets created.
+    const clusters = {}; // macro → { name, owners:{id→count}, sectors:[] }
+    for (const s of Object.values(_sectorInfoMap)) {
+      if (!s.is_discovered) continue;
+      const cm = s.cluster_macro || 'unknown';
+      const c  = clusters[cm] || (clusters[cm] = { macro: cm, name: _clusterName(cm, s), owners: {}, sectors: [] });
+      c.sectors.push(s);
+      if (s.owner_id) c.owners[s.owner_id] = (c.owners[s.owner_id] || 0) + 1;
+    }
+
+    // Dominant-faction colour for the cluster header swatch (mirrors the map).
+    const clusterColour = (c) => {
+      const sorted = Object.entries(c.owners).sort((a, b) => b[1] - a[1]);
+      for (const [id] of sorted) if (FACTION_COLOURS[id]) return FACTION_COLOURS[id];
+      return '#3d444d';
+    };
+
+    const ordered = Object.values(clusters).sort((a, b) => a.name.localeCompare(b.name));
+    let html = '';
+    for (const c of ordered) {
+      html += `<div class="sectors-cluster-head"><span class="scl-dot" style="background:${clusterColour(c)}"></span>${c.name}</div>`;
+      c.sectors.sort((a, b) => (a.sector_name || '').localeCompare(b.sector_name || ''));
+      for (const s of c.sectors) {
+        const dot  = FACTION_COLOURS[s.owner_id] || '#6e7681';
+        const active = s.sector_macro === _selectedSector ? ' active' : '';
+        // Count of the player's own stations in this sector (badge when > 0).
+        const pCount = (_playerStaBySector[s.sector_macro] || []).length;
+        const badge  = pCount ? `<span class="sr-sta-badge" title="${pCount} of your stations"><i class="ti ti-building-factory-2"></i>${pCount}</span>` : '';
+        html += `<div class="sector-row${active}" data-macro="${s.sector_macro}" onclick="showSectorDetail('${s.sector_macro}')">`
+              + `<span class="sr-dot" style="background:${dot}"></span>`
+              + `<span class="sr-name">${s.sector_name || s.sector_macro}</span>${badge}</div>`;
+      }
+    }
+    listEl.innerHTML = html || '<div class="sectors-empty">No sector data.</div>';
+  }
+
+  function showSectorDetail(macro) {
+    _selectedSector = macro;
+
+    // Reflect selection in the list.
+    document.querySelectorAll('#sectors-list .sector-row').forEach(r =>
+      r.classList.toggle('active', r.dataset.macro === macro));
+
+    const detailEl = document.getElementById('sectors-detail');
+    if (!detailEl) return;
+    const sec = _sectorInfoMap[macro];
+    if (!sec) { detailEl.innerHTML = '<div class="sectors-empty">Sector not found.</div>'; return; }
+
+    const ownColor = FACTION_COLOURS[sec.owner_id] || 'var(--text-dim)';
+    const near     = _nearestStation[macro];
+    const jumpsTxt = near ? (near.jumps === 0 ? 'In sector' : `${near.jumps} jump${near.jumps !== 1 ? 's' : ''}`) : '—';
+    const sunTxt   = (sec.sunlight != null) ? Math.round(sec.sunlight * 100) + '%' : '—';
+
+    let html = `<div class="sd-head"><div class="sd-name">${sec.sector_name || macro}</div>`
+             + `<div class="sd-cluster">${_clusterName(sec.cluster_macro, sec)}</div></div>`
+             + `<div class="sd-owner" style="color:${ownColor}">${_ownerLabel(sec.owner_name)}</div>`;
+
+    // Key stats.
+    html += '<div class="sd-grid">'
+          + `<div class="sd-stat"><div class="sd-stat-label">Sunlight</div><div class="sd-stat-value">${sunTxt}</div></div>`
+          + `<div class="sd-stat"><div class="sd-stat-label">Nearest Station</div><div class="sd-stat-value">${jumpsTxt}</div></div>`;
+    if (near) html += `<div class="sd-stat"><div class="sd-stat-label">Station</div><div class="sd-stat-value" style="font-size:13px;font-family:var(--font-cond)">${near.name}</div></div>`;
+    html += '</div>';
+
+    // The player's own stations in this sector. Click jumps to the station card.
+    const myStations = _playerStaBySector[macro] || [];
+    if (myStations.length) {
+      html += `<div class="sd-section-title">Your Stations (${myStations.length})</div><div class="sd-list">`;
+      for (const st of myStations) {
+        const code = st.code || '';
+        html += `<div class="sd-sta-row" onclick="goToStation('${code}')">`
+              + `<i class="ti ti-building-factory-2"></i>`
+              + `<span class="sd-sta-name">${st.name || code || 'Station'}</span>`
+              + (code ? `<span class="sd-sta-code">${code}</span>` : '')
+              + `</div>`;
+      }
+      html += '</div>';
+    }
+
+    // Mineable resources (from the save's <resourceareas>), richest capacity
+    // first. Capacity is the combined recharge "max" across the sector's fields.
+    const resources = sec.resources || [];
+    if (resources.length) {
+      html += '<div class="sd-section-title">Resources</div><div class="sd-list">';
+      for (const res of resources) {
+        const yl  = res.yield_level || '';
+        const cap = _fmtCompact(res.recharge_max);
+        const sec_ = res.recharge_time ? Math.round(res.recharge_time / 1000) + 's' : '';
+        const meta = [cap && ('cap ' + cap), sec_].filter(Boolean).join(', ');
+        html += `<div class="sd-res-row">`
+              + `<span class="sd-res-name">${res.ware_name || res.ware}</span>`
+              + `<span class="sd-res-yield" data-yield="${yl}">${yl || '—'}</span>`
+              + `<span class="sd-res-meta">${meta}</span></div>`;
+      }
+      html += '</div>';
+    }
+
+    // Connections (gates / highways). Undiscovered neighbours are omitted, to
+    // match the map where jump-lines to undiscovered sectors aren't drawn.
+    const links = (_sectorAdj[macro] || [])
+      .filter(lk => { const ns = _sectorInfoMap[lk.macro]; return ns && ns.is_discovered; })
+      .sort((a, b) => a.cost - b.cost);
+    if (links.length) {
+      html += '<div class="sd-section-title">Connections</div><div class="sd-list">';
+      for (const lk of links) {
+        const ns    = _sectorInfoMap[lk.macro];
+        const nName = ns.sector_name || lk.macro;
+        const nDot  = FACTION_COLOURS[ns.owner_id] || '#6e7681';
+        const costTxt = lk.cost === 0 ? 'highway' : `${lk.cost} jump${lk.cost !== 1 ? 's' : ''}`;
+        html += `<div class="sd-conn-row" onclick="showSectorDetail('${lk.macro}')">`
+              + `<span class="sr-dot" style="background:${nDot}"></span>`
+              + `<span class="sd-conn-name">${nName}</span>`
+              + `<span class="sd-conn-cost">${costTxt}</span></div>`;
+      }
+      html += '</div>';
+    }
+
+    // NPC station presence by faction.
+    const facs = _npcBySector[macro] || [];
+    if (facs.length) {
+      html += '<div class="sd-section-title">Station Presence</div><div class="sd-list">';
+      for (const f of facs) {
+        const fc = FACTION_COLOURS[f.owner_id] || '#6e7681';
+        html += `<div class="sd-fac-row">`
+              + `<span class="sr-dot" style="background:${fc}"></span>`
+              + `<span class="sd-fac-name">${_ownerLabel(f.owner_name)}</span>`
+              + `<span class="sd-fac-count">${f.count}</span></div>`;
+      }
+      html += '</div>';
+    }
+
+    detailEl.innerHTML = html;
   }
 
   // Click handlers for the fleet table:

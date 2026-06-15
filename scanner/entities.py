@@ -90,6 +90,29 @@ class Sector:
     owner_id:      str           # faction ID e.g. "argon"
     owner_name:    str           # faction display name e.g. "Argon Federation"
     sunlight:      float         # solar multiplier — affects energy cell production
+    is_discovered: bool          # save had knownto="player" — player has seen this sector
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  SECTOR RESOURCE  (one mineable ware available in a sector)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@dataclass
+class SectorResource:
+    """
+    One ware mineable in a sector, aggregated from the sector's <resourceareas>.
+
+    The save stores resources per <area> (a resource field at an x/y/z position),
+    each listing <wares> (recharge capacity + refresh time) and <yields> (an
+    abundance level like low/medium/high). We aggregate across every area in the
+    sector to one row per ware: recharge_max is summed, yield_level is the highest
+    abundance seen. Keyed by sector_macro for a join back to the `sectors` table.
+    """
+    sector_macro:  str    # owning sector e.g. "cluster_43_sector001_macro"
+    ware:          str    # ware id e.g. "ore", "silicon", "hydrogen"
+    yield_level:   str    # abundance: verylow|low|lowplus|medium|medhigh|high
+    recharge_max:  int    # summed capacity across the sector's areas for this ware
+    recharge_time: int    # refresh time in ms (longest seen for this ware)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

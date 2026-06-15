@@ -314,7 +314,24 @@ CREATE TABLE IF NOT EXISTS sectors (
     cluster_name   TEXT,
     owner_id       TEXT,
     owner_name     TEXT,
-    sunlight       REAL
+    sunlight       REAL,
+    -- 1 when the save marked this sector knownto="player" (discovered/seen),
+    -- 0 otherwise. MUST stay the last column: write.py inserts positionally and
+    -- _migrate appends this column at the physical end on pre-existing DBs.
+    is_discovered  INTEGER
+);
+
+-- Mineable resources per sector, aggregated from the save's <resourceareas>.
+-- One row per (sector, ware). Reference data (latest-only): write.py clears the
+-- whole table each scan and rewrites it, like sector_links.
+CREATE TABLE IF NOT EXISTS sector_resources (
+    sector_macro   TEXT    NOT NULL,
+    ware           TEXT    NOT NULL,
+    yield_level    TEXT,              -- verylow|low|lowplus|medium|medhigh|high
+    recharge_max   INTEGER,           -- summed capacity across the sector's areas
+    recharge_time  INTEGER,           -- refresh time in ms
+    last_scan_id   INTEGER NOT NULL,
+    PRIMARY KEY (sector_macro, ware)
 );
 
 CREATE TABLE IF NOT EXISTS npc_stations (

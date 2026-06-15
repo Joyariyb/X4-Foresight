@@ -307,9 +307,10 @@ def _write_ledger(cur, scan_id, ctx) -> None:
 
 def _write_reference(cur, scan_id, ctx) -> None:
     cur.executemany(
-        "INSERT OR REPLACE INTO sectors VALUES(?,?,?,?,?,?,?,?)",
+        "INSERT OR REPLACE INTO sectors VALUES(?,?,?,?,?,?,?,?,?)",
         [(s.sector_macro, scan_id, s.sector_name, s.cluster_macro, s.cluster_name,
-          s.owner_id, s.owner_name, s.sunlight) for s in ctx.sectors],
+          s.owner_id, s.owner_name, s.sunlight, int(s.is_discovered))
+         for s in ctx.sectors],
     )
     cur.executemany(
         "INSERT OR REPLACE INTO npc_stations VALUES(?,?,?,?,?,?,?,?,?)",
@@ -332,4 +333,15 @@ def _write_reference(cur, scan_id, ctx) -> None:
     cur.executemany(
         "INSERT INTO sector_links(sector_a, sector_b, cost, last_scan_id) VALUES(?,?,?,?)",
         [(a, b, cost, scan_id) for a, b, cost in galaxy_map.edges(graph)],
+    )
+
+    # Sector resources — reference data rebuilt from this scan's <resourceareas>.
+    # Clear and rewrite the whole table (one row per sector+ware), same pattern.
+    cur.execute("DELETE FROM sector_resources")
+    cur.executemany(
+        "INSERT INTO sector_resources"
+        "(sector_macro, ware, yield_level, recharge_max, recharge_time, last_scan_id) "
+        "VALUES(?,?,?,?,?,?)",
+        [(r.sector_macro, r.ware, r.yield_level, r.recharge_max, r.recharge_time, scan_id)
+         for r in ctx.sector_resources],
     )

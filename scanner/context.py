@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 
 from .entities import (
     Station, NpcStation, Ship, CrewMember, ReputationEntry, Sector, Gate,
-    FactionRelationEntry,
+    SectorResource, FactionRelationEntry,
     ActiveTrade, ActiveAutoTrade,
     TradeHistory, TradeHistoryMining, TradeHistoryInternal,
 )
@@ -112,6 +112,9 @@ class ScanContext:
     # display order as ctx.reputation.
     faction_relations:      list[FactionRelationEntry]  = field(default_factory=list)
     sectors:                list[Sector]                = field(default_factory=list)
+    # ResourceHandler → db/export (Sectors-tab resource panel). One row per
+    # (sector, ware); built from each sector's <resourceareas> subtree.
+    sector_resources:       list[SectorResource]        = field(default_factory=list)
     gates:                  list[Gate]                  = field(default_factory=list)
     npc_stations:           list[NpcStation]            = field(default_factory=list)
     active_trades:          list[ActiveTrade]           = field(default_factory=list)
