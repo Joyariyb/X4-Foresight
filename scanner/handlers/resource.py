@@ -29,12 +29,15 @@ class ResourceHandler:
     each element on its 'end' event.
     """
 
-    # Abundance order, lowest → highest (full ladder seen in save_001, e.g.
-    # medlow/medplus exist between low and high). Unknown levels rank below
-    # everything known (-1) so a recognised level always beats an unknown one.
+    # Abundance order, lowest → highest. X4 uses a fine-grained ladder of region
+    # yield tags (all 15 below seen in save_001). Exact ordering of the rare
+    # modifiers (lowextra/highplus/…) isn't documented, so this is a best-effort
+    # monotonic guess; it only matters as a tie-break when one ware spans multiple
+    # areas in a sector. Unknown tags rank below everything (-1).
     YIELD_RANK = {
-        'verylow': 0, 'low': 1, 'lowplus': 2, 'medlow': 3, 'medium': 4,
-        'medplus': 5, 'medhigh': 6, 'high': 7, 'veryhigh': 8,
+        'lowest': 0, 'lowminus': 1, 'verylow': 2, 'low': 3, 'lowplus': 4,
+        'lowextra': 5, 'medlow': 6, 'medium': 7, 'medplus': 8, 'medhigh': 9,
+        'highlow': 10, 'high': 11, 'highplus': 12, 'veryhigh': 13, 'highest': 14,
     }
 
     def __init__(self) -> None:

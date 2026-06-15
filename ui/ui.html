@@ -200,10 +200,15 @@
        Master-detail: a cluster-grouped sector list on the left, the selected
        sector's data on the right. Negative margin fills #content like the map. */
     #tab-sectors { flex: 1; min-height: 0; margin: -14px; gap: 0; flex-direction: row; }
-    #sectors-list {
-      width: 260px; flex-shrink: 0; overflow-y: auto;
-      background: var(--bg-panel); border-right: 1px solid var(--border); padding: 8px 0;
+    /* Left column = sort bar (fixed) above a scrolling list. */
+    #sectors-left {
+      width: 260px; flex-shrink: 0; min-height: 0; display: flex; flex-direction: column;
+      background: var(--bg-panel); border-right: 1px solid var(--border);
     }
+    #sectors-sortbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .ssb-label { font-family: var(--font-cond); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); flex-shrink: 0; }
+    #sectors-sort { flex: 1; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 3px; padding: 4px 6px; font-family: var(--font-cond); font-size: 12px; cursor: pointer; }
+    #sectors-list { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 0; }
     .sectors-cluster-head {
       display: flex; align-items: center; gap: 7px; padding: 8px 12px 4px;
       font-family: var(--font-cond); font-size: 11px; font-weight: 600;
@@ -222,6 +227,8 @@
     /* Count of the player's own stations in the sector. */
     .sr-sta-badge { flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px; font-family: var(--font-mono); font-size: 10px; color: var(--teal); background: var(--teal-dim); padding: 1px 5px; border-radius: 3px; }
     .sr-sta-badge i { font-size: 11px; }
+    /* Right-aligned value for the active sort (sunlight %, resource capacity). */
+    .sector-row .sr-metric { flex-shrink: 0; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
 
     #sectors-detail { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 24px; }
     .sectors-empty { color: var(--text-dim); font-family: var(--font-cond); font-size: 14px; margin-top: 40px; text-align: center; }
@@ -250,11 +257,15 @@
     .sd-res-row { display: flex; align-items: center; gap: 10px; padding: 3px 0; font-family: var(--font-cond); font-size: 13px; color: var(--text); }
     .sd-res-name { flex: 1; }
     .sd-res-yield { font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 1px 7px; border-radius: 3px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-dim); white-space: nowrap; }
-    /* Abundance ramp — low (red) → high (green), so richer sectors read at a glance. */
-    .sd-res-yield[data-yield="verylow"], .sd-res-yield[data-yield="low"]      { color: #f0883e; border-color: #f0883e55; }
-    .sd-res-yield[data-yield="lowplus"], .sd-res-yield[data-yield="medlow"]   { color: #e3b341; border-color: #e3b34155; }
-    .sd-res-yield[data-yield="medium"],  .sd-res-yield[data-yield="medplus"]  { color: #d2c84a; border-color: #d2c84a55; }
-    .sd-res-yield[data-yield="medhigh"], .sd-res-yield[data-yield="high"], .sd-res-yield[data-yield="veryhigh"] { color: #3fb950; border-color: #3fb95055; }
+    /* Abundance ramp — low (orange) → med (yellow) → high (green). Prefix match
+       so the whole X4 yield ladder (lowest/lowplus/medlow/highlow/highest/…) is
+       covered: low* and verylow → orange, med* → yellow, high* and veryhigh →
+       green. "med*" is listed after "low*" so medlow/medhigh land on yellow. */
+    .sd-res-yield[data-yield^="low"],  .sr-metric-yield[data-yield^="low"],
+    .sd-res-yield[data-yield="verylow"], .sr-metric-yield[data-yield="verylow"]   { color: #f0883e; border-color: #f0883e55; }
+    .sd-res-yield[data-yield^="med"],  .sr-metric-yield[data-yield^="med"]        { color: #d2c84a; border-color: #d2c84a55; }
+    .sd-res-yield[data-yield^="high"], .sr-metric-yield[data-yield^="high"],
+    .sd-res-yield[data-yield="veryhigh"], .sr-metric-yield[data-yield="veryhigh"] { color: #3fb950; border-color: #3fb95055; }
     .sd-res-meta { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); white-space: nowrap; }
 
     /* The player's own stations in a sector — clickable to the station card. */
@@ -318,7 +329,7 @@
     .rep-bar { height: 100%; border-radius: 2px; }
 
     /* ── HULL HEALTH BAR ── */
-    .hull-bar-wrap { width: 80px; height: 22px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 0; }
+    .hull-bar-wrap { width: 80px; height: 11px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 0; }
     .hull-bar { height: 100%; border-radius: 2px; }
 
     /* ── HULL HOVER TOOLTIP ── */
@@ -471,6 +482,11 @@
     .data-table th[data-sort-key] { cursor: pointer; user-select: none; }
     .data-table th[data-sort-key]:hover { color: var(--teal); }
     .data-table th.sort-active { color: var(--teal); }
+    /* Inline sort labels — used by the merged Hull/Shields column header, which
+       holds two independently-clickable sort keys in one <th>. */
+    .data-table th .col-sort { cursor: pointer; user-select: none; }
+    .data-table th .col-sort:hover { color: var(--teal); }
+    .data-table th .col-sort.sort-active { color: var(--teal); }
 
     /* ── FLEET SUB-TABS ── */
     /* Badge style — matches the hull-type chips in the ship tables */
@@ -678,7 +694,13 @@
                   <th data-sort-key="name"   onclick="setSort('name')">Code / Name</th>
                   <th data-sort-key="size"   onclick="setSort('size')">Size</th>
                   <th data-sort-key="role"   onclick="setSort('role')">Hull Type</th>
-                  <th data-sort-key="health" onclick="setSort('health')">HP</th>
+                  <!-- Merged defence column: hull + shields share one column,
+                       but each stays independently sortable via its own label. -->
+                  <th>
+                    <span class="col-sort" data-sort-key="health" onclick="setSort('health')">Hull</span>
+                    <span style="color:var(--text-faint)"> / </span>
+                    <span class="col-sort" data-sort-key="shield" onclick="setSort('shield')">Shields</span>
+                  </th>
                   <th data-sort-key="order"  onclick="setSort('order')">Order</th>
                   <th data-sort-key="sector"  onclick="setSort('sector')">Sector</th>
                   <th data-sort-key="station" onclick="setSort('station')">Station</th>
@@ -822,7 +844,26 @@
 
       <!-- SECTORS TAB -->
       <div class="tab-panel" id="tab-sectors">
-        <div id="sectors-list"></div>
+        <div id="sectors-left">
+          <div id="sectors-sortbar">
+            <span class="ssb-label">Sort</span>
+            <select id="sectors-sort" onchange="renderSectorsList()">
+              <option value="alpha">Alphabetical</option>
+              <option value="player">Player Stations</option>
+              <option value="sunlight">Sunlight</option>
+              <optgroup label="Resource">
+                <option value="res:ore">Ore</option>
+                <option value="res:silicon">Silicon</option>
+                <option value="res:ice">Ice</option>
+                <option value="res:hydrogen">Hydrogen</option>
+                <option value="res:helium">Helium</option>
+                <option value="res:methane">Methane</option>
+                <option value="res:nividium">Nividium</option>
+              </optgroup>
+            </select>
+          </div>
+          <div id="sectors-list"></div>
+        </div>
         <div id="sectors-detail">
           <div class="sectors-empty">Select a sector to view its details.</div>
         </div>
@@ -2014,6 +2055,38 @@
     </div>`;
   }
 
+  // Shield bar — reuses hullBar's markup (so the shared #hull-tip hover tooltip
+  // just works) but a blue→amber→red scheme so shields read as visually distinct
+  // from the green→red hull bar. Same thresholds the station cards use for
+  // shields. Only player ships carry shield data; NPC ships fall through to "—".
+  function shieldBar(pct, shieldHp, maxShield) {
+    if (pct === null || pct === undefined) {
+      const raw = (shieldHp !== null && shieldHp !== undefined)
+        ? Math.round(shieldHp).toLocaleString() + " HP"
+        : "—";
+      return `<span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint)">${raw}</span>`;
+    }
+
+    const barWidth = Math.min(pct, 100).toFixed(1);
+    const color = pct >= 80 ? "#388bfd" : pct >= 50 ? "var(--amber)" : "var(--red)";
+
+    const label = pct >= 100 ? "Full" : `${Math.round(pct)}%`;
+    const tipParts = [label];
+    if (maxShield !== null && maxShield !== undefined) {
+      const current = (shieldHp !== null && shieldHp !== undefined)
+        ? Math.round(shieldHp).toLocaleString()
+        : maxShield.toLocaleString();
+      tipParts.push(`${current} / ${maxShield.toLocaleString()} HP`);
+    } else if (shieldHp !== null && shieldHp !== undefined) {
+      tipParts.push(`${Math.round(shieldHp).toLocaleString()} HP`);
+    }
+
+    return `<div class="hull-bar-wrap" style="cursor:default"
+        data-hull-tip="${tipParts.join(' · ')}" data-hull-color="${color}">
+      <div class="hull-bar" style="width:${barWidth}%;background:${color}"></div>
+    </div>`;
+  }
+
   // Converts raw skill points (0–15) to 5 HTML stars (full / half / empty).
   // Half-star uses an absolutely-positioned clipped overlay so no font/icon
   // dependency is needed — just plain Unicode ★ and ☆ glyphs.
@@ -2087,6 +2160,12 @@
     if (key === 'pilot')   return (ship.pilot && ship.pilot.skills && ship.pilot.skills.piloting != null) ? ship.pilot.skills.piloting : null;
     if (key === 'size')    return { S: 0, M: 1, L: 2, XL: 3 }[ship.size] ?? null;
     if (key === 'health')  return (ship.hull_pct !== null && ship.hull_pct !== undefined) ? ship.hull_pct : null;
+    // Sort by absolute shield HP, not percentage: a 200k-HP shield should
+    // outrank a 5k one even when both read "Full". Ships with no shield
+    // generator have a null shield_hp; we map them to -1 (below 0 HP) rather
+    // than null so they aren't pushed to the bottom — instead they lead an
+    // ascending sort, i.e. "start from the ones with no shields".
+    if (key === 'shield')  return (ship.shield_hp !== null && ship.shield_hp !== undefined) ? ship.shield_hp : -1;
     if (key === 'name')    return (ship.display_name || ship.name || '').toLowerCase();
     // Unassigned ships (null homebase_code) sort to the bottom — same null-push
     // logic as other keys, handled by the null checks in renderFleet's sort().
@@ -2167,7 +2246,12 @@
         </td>
         <td class="mono" style="color:${sCol}">${s.size}</td>
         <td style="white-space:nowrap">${hullBadge(s.hull_origin)}<i class="ti ${ROLE_ICONS[s.role]||'ti-rocket'}" style="font-size:12px;vertical-align:-2px;margin-left:5px;margin-right:3px;color:var(--text-faint)"></i>${s.role}</td>
-        <td>${hullBar(s.hull_pct, s.hull_hp, s.max_hull)}</td>
+        <td>
+          <div style="display:flex;flex-direction:column;gap:3px">
+            ${hullBar(s.hull_pct, s.hull_hp, s.max_hull)}
+            ${shieldBar(s.shield_pct, s.shield_hp, s.shield_max)}
+          </div>
+        </td>
         <td><i class="ti ${oIcon}" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:${oCol}"></i><span style="color:${oCol}">${s.order}</span></td>
         <td style="color:var(--text-dim)"><i class="ti ti-map-pin" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:var(--text-faint)"></i>${s.sector}</td>
         <td style="white-space:nowrap">${stationEl}</td>
@@ -2179,7 +2263,8 @@
   // Called when a column header is clicked.
   // Clicking the active column toggles direction; clicking a new column resets
   // direction to ascending, except health and pilot skill which default to
-  // descending (highest first).
+  // descending (highest first). Shields default to ascending so the ships with
+  // no/low shields surface first (the no-shield sentinel of -1 sorts to the top).
   function setSort(key) {
     if (key === currentSortKey) {
       currentSortDir *= -1;
@@ -2196,14 +2281,17 @@
   // table's selector plus that table's own sort state. activeKey may be null
   // (crew table before any header is clicked) — every header just shows plain.
   function updateSortHeaders(tableSelector, activeKey, dir) {
-    document.querySelectorAll(`${tableSelector} th[data-sort-key]`).forEach(th => {
-      const isActive = th.dataset.sortKey === activeKey;
-      th.classList.toggle('sort-active', isActive);
+    // Match any [data-sort-key] element, not just <th>: the merged Hull/Shields
+    // column carries its sort keys on inner <span>s. Both th's and those spans
+    // are text-only, so the textContent rewrite below is safe for either.
+    document.querySelectorAll(`${tableSelector} [data-sort-key]`).forEach(el => {
+      const isActive = el.dataset.sortKey === activeKey;
+      el.classList.toggle('sort-active', isActive);
       // Cache the original label text on first call so we can restore it cleanly.
-      if (!th.dataset.label) th.dataset.label = th.textContent.trim();
-      th.textContent = isActive
-        ? `${th.dataset.label} ${dir === 1 ? '↑' : '↓'}`
-        : th.dataset.label;
+      if (!el.dataset.label) el.dataset.label = el.textContent.trim();
+      el.textContent = isActive
+        ? `${el.dataset.label} ${dir === 1 ? '↑' : '↓'}`
+        : el.dataset.label;
     });
   }
 
@@ -4648,44 +4736,82 @@
     return String(n);
   }
 
+  // One sector row, shared by the grouped (alpha) and flat (metric) views.
+  // metricHtml is an optional right-aligned value for the active sort.
+  function _sectorRowHtml(s, metricHtml) {
+    const dot    = FACTION_COLOURS[s.owner_id] || '#6e7681';
+    const active = s.sector_macro === _selectedSector ? ' active' : '';
+    // Count of the player's own stations in this sector (badge when > 0).
+    const pCount = (_playerStaBySector[s.sector_macro] || []).length;
+    const badge  = pCount ? `<span class="sr-sta-badge" title="${pCount} of your stations"><i class="ti ti-building-factory-2"></i>${pCount}</span>` : '';
+    const metric = metricHtml ? `<span class="sr-metric">${metricHtml}</span>` : '';
+    return `<div class="sector-row${active}" data-macro="${s.sector_macro}" onclick="showSectorDetail('${s.sector_macro}')">`
+         + `<span class="sr-dot" style="background:${dot}"></span>`
+         + `<span class="sr-name">${s.sector_name || s.sector_macro}</span>${badge}${metric}</div>`;
+  }
+
+  // Sort metric for a sector under the given mode. Returns the numeric value to
+  // sort on (descending) plus the HTML shown on the row. Missing data sorts last.
+  function _sectorSortMetric(s, mode) {
+    if (mode === 'player') {
+      // Player-station count drives the sort; the badge already shows it.
+      return { value: (_playerStaBySector[s.sector_macro] || []).length, label: '' };
+    }
+    if (mode === 'sunlight') {
+      const v = s.sunlight != null ? s.sunlight : 0;
+      return { value: v, label: Math.round(v * 100) + '%' };
+    }
+    if (mode.startsWith('res:')) {
+      const ware = mode.slice(4);
+      const r = (s.resources || []).find(x => x.ware === ware);
+      if (!r) return { value: -1, label: '' };  // sector lacks this resource → bottom
+      return {
+        value: r.recharge_max || 0,
+        label: `<span class="sr-metric-yield" data-yield="${r.yield_level || ''}">${_fmtCompact(r.recharge_max)}</span>`,
+      };
+    }
+    return { value: 0, label: '' };
+  }
+
   function renderSectorsList() {
     const listEl = document.getElementById('sectors-list');
     if (!listEl) return;
+    const mode = document.getElementById('sectors-sort')?.value || 'alpha';
 
-    // Group sectors by cluster from the same map already in memory. Undiscovered
-    // sectors are skipped entirely, so a cluster with none never gets created.
-    const clusters = {}; // macro → { name, owners:{id→count}, sectors:[] }
-    for (const s of Object.values(_sectorInfoMap)) {
-      if (!s.is_discovered) continue;
-      const cm = s.cluster_macro || 'unknown';
-      const c  = clusters[cm] || (clusters[cm] = { macro: cm, name: _clusterName(cm, s), owners: {}, sectors: [] });
-      c.sectors.push(s);
-      if (s.owner_id) c.owners[s.owner_id] = (c.owners[s.owner_id] || 0) + 1;
-    }
-
-    // Dominant-faction colour for the cluster header swatch (mirrors the map).
-    const clusterColour = (c) => {
-      const sorted = Object.entries(c.owners).sort((a, b) => b[1] - a[1]);
-      for (const [id] of sorted) if (FACTION_COLOURS[id]) return FACTION_COLOURS[id];
-      return '#3d444d';
-    };
-
-    const ordered = Object.values(clusters).sort((a, b) => a.name.localeCompare(b.name));
+    // Only discovered sectors are ever listed.
+    const discovered = Object.values(_sectorInfoMap).filter(s => s.is_discovered);
     let html = '';
-    for (const c of ordered) {
-      html += `<div class="sectors-cluster-head"><span class="scl-dot" style="background:${clusterColour(c)}"></span>${c.name}</div>`;
-      c.sectors.sort((a, b) => (a.sector_name || '').localeCompare(b.sector_name || ''));
-      for (const s of c.sectors) {
-        const dot  = FACTION_COLOURS[s.owner_id] || '#6e7681';
-        const active = s.sector_macro === _selectedSector ? ' active' : '';
-        // Count of the player's own stations in this sector (badge when > 0).
-        const pCount = (_playerStaBySector[s.sector_macro] || []).length;
-        const badge  = pCount ? `<span class="sr-sta-badge" title="${pCount} of your stations"><i class="ti ti-building-factory-2"></i>${pCount}</span>` : '';
-        html += `<div class="sector-row${active}" data-macro="${s.sector_macro}" onclick="showSectorDetail('${s.sector_macro}')">`
-              + `<span class="sr-dot" style="background:${dot}"></span>`
-              + `<span class="sr-name">${s.sector_name || s.sector_macro}</span>${badge}</div>`;
+
+    if (mode === 'alpha') {
+      // Default view: grouped by cluster, alphabetical, with cluster headers.
+      const clusters = {}; // macro → { name, owners:{id→count}, sectors:[] }
+      for (const s of discovered) {
+        const cm = s.cluster_macro || 'unknown';
+        const c  = clusters[cm] || (clusters[cm] = { macro: cm, name: _clusterName(cm, s), owners: {}, sectors: [] });
+        c.sectors.push(s);
+        if (s.owner_id) c.owners[s.owner_id] = (c.owners[s.owner_id] || 0) + 1;
       }
+      // Dominant-faction colour for the cluster header swatch (mirrors the map).
+      const clusterColour = (c) => {
+        const sorted = Object.entries(c.owners).sort((a, b) => b[1] - a[1]);
+        for (const [id] of sorted) if (FACTION_COLOURS[id]) return FACTION_COLOURS[id];
+        return '#3d444d';
+      };
+      const ordered = Object.values(clusters).sort((a, b) => a.name.localeCompare(b.name));
+      for (const c of ordered) {
+        html += `<div class="sectors-cluster-head"><span class="scl-dot" style="background:${clusterColour(c)}"></span>${c.name}</div>`;
+        c.sectors.sort((a, b) => (a.sector_name || '').localeCompare(b.sector_name || ''));
+        for (const s of c.sectors) html += _sectorRowHtml(s, '');
+      }
+    } else {
+      // Metric sort: a flat list, highest value first, name as tie-breaker.
+      const rows = discovered
+        .map(s => ({ s, m: _sectorSortMetric(s, mode) }))
+        .sort((a, b) => b.m.value - a.m.value
+                     || (a.s.sector_name || '').localeCompare(b.s.sector_name || ''));
+      for (const { s, m } of rows) html += _sectorRowHtml(s, m.label);
     }
+
     listEl.innerHTML = html || '<div class="sectors-empty">No sector data.</div>';
   }
 

@@ -438,8 +438,10 @@ def gen_station_stats_py(idx: CatalogIndex) -> str:
       cargo       → <cargo max="N"/>   (storage modules)
       produces    → <production><queue ware="..."/>  (production modules)
 
-    Shield equipment  (assets/equipment/shields/macros/*.xml, base + DLC):
+    Shield equipment  (assets/props/surfaceelements/macros/shield_*.xml, base + DLC):
       max_shield  → <recharge max="N"/>
+      Alias macros (a <macro> with a ref/alias attribute and no <recharge> of
+      its own) inherit max_shield from the macro they reference.
 
     Only entries with at least one meaningful value are emitted — decorative
     pieces and pure connection modules (no hull/shield/cargo/produces) are
@@ -453,6 +455,9 @@ def gen_station_stats_py(idx: CatalogIndex) -> str:
         idx.find("assets/structures/*/macros/*.xml") +
         idx.find("extensions/*/assets/structures/*/macros/*.xml")
     )
+    # Like shields, a structure macro can be a pure alias: a ref/alias to another
+    # macro with no stats of its own. Record those and resolve in a second pass.
+    struct_aliases: dict[str, str] = {}
     for vp in struct_paths:
         root = ET.fromstring(idx.read(vp))
         macro_el = root.find(".//macro")
@@ -484,6 +489,18 @@ def gen_station_stats_py(idx: CatalogIndex) -> str:
 
         if entry:
             stats[macro_id] = entry
+        else:
+            # No stats of its own → inherit from the macro it points at.
+            ref = (macro_el.get("ref") or macro_el.get("alias") or "").lower()
+            if ref:
+                struct_aliases[macro_id] = ref
+
+    # Resolve structure aliases against the concrete macros gathered above. Copy
+    # the whole entry (hull/cargo/produces) so the alias behaves like its target.
+    for macro_id, ref in struct_aliases.items():
+        target = stats.get(ref)
+        if target:
+            stats[macro_id] = dict(target)
 
     # ── Shield equipment ─────────────────────────────────────────────────
     # Shields live under assets/props/surfaceelements/, not equipment/.
@@ -491,6 +508,12 @@ def gen_station_stats_py(idx: CatalogIndex) -> str:
         idx.find("assets/props/surfaceelements/macros/shield_*.xml") +
         idx.find("extensions/*/assets/props/surfaceelements/macros/shield_*.xml")
     )
+    # Some shield macros are pure aliases: they carry a ref/alias to another
+    # macro and have no <recharge> of their own, inheriting that macro's stats
+    # (e.g. shield_xen_m_standard_02_mk1 → ..._04_mk1, added in 9.00). Record
+    # them and resolve in a second pass, once every concrete macro is loaded —
+    # otherwise the referenced macro might not be in `stats` yet.
+    shield_aliases: dict[str, str] = {}
     for vp in shield_paths:
         root = ET.fromstring(idx.read(vp))
         macro_el = root.find(".//macro")
@@ -505,6 +528,19 @@ def gen_station_stats_py(idx: CatalogIndex) -> str:
             v = int(recharge_el.get("max", 0) or 0)
             if v > 0:
                 stats[macro_id] = {"max_shield": v}
+        else:
+            # No recharge of its own → inherit from the macro it points at.
+            ref = (macro_el.get("ref") or macro_el.get("alias") or "").lower()
+            if ref:
+                shield_aliases[macro_id] = ref
+
+    # Resolve aliases against the concrete macros gathered above. Skip any whose
+    # target is missing or had no shield value, so we never emit an entry the
+    # scanner can't use.
+    for macro_id, ref in shield_aliases.items():
+        target = stats.get(ref)
+        if target and "max_shield" in target:
+            stats[macro_id] = {"max_shield": target["max_shield"]}
 
     # ── Format output ────────────────────────────────────────────────────
     def _entry_str(e: dict) -> str:

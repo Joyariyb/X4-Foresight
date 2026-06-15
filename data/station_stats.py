@@ -1132,6 +1132,9 @@ STATION_STATS = {
     'shield_xen_m_standard_01_mk2_macro': {
         'max_shield':     5662,
     },
+    'shield_xen_m_standard_02_mk1_macro': {
+        'max_shield':     4750,
+    },
     'shield_xen_m_standard_02_mk2_macro': {
         'max_shield':     5662,
     },
