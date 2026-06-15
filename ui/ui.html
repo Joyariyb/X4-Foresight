@@ -405,6 +405,14 @@
     .diplo-matrix th.dm-row:hover { color: var(--teal); }
     .diplo-matrix td { min-width: 40px; height: 24px; text-align: center; border-radius: 2px; }
     .diplo-matrix td.dm-empty { background: rgba(255,255,255,0.02); color: var(--text-faint); }
+    /* Faction selector: a dropdown built from the same .fleet-subtab button, with
+       the Matrix toggle sitting beside it as a peer (not inside the list). */
+    .diplo-controls { display: flex; gap: 5px; align-items: center; padding-bottom: 8px; border-bottom: 1px solid var(--border); margin-bottom: 4px; flex-shrink: 0; }
+    .diplo-dd { position: relative; }
+    .diplo-dd-trigger { min-width: 150px; justify-content: space-between; }
+    .diplo-dd-menu { display: none; position: absolute; top: calc(100% + 5px); left: 0; z-index: 50; flex-direction: column; gap: 3px; min-width: 100%; max-height: 60vh; overflow-y: auto; padding: 5px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 3px; box-shadow: 0 4px 14px rgba(0,0,0,0.45); scrollbar-width: thin; }
+    .diplo-dd-menu.open { display: flex; }
+    .diplo-dd-menu .fleet-subtab { width: 100%; }
 
     /* ── SHIP NAME SUBLINE ── */
     /* Displayed below the code in the fleet table Code cell */
@@ -652,13 +660,21 @@
       <!-- DIPLOMACY TAB -->
       <div class="tab-panel" id="tab-diplomacy">
 
-        <!-- Sub-tab bar: Player tab is static; faction tabs are built by populate() -->
-        <div class="fleet-subtabs" id="diplo-subtabs">
-          <div class="fleet-subtab active" data-faction="player"
-               style="--tab-color:#2dd4bf;--tab-bg:rgba(45,212,191,0.12);--tab-border:rgba(45,212,191,0.3)"
-               onclick="switchDiploTab('player',this)">
-            Player
+        <!-- Faction selector: a dropdown styled from the .fleet-subtab button.
+             The faction list is built by populate(); the Matrix toggle is
+             injected as a peer button beside it (not inside the list). -->
+        <div class="diplo-controls" id="diplo-controls">
+          <div class="diplo-dd" id="diplo-dd">
+            <div class="fleet-subtab diplo-dd-trigger active" id="diplo-dd-trigger"
+                 data-faction="player"
+                 style="--tab-color:#2dd4bf;--tab-bg:rgba(45,212,191,0.12);--tab-border:rgba(45,212,191,0.3)"
+                 onclick="toggleDiploDropdown(event)">
+              <span id="diplo-dd-label">Player</span>
+              <i class="ti ti-chevron-down" style="font-size:13px"></i>
+            </div>
+            <div class="diplo-dd-menu" id="diplo-dd-menu"></div>
           </div>
+          <!-- #diplo-matrix-btn injected here by populate() -->
         </div>
 
         <!-- Player standings panel (the original Diplomacy table, unchanged) -->
@@ -2171,11 +2187,53 @@
     document.getElementById('fleet-panel-' + faction).classList.add('active');
   }
 
-  function switchDiploTab(faction, el) {
-    document.querySelectorAll('#diplo-subtabs .fleet-subtab').forEach(t => t.classList.remove('active'));
+  // The Diplomacy faction selector is a dropdown (built from the same
+  // .fleet-subtab buttons that used to form the strip) plus a peer Matrix
+  // toggle. diploSelection tracks the current choice for back-navigation.
+  let diploSelection = 'player';
+
+  function toggleDiploDropdown(e) {
+    if (e) e.stopPropagation();   // don't let the outside-click handler close it
+    document.getElementById('diplo-dd-menu').classList.toggle('open');
+  }
+  function closeDiploDropdown() {
+    document.getElementById('diplo-dd-menu')?.classList.remove('open');
+  }
+  // Any click outside the dropdown dismisses the open menu.
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#diplo-dd')) closeDiploDropdown();
+  });
+
+  function switchDiploTab(faction) {
     document.querySelectorAll('.diplo-panel').forEach(p => p.classList.remove('active'));
-    (el || document.querySelector(`#diplo-subtabs [data-faction="${faction}"]`)).classList.add('active');
-    document.getElementById('diplo-panel-' + faction).classList.add('active');
+    document.getElementById('diplo-panel-' + faction)?.classList.add('active');
+    diploSelection = faction;
+
+    const trigger   = document.getElementById('diplo-dd-trigger');
+    const matrixBtn = document.getElementById('diplo-matrix-btn');
+
+    if (faction === 'matrix') {
+      // Matrix is its own button. The trigger keeps showing the last faction
+      // but drops its active ring so only one control reads as selected.
+      matrixBtn?.classList.add('active');
+      trigger.classList.remove('active');
+    } else {
+      // Mirror the chosen faction onto the trigger by copying straight from its
+      // menu item — label (incl. any lock icon) and the three colour vars — so
+      // the closed dropdown looks exactly like the old per-faction button.
+      const item = document.querySelector(`#diplo-dd-menu [data-faction="${faction}"]`);
+      if (item) {
+        document.getElementById('diplo-dd-label').innerHTML = item.innerHTML;
+        ['--tab-color', '--tab-bg', '--tab-border'].forEach(v =>
+          trigger.style.setProperty(v, item.style.getPropertyValue(v)));
+        document.querySelectorAll('#diplo-dd-menu .fleet-subtab').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+      }
+      trigger.dataset.faction = faction;
+      trigger.classList.add('active');
+      matrixBtn?.classList.remove('active');
+    }
+    closeDiploDropdown();
   }
 
   // Per-faction sort state and cached ship lists so setNpcSort() can re-render
@@ -2244,7 +2302,7 @@
       scrollTop:    content ? content.scrollTop : 0,
       fleetFaction: document.querySelector('#fleet-subtabs .fleet-subtab.active')?.dataset.faction || null,
       crewRole:     document.querySelector('#crew-subtabs .fleet-subtab.active')?.dataset.role || null,
-      diploFaction: document.querySelector('#diplo-subtabs .fleet-subtab.active')?.dataset.faction || null,
+      diploFaction: diploSelection,
     };
   }
   function _navRecord() {            // start of a jump: remember where we are now
@@ -2807,10 +2865,34 @@
     const repByFaction = {};
     rep.forEach(r => { repByFaction[r.faction_id] = r; });
 
-    const diploTabs   = document.getElementById('diplo-subtabs');
-    const diploPanels = document.getElementById('diplo-npc-panels');
-    diploTabs.querySelectorAll('.fleet-subtab:not([data-faction="player"])').forEach(t => t.remove());
+    const diploMenu     = document.getElementById('diplo-dd-menu');
+    const diploControls = document.getElementById('diplo-controls');
+    const diploPanels   = document.getElementById('diplo-npc-panels');
+
+    // Reset the dropdown list, the injected Matrix button and the panels.
+    // (The dropdown trigger and the static Player panel stay in markup.)
+    diploMenu.innerHTML = '';
+    document.getElementById('diplo-matrix-btn')?.remove();
     diploPanels.innerHTML = '';
+
+    // Build one dropdown entry — a .fleet-subtab so it's visually identical to
+    // the old strip button, just stacked in the menu.
+    const makeDiploItem = (factionId, label, color, locked) => {
+      const item = document.createElement('div');
+      item.className = 'fleet-subtab';
+      item.dataset.faction = factionId;
+      item.style.setProperty('--tab-color',  color);
+      item.style.setProperty('--tab-bg',     hexToRgba(color, 0.12));
+      item.style.setProperty('--tab-border', hexToRgba(color, 0.3));
+      item.innerHTML = locked
+        ? `${label} <i class="ti ti-lock" style="font-size:12px" title="Standings locked by the game"></i>`
+        : label;
+      item.onclick = () => switchDiploTab(factionId);
+      return item;
+    };
+
+    // Player is always the first choice in the list.
+    diploMenu.appendChild(makeDiploItem('player', 'Player', '#2dd4bf', false));
 
     const diploOrder = Object.keys(relByFaction)
       .sort((a, b) => (repByFaction[b]?.value ?? -99) - (repByFaction[a]?.value ?? -99));
@@ -2820,6 +2902,9 @@
         const fullName = nameMap[factionId] || label;
         const color    = FACTION_COLOURS[factionId] || '#2dd4bf';
         const locked   = relByFaction[factionId][0].locked === 1;
+
+        // Dropdown entry for this faction.
+        diploMenu.appendChild(makeDiploItem(factionId, label, color, locked));
 
         // Rows arrive pre-sorted value-descending from the export. A few
         // factions store no player pairing on their side of the save —
@@ -2831,19 +2916,6 @@
                              value: pr.value, tier: pr.tier, mirrored: true }]
             .sort((a, b) => b.value - a.value);
         }
-
-        // Sub-tab
-        const tab = document.createElement('div');
-        tab.className = 'fleet-subtab';
-        tab.dataset.faction = factionId;
-        tab.style.setProperty('--tab-color',  color);
-        tab.style.setProperty('--tab-bg',     hexToRgba(color, 0.12));
-        tab.style.setProperty('--tab-border', hexToRgba(color, 0.3));
-        tab.innerHTML = locked
-          ? `${label} <i class="ti ti-lock" style="font-size:12px" title="Standings locked by the game"></i>`
-          : label;
-        tab.onclick = () => switchDiploTab(factionId, tab);
-        diploTabs.appendChild(tab);
 
         // Panel — same table shape as the player standings, minus base/booster
         // (NPC boosters are not extracted).
@@ -2916,15 +2988,17 @@
       });
       mhtml += '</tbody></table>';
 
-      const mtab = document.createElement('div');
-      mtab.className = 'fleet-subtab';
-      mtab.dataset.faction = 'matrix';
-      mtab.style.setProperty('--tab-color',  '#8b949e');
-      mtab.style.setProperty('--tab-bg',     'rgba(139,148,158,0.10)');
-      mtab.style.setProperty('--tab-border', 'rgba(139,148,158,0.3)');
-      mtab.innerHTML = '<i class="ti ti-grid-dots" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>Matrix';
-      mtab.onclick = () => switchDiploTab('matrix', mtab);
-      diploTabs.appendChild(mtab);
+      // Matrix lives beside the dropdown as its own toggle, not in the list.
+      const mbtn = document.createElement('div');
+      mbtn.className = 'fleet-subtab';
+      mbtn.id = 'diplo-matrix-btn';
+      mbtn.dataset.faction = 'matrix';
+      mbtn.style.setProperty('--tab-color',  '#8b949e');
+      mbtn.style.setProperty('--tab-bg',     'rgba(139,148,158,0.10)');
+      mbtn.style.setProperty('--tab-border', 'rgba(139,148,158,0.3)');
+      mbtn.innerHTML = '<i class="ti ti-grid-dots" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>Matrix';
+      mbtn.onclick = () => switchDiploTab('matrix');
+      diploControls.appendChild(mbtn);
 
       const mpanel = document.createElement('div');
       mpanel.className = 'diplo-panel';
@@ -2940,6 +3014,10 @@
         <div class="panel" style="overflow:auto; max-height: calc(100vh - 200px);">${mhtml}</div>`;
       diploPanels.appendChild(mpanel);
     }
+
+    // Land on Player after a rebuild: syncs the trigger label/colour and the
+    // active panel (the menu item now exists to copy styling from).
+    switchDiploTab('player');
 
     // Stations
     document.getElementById("stations-grid").innerHTML = stations.map(s => {
