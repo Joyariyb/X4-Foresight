@@ -604,7 +604,12 @@
   <div id="topbar">
     <div class="tb-logo"><i class="ti ti-radar-2"></i> X4 · EMPIRE INTELLIGENCE</div>
     <div class="nav-tab active" onclick="switchTab('overview',this)"><i class="ti ti-layout-dashboard"></i> Overview</div>
-    <div class="nav-tab" onclick="switchTab('fleet',this)"><i class="ti ti-rocket"></i> Naval <span class="nav-badge" id="nav-ships">—</span></div>
+    <div class="nav-tab nav-dropdown" id="nav-naval"><i class="ti ti-rocket"></i> Naval <span class="nav-badge" id="nav-ships">—</span> <i class="ti ti-chevron-down nav-dd-caret"></i>
+      <div class="nav-dd-menu">
+        <div class="nav-dd-item" onclick="switchTab('fleet',document.getElementById('nav-naval'))"><i class="ti ti-list-details"></i> Ships</div>
+        <div class="nav-dd-item" onclick="switchTab('designs',document.getElementById('nav-naval'))"><i class="ti ti-vector-triangle"></i> Designs</div>
+      </div>
+    </div>
     <div class="nav-tab" onclick="switchTab('stations',this)"><i class="ti ti-building-factory-2"></i> Stations</div>
     <div class="nav-tab" onclick="switchTab('crew',this)"><i class="ti ti-users"></i> Crew</div>
     <div class="nav-tab" onclick="switchTab('diplomacy',this)"><i class="ti ti-world"></i> Diplomacy</div>
@@ -633,8 +638,8 @@
       <div class="sb-item" onclick="requestNewScan()">
         <span class="sb-item-label"><i class="ti ti-radar-2"></i> New Scan</span>
       </div>
-      <div class="sb-item" onclick="switchTab('fleet',null)">
-        <span class="sb-item-label"><i class="ti ti-rocket"></i> Fleet Designs</span>
+      <div class="sb-item" onclick="switchTab('designs',document.getElementById('nav-naval'))">
+        <span class="sb-item-label"><i class="ti ti-vector-triangle"></i> Fleet Designs</span>
       </div>
       <div class="sb-divider"></div>
       <div class="sb-heading">Advisors</div>
@@ -747,6 +752,23 @@
         <!-- NPC faction panels — built dynamically by populate() -->
         <div id="fleet-npc-panels"></div>
 
+      </div>
+
+      <!-- DESIGNS TAB -->
+      <!-- Second entry under the Naval dropdown. Phase 0 is the empty shell;
+           the deduped design cards + blueprint builder land in later phases. -->
+      <div class="tab-panel" id="tab-designs">
+        <div class="sec-header"><div class="sec-title">Ship Designs</div><div class="sec-line"></div></div>
+        <div id="designs-grid"></div>
+        <!-- Placeholder until loadout extraction + the dedup view exist. -->
+        <div id="designs-empty" style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:80px 20px;color:var(--text-dim)">
+          <i class="ti ti-vector-triangle" style="font-size:40px;color:var(--teal);opacity:0.5"></i>
+          <div class="cond" style="font-size:18px;font-weight:600;color:var(--text)">Blueprint builder coming soon</div>
+          <div style="font-size:13px;max-width:420px;text-align:center;line-height:1.6">
+            This tab will list your fleet's unique ship configurations and let you
+            design new loadouts. Equipment data isn't scanned yet — that's the next step.
+          </div>
+        </div>
       </div>
 
       <!-- STATIONS TAB -->
@@ -2849,7 +2871,9 @@
   function jumpToShip(code, faction) {
     _navRecord();
     faction = faction || 'player';
-    const fleetNavTab = document.querySelector('.nav-tab[onclick*="\'fleet\'"]');
+    // Naval is now a dropdown (Ships / Designs); the active highlight lives on
+    // the parent label, so resolve it by id rather than by the child's onclick.
+    const fleetNavTab = document.getElementById('nav-naval');
     switchTab('fleet', fleetNavTab);
     _navAfterJump();
     switchFleetTab(faction, document.querySelector(`.fleet-subtab[data-faction="${faction}"]`));
