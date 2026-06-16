@@ -280,6 +280,10 @@ class Ship:
     cargo_m3:           float | None   # current cargo load — not yet extracted
     cargo_max_m3:       float | None   # maximum cargo capacity
     pilot_id:           str | None     # FK → crew.object_id, None for NPC ships
+    # Installed equipment as [(slot, macro), ...] — one entry per physical item,
+    # duplicates kept so identical loadouts can be deduped into "designs".
+    # Player ships only; NPC ships aren't buffered, so this stays empty for them.
+    loadout:            list = field(default_factory=list)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

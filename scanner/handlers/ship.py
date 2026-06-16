@@ -187,6 +187,50 @@ def _parse_shields(
     return current, max_total, pct
 
 
+# Equipment <component> classes installed on a ship → the catalog slot bucket
+# (data/equipment_stats.py). Verified against save_001.xml: each item is a
+# <component class=... macro=...> in the ship's connections — the same structure
+# _parse_shields walks. Thrusters are the exception: they are NOT components,
+# they're a `thruster=` attribute on the ship element itself.
+_EQUIP_SLOTS = {
+    "weapon":          "weapon",
+    "turret":          "turret",
+    "shieldgenerator": "shield",
+    "engine":          "engine",
+}
+
+
+def _parse_loadout(ship_elem) -> list[tuple[str, str]]:
+    """
+    Returns [(slot, macro), ...] for every equipment item installed on the ship.
+
+    One entry per physical item — duplicates are kept so the UI can count them
+    and dedupe identical loadouts into ship "designs". The slot is the catalog
+    bucket: weapon / turret / shield / engine / thruster.
+
+    iter_station_components() is used for the same reason _parse_shields uses it:
+    it skips equipment on ships docked INSIDE a carrier, so a carrier's loadout
+    never absorbs its fighters' guns.
+
+    Thrusters are read from the ship element's `thruster=` attribute — verified
+    against save_001.xml, where no thruster <component> exists.
+    """
+    items: list[tuple[str, str]] = []
+
+    for comp in iter_station_components(ship_elem):
+        slot = _EQUIP_SLOTS.get(comp.get("class", ""))
+        if slot:
+            macro = comp.get("macro", "")
+            if macro:
+                items.append((slot, macro))
+
+    thruster = ship_elem.get("thruster")
+    if thruster:
+        items.append(("thruster", thruster))
+
+    return items
+
+
 def _parse_order(ship_elem) -> str:
     """
     Returns a human-readable label for the ship's current active order.
@@ -603,6 +647,7 @@ def _extract_docked_ships(
             cargo_m3         = None,   # not yet extracted
             cargo_max_m3     = None,
             pilot_id         = pilot_id,
+            loadout          = _parse_loadout(child),
         )
 
         ctx.ships.append(ship)
@@ -943,6 +988,7 @@ class ShipHandler:
             cargo_m3         = None,   # not yet extracted (requires ware volume table)
             cargo_max_m3     = None,
             pilot_id         = pilot_id,
+            loadout          = _parse_loadout(elem),
         )
 
         ctx.ships.append(ship)

@@ -151,6 +151,20 @@ CREATE TABLE IF NOT EXISTS ships (
     PRIMARY KEY (scan_id, object_id)
 );
 
+-- Equipment installed on each player ship: weapons, turrets, shields, engines,
+-- thrusters. One row per (ship, slot, macro) with a count — this is the dedup
+-- source for ship "designs". The macro resolves to a display name + stats via
+-- data/equipment_stats.py at export time. Player ships only (NPC ship subtrees
+-- aren't buffered, so their equipment can't be read).
+CREATE TABLE IF NOT EXISTS ship_equipment (
+    scan_id   INTEGER NOT NULL REFERENCES scans(scan_id) ON DELETE CASCADE,
+    ship_id   TEXT    NOT NULL,            -- FK → ships.object_id
+    slot_type TEXT    NOT NULL,            -- weapon / turret / shield / engine / thruster
+    macro     TEXT    NOT NULL,
+    count     INTEGER NOT NULL DEFAULT 1
+    -- no PK: aggregated per (ship, slot, macro); a ship holds many of each
+);
+
 -- NPC ships in the player's station sectors — situational awareness (who is
 -- operating near your stations). Bounded subset (~hundreds), per-scan so threat
 -- presence can be tracked over time. Identity-level only (no hull/crew); the

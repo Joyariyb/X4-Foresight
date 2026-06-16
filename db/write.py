@@ -171,6 +171,20 @@ def _write_ships(cur, scan_id, ctx) -> None:
          for sh in ctx.ships if sh.owner_id == 'player'],
     )
 
+    # Equipment: collapse each ship's per-item loadout into (slot, macro) → count
+    # rows. Duplicates (e.g. 6 identical guns) become one row with count=6, which
+    # is what the design-dedup and the hover tooltip both want.
+    equip_rows = []
+    for sh in ctx.ships:
+        if sh.owner_id != 'player' or not sh.loadout:
+            continue
+        counts: dict[tuple[str, str], int] = {}
+        for slot, macro in sh.loadout:
+            counts[(slot, macro)] = counts.get((slot, macro), 0) + 1
+        for (slot, macro), n in counts.items():
+            equip_rows.append((scan_id, sh.object_id, slot, macro, n))
+    cur.executemany("INSERT INTO ship_equipment VALUES(?,?,?,?,?)", equip_rows)
+
 
 def _write_npc_ships(cur, scan_id, ctx) -> None:
     """

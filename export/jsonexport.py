@@ -21,6 +21,7 @@ from pathlib import Path
 
 from scanner import galaxy_map as gm
 from scanner.ship_names import ship_display_name
+from data.equipment_stats import EQUIPMENT_STATS, EQUIPMENT_ALIASES
 
 
 def _rows(conn, sql, params=()) -> list[dict]:
@@ -179,8 +180,36 @@ def _stations(conn, scan_id) -> list[dict]:
     return out
 
 
+def _ship_loadouts(conn, scan_id) -> dict[str, list[dict]]:
+    """ship object_id → its equipment, each resolved to a display name.
+
+    Reads the ship_equipment rows and joins them against the generated catalog
+    (data/equipment_stats.py) so the UI gets ready-to-show names without owning
+    any resolution logic. Falls back through EQUIPMENT_ALIASES, then to the raw
+    macro if a piece of gear somehow isn't in the catalog (e.g. a mod's macro).
+    """
+    out: dict[str, list[dict]] = defaultdict(list)
+    for r in conn.execute(
+        "SELECT ship_id, slot_type, macro, count FROM ship_equipment "
+        "WHERE scan_id=? ORDER BY slot_type, macro", (scan_id,),
+    ):
+        macro = r['macro']
+        cat = EQUIPMENT_STATS.get(macro) or \
+              EQUIPMENT_STATS.get(EQUIPMENT_ALIASES.get(macro, ''))
+        out[r['ship_id']].append({
+            'slot':  r['slot_type'],
+            'macro': macro,
+            'count': r['count'],
+            'name':  cat['name'] if cat else macro,
+            'mk':    cat.get('mk')   if cat else None,   # mark number, if any
+            'race':  cat.get('race') if cat else None,   # maker faction, if any
+        })
+    return out
+
+
 def _ships(conn, scan_id) -> list[dict]:
     out = []
+    loadouts = _ship_loadouts(conn, scan_id)
     # LEFT JOIN stations so each ship carries its homebase station code directly.
     # homebase_id is a station object_id (e.g. "[0x1ca1c]"); the JOIN resolves it
     # to the human-readable code (e.g. "TDD") without any Python-side lookup.
@@ -199,6 +228,7 @@ def _ships(conn, scan_id) -> list[dict]:
         # "Magnetar Vanguard" or "Argon L Freighter (B)"). Stored as display_name
         # so the UI can show it without re-implementing resolution logic.
         d['display_name'] = ship_display_name(d.get('macro') or '', d.get('name'))
+        d['loadout'] = loadouts.get(d.get('object_id'), [])
         out.append(d)
     return out
 
