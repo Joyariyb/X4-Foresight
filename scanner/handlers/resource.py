@@ -11,29 +11,38 @@ class ResourceHandler:
     first child — it streams past before any buffered component opens — so we
     run a tiny state machine over its child elements instead of a tree walk.
 
-    Save shape (verified against save_001):
+    Two save layouts are supported:
+
+    9.00+ (current) — resource + yield are encoded on the <area> tag itself:
 
         <component class="sector" macro="cluster_43_sector001_macro" ...>
           <resourceareas>                    ← activate, bind to this sector
-            <area x=".." y=".." z="..">
-              <wares>                          ← section = wares (capacity)
-                <ware ware="ore">
-                  <recharge max="7805" time="108000"/>
-              <yields>                         ← section = yields (abundance)
-                <ware ware="ore">
-                  <yield name="low"/>
+            <area yieldid="sphere_large_ore_high_slow" yield="954823" ...>
+              <offset><position .../></offset>
+              <fields><field region=".." macro="env_ast_ore_l_01_macro" .../></fields>
+            <area yieldid="sphere_small_helium_low_veryslow" yield="6911" ...>
 
-    Aggregation is per ware across every <area> in the sector: recharge max is
-    summed, the highest yield level wins. All needed values sit on the OPENING
-    tag, so reading on the 'start' event is safe even though the Scanner clears
-    each element on its 'end' event.
+      yieldid is sphere_<size>_<resource>_<yield>_<speed>; we take the resource
+      and yield tokens. The `yield` attribute is the field's amount.
+
+    Pre-9.00 (legacy) — resources lived in <wares>/<yields> children:
+
+            <area x=".." y=".." z="..">
+              <wares>  <ware ware="ore"><recharge max="7805" time="108000"/> …
+              <yields> <ware ware="ore"><yield name="low"/> …
+
+    Either way we aggregate per resource across every <area> in the sector:
+    amount summed (recharge_max), highest yield level wins. recharge_time is the
+    old refresh interval where present (0 in 9.00, which no longer stores it).
+    All values sit on the OPENING tag, so reading on 'start' is safe even though
+    the Scanner clears each element on its 'end' event.
     """
 
-    # Abundance order, lowest → highest. X4 uses a fine-grained ladder of region
-    # yield tags (all 15 below seen in save_001). Exact ordering of the rare
-    # modifiers (lowextra/highplus/…) isn't documented, so this is a best-effort
-    # monotonic guess; it only matters as a tie-break when one ware spans multiple
-    # areas in a sector. Unknown tags rank below everything (-1).
+    # Abundance order, lowest → highest. 9.00 uses a simple 5-level ladder
+    # (verylow/low/medium/high/veryhigh); the extra rare tags here are from the
+    # pre-9.00 ladder and kept for back-compat. Ordering of the rare modifiers
+    # isn't documented (best-effort guess); it only matters as a tie-break when
+    # one resource spans multiple areas. Unknown tags rank below everything (-1).
     YIELD_RANK = {
         'lowest': 0, 'lowminus': 1, 'verylow': 2, 'low': 3, 'lowplus': 4,
         'lowextra': 5, 'medlow': 6, 'medium': 7, 'medplus': 8, 'medhigh': 9,
@@ -63,6 +72,22 @@ class ResourceHandler:
         if not self.active:
             return
 
+        # 9.00 format: everything is on the <area> tag. yieldid encodes the
+        # resource + yield level; `yield` is the amount.
+        if tag == 'area' and elem.get('yieldid'):
+            parts = elem.get('yieldid', '').split('_')
+            # sphere_<size>_<resource>_<yield>_<speed>
+            if len(parts) >= 5 and parts[0] == 'sphere':
+                ware, level = parts[2], parts[3]
+                rec = self._acc.setdefault(ware, {'max': 0, 'time': 0, 'yield': None})
+                try:
+                    rec['max'] += int(float(elem.get('yield', 0)))
+                except (ValueError, TypeError):
+                    pass
+                self._bump_yield(rec, level)
+            return
+
+        # ── Legacy (pre-9.00) <wares>/<yields> layout ──────────────────────────
         if tag == 'wares':
             self._section = 'wares'
         elif tag == 'yields':
@@ -80,11 +105,14 @@ class ResourceHandler:
             except (ValueError, TypeError):
                 pass
         elif tag == 'yield' and self._section == 'yields' and self._ware:
-            name = elem.get('name', '')
             rec = self._acc.setdefault(self._ware, {'max': 0, 'time': 0, 'yield': None})
-            cur = rec['yield']
-            if cur is None or self.YIELD_RANK.get(name, -1) > self.YIELD_RANK.get(cur, -1):
-                rec['yield'] = name
+            self._bump_yield(rec, elem.get('name', ''))
+
+    def _bump_yield(self, rec: dict, level: str) -> None:
+        """Keep the highest-ranked yield level seen for a resource."""
+        cur = rec['yield']
+        if cur is None or self.YIELD_RANK.get(level, -1) > self.YIELD_RANK.get(cur, -1):
+            rec['yield'] = level
 
     def on_end(self, tag, elem, ctx) -> None:
         if not self.active:

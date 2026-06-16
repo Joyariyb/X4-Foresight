@@ -206,13 +206,13 @@
       background: var(--bg-panel); border-right: 1px solid var(--border);
     }
     #sectors-sortbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-    .ssb-label { font-family: var(--font-cond); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); flex-shrink: 0; }
+    .ssb-label { font-family: var(--font-cond); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); flex-shrink: 0; }
     #sectors-sort { flex: 1; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 3px; padding: 4px 6px; font-family: var(--font-cond); font-size: 12px; cursor: pointer; }
     #sectors-list { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 0; }
     .sectors-cluster-head {
       display: flex; align-items: center; gap: 7px; padding: 8px 12px 4px;
       font-family: var(--font-cond); font-size: 11px; font-weight: 600;
-      letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim);
+      letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint);
     }
     .sectors-cluster-head .scl-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
     .sector-row {
@@ -227,18 +227,32 @@
     /* Count of the player's own stations in the sector. */
     .sr-sta-badge { flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px; font-family: var(--font-mono); font-size: 10px; color: var(--teal); background: var(--teal-dim); padding: 1px 5px; border-radius: 3px; }
     .sr-sta-badge i { font-size: 11px; }
-    /* Right-aligned value for the active sort (sunlight %, resource capacity). */
-    .sector-row .sr-metric { flex-shrink: 0; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
+    /* Right-aligned value for the active sort. Coloured per metric: resource
+       amounts take the yield-tier colour, sunlight is sun-amber. */
+    .sector-row .sr-metric { flex-shrink: 0; font-family: var(--font-mono); font-size: 11px; color: var(--text); }
+    .sr-metric-sun { color: var(--amber); }
 
     #sectors-detail { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 24px; }
     .sectors-empty { color: var(--text-dim); font-family: var(--font-cond); font-size: 14px; margin-top: 40px; text-align: center; }
     .sd-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 2px; }
     .sd-name { font-family: var(--font-cond); font-size: 22px; font-weight: 600; color: var(--text); letter-spacing: 0.02em; }
-    .sd-cluster { font-family: var(--font-cond); font-size: 12px; color: var(--text-dim); letter-spacing: 0.06em; text-transform: uppercase; }
-    .sd-owner { font-family: var(--font-cond); font-size: 14px; margin-bottom: 18px; }
+    .sd-cluster { font-family: var(--font-cond); font-size: 12px; color: var(--text-faint); letter-spacing: 0.06em; text-transform: uppercase; }
+    .sd-owner { font-family: var(--font-cond); font-size: 14px; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+    /* Summary character tags — thin chip row near the top of the pane. */
+    .sd-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 14px; }
+    .sd-tag { font-family: var(--font-cond); font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 9px; border-radius: 10px; border: 1px solid; white-space: nowrap; }
+    .sd-tag.tag-you     { color: var(--teal);   border-color: rgba(45,212,191,0.4);  background: var(--teal-dim); }
+    .sd-tag.tag-bad     { color: var(--red);    border-color: rgba(248,81,73,0.4);   background: var(--red-dim); }
+    .sd-tag.tag-neutral { color: var(--text);   border-color: var(--border);         background: var(--bg-card); }
+    .sd-tag.tag-rich    { color: var(--green);  border-color: rgba(63,185,80,0.4);   background: var(--green-dim); }
+    .sd-tag.tag-sun     { color: var(--amber);  border-color: rgba(210,153,34,0.4);  background: var(--amber-dim); }
+    .sd-tag.tag-hub     { color: #388bfd;       border-color: rgba(56,139,253,0.4);  background: rgba(56,139,253,0.1); }
+    .sd-tag.tag-core     { color: var(--teal);   border-color: rgba(45,212,191,0.4);  background: var(--teal-dim); }
+    .sd-tag.tag-frontier { color: #f0883e;       border-color: rgba(240,136,62,0.4);  background: rgba(240,136,62,0.1); }
+    .sd-tag.tag-remote   { color: var(--purple); border-color: rgba(163,113,247,0.4); background: rgba(163,113,247,0.1); }
     .sd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 22px; }
     .sd-stat { background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; padding: 9px 12px; }
-    .sd-stat-label { font-family: var(--font-cond); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 3px; }
+    .sd-stat-label { font-family: var(--font-cond); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 3px; }
     .sd-stat-value { font-family: var(--font-mono); font-size: 16px; color: var(--text); }
     .sd-section-title { font-family: var(--font-cond); font-weight: 600; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); margin: 0 0 8px; }
     .sd-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 22px; }
@@ -247,33 +261,51 @@
     .sd-conn-row:hover .sd-conn-name { color: var(--teal); }
     .sd-conn-row .sr-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
     .sd-conn-name { flex: 1; }
-    .sd-conn-cost { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
+    .sd-conn-cost { font-family: var(--font-mono); font-size: 11px; color: var(--teal); }
     .sd-fac-row { padding: 2px 0; }
     .sd-fac-row .sr-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
     .sd-fac-name { flex: 1; }
-    .sd-fac-count { font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); }
+    .sd-fac-count { font-family: var(--font-mono); font-size: 12px; color: var(--text); }
 
-    /* Resource rows: ware name · yield badge · capacity/refresh meta. */
-    .sd-res-row { display: flex; align-items: center; gap: 10px; padding: 3px 0; font-family: var(--font-cond); font-size: 13px; color: var(--text); }
-    .sd-res-name { flex: 1; }
-    .sd-res-yield { font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 1px 7px; border-radius: 3px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-dim); white-space: nowrap; }
-    /* Abundance ramp — low (orange) → med (yellow) → high (green). Prefix match
-       so the whole X4 yield ladder (lowest/lowplus/medlow/highlow/highest/…) is
-       covered: low* and verylow → orange, med* → yellow, high* and veryhigh →
-       green. "med*" is listed after "low*" so medlow/medhigh land on yellow. */
-    .sd-res-yield[data-yield^="low"],  .sr-metric-yield[data-yield^="low"],
-    .sd-res-yield[data-yield="verylow"], .sr-metric-yield[data-yield="verylow"]   { color: #f0883e; border-color: #f0883e55; }
-    .sd-res-yield[data-yield^="med"],  .sr-metric-yield[data-yield^="med"]        { color: #d2c84a; border-color: #d2c84a55; }
-    .sd-res-yield[data-yield^="high"], .sr-metric-yield[data-yield^="high"],
-    .sd-res-yield[data-yield="veryhigh"], .sr-metric-yield[data-yield="veryhigh"] { color: #3fb950; border-color: #3fb95055; }
-    .sd-res-meta { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); white-space: nowrap; }
+    /* Resources as a 3-column grid: name | yield | amount. display:contents on
+       the rows lets every cell line up in the shared columns, so the right-hand
+       Yield and Amount values align neatly down the list. */
+    .sd-res-table { display: grid; grid-template-columns: 1fr auto auto; column-gap: 20px; row-gap: 6px; align-items: baseline; margin-bottom: 22px; }
+    .sd-res-head, .sd-res-row { display: contents; }
+    .sd-res-h { font-family: var(--font-cond); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); text-align: right; }
+    .sd-res-name { font-family: var(--font-cond); font-size: 14px; color: var(--text); }
+    .sd-res-yield { font-family: var(--font-cond); font-size: 13px; font-weight: 600; text-align: right; white-space: nowrap; }
+    .sd-res-amt { font-family: var(--font-mono); font-size: 13px; color: var(--text); text-align: right; white-space: nowrap; }
+    /* Abundance heat-ramp using brand colours — red (poor) → orange → yellow →
+       green (rich). Prefix match covers the whole X4 yield ladder; verylow and
+       veryhigh are pinned to the extremes. Applies to both the detail table
+       (.sd-res-yield) and the list sort value (.sr-metric-yield). */
+    .sd-res-yield[data-yield="verylow"],  .sr-metric-yield[data-yield="verylow"]  { color: var(--red); }
+    .sd-res-yield[data-yield^="low"],     .sr-metric-yield[data-yield^="low"]     { color: #f0883e; }
+    .sd-res-yield[data-yield^="med"],     .sr-metric-yield[data-yield^="med"]     { color: var(--yellow); }
+    .sd-res-yield[data-yield^="high"],    .sr-metric-yield[data-yield^="high"]    { color: var(--green); }
+    .sd-res-yield[data-yield="veryhigh"], .sr-metric-yield[data-yield="veryhigh"] { color: #56d364; }
 
     /* The player's own stations in a sector — clickable to the station card. */
     .sd-sta-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-family: var(--font-cond); font-size: 13px; color: var(--text); cursor: pointer; }
     .sd-sta-row i { font-size: 14px; color: var(--teal); flex-shrink: 0; }
     .sd-sta-row:hover .sd-sta-name { color: var(--teal); }
     .sd-sta-name { flex: 1; }
-    .sd-sta-code { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
+    .sd-sta-code { font-family: var(--font-mono); font-size: 11px; color: var(--teal); }
+
+    /* Collapsible "Your Ships" set. Native <details> — default collapsed. */
+    .sd-ships { margin-bottom: 22px; }
+    .sd-ships-sum { display: flex; align-items: center; gap: 8px; cursor: pointer; list-style: none; user-select: none; }
+    .sd-ships-sum::-webkit-details-marker { display: none; }
+    .sd-ships-chev { font-size: 14px; color: var(--text-faint); transition: transform 0.15s; }
+    .sd-ships[open] .sd-ships-chev { transform: rotate(90deg); }
+    .sd-ships-title { font-family: var(--font-cond); font-weight: 600; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); }
+    .sd-ships-break { font-family: var(--font-cond); font-size: 12px; color: var(--text); }
+    .sd-ships-list { display: grid; grid-template-columns: 1fr auto auto; column-gap: 16px; row-gap: 4px; align-items: baseline; margin: 8px 0 0 22px; }
+    .sd-ship-row { display: contents; }
+    .sd-ship-name { font-family: var(--font-cond); font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sd-ship-role { font-family: var(--font-cond); font-size: 12px; color: var(--text); text-align: right; white-space: nowrap; }
+    .sd-ship-code { font-family: var(--font-mono); font-size: 11px; color: var(--teal); text-align: right; white-space: nowrap; }
 
     /* ── SECTION HEADER ── */
     .sec-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
@@ -4107,6 +4139,9 @@
   let _sectorInfoMap  = {}; // {sector_macro → sector row from data.sectors}
   let _npcBySector    = {}; // {sector_macro → [{owner_id, owner_name, count}]}
   let _playerStaBySector = {}; // {sector_macro → [station, …]} — the player's own stations
+  let _playerShipsBySector = {}; // {sector_macro → [ship, …]} — the player's own ships
+  let _repByFaction      = {}; // {faction_id → reputation row} — player standing per faction
+  let _distFromEmpire    = {}; // {sector_macro → jumps from your nearest territory}
   let _sectorAdj      = {}; // {sector_macro → [{macro, cost}]} — gate/highway links
 
   // Fit all clusters inside the map container, called on first tab open when
@@ -4542,6 +4577,23 @@
       (_playerStaBySector[st.sector_macro] || (_playerStaBySector[st.sector_macro] = [])).push(st);
     }
 
+    // The player's own ships grouped by sector (data.ships is the player fleet).
+    // Powers the collapsible "Your Ships" list in the Sectors tab.
+    _playerShipsBySector = {};
+    for (const sp of (data.ships || [])) {
+      if (!sp.sector_macro) continue;
+      (_playerShipsBySector[sp.sector_macro] || (_playerShipsBySector[sp.sector_macro] = [])).push(sp);
+    }
+
+    // Player standing per faction, so the sector pane can show the owner's tier
+    // (using the same tierBadge as the Diplomacy tab).
+    _repByFaction = {};
+    for (const r of (data.reputation || [])) _repByFaction[r.faction_id] = r;
+
+    // Jump distance from your nearest owned/occupied territory to every sector,
+    // for the Core/Frontier/Remote tags. 0 = a sector you're established in.
+    _distFromEmpire = data.galaxy_map?.distances_from_player || {};
+
     // Sector adjacency for the Sectors-tab detail pane: each gate/highway edge
     // is undirected, so record it both ways. cost 0 = intra-cluster highway.
     _sectorAdj = {};
@@ -4727,13 +4779,56 @@
   // Strip the "[TEL] " bracket prefix the export puts on faction display names.
   function _ownerLabel(name) { return (name || '').replace(/^\[\w+\]\s*/, '') || 'Unclaimed'; }
 
-  // Compact number for resource capacities: 7805 → 7.8k, 9.6M, 1.45B.
-  function _fmtCompact(n) {
-    n = Number(n) || 0;
-    if (n >= 1e9) return (n / 1e9).toFixed(2).replace(/\.?0+$/, '') + 'B';
-    if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
-    if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'k';
-    return String(n);
+  // Full, grouped number — no abbreviations (e.g. 2360711 → "2,360,711"), so the
+  // reader sees the real figure rather than decoding "2.4M".
+  function _fmtFull(n) { return (Number(n) || 0).toLocaleString('en-US'); }
+
+  // Human-readable yield level. 9.00 uses verylow/low/medium/high/veryhigh; the
+  // map covers the older fine-grained tags too. Falls back to a capitalised tag.
+  const YIELD_LABELS = {
+    verylow: 'Very Low', low: 'Low', lowplus: 'Low+', lowminus: 'Low−',
+    lowest: 'Lowest', lowextra: 'Low Extra', medlow: 'Med-Low', medium: 'Medium',
+    medplus: 'Med+', medhigh: 'Med-High', highlow: 'High-Low', high: 'High',
+    highplus: 'High+', veryhigh: 'Very High', highest: 'Highest',
+  };
+  function _yieldLabel(y) {
+    return YIELD_LABELS[y] || (y ? y.charAt(0).toUpperCase() + y.slice(1) : '—');
+  }
+
+  // Bucket a ship role into miner / trader / combat (the catch-all). Used for the
+  // "Your Ships" breakdown. MINER_ROLES is the same set the fleet/alerts use.
+  function _shipCategory(role) {
+    if (MINER_ROLES.has(role)) return 'miner';
+    if (role === 'Freighter' || role === 'Trader' || role === 'Transporter') return 'trader';
+    return 'combat';
+  }
+
+  // Derive a few at-a-glance "character" tags for a sector. Kept short and only
+  // the ones that apply, so the chip row stays a thin summary, not a wall.
+  function _sectorTags(sec, macro, ownerRep) {
+    const tags = [];
+    // Ownership / standing. "Your Territory" means the player FACTION owns the
+    // sector's sovereignty — not merely having a station in someone else's space.
+    if (sec.owner_id === 'player') tags.push({ label: 'Your Territory', cls: 'tag-you' });
+    else if (!sec.owner_id) tags.push({ label: 'Unclaimed', cls: 'tag-neutral' });
+    else if (ownerRep && (ownerRep.tier === 'Hostile' || ownerRep.tier === 'At War'))
+      tags.push({ label: 'Hostile', cls: 'tag-bad' });
+
+    // Proximity to your empire (jumps from your nearest territory).
+    //   Core 0–1 · Frontier 2–5 · Remote 6+
+    const dist = _distFromEmpire[macro];
+    if (dist != null) {
+      if (dist <= 1)      tags.push({ label: 'Core',     cls: 'tag-core' });
+      else if (dist <= 5) tags.push({ label: 'Frontier', cls: 'tag-frontier' });
+      else                tags.push({ label: 'Remote',   cls: 'tag-remote' });
+    }
+
+    // Features.
+    if ((sec.resources || []).some(r => /^high/.test(r.yield_level) || r.yield_level === 'veryhigh'))
+      tags.push({ label: 'Mining-Rich', cls: 'tag-rich' });
+    if (sec.sunlight != null && sec.sunlight >= 1.3) tags.push({ label: 'High Sunlight', cls: 'tag-sun' });
+    if ((_sectorAdj[macro] || []).length >= 4) tags.push({ label: 'Hub', cls: 'tag-hub' });
+    return tags;
   }
 
   // One sector row, shared by the grouped (alpha) and flat (metric) views.
@@ -4759,7 +4854,7 @@
     }
     if (mode === 'sunlight') {
       const v = s.sunlight != null ? s.sunlight : 0;
-      return { value: v, label: Math.round(v * 100) + '%' };
+      return { value: v, label: `<span class="sr-metric-sun">${Math.round(v * 100)}%</span>` };
     }
     if (mode.startsWith('res:')) {
       const ware = mode.slice(4);
@@ -4767,7 +4862,7 @@
       if (!r) return { value: -1, label: '' };  // sector lacks this resource → bottom
       return {
         value: r.recharge_max || 0,
-        label: `<span class="sr-metric-yield" data-yield="${r.yield_level || ''}">${_fmtCompact(r.recharge_max)}</span>`,
+        label: `<span class="sr-metric-yield" data-yield="${r.yield_level || ''}">${_fmtFull(r.recharge_max)}</span>`,
       };
     }
     return { value: 0, label: '' };
@@ -4832,9 +4927,29 @@
     const jumpsTxt = near ? (near.jumps === 0 ? 'In sector' : `${near.jumps} jump${near.jumps !== 1 ? 's' : ''}`) : '—';
     const sunTxt   = (sec.sunlight != null) ? Math.round(sec.sunlight * 100) + '%' : '—';
 
+    // Single-sector clusters share the sector's name, so the cluster subtitle
+    // would just repeat it — only show it when it actually differs.
+    const clusterName = _clusterName(sec.cluster_macro, sec);
+    const showCluster = clusterName.trim().toLowerCase() !== (sec.sector_name || '').trim().toLowerCase();
+
+    // Owner standing — reuse the Diplomacy tab's tierBadge so the label is
+    // byte-identical (same text, same colour) to the Faction Standings table.
+    const ownerRep   = sec.owner_id ? _repByFaction[sec.owner_id] : null;
+    const ownerBadge = ownerRep ? ' ' + tierBadge(ownerRep.tier) : '';
+
     let html = `<div class="sd-head"><div class="sd-name">${sec.sector_name || macro}</div>`
-             + `<div class="sd-cluster">${_clusterName(sec.cluster_macro, sec)}</div></div>`
-             + `<div class="sd-owner" style="color:${ownColor}">${_ownerLabel(sec.owner_name)}</div>`;
+             + (showCluster ? `<div class="sd-cluster">${clusterName}</div>` : '')
+             + `</div>`;
+
+    // Summary tags — a thin, instantly-visible row characterising the sector.
+    const tags = _sectorTags(sec, macro, ownerRep);
+    if (tags.length) {
+      html += '<div class="sd-tags">'
+            + tags.map(t => `<span class="sd-tag ${t.cls}">${t.label}</span>`).join('')
+            + '</div>';
+    }
+
+    html += `<div class="sd-owner"><span style="color:${ownColor}">${_ownerLabel(sec.owner_name)}</span>${ownerBadge}</div>`;
 
     // Key stats.
     html += '<div class="sd-grid">'
@@ -4858,20 +4973,46 @@
       html += '</div>';
     }
 
-    // Mineable resources (from the save's <resourceareas>), richest capacity
-    // first. Capacity is the combined recharge "max" across the sector's fields.
+    // The player's own ships in this sector, as a collapsible set (default closed
+    // to stay compact). The summary line carries the count + a role breakdown.
+    const myShips = _playerShipsBySector[macro] || [];
+    if (myShips.length) {
+      const cat = { miner: 0, trader: 0, combat: 0 };
+      for (const sp of myShips) cat[_shipCategory(sp.role)]++;
+      const breakdown = [
+        cat.miner  && `${cat.miner} mining`,
+        cat.trader && `${cat.trader} trade`,
+        cat.combat && `${cat.combat} combat`,
+      ].filter(Boolean).join(' · ');
+      html += `<details class="sd-ships"><summary class="sd-ships-sum">`
+            + `<i class="ti ti-chevron-right sd-ships-chev"></i>`
+            + `<span class="sd-ships-title">Your Ships (${myShips.length})</span>`
+            + `<span class="sd-ships-break">${breakdown}</span></summary>`
+            + `<div class="sd-ships-list">`;
+      for (const sp of myShips) {
+        html += `<div class="sd-ship-row">`
+              + `<span class="sd-ship-name">${sp.display_name || sp.name || sp.code || 'Ship'}</span>`
+              + `<span class="sd-ship-role">${sp.role || ''}</span>`
+              + (sp.code ? `<span class="sd-ship-code">${sp.code}</span>` : '')
+              + `</div>`;
+      }
+      html += '</div></details>';
+    }
+
+    // Mineable resources, richest first. A 3-column grid keeps the Yield and
+    // Amount columns aligned across rows; a header labels them once (no per-row
+    // abbreviations). 9.00's `amount` is a live figure that depletes/regenerates.
     const resources = sec.resources || [];
     if (resources.length) {
-      html += '<div class="sd-section-title">Resources</div><div class="sd-list">';
+      html += '<div class="sd-section-title">Resources</div><div class="sd-res-table">'
+            + '<div class="sd-res-head"><span></span>'
+            + '<span class="sd-res-h">Yield</span><span class="sd-res-h">Amount</span></div>';
       for (const res of resources) {
-        const yl  = res.yield_level || '';
-        const cap = _fmtCompact(res.recharge_max);
-        const sec_ = res.recharge_time ? Math.round(res.recharge_time / 1000) + 's' : '';
-        const meta = [cap && ('cap ' + cap), sec_].filter(Boolean).join(', ');
+        const yl = res.yield_level || '';
         html += `<div class="sd-res-row">`
               + `<span class="sd-res-name">${res.ware_name || res.ware}</span>`
-              + `<span class="sd-res-yield" data-yield="${yl}">${yl || '—'}</span>`
-              + `<span class="sd-res-meta">${meta}</span></div>`;
+              + `<span class="sd-res-yield" data-yield="${yl}">${_yieldLabel(yl)}</span>`
+              + `<span class="sd-res-amt">${_fmtFull(res.recharge_max)}</span></div>`;
       }
       html += '</div>';
     }
