@@ -530,6 +530,23 @@
     .ft-count { font-family: var(--font-mono); font-size: 10px; opacity: 0.6; }
     .fleet-panel { display: none; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
     .fleet-panel.active { display: flex; }
+
+    /* ── SHIP DESIGN CARDS ──
+       Each equipment category is its own bounded panel (.dsect) with a coloured
+       icon + tinted header. The stat columns inside every section share one grid
+       so count / badge / name / stats / cost line up. */
+    .dsect { border: 1px solid var(--border); border-radius: 4px; background: var(--bg-panel); margin-bottom: 8px; overflow: hidden; }
+    .dsect-hd { display: flex; align-items: center; gap: 8px; padding: 5px 10px; border-bottom: 1px solid var(--border); }
+    .dsect-hd i { font-size: 15px; }
+    .dsect-hd .lbl { font-family: var(--font-cond); font-weight: 600; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; }
+    .dsect-hd .slots { margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); }
+    .dsect-body { padding: 5px 10px 7px; }
+    .drow { display: grid; grid-template-columns: 34px 46px minmax(110px,1fr) 60px 60px 60px 60px 80px; align-items: center; gap: 5px 9px; padding: 2px 0; }
+    .dhd   { font-size: 9px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-faint); text-align: right; }
+    .dst   { font-family: var(--font-mono); font-size: 11px; color: var(--text); text-align: right; }
+    .dcost { font-family: var(--font-mono); font-size: 11px; color: var(--amber); text-align: right; }
+    .dcnt  { font-family: var(--font-mono); color: var(--lime); font-size: 12px; text-align: right; }
+    .dnm   { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     /* Diplomacy panels — own class so the fleet switcher can't toggle them. */
     .diplo-panel { display: none; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
     .diplo-panel.active { display: flex; }
@@ -607,7 +624,7 @@
     <div class="nav-tab nav-dropdown" id="nav-naval"><i class="ti ti-rocket"></i> Naval <span class="nav-badge" id="nav-ships">—</span> <i class="ti ti-chevron-down nav-dd-caret"></i>
       <div class="nav-dd-menu">
         <div class="nav-dd-item" onclick="switchTab('fleet',document.getElementById('nav-naval'))"><i class="ti ti-list-details"></i> Ships</div>
-        <div class="nav-dd-item" onclick="switchTab('designs',document.getElementById('nav-naval'))"><i class="ti ti-vector-triangle"></i> Designs</div>
+        <div class="nav-dd-item" onclick="switchTab('designs',document.getElementById('nav-naval')); renderDesigns()"><i class="ti ti-vector-triangle"></i> Designs</div>
       </div>
     </div>
     <div class="nav-tab" onclick="switchTab('stations',this)"><i class="ti ti-building-factory-2"></i> Stations</div>
@@ -638,7 +655,7 @@
       <div class="sb-item" onclick="requestNewScan()">
         <span class="sb-item-label"><i class="ti ti-radar-2"></i> New Scan</span>
       </div>
-      <div class="sb-item" onclick="switchTab('designs',document.getElementById('nav-naval'))">
+      <div class="sb-item" onclick="switchTab('designs',document.getElementById('nav-naval')); renderDesigns()">
         <span class="sb-item-label"><i class="ti ti-vector-triangle"></i> Fleet Designs</span>
       </div>
       <div class="sb-divider"></div>
@@ -2358,6 +2375,191 @@
 
   function updateFleetSortHeaders() {
     updateSortHeaders('#fleet-table', currentSortKey, currentSortDir);
+  }
+
+  // ── DESIGNS TAB ───────────────────────────────────────────────────────────
+  // A "design" is a unique ship configuration: same hull macro + the same
+  // installed equipment (same macros, same counts). Many ships collapse onto
+  // one design. Built entirely from the loadout the export already carries —
+  // no backend. Deployables have no loadout, so they never appear here.
+
+  const DESIGN_SLOTS = [
+    ['weapon','Weapons'], ['turret','Turrets'], ['shield','Shields'],
+    ['engine','Engine'],  ['thruster','Thruster'],
+  ];
+
+  const designCr = n => Number(n).toLocaleString();
+
+  // Per-category icon + colour for the section headers (.dsect-hd). The tint is
+  // the same colour at low alpha, used as the header background.
+  const SLOT_META = {
+    hull:     { icon:'ti-ufo',        color:'var(--yellow)', tint:'rgba(227,179,65,0.08)' },
+    weapon:   { icon:'ti-bolt',       color:'var(--red)',    tint:'rgba(248,81,73,0.08)' },
+    turret:   { icon:'ti-circle-dot', color:'var(--amber)',  tint:'rgba(210,153,34,0.08)' },
+    shield:   { icon:'ti-shield',     color:'var(--teal)',   tint:'rgba(45,212,191,0.08)' },
+    engine:   { icon:'ti-engine',     color:'var(--purple)', tint:'rgba(163,113,247,0.08)' },
+    thruster: { icon:'ti-windmill',   color:'var(--lime)',   tint:'rgba(57,255,20,0.08)' },
+  };
+
+  // Per-slot stat columns: [catalog key, header label, value formatter].
+  const SLOT_STATS = {
+    weapon:   [['damage_hull','Damage',designCr], ['range_m','Range',v=>(v/1000).toFixed(1)+' km'], ['reload_rate','Rate',v=>v+'/s']],
+    turret:   [['damage_hull','Damage',designCr], ['range_m','Range',v=>(v/1000).toFixed(1)+' km'], ['reload_rate','Rate',v=>v+'/s']],
+    shield:   [['capacity','Capacity',designCr],  ['recharge_rate','Rechg',v=>designCr(v)+'/s'],   ['recharge_delay','Delay',v=>v+' s']],
+    engine:   [['thrust_forward','Forward',designCr], ['travel_thrust','Travel',v=>Math.round(v)]],
+    thruster: [['strafe','Strafe',designCr], ['pitch','Pitch',designCr], ['yaw','Yaw',designCr], ['roll','Roll',designCr]],
+  };
+
+  // 3-letter faction tag in the hull-badge style (.badge .{faction} colour).
+  // Generic / no-maker parts (thrusters) get a neutral GEN badge.
+  const FAC3 = {
+    argon:'ARG', paranid:'PAR', teladi:'TEL', split:'SPL', terran:'TER',
+    boron:'BOR', xenon:'XEN', khaak:'KHA', pirate:'PIR', yaki:'YAK',
+  };
+  function designBadge(faction) {
+    if (!faction) return '<span class="badge neutral">GEN</span>';
+    const f = faction.toLowerCase();
+    return `<span class="badge ${f}">${FAC3[f] || f.slice(0,3).toUpperCase()}</span>`;
+  }
+
+  // Resolvable equipment only — drops the unresolved internal parts (raw macros).
+  const designItems = s => (s.loadout || []).filter(e => !e.name.endsWith('_macro'));
+
+  // Stable grouping key: hull + each item as slot:macro:count, sorted so the
+  // order equipment was read never affects whether two ships match.
+  function designSignature(s) {
+    return s.macro + '||' +
+      designItems(s).map(e => `${e.slot}:${e.macro}:${e.count}`).sort().join('|');
+  }
+
+  function renderDesigns() {
+    const grid  = document.getElementById('designs-grid');
+    const empty = document.getElementById('designs-empty');
+    const ships = (allPlayerShips || []).filter(s => designItems(s).length);
+    if (!ships.length) { grid.innerHTML = ''; empty.style.display = 'flex'; return; }
+    empty.style.display = 'none';
+
+    // Group ships by signature.
+    const groups = new Map();
+    for (const s of ships) {
+      const sig = designSignature(s);
+      if (!groups.has(sig))
+        groups.set(sig, {
+          type: s.type_name || s.macro, loadout: s.loadout, ships: [],
+          hullFaction: s.hull_origin, hullMax: s.hull_max, hullPrice: s.hull_price,
+          hullSize: s.size,
+        });
+      groups.get(sig).ships.push(s);
+    }
+    const designs = [...groups.values()];
+
+    // Config letters per hull type, lettered by descending member count. A type
+    // with only one config gets no letter (no "Config A" when there's no B).
+    const byType = {};
+    designs.forEach(d => (byType[d.type] = byType[d.type] || []).push(d));
+    Object.values(byType).forEach(list => {
+      list.sort((a, b) => b.ships.length - a.ships.length);
+      list.forEach((d, i) =>
+        d.config = list.length > 1 ? ' · Config ' + String.fromCharCode(65 + i) : '');
+    });
+
+    // Most-common designs first.
+    designs.sort((a, b) => b.ships.length - a.ships.length || a.type.localeCompare(b.type));
+    grid.innerHTML = designs.map((d, i) => designCardHtml(d, i)).join('');
+  }
+
+  // Generic placeholder hull wireframe. Replaced per-hull by the .xmf mesh
+  // render in a later phase; kept neutral so it reads as a preview, not data.
+  const WIRE_SVG = `<svg viewBox="0 0 140 64" style="width:140px;height:64px;filter:drop-shadow(0 0 3px rgba(45,212,191,0.5))" aria-hidden="true">
+    <g fill="none" stroke="var(--teal)" stroke-width="1.1"><polygon points="70,5 80,26 76,54 70,60 64,54 60,26"/><line x1="70" y1="5" x2="70" y2="60"/><polygon points="60,30 41,38 44,49 60,45"/><polygon points="80,30 99,38 96,49 80,45"/></g>
+    <g fill="none" stroke="var(--lime)" stroke-width="1.1"><line x1="66" y1="56" x2="66" y2="63"/><line x1="74" y1="56" x2="74" y2="63"/></g></svg>`;
+
+  function designCardHtml(d, idx) {
+    // Four stat cells from a source object + the slot's column defs (pads empties).
+    const statCells = (src, defs) => [0,1,2,3].map(i => {
+      if (!defs[i]) return '<span></span>';
+      const v = src[defs[i][0]];
+      return `<span class="dst">${v != null ? defs[i][2](v) : '—'}</span>`;
+    }).join('');
+    const headerRow = defs =>
+      `<div class="drow"><span></span><span></span><span></span>` +
+      [0,1,2,3].map(i => `<span class="dhd">${defs[i] ? defs[i][1] : ''}</span>`).join('') +
+      `<span class="dhd">Cost</span></div>`;
+
+    // One bounded, colour-headed category panel.
+    const section = (slot, label, slotsText, inner) => {
+      const m = SLOT_META[slot];
+      return `<div class="dsect">
+        <div class="dsect-hd" style="background:${m.tint}">
+          <i class="ti ${m.icon}" style="color:${m.color}"></i><span class="lbl">${label}</span>
+          <span class="slots">${slotsText || ''}</span>
+        </div>
+        <div class="dsect-body">${inner}</div>
+      </div>`;
+    };
+
+    let total = d.hullPrice || 0;
+
+    // ── Hull section: wireframe preview + the priced hull row ────────────────
+    const hullDefs = [['hull_max', 'Hull HP', designCr]];
+    const hullInner = `<div style="display:flex;gap:12px;align-items:center">
+      <div style="border:1px solid rgba(45,212,191,0.27);border-radius:3px;background:#0a0e13;padding:3px;flex-shrink:0">${WIRE_SVG}</div>
+      <div style="flex:1">
+        ${headerRow(hullDefs)}
+        <div class="drow">
+          <span class="dcnt">1×</span>${designBadge(d.hullFaction)}
+          <span style="font-family:var(--font-cond);font-weight:600;font-size:14px">${d.type}</span>
+          ${statCells({ hull_max: d.hullMax }, hullDefs)}
+          <span class="dcost">${d.hullPrice != null ? designCr(d.hullPrice) : '—'}</span>
+        </div>
+      </div>
+    </div>`;
+    let body = section('hull', 'Hull',
+      `${d.hullSize || ''}${d.hullFaction ? ' · ' + d.hullFaction : ''}`, hullInner);
+
+    // ── Equipment sections ──────────────────────────────────────────────────
+    for (const [slot, label] of DESIGN_SLOTS) {
+      const items = (d.loadout || []).filter(e => e.slot === slot && !e.name.endsWith('_macro'));
+      if (!items.length) continue;
+      const defs = SLOT_STATS[slot] || [];
+      // Distinct mount sizes present (e.g. "M", or "M / L" if mixed).
+      const sizes = [...new Set(items.map(e => e.size).filter(Boolean))].map(s => s.toUpperCase()).join(' / ');
+      const rows = items.map(e => {
+        if (e.price) total += e.price * e.count;
+        const mk = e.mk ? ` Mk${e.mk}` : '';
+        return `<div class="drow">
+          <span class="dcnt">${e.count}×</span>${designBadge(e.race)}
+          <span class="dnm">${e.name}${mk}</span>
+          ${statCells(e, defs)}
+          <span class="dcost">${e.price != null ? designCr(e.price) : '—'}</span>
+        </div>`;
+      }).join('');
+      body += section(slot, label, sizes, headerRow(defs) + rows);
+    }
+
+    const n = d.ships.length;
+    const chips = d.ships.map(s =>
+      `<span onclick="jumpToShip('${s.code}')" style="cursor:pointer;font-family:var(--font-mono);font-size:11px;color:var(--teal);border:1px solid var(--border);border-radius:2px;padding:2px 8px">${s.code}${s.name ? ' · ' + s.name : ''}</span>`
+    ).join('');
+
+    return `<div class="panel" style="margin-bottom:12px;padding:14px">
+      <div style="display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:8px">
+        <i class="ti ti-vector-triangle" style="color:var(--teal);font-size:16px"></i>
+        <span style="font-family:var(--font-cond);font-weight:600;font-size:16px;color:var(--text)">${d.type}${d.config}</span>
+        <span onclick="toggleDesignShips(${idx})" style="margin-left:auto;cursor:pointer;color:var(--text-dim);font-size:12px;white-space:nowrap">used by <b style="color:var(--lime)">${n}</b> ship${n > 1 ? 's' : ''} <i class="ti ti-chevron-down" style="vertical-align:-2px"></i></span>
+      </div>
+      ${body}
+      <div style="display:flex;align-items:baseline;gap:10px;border-top:1px solid var(--border);margin-top:2px;padding-top:9px">
+        <span style="font-family:var(--font-cond);font-weight:600;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim)">Design total</span>
+        <span style="margin-left:auto;font-family:var(--font-mono);font-size:16px;color:var(--amber)">${designCr(total)} <span style="font-size:11px;color:var(--text-dim)">Cr</span></span>
+      </div>
+      <div id="design-ships-${idx}" style="display:none;gap:6px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">${chips}</div>
+    </div>`;
+  }
+
+  function toggleDesignShips(idx) {
+    const el = document.getElementById('design-ships-' + idx);
+    if (el) el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
   }
 
 

@@ -41,6 +41,7 @@ from lxml import etree as ET
 
 from gamefiles.catalog import CatalogIndex, find_x4_install
 from gamefiles.langtext import _REF_RE, clean_text, load_texts
+from gamefiles.generate_data import load_macro_prices
 
 DATA_DIR = REPO / "data"
 
@@ -63,7 +64,7 @@ GENERATED_BANNER = (
 # Field order for the emitted per-entry dicts: identity first, then the
 # slot-specific stats. Absent fields are simply skipped.
 _FIELD_ORDER = [
-    "slot", "name", "mk", "size", "race", "group",
+    "slot", "name", "mk", "size", "race", "group", "price",
     # weapon / turret
     "damage_hull", "damage_shield", "reload_rate", "range_m",
     # shield
@@ -180,7 +181,7 @@ def load_bullets(idx: CatalogIndex) -> dict[str, dict]:
 #  Pass 2 — equipment macros
 # ──────────────────────────────────────────────────────────────────────────
 
-def load_equipment(idx: CatalogIndex, bullets: dict[str, dict]):
+def load_equipment(idx: CatalogIndex, bullets: dict[str, dict], prices: dict[str, int]):
     """Returns (records, aliases, name_pages).
 
     records   list of {macro, slot, name_ref, ...stats} (name still unresolved)
@@ -261,6 +262,9 @@ def load_equipment(idx: CatalogIndex, bullets: dict[str, dict]):
         race = ident.get("makerrace")
         if race:
             rec["race"] = race
+        price = prices.get(macro)
+        if price:
+            rec["price"] = price
 
         # ── slot-specific stats ──────────────────────────────────────────────
         if slot in ("weapon", "turret"):
@@ -366,7 +370,8 @@ def main() -> int:
     bullets = load_bullets(idx)
     print(f"Indexed {len(bullets)} bullet macros (damage table)")
 
-    records, aliases, name_pages = load_equipment(idx, bullets)
+    prices = load_macro_prices(idx)   # macro → average buy price
+    records, aliases, name_pages = load_equipment(idx, bullets, prices)
     print(f"Found {len(records)} equipment macros, {len(aliases)} alias refs")
 
     # Resolve display names now that we know which t-file pages they reference.

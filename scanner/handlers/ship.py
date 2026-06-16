@@ -18,6 +18,7 @@ ALL XML attribute names in this file have been verified against save_001.xml.
 No guesswork.
 """
 from __future__ import annotations
+import re
 from data.factions   import FACTION_NAMES
 from data.ship_stats  import SHIP_STATS    # macro → {max_hull: N}
 from data.station_stats import STATION_STATS  # macro → {max_shield: N} — same table for ship shields
@@ -199,6 +200,13 @@ _EQUIP_SLOTS = {
     "engine":          "engine",
 }
 
+# Deployable structures (laser towers, satellites, nav/distress beacons, resource
+# probes) are player-owned like ships but aren't real ship designs. We give them
+# no loadout at all so they never reach the DB, the export, or the Designs view.
+# NB: "mine" is deliberately absent — it would also match "miner". Patterns
+# verified against save_001.xml (lasertower, distressbeacon present).
+_DEPLOYABLE_RE = re.compile(r'lasertower|satellite|beacon|resourceprobe|navsat', re.I)
+
 
 def _parse_loadout(ship_elem) -> list[tuple[str, str]]:
     """
@@ -214,7 +222,13 @@ def _parse_loadout(ship_elem) -> list[tuple[str, str]]:
 
     Thrusters are read from the ship element's `thruster=` attribute — verified
     against save_001.xml, where no thruster <component> exists.
+
+    Deployables (laser towers, beacons, satellites) return an empty loadout so
+    they're excluded from designs everywhere downstream.
     """
+    if _DEPLOYABLE_RE.search(ship_elem.get("macro", "")):
+        return []
+
     items: list[tuple[str, str]] = []
 
     for comp in iter_station_components(ship_elem):

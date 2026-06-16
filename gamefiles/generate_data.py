@@ -83,6 +83,29 @@ def load_merged_wares(idx: CatalogIndex):
     return root
 
 
+def load_macro_prices(idx: CatalogIndex) -> dict[str, int]:
+    """component macro id (lowercase) → average buy price, from wares.xml.
+
+    Ships and equipment are sold as wares; each priced ware links back to its
+    component via <component ref="..._macro"/>, so the ref IS the macro id. Used
+    to price hulls in ship_stats and equipment in the equipment catalog.
+    """
+    root = load_merged_wares(idx)
+    prices: dict[str, int] = {}
+    for w in root.findall("ware"):
+        comp  = w.find("component")
+        price = w.find("price")
+        if comp is None or price is None:
+            continue
+        ref = (comp.get("ref") or "").lower()
+        if ref:
+            try:
+                prices[ref] = int(price.get("average", 0))
+            except (ValueError, TypeError):
+                pass
+    return prices
+
+
 def load_group_textids(idx: CatalogIndex) -> dict[str, int]:
     """
     waregroups.xml: group id → page 20215 base textId.
@@ -323,10 +346,11 @@ def gen_station_names_py(wares, texts) -> str:
 #  ships.py + ship_stats.py
 # ──────────────────────────────────────────────────────────────────────────
 
-def load_ship_data(idx: CatalogIndex, texts: dict) -> list[tuple]:
+def load_ship_data(idx: CatalogIndex, texts: dict, prices: dict[str, int]) -> list[tuple]:
     """
     Reads every ship_*.xml macro from the catalogs (base + DLC) and returns
-    a list of (macro_id, display_name, ship_class, max_hull) tuples.
+    a list of (macro_id, display_name, ship_class, max_hull, price) tuples.
+    price is the hull's average buy price (0 if the hull isn't a sold ware).
 
     DLC ship macros are full documents (not diffs), so they're simply parsed
     alongside the base-game ones — no patch application needed.
@@ -351,9 +375,10 @@ def load_ship_data(idx: CatalogIndex, texts: dict) -> list[tuple]:
         display  = clean_text(name_ref, texts) if name_ref else macro_id
 
         max_hull = int(hull_el.get("max", 0)) if hull_el is not None else 0
+        price    = prices.get(macro_id.lower(), 0)
 
         if macro_id:
-            ships.append((macro_id, display, ship_class, max_hull))
+            ships.append((macro_id, display, ship_class, max_hull, price))
 
     ships.sort(key=lambda s: s[0])
     return ships
@@ -361,7 +386,7 @@ def load_ship_data(idx: CatalogIndex, texts: dict) -> list[tuple]:
 
 def gen_ships_py(ships) -> str:
     items = [(macro_id, repr(display))
-             for macro_id, display, _, _ in ships]
+             for macro_id, display, *_ in ships]
     return (GENERATED_BANNER +
             "\n# Ship macro id → display name (ship macro XML identification/@name\n"
             "# resolved via page 20101 of the language file).\n"
@@ -372,15 +397,17 @@ def gen_ships_py(ships) -> str:
 
 def gen_ship_stats_py(ships) -> str:
     blocks = []
-    for macro_id, _, ship_class, max_hull in ships:
+    for macro_id, _, ship_class, max_hull, price in ships:
         blocks.append(f"    '{macro_id}': {{\n"
                       f"        'class':    '{ship_class}',\n"
                       f"        'max_hull': {max_hull},\n"
+                      f"        'price':    {price},\n"
                       f"    }},")
     return (GENERATED_BANNER +
-            "\n# Ship macro id → static game stats (ship macro XML).\n"
+            "\n# Ship macro id → static game stats (ship macro XML + wares.xml).\n"
             "#   class    — ship size class (ship_s, ship_m, ship_l, ship_xl, ship_xs)\n"
             "#   max_hull — base maximum hull HP before mods\n"
+            "#   price    — average buy price in credits (0 if the hull isn't sold)\n"
             "SHIP_STATS: dict[str, dict] = {\n" +
             "\n".join(blocks) + "\n}\n")
 
@@ -670,8 +697,9 @@ def main() -> int:
     # 20111 — variant suffixes ("Vanguard", "Sentinel") and type qualifiers
     #         ("\(Gas\)", "\(Mineral\)") referenced inside the 20101 entries
     texts_ships = load_texts(idx, {"20101", "20111"})
-    ships = load_ship_data(idx, texts_ships)
-    print(f"Found {len(ships)} ship macros")
+    prices = load_macro_prices(idx)   # macro → average buy price (hulls + equipment)
+    ships = load_ship_data(idx, texts_ships, prices)
+    print(f"Found {len(ships)} ship macros ({sum(1 for s in ships if s[4])} priced)")
 
     # ── Station stats (structure modules + shields, page 20004 for sector names) ──
     # Page 20004 is also used by gen_sector_stats_py for display-name comments.

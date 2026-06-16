@@ -20,8 +20,18 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 from scanner import galaxy_map as gm
-from scanner.ship_names import ship_display_name
+from scanner.ship_names import ship_display_name, resolve_ship_type
 from data.equipment_stats import EQUIPMENT_STATS, EQUIPMENT_ALIASES
+from data.ship_stats import SHIP_STATS
+
+# Catalog stat fields copied onto each exported loadout entry. The UI picks
+# which to show per slot; price drives the per-item cost + design total.
+_EQUIP_STAT_KEYS = (
+    'damage_hull', 'damage_shield', 'reload_rate', 'range_m',
+    'capacity', 'recharge_rate', 'recharge_delay',
+    'thrust_forward', 'thrust_reverse', 'travel_thrust', 'boost_thrust',
+    'strafe', 'pitch', 'yaw', 'roll', 'price',
+)
 
 
 def _rows(conn, sql, params=()) -> list[dict]:
@@ -196,14 +206,20 @@ def _ship_loadouts(conn, scan_id) -> dict[str, list[dict]]:
         macro = r['macro']
         cat = EQUIPMENT_STATS.get(macro) or \
               EQUIPMENT_STATS.get(EQUIPMENT_ALIASES.get(macro, ''))
-        out[r['ship_id']].append({
+        entry = {
             'slot':  r['slot_type'],
             'macro': macro,
             'count': r['count'],
             'name':  cat['name'] if cat else macro,
             'mk':    cat.get('mk')   if cat else None,   # mark number, if any
             'race':  cat.get('race') if cat else None,   # maker faction, if any
-        })
+            'size':  cat.get('size') if cat else None,   # S/M/L/XL mount size
+        }
+        if cat:
+            # Flatten the catalog stats (damage/range/capacity/.../price) onto
+            # the entry so the design card's stat columns have real numbers.
+            entry.update({k: cat[k] for k in _EQUIP_STAT_KEYS if k in cat})
+        out[r['ship_id']].append(entry)
     return out
 
 
@@ -228,6 +244,12 @@ def _ships(conn, scan_id) -> list[dict]:
         # "Magnetar Vanguard" or "Argon L Freighter (B)"). Stored as display_name
         # so the UI can show it without re-implementing resolution logic.
         d['display_name'] = ship_display_name(d.get('macro') or '', d.get('name'))
+        # Hull TYPE name, independent of any custom ship name — the Designs view
+        # titles each card by type (e.g. "Cerberus Vanguard"), not by a ship's
+        # player-given name.
+        d['type_name'] = resolve_ship_type(d.get('macro') or '')
+        # Hull buy price (credits) — the base of the design's total cost.
+        d['hull_price'] = SHIP_STATS.get(d.get('macro') or '', {}).get('price')
         d['loadout'] = loadouts.get(d.get('object_id'), [])
         out.append(d)
     return out

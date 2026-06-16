@@ -6,1536 +6,1919 @@
 #  then review the git diff for what the patch changed.
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Ship macro id → static game stats (ship macro XML).
+# Ship macro id → static game stats (ship macro XML + wares.xml).
 #   class    — ship size class (ship_s, ship_m, ship_l, ship_xl, ship_xs)
 #   max_hull — base maximum hull HP before mods
+#   price    — average buy price in credits (0 if the hull isn't sold)
 SHIP_STATS: dict[str, dict] = {
     'ship_arg_l_destroyer_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 93000,
+        'price':    4713125,
     },
     'ship_arg_l_destroyer_01_b_macro': {
         'class':    'ship_l',
         'max_hull': 111000,
+        'price':    5641250,
     },
     'ship_arg_l_destroyer_02_a_macro': {
         'class':    'ship_l',
         'max_hull': 153000,
+        'price':    9250830,
     },
     'ship_arg_l_miner_liquid_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 40000,
+        'price':    1307600,
     },
     'ship_arg_l_miner_liquid_01_b_macro': {
         'class':    'ship_l',
         'max_hull': 46000,
+        'price':    1589310,
     },
     'ship_arg_l_miner_solid_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 40000,
+        'price':    1304385,
     },
     'ship_arg_l_miner_solid_01_b_macro': {
         'class':    'ship_l',
         'max_hull': 46000,
+        'price':    1586095,
     },
     'ship_arg_l_trans_container_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 57000,
+        'price':    3065695,
     },
     'ship_arg_l_trans_container_01_b_macro': {
         'class':    'ship_l',
         'max_hull': 69000,
+        'price':    3694780,
     },
     'ship_arg_l_trans_container_02_a_macro': {
         'class':    'ship_l',
         'max_hull': 53000,
+        'price':    3182880,
     },
     'ship_arg_l_trans_container_02_b_macro': {
         'class':    'ship_l',
         'max_hull': 64000,
+        'price':    3824825,
     },
     'ship_arg_l_trans_container_03_a_macro': {
         'class':    'ship_l',
         'max_hull': 78000,
+        'price':    3096880,
     },
     'ship_arg_l_trans_container_03_b_macro': {
         'class':    'ship_l',
         'max_hull': 93000,
+        'price':    4999085,
     },
     'ship_arg_l_trans_container_04_a_macro': {
         'class':    'ship_l',
         'max_hull': 84000,
+        'price':    4520540,
     },
     'ship_arg_l_trans_container_04_b_macro': {
         'class':    'ship_l',
         'max_hull': 101000,
+        'price':    5429245,
     },
     'ship_arg_l_trans_container_05_a_macro': {
         'class':    'ship_l',
         'max_hull': 67000,
+        'price':    3587240,
     },
     'ship_arg_l_trans_container_05_b_macro': {
         'class':    'ship_l',
         'max_hull': 80000,
+        'price':    4294770,
     },
     'ship_arg_m_bomber_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 16500,
+        'price':    750580,
     },
     'ship_arg_m_bomber_01_b_macro': {
         'class':    'ship_m',
         'max_hull': 18800,
+        'price':    888430,
     },
     'ship_arg_m_bomber_02_a_macro': {
         'class':    'ship_m',
         'max_hull': 14600,
+        'price':    741015,
     },
     'ship_arg_m_frigate_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 19000,
+        'price':    963665,
     },
     'ship_arg_m_frigate_01_b_macro': {
         'class':    'ship_m',
         'max_hull': 22000,
+        'price':    1145000,
     },
     'ship_arg_m_miner_liquid_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 6000,
+        'price':    127545,
     },
     'ship_arg_m_miner_liquid_01_b_macro': {
         'class':    'ship_m',
         'max_hull': 7000,
+        'price':    161380,
     },
     'ship_arg_m_miner_solid_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 6000,
+        'price':    131965,
     },
     'ship_arg_m_miner_solid_01_b_macro': {
         'class':    'ship_m',
         'max_hull': 7000,
+        'price':    155915,
     },
     'ship_arg_m_trans_container_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 6000,
+        'price':    173355,
     },
     'ship_arg_m_trans_container_01_b_macro': {
         'class':    'ship_m',
         'max_hull': 7000,
+        'price':    208235,
     },
     'ship_arg_m_trans_container_02_a_macro': {
         'class':    'ship_m',
         'max_hull': 5400,
+        'price':    199358,
     },
     'ship_arg_m_trans_container_02_b_macro': {
         'class':    'ship_m',
         'max_hull': 6400,
+        'price':    239470,
     },
     'ship_arg_s_fighter_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 3100,
+        'price':    131970,
     },
     'ship_arg_s_fighter_01_b_macro': {
         'class':    'ship_s',
         'max_hull': 3800,
+        'price':    160100,
     },
     'ship_arg_s_fighter_02_a_macro': {
         'class':    'ship_s',
         'max_hull': 1800,
+        'price':    76755,
     },
     'ship_arg_s_fighter_02_b_macro': {
         'class':    'ship_s',
         'max_hull': 2200,
+        'price':    92990,
     },
     'ship_arg_s_fighter_03_a_macro': {
         'class':    'ship_s',
         'max_hull': 3600,
+        'price':    113565,
     },
     'ship_arg_s_fighter_04_a_macro': {
         'class':    'ship_s',
         'max_hull': 3300,
+        'price':    100545,
     },
     'ship_arg_s_heavyfighter_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 4400,
+        'price':    187105,
     },
     'ship_arg_s_heavyfighter_01_b_macro': {
         'class':    'ship_s',
         'max_hull': 5300,
+        'price':    226005,
     },
     'ship_arg_s_heavyfighter_02_a_macro': {
         'class':    'ship_s',
         'max_hull': 4000,
+        'price':    169745,
     },
     'ship_arg_s_miner_solid_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 2800,
+        'price':    83265,
     },
     'ship_arg_s_racer_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 1800,
+        'price':    172350,
     },
     'ship_arg_s_scout_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 1400,
+        'price':    87605,
     },
     'ship_arg_s_scout_01_b_macro': {
         'class':    'ship_s',
         'max_hull': 1700,
+        'price':    105930,
     },
     'ship_arg_s_trans_container_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 2800,
+        'price':    155760,
     },
     'ship_arg_s_trans_container_01_b_macro': {
         'class':    'ship_s',
         'max_hull': 3200,
+        'price':    185980,
     },
     'ship_arg_s_trans_container_02_a_macro': {
         'class':    'ship_s',
         'max_hull': 2100,
+        'price':    80050,
     },
     'ship_arg_s_trans_container_02_b_macro': {
         'class':    'ship_s',
         'max_hull': 2500,
+        'price':    98455,
     },
     'ship_arg_xl_builder_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 115000,
+        'price':    9123765,
     },
     'ship_arg_xl_builder_01_b_macro': {
         'class':    'ship_xl',
         'max_hull': 138000,
+        'price':    10948470,
     },
     'ship_arg_xl_carrier_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 216000,
+        'price':    10090050,
     },
     'ship_arg_xl_carrier_01_b_macro': {
         'class':    'ship_xl',
         'max_hull': 259000,
+        'price':    12102675,
     },
     'ship_arg_xl_carrier_02_a_macro': {
         'class':    'ship_xl',
         'max_hull': 275000,
+        'price':    15359641,
     },
     'ship_arg_xl_resupplier_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 174000,
+        'price':    8600515,
     },
     'ship_arg_xl_resupplier_01_b_macro': {
         'class':    'ship_xl',
         'max_hull': 200000,
+        'price':    10313175,
     },
     'ship_arg_xs_cv_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 150,
+        'price':    0,
     },
     'ship_arg_xs_cv_02_a_macro': {
         'class':    'ship_xs',
         'max_hull': 100,
+        'price':    0,
     },
     'ship_arg_xs_police_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 281,
+        'price':    11420,
     },
     'ship_arg_xs_pv_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_arg_xs_pv_01_b_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_arg_xs_pv_01_c_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_arg_xs_pv_01_d_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_arg_xs_pv_02_a_macro': {
         'class':    'ship_xs',
         'max_hull': 209,
+        'price':    0,
     },
     'ship_arg_xs_pv_03_a_macro': {
         'class':    'ship_xs',
         'max_hull': 200,
+        'price':    0,
     },
     'ship_arg_xs_pv_03_b_macro': {
         'class':    'ship_xs',
         'max_hull': 260,
+        'price':    0,
     },
     'ship_arg_xs_pv_04_a_macro': {
         'class':    'ship_xs',
         'max_hull': 150,
+        'price':    0,
     },
     'ship_arg_xs_pv_04_b_macro': {
         'class':    'ship_xs',
         'max_hull': 260,
+        'price':    0,
     },
     'ship_arg_xs_pv_05_a_macro': {
         'class':    'ship_xs',
         'max_hull': 100,
+        'price':    0,
     },
     'ship_arg_xs_pv_05_b_macro': {
         'class':    'ship_xs',
         'max_hull': 130,
+        'price':    0,
     },
     'ship_arg_xs_pv_05_c_macro': {
         'class':    'ship_xs',
         'max_hull': 100,
+        'price':    0,
     },
     'ship_arg_xs_spacesuit_01_a_macro': {
         'class':    'spacesuit',
         'max_hull': 1,
+        'price':    0,
     },
     'ship_atf_l_destroyer_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 180700,
+        'price':    12823980,
     },
     'ship_atf_xl_battleship_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 330000,
+        'price':    26179920,
     },
     'ship_bor_l_carrier_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 117000,
+        'price':    6513220,
     },
     'ship_bor_l_destroyer_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 131000,
+        'price':    8249396,
     },
     'ship_bor_l_miner_liquid_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 42000,
+        'price':    1381332,
     },
     'ship_bor_l_miner_solid_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 42000,
+        'price':    1359733,
     },
     'ship_bor_l_trans_container_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 40000,
+        'price':    4401675,
     },
     'ship_bor_m_corvette_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 8400,
+        'price':    1468656,
     },
     'ship_bor_m_corvette_02_a_macro': {
         'class':    'ship_m',
         'max_hull': 8800,
+        'price':    1624234,
     },
     'ship_bor_m_gunboat_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 11500,
+        'price':    1252370,
     },
     'ship_bor_m_miner_liquid_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 9600,
+        'price':    164592,
     },
     'ship_bor_m_miner_solid_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 9600,
+        'price':    172090,
     },
     'ship_bor_m_trans_container_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 9000,
+        'price':    255620,
     },
     'ship_bor_s_fighter_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 3100,
+        'price':    133165,
     },
     'ship_bor_s_heavyfighter_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 3700,
+        'price':    356250,
     },
     'ship_bor_s_miner_solid_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 4000,
+        'price':    83723,
     },
     'ship_bor_s_miner_solid_01_story_macro': {
         'class':    'ship_s',
         'max_hull': 0,
+        'price':    83723,
     },
     'ship_bor_s_scout_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 4000,
+        'price':    102657,
     },
     'ship_bor_s_scout_02_a_macro': {
         'class':    'ship_s',
         'max_hull': 2600,
+        'price':    119702,
     },
     'ship_bor_s_trans_container_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 4000,
+        'price':    198595,
     },
     'ship_bor_xl_builder_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 178000,
+        'price':    11954185,
     },
     'ship_bor_xl_carrier_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 383000,
+        'price':    24464165,
     },
     'ship_bor_xl_resupplier_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 190000,
+        'price':    17596810,
     },
     'ship_bor_xs_cv_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_bor_xs_cv_02_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_bor_xs_cv_03_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_bor_xs_pv_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_bor_xs_pv_02_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_bor_xs_pv_03_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_bor_xs_pv_04_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_bor_xs_pv_05_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_bor_xs_spacesuit_01_a_macro': {
         'class':    'spacesuit',
         'max_hull': 1,
+        'price':    0,
     },
     'ship_gen_m_transdrone_container_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 10000,
+        'price':    46600,
     },
     'ship_gen_m_transdrone_container_02_a_macro': {
         'class':    'ship_m',
         'max_hull': 10000,
+        'price':    46600,
     },
     'ship_gen_m_tugboat_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 8000,
+        'price':    402755,
     },
     'ship_gen_m_yacht_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 9200,
+        'price':    2170000,
     },
     'ship_gen_s_fighter_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 3900,
+        'price':    77630,
     },
     'ship_gen_s_fighter_01_b_macro': {
         'class':    'ship_s',
         'max_hull': 4600,
+        'price':    95390,
     },
     'ship_gen_s_fightingdrone_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 1900,
+        'price':    13660,
     },
     'ship_gen_s_fightingdrone_explosive_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 1200,
+        'price':    0,
     },
     'ship_gen_s_lasertower_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 2500,
+        'price':    14770,
     },
     'ship_gen_s_miningdrone_liquid_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 1700,
+        'price':    13860,
     },
     'ship_gen_s_miningdrone_solid_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 1700,
+        'price':    13860,
     },
     'ship_gen_s_racer_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 2100,
+        'price':    346850,
     },
     'ship_gen_s_transdrone_container_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 2200,
+        'price':    23300,
     },
     'ship_gen_s_transdrone_container_02_a_macro': {
         'class':    'ship_s',
         'max_hull': 2200,
+        'price':    23300,
     },
     'ship_gen_xs_boardingpod_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 200,
+        'price':    0,
     },
     'ship_gen_xs_buildingdrone_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 207,
+        'price':    15270,
     },
     'ship_gen_xs_cargodrone_container_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 523,
+        'price':    0,
     },
     'ship_gen_xs_cargodrone_empty_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 523,
+        'price':    16150,
     },
     'ship_gen_xs_cargodrone_equipment_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 523,
+        'price':    0,
     },
     'ship_gen_xs_cargodrone_liquid_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 523,
+        'price':    0,
     },
     'ship_gen_xs_cargodrone_pickup_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 523,
+        'price':    0,
     },
     'ship_gen_xs_cargodrone_solid_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 523,
+        'price':    0,
     },
     'ship_gen_xs_distressbeacon_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 250,
+        'price':    0,
     },
     'ship_gen_xs_escapepod_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 209,
+        'price':    0,
     },
     'ship_gen_xs_lasertower_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 700,
+        'price':    9450,
     },
     'ship_gen_xs_repairdrone_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 207,
+        'price':    15270,
     },
     'ship_gen_xs_spacesuit_01_a_macro': {
         'class':    'spacesuit',
         'max_hull': 1,
+        'price':    0,
     },
     'ship_kha_l_destroyer_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 136000,
+        'price':    0,
     },
     'ship_kha_m_fighter_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 4000,
+        'price':    0,
     },
     'ship_kha_m_fighter_02_a_macro': {
         'class':    'ship_m',
         'max_hull': 3000,
+        'price':    0,
     },
     'ship_kha_s_fighter_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 800,
+        'price':    0,
     },
     'ship_kha_s_fighter_02_a_macro': {
         'class':    'ship_s',
         'max_hull': 600,
+        'price':    0,
     },
     'ship_kha_xl_battleship_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 275000,
+        'price':    0,
     },
     'ship_par_l_destroyer_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 99000,
+        'price':    5030940,
     },
     'ship_par_l_destroyer_01_b_macro': {
         'class':    'ship_l',
         'max_hull': 119000,
+        'price':    6042095,
     },
     'ship_par_l_destroyer_02_a_macro': {
         'class':    'ship_l',
         'max_hull': 140000,
+        'price':    9791150,
     },
     'ship_par_l_miner_liquid_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 23000,
+        'price':    1154890,
     },
     'ship_par_l_miner_liquid_01_b_macro': {
         'class':    'ship_l',
         'max_hull': 28000,
+        'price':    1395770,
     },
     'ship_par_l_miner_liquid_02_a_macro': {
         'class':    'ship_l',
         'max_hull': 50000,
+        'price':    1591620,
     },
     'ship_par_l_miner_solid_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 23000,
+        'price':    1154890,
     },
     'ship_par_l_miner_solid_01_b_macro': {
         'class':    'ship_l',
         'max_hull': 28000,
+        'price':    1395770,
     },
     'ship_par_l_miner_solid_02_a_macro': {
         'class':    'ship_l',
         'max_hull': 50000,
+        'price':    1591625,
     },
     'ship_par_l_trans_container_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 37000,
+        'price':    1995760,
     },
     'ship_par_l_trans_container_01_b_macro': {
         'class':    'ship_l',
         'max_hull': 45000,
+        'price':    2410810,
     },
     'ship_par_l_trans_container_02_a_macro': {
         'class':    'ship_l',
         'max_hull': 33000,
+        'price':    1995760,
     },
     'ship_par_l_trans_container_02_b_macro': {
         'class':    'ship_l',
         'max_hull': 40000,
+        'price':    2410810,
     },
     'ship_par_l_trans_container_03_a_macro': {
         'class':    'ship_l',
         'max_hull': 55000,
+        'price':    3470000,
     },
     'ship_par_m_corvette_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 13000,
+        'price':    622295,
     },
     'ship_par_m_corvette_01_b_macro': {
         'class':    'ship_m',
         'max_hull': 15000,
+        'price':    746320,
     },
     'ship_par_m_frigate_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 20500,
+        'price':    1098300,
     },
     'ship_par_m_frigate_01_b_macro': {
         'class':    'ship_m',
         'max_hull': 23000,
+        'price':    1323040,
     },
     'ship_par_m_miner_liquid_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 5100,
+        'price':    133010,
     },
     'ship_par_m_miner_liquid_01_b_macro': {
         'class':    'ship_m',
         'max_hull': 6200,
+        'price':    162505,
     },
     'ship_par_m_miner_solid_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 5100,
+        'price':    133010,
     },
     'ship_par_m_miner_solid_01_b_macro': {
         'class':    'ship_m',
         'max_hull': 6200,
+        'price':    162505,
     },
     'ship_par_m_trans_container_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 6300,
+        'price':    176650,
     },
     'ship_par_m_trans_container_01_b_macro': {
         'class':    'ship_m',
         'max_hull': 7300,
+        'price':    229050,
     },
     'ship_par_m_trans_container_02_a_macro': {
         'class':    'ship_m',
         'max_hull': 5000,
+        'price':    176650,
     },
     'ship_par_m_trans_container_02_b_macro': {
         'class':    'ship_m',
         'max_hull': 5900,
+        'price':    229050,
     },
     'ship_par_m_trans_container_03_a_macro': {
         'class':    'ship_m',
         'max_hull': 12300,
+        'price':    292080,
     },
     'ship_par_s_fighter_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 3700,
+        'price':    156805,
     },
     'ship_par_s_fighter_01_b_macro': {
         'class':    'ship_s',
         'max_hull': 4400,
+        'price':    188150,
     },
     'ship_par_s_fighter_02_a_macro': {
         'class':    'ship_s',
         'max_hull': 4200,
+        'price':    177380,
     },
     'ship_par_s_fighter_02_b_macro': {
         'class':    'ship_s',
         'max_hull': 5000,
+        'price':    211940,
     },
     'ship_par_s_heavyfighter_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 4800,
+        'price':    243540,
     },
     'ship_par_s_miner_solid_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 2100,
+        'price':    83265,
     },
     'ship_par_s_racer_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 4200,
+        'price':    191440,
     },
     'ship_par_s_scout_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 1300,
+        'price':    80050,
     },
     'ship_par_s_scout_01_b_macro': {
         'class':    'ship_s',
         'max_hull': 1600,
+        'price':    97330,
     },
     'ship_par_s_trans_container_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 2100,
+        'price':    150295,
     },
     'ship_par_s_trans_container_01_b_macro': {
         'class':    'ship_s',
         'max_hull': 2600,
+        'price':    183810,
     },
     'ship_par_xl_builder_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 149000,
+        'price':    9123765,
     },
     'ship_par_xl_builder_01_b_macro': {
         'class':    'ship_xl',
         'max_hull': 178000,
+        'price':    10948470,
     },
     'ship_par_xl_carrier_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 281000,
+        'price':    13127715,
     },
     'ship_par_xl_carrier_01_b_macro': {
         'class':    'ship_xl',
         'max_hull': 337000,
+        'price':    15747905,
     },
     'ship_par_xl_carrier_02_a_macro': {
         'class':    'ship_xl',
         'max_hull': 303000,
+        'price':    17540630,
     },
     'ship_par_xl_resupplier_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 130000,
+        'price':    9640505,
     },
     'ship_par_xl_resupplier_01_b_macro': {
         'class':    'ship_xl',
         'max_hull': 156000,
+        'price':    11568815,
     },
     'ship_par_xl_resupplier_02_a_macro': {
         'class':    'ship_xl',
         'max_hull': 178000,
+        'price':    15457615,
     },
     'ship_par_xs_police_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 281,
+        'price':    11420,
     },
     'ship_par_xs_pv_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_par_xs_pv_02_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_par_xs_pv_03_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_par_xs_pv_04_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_par_xs_spacesuit_01_a_macro': {
         'class':    'spacesuit',
         'max_hull': 1,
+        'price':    0,
     },
     'ship_pir_l_miner_solid_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 40000,
+        'price':    1564470,
     },
     'ship_pir_l_scavenger_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 114000,
+        'price':    7714025,
     },
     'ship_pir_l_scavenger_01_a_storyhighcapacity_macro': {
         'class':    'ship_l',
         'max_hull': 114000,
+        'price':    4599250,
     },
     'ship_pir_l_scrapper_01_macro': {
         'class':    'ship_l',
         'max_hull': 66000,
+        'price':    4322065,
     },
     'ship_pir_s_fighter_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 3000,
+        'price':    53080,
     },
     'ship_pir_s_fighter_02_a_macro': {
         'class':    'ship_s',
         'max_hull': 2600,
+        'price':    175140,
     },
     'ship_pir_s_heavyfighter_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 4900,
+        'price':    274485,
     },
     'ship_pir_s_trans_condensate_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 2500,
+        'price':    217900,
     },
     'ship_pir_s_trans_container_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 2500,
+        'price':    203995,
     },
     'ship_pir_xl_battleship_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 500000,
+        'price':    14920415,
     },
     'ship_pir_xl_builder_01_macro': {
         'class':    'ship_xl',
         'max_hull': 115000,
+        'price':    11470775,
     },
     'ship_spl_l_destroyer_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 242650,
+        'price':    15290790,
     },
     'ship_spl_l_miner_liquid_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 48000,
+        'price':    1610285,
     },
     'ship_spl_l_miner_solid_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 48000,
+        'price':    1610285,
     },
     'ship_spl_l_trans_container_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 37000,
+        'price':    2938525,
     },
     'ship_spl_m_bomber_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 25000,
+        'price':    0,
     },
     'ship_spl_m_corvette_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 21000,
+        'price':    1243415,
     },
     'ship_spl_m_corvette_01_b_macro': {
         'class':    'ship_m',
         'max_hull': 13800,
+        'price':    739265,
     },
     'ship_spl_m_frigate_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 33000,
+        'price':    2172540,
     },
     'ship_spl_m_miner_liquid_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 5850,
+        'price':    212670,
     },
     'ship_spl_m_miner_solid_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 5850,
+        'price':    236300,
     },
     'ship_spl_m_trans_container_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 7400,
+        'price':    373740,
     },
     'ship_spl_s_fighter_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 3600,
+        'price':    194430,
     },
     'ship_spl_s_fighter_02_a_macro': {
         'class':    'ship_s',
         'max_hull': 4600,
+        'price':    255275,
     },
     'ship_spl_s_fighter_02_b_macro': {
         'class':    'ship_s',
         'max_hull': 2200,
+        'price':    123940,
     },
     'ship_spl_s_heavyfighter_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 6100,
+        'price':    350477,
     },
     'ship_spl_s_heavyfighter_02_a_macro': {
         'class':    'ship_s',
         'max_hull': 5500,
+        'price':    352755,
     },
     'ship_spl_s_miner_solid_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 1800,
+        'price':    128200,
     },
     'ship_spl_s_scenariofighter_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 6100,
+        'price':    0,
     },
     'ship_spl_s_scout_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 2000,
+        'price':    146365,
     },
     'ship_spl_s_trans_container_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 2300,
+        'price':    247800,
     },
     'ship_spl_s_trans_container_01_plot_01_macro': {
         'class':    'ship_s',
         'max_hull': 2300,
+        'price':    0,
     },
     'ship_spl_xl_ark_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 935000,
+        'price':    0,
     },
     'ship_spl_xl_ark_01_hab_l_01_macro': {
         'class':    'destructible',
         'max_hull': 0,
+        'price':    0,
     },
     'ship_spl_xl_ark_01_hab_s_01_macro': {
         'class':    'destructible',
         'max_hull': 0,
+        'price':    0,
     },
     'ship_spl_xl_ark_01_part_01_macro': {
         'class':    'destructible',
         'max_hull': 0,
+        'price':    0,
     },
     'ship_spl_xl_ark_01_part_02_macro': {
         'class':    'destructible',
         'max_hull': 0,
+        'price':    0,
     },
     'ship_spl_xl_ark_01_prod_cheltmeat_01_macro': {
         'class':    'destructible',
         'max_hull': 0,
+        'price':    0,
     },
     'ship_spl_xl_ark_01_prod_scruffinfruit_01_macro': {
         'class':    'destructible',
         'max_hull': 0,
+        'price':    0,
     },
     'ship_spl_xl_ark_01_storage_l_container_01_macro': {
         'class':    'destructible',
         'max_hull': 0,
+        'price':    0,
     },
     'ship_spl_xl_ark_01_storage_l_liquid_01_macro': {
         'class':    'destructible',
         'max_hull': 0,
+        'price':    0,
     },
     'ship_spl_xl_ark_01_storage_m_liquid_01_macro': {
         'class':    'destructible',
         'max_hull': 0,
+        'price':    0,
     },
     'ship_spl_xl_ark_01_storage_m_solid_01_macro': {
         'class':    'destructible',
         'max_hull': 0,
+        'price':    0,
     },
     'ship_spl_xl_ark_01_struct_base_02_macro': {
         'class':    'destructible',
         'max_hull': 0,
+        'price':    0,
     },
     'ship_spl_xl_ark_01_struct_base_03_macro': {
         'class':    'destructible',
         'max_hull': 0,
+        'price':    0,
     },
     'ship_spl_xl_ark_01_struct_cross_01_macro': {
         'class':    'destructible',
         'max_hull': 0,
+        'price':    0,
     },
     'ship_spl_xl_battleship_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 230000,
+        'price':    0,
     },
     'ship_spl_xl_builder_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 181000,
+        'price':    12022990,
     },
     'ship_spl_xl_carrier_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 590000,
+        'price':    32605075,
     },
     'ship_spl_xl_resupplier_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 220000,
+        'price':    17231160,
     },
     'ship_spl_xs_cv_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_spl_xs_cv_01_b_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_spl_xs_cv_02_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_spl_xs_cv_02_b_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_spl_xs_cv_03_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_spl_xs_cv_03_b_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_spl_xs_police_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 281,
+        'price':    9410,
     },
     'ship_spl_xs_pv_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_spl_xs_pv_01_b_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_spl_xs_pv_01_c_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_spl_xs_pv_02_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_spl_xs_pv_02_b_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_spl_xs_pv_02_c_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_spl_xs_pv_03_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_spl_xs_pv_03_b_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_spl_xs_pv_03_c_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_spl_xs_spacesuit_01_a_macro': {
         'class':    'spacesuit',
         'max_hull': 1,
+        'price':    0,
     },
     'ship_tel_l_destroyer_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 104000,
+        'price':    5273360,
     },
     'ship_tel_l_destroyer_01_b_macro': {
         'class':    'ship_l',
         'max_hull': 124000,
+        'price':    6307905,
     },
     'ship_tel_l_destroyer_02_a_macro': {
         'class':    'ship_l',
         'max_hull': 123200,
+        'price':    6034866,
     },
     'ship_tel_l_miner_liquid_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 30000,
+        'price':    1503310,
     },
     'ship_tel_l_miner_liquid_01_b_macro': {
         'class':    'ship_l',
         'max_hull': 36000,
+        'price':    1804390,
     },
     'ship_tel_l_miner_liquid_02_a_macro': {
         'class':    'ship_l',
         'max_hull': 56000,
+        'price':    1922187,
     },
     'ship_tel_l_miner_solid_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 30000,
+        'price':    1503310,
     },
     'ship_tel_l_miner_solid_01_b_macro': {
         'class':    'ship_l',
         'max_hull': 36000,
+        'price':    1804390,
     },
     'ship_tel_l_miner_solid_02_a_macro': {
         'class':    'ship_l',
         'max_hull': 56000,
+        'price':    1922187,
     },
     'ship_tel_l_trans_container_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 52000,
+        'price':    2652815,
     },
     'ship_tel_l_trans_container_01_b_macro': {
         'class':    'ship_l',
         'max_hull': 63000,
+        'price':    3199035,
     },
     'ship_tel_l_trans_container_02_a_macro': {
         'class':    'ship_l',
         'max_hull': 48000,
+        'price':    2436610,
     },
     'ship_tel_l_trans_container_02_b_macro': {
         'class':    'ship_l',
         'max_hull': 57000,
+        'price':    2908725,
     },
     'ship_tel_l_trans_container_03_a_macro': {
         'class':    'ship_l',
         'max_hull': 64000,
+        'price':    3551033,
     },
     'ship_tel_m_bomber_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 16000,
+        'price':    735710,
     },
     'ship_tel_m_bomber_01_b_macro': {
         'class':    'ship_m',
         'max_hull': 17400,
+        'price':    870425,
     },
     'ship_tel_m_frigate_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 36000,
+        'price':    1044205,
     },
     'ship_tel_m_frigate_01_b_macro': {
         'class':    'ship_m',
         'max_hull': 41000,
+        'price':    1263720,
     },
     'ship_tel_m_miner_liquid_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 4750,
+        'price':    118865,
     },
     'ship_tel_m_miner_liquid_01_b_macro': {
         'class':    'ship_m',
         'max_hull': 5400,
+        'price':    143940,
     },
     'ship_tel_m_miner_solid_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 4750,
+        'price':    118865,
     },
     'ship_tel_m_miner_solid_01_b_macro': {
         'class':    'ship_m',
         'max_hull': 5400,
+        'price':    143940,
     },
     'ship_tel_m_trans_container_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 10200,
+        'price':    266020,
     },
     'ship_tel_m_trans_container_01_b_macro': {
         'class':    'ship_m',
         'max_hull': 11800,
+        'price':    308615,
     },
     'ship_tel_m_trans_container_02_a_macro': {
         'class':    'ship_m',
         'max_hull': 8800,
+        'price':    266020,
     },
     'ship_tel_m_trans_container_02_b_macro': {
         'class':    'ship_m',
         'max_hull': 10000,
+        'price':    308615,
     },
     'ship_tel_m_trans_container_03_a_macro': {
         'class':    'ship_m',
         'max_hull': 14000,
+        'price':    418830,
     },
     'ship_tel_s_fighter_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 3900,
+        'price':    164360,
     },
     'ship_tel_s_fighter_01_b_macro': {
         'class':    'ship_s',
         'max_hull': 4600,
+        'price':    195705,
     },
     'ship_tel_s_fighter_02_a_macro': {
         'class':    'ship_s',
         'max_hull': 4100,
+        'price':    157850,
     },
     'ship_tel_s_fighter_02_b_macro': {
         'class':    'ship_s',
         'max_hull': 5000,
+        'price':    190320,
     },
     'ship_tel_s_miner_solid_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 2400,
+        'price':    90820,
     },
     'ship_tel_s_racer_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 2500,
+        'price':    163250,
     },
     'ship_tel_s_scout_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 2500,
+        'price':    91945,
     },
     'ship_tel_s_scout_01_b_macro': {
         'class':    'ship_s',
         'max_hull': 3100,
+        'price':    110350,
     },
     'ship_tel_s_scout_02_a_macro': {
         'class':    'ship_s',
         'max_hull': 2800,
+        'price':    139525,
     },
     'ship_tel_s_scout_02_b_macro': {
         'class':    'ship_s',
         'max_hull': 3300,
+        'price':    166530,
     },
     'ship_tel_s_trans_container_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 2600,
+        'price':    168700,
     },
     'ship_tel_s_trans_container_01_b_macro': {
         'class':    'ship_s',
         'max_hull': 3000,
+        'price':    200045,
     },
     'ship_tel_s_trans_container_02_a_macro': {
         'class':    'ship_s',
         'max_hull': 6400,
+        'price':    566090,
     },
     'ship_tel_xl_builder_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 128000,
+        'price':    9123765,
     },
     'ship_tel_xl_builder_01_b_macro': {
         'class':    'ship_xl',
         'max_hull': 154000,
+        'price':    10948470,
     },
     'ship_tel_xl_carrier_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 290000,
+        'price':    11170550,
     },
     'ship_tel_xl_carrier_01_b_macro': {
         'class':    'ship_xl',
         'max_hull': 310000,
+        'price':    13409595,
     },
     'ship_tel_xl_resupplier_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 162000,
+        'price':    7784855,
     },
     'ship_tel_xl_resupplier_01_b_macro': {
         'class':    'ship_xl',
         'max_hull': 186000,
+        'price':    9342630,
     },
     'ship_tel_xs_police_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 281,
+        'price':    11420,
     },
     'ship_tel_xs_police_02_a_macro': {
         'class':    'ship_xs',
         'max_hull': 281,
+        'price':    11420,
     },
     'ship_tel_xs_police_03_a_macro': {
         'class':    'ship_xs',
         'max_hull': 281,
+        'price':    11420,
     },
     'ship_tel_xs_pv_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_tel_xs_pv_01_b_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_tel_xs_pv_02_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_tel_xs_pv_02_b_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_tel_xs_pv_03_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_tel_xs_pv_03_b_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_tel_xs_pv_04_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_tel_xs_pv_04_b_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_tel_xs_spacesuit_01_a_macro': {
         'class':    'spacesuit',
         'max_hull': 1,
+        'price':    0,
     },
     'ship_tel_xs_spacesuit_01_b_macro': {
         'class':    'spacesuit',
         'max_hull': 1,
+        'price':    0,
     },
     'ship_ter_l_destroyer_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 104000,
+        'price':    8233870,
     },
     'ship_ter_l_flagship_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 128000,
+        'price':    7099138,
     },
     'ship_ter_l_flagship_01_b_macro': {
         'class':    'ship_l',
         'max_hull': 128000,
+        'price':    0,
     },
     'ship_ter_l_miner_liquid_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 58000,
+        'price':    2854250,
     },
     'ship_ter_l_miner_solid_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 58000,
+        'price':    2854250,
     },
     'ship_ter_l_research_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 36000,
+        'price':    4599250,
     },
     'ship_ter_l_trans_container_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 36000,
+        'price':    4472180,
     },
     'ship_ter_m_corvette_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 12200,
+        'price':    1763540,
     },
     'ship_ter_m_corvette_02_a_macro': {
         'class':    'ship_m',
         'max_hull': 16100,
+        'price':    2116165,
     },
     'ship_ter_m_corvette_02_b_macro': {
         'class':    'ship_m',
         'max_hull': 16100,
+        'price':    0,
     },
     'ship_ter_m_frigate_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 26000,
+        'price':    2813860,
     },
     'ship_ter_m_gunboat_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 13400,
+        'price':    2057600,
     },
     'ship_ter_m_miner_liquid_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 7600,
+        'price':    388740,
     },
     'ship_ter_m_miner_solid_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 7600,
+        'price':    388740,
     },
     'ship_ter_m_trans_container_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 11000,
+        'price':    734360,
     },
     'ship_ter_s_fighter_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 3700,
+        'price':    327573,
     },
     'ship_ter_s_fighter_02_a_macro': {
         'class':    'ship_s',
         'max_hull': 3300,
+        'price':    342750,
     },
     'ship_ter_s_fighter_03_a_macro': {
         'class':    'ship_s',
         'max_hull': 3400,
+        'price':    343160,
     },
     'ship_ter_s_fighter_04_a_macro': {
         'class':    'ship_s',
         'max_hull': 3600,
+        'price':    343801,
     },
     'ship_ter_s_fighter_04_b_macro': {
         'class':    'ship_s',
         'max_hull': 2500,
+        'price':    0,
     },
     'ship_ter_s_fighter_04_c_macro': {
         'class':    'ship_s',
         'max_hull': 3600,
+        'price':    0,
     },
     'ship_ter_s_heavyfighter_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 4800,
+        'price':    470800,
     },
     'ship_ter_s_miner_solid_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 2000,
+        'price':    171090,
     },
     'ship_ter_s_scout_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 1400,
+        'price':    213800,
     },
     'ship_ter_s_scout_02_a_macro': {
         'class':    'ship_s',
         'max_hull': 3000,
+        'price':    342750,
     },
     'ship_ter_s_trans_container_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 2000,
+        'price':    299630,
     },
     'ship_ter_s_xperimental_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 4580,
+        'price':    1323258,
     },
     'ship_ter_s_xperimental_01_a_story_macro': {
         'class':    'ship_s',
         'max_hull': 38000,
+        'price':    0,
     },
     'ship_ter_xl_builder_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 153000,
+        'price':    21146490,
     },
     'ship_ter_xl_carrier_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 265000,
+        'price':    21886875,
     },
     'ship_ter_xl_resupplier_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 238000,
+        'price':    26263870,
     },
     'ship_ter_xs_cv_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_ter_xs_cv_02_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_ter_xs_police_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 300,
+        'price':    27418,
     },
     'ship_ter_xs_pv_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_ter_xs_pv_02_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_ter_xs_pv_03_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_tfm_xl_carrier_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 735000,
+        'price':    0,
     },
     'ship_tfm_xl_carrier_02_a_macro': {
         'class':    'ship_xl',
         'max_hull': 1190000,
+        'price':    0,
     },
     'ship_tfm_xl_carrier_02_b_macro': {
         'class':    'ship_xl',
         'max_hull': 1190000,
+        'price':    0,
     },
     'ship_xen_l_terraformer_01_a_macro': {
         'class':    'ship_l',
         'max_hull': 112000,
+        'price':    1676240,
     },
     'ship_xen_l_terraformer_01_b_macro': {
         'class':    'ship_l',
         'max_hull': 0,
+        'price':    0,
     },
     'ship_xen_m_corvette_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 16600,
+        'price':    99600,
     },
     'ship_xen_m_corvette_01_b_macro': {
         'class':    'ship_m',
         'max_hull': 0,
+        'price':    0,
     },
     'ship_xen_m_corvette_02_a_macro': {
         'class':    'ship_m',
         'max_hull': 12600,
+        'price':    85300,
     },
     'ship_xen_m_fighter_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 10000,
+        'price':    78620,
     },
     'ship_xen_m_miner_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 8000,
+        'price':    71350,
     },
     'ship_xen_m_miner_solid_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 8400,
+        'price':    71350,
     },
     'ship_xen_s_fighter_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 2500,
+        'price':    34530,
     },
     'ship_xen_s_fighter_02_a_macro': {
         'class':    'ship_s',
         'max_hull': 2900,
+        'price':    39840,
     },
     'ship_xen_s_heavyfighter_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 4800,
+        'price':    67800,
     },
     'ship_xen_s_heavyfighter_01_b_macro': {
         'class':    'ship_s',
         'max_hull': 0,
+        'price':    0,
     },
     'ship_xen_s_scout_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 1200,
+        'price':    25880,
     },
     'ship_xen_xl_carrier_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 480000,
+        'price':    5059920,
     },
     'ship_xen_xl_destroyer_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 265000,
+        'price':    2432440,
     },
     'ship_xen_xl_mothership_01_a_macro': {
         'class':    'ship_xl',
         'max_hull': 1496000,
+        'price':    15340000,
     },
     'ship_xen_xl_mothership_01_damagebody_01_macro': {
         'class':    'destructible',
         'max_hull': 0,
+        'price':    0,
     },
     'ship_xen_xl_mothership_01_part_01_macro': {
         'class':    'destructible',
         'max_hull': 0,
+        'price':    0,
     },
     'ship_xen_xl_mothership_01_part_02_macro': {
         'class':    'destructible',
         'max_hull': 0,
+        'price':    0,
     },
     'ship_xen_xl_mothership_01_part_03_macro': {
         'class':    'destructible',
         'max_hull': 0,
+        'price':    0,
     },
     'ship_xen_xl_mothership_01_part_04_macro': {
         'class':    'destructible',
         'max_hull': 0,
+        'price':    0,
     },
     'ship_xen_xl_mothership_01_part_05_macro': {
         'class':    'destructible',
         'max_hull': 0,
+        'price':    0,
     },
     'ship_xen_xl_mothership_01_part_06_macro': {
         'class':    'defencemodule',
         'max_hull': 27500,
+        'price':    0,
     },
     'ship_xen_xs_pv_01_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_xen_xs_pv_02_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_xen_xs_pv_03_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_xen_xs_pv_04_a_macro': {
         'class':    'ship_xs',
         'max_hull': 184,
+        'price':    0,
     },
     'ship_yak_m_corvette_01_a_macro': {
         'class':    'ship_m',
         'max_hull': 11600,
+        'price':    984025,
     },
     'ship_yak_s_fighter_01_a_macro': {
         'class':    'ship_s',
         'max_hull': 4000,
+        'price':    269180,
     },
 }
