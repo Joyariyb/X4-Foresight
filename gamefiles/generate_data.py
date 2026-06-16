@@ -42,6 +42,10 @@ from lxml import etree as ET
 
 from gamefiles.catalog import CatalogIndex, find_x4_install
 from gamefiles.xmlpatch import apply_diff
+# The {page,id} t-file resolver now lives in one shared module so the equipment
+# generator can reuse it. Imported names keep their original spelling so every
+# call site below (clean_text, load_texts, _REF_RE) stays unchanged.
+from gamefiles.langtext import _COMMENT_RE, _REF_RE, clean_text, load_texts
 
 DATA_DIR = REPO / "data"
 
@@ -63,51 +67,8 @@ GENERATED_BANNER = (
 )
 
 
-# ──────────────────────────────────────────────────────────────────────────
-#  Language-file text handling
-# ──────────────────────────────────────────────────────────────────────────
-
-# X4 t-file format:
-#   - "{page,id}" references are the actual display text, composed at runtime.
-#   - Leading "(...)" blocks are translator comments — always BEFORE the refs.
-#     Strip them first so ref resolution sees only the content.
-#   - "\(" and "\)" are escaped literal parentheses in the resolved text.
-#
-# The comment regex uses `(?:[^()\\]|\\.)*` so that escaped parens like \(Gas\)
-# inside a comment (e.g. "(Magnetar \(Gas\) Vanguard)") are treated as
-# non-delimiter characters and the whole comment matches cleanly.
-_COMMENT_RE = re.compile(r'(?<!\\)\((?:[^()\\]|\\.)*\)')
-_REF_RE = re.compile(r'\{\s*(\d+)\s*,\s*(\d+)\s*\}')
-
-
-def clean_text(raw: str, texts: dict) -> str:
-    """Strips translator comments, resolves {page,id} refs, unescapes parentheses.
-
-    X4 t-file entries often look like:
-        (Behemoth Vanguard){20101,11001} {20111,1101}
-    The leading (...) is a translator comment; the refs ARE the actual text.
-    The comment appears in the RESOLVED value (not the initial ref), so we must
-    strip comments after each resolution pass, not just once up front.
-    """
-    for _ in range(4):  # 4 passes: enough for one level of ref nesting
-        raw = _COMMENT_RE.sub("", raw).strip()   # strip comments from current value
-        new = _REF_RE.sub(lambda m: texts.get(f"{m.group(1)}:{m.group(2)}", ""),
-                          raw)
-        if new == raw:
-            break
-        raw = new
-    return raw.replace(r"\(", "(").replace(r"\)", ")").strip()
-
-
-def load_texts(idx: CatalogIndex, page_ids: set[str]) -> dict:
-    """{"page:id": raw text} for the requested pages of t/0001-l044.xml."""
-    root = ET.fromstring(idx.read("t/0001-l044.xml"))
-    texts = {}
-    for page in root.findall("page"):
-        if page.get("id") in page_ids:
-            for t in page.findall("t"):
-                texts[f"{page.get('id')}:{t.get('id')}"] = t.text or ""
-    return texts
+# clean_text / load_texts / _REF_RE / _COMMENT_RE are imported from
+# gamefiles.langtext above (shared with generate_equipment.py).
 
 
 # ──────────────────────────────────────────────────────────────────────────
