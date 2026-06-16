@@ -247,7 +247,7 @@
     .sd-tag.tag-rich    { color: var(--green);  border-color: rgba(63,185,80,0.4);   background: var(--green-dim); }
     .sd-tag.tag-sun     { color: var(--amber);  border-color: rgba(210,153,34,0.4);  background: var(--amber-dim); }
     .sd-tag.tag-hub     { color: #388bfd;       border-color: rgba(56,139,253,0.4);  background: rgba(56,139,253,0.1); }
-    .sd-tag.tag-core     { color: var(--teal);   border-color: rgba(45,212,191,0.4);  background: var(--teal-dim); }
+    .sd-tag.tag-core     { color: var(--yellow); border-color: rgba(227,179,65,0.4);  background: rgba(227,179,65,0.1); }
     .sd-tag.tag-frontier { color: #f0883e;       border-color: rgba(240,136,62,0.4);  background: rgba(240,136,62,0.1); }
     .sd-tag.tag-remote   { color: var(--purple); border-color: rgba(163,113,247,0.4); background: rgba(163,113,247,0.1); }
     .sd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 22px; }
@@ -2794,6 +2794,21 @@
     if (card) card.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }
 
+  // Jump from the universe Map to a sector's card on the Sectors tab. Records the
+  // back trail (like goToStation) so the Back button returns to the map. Guarded
+  // to discovered sectors only — you can't inspect fog-of-war space.
+  function goToSector(macro) {
+    const sec = _sectorInfoMap[macro];
+    if (!sec || !sec.is_discovered) return;
+    _navRecord();
+    switchTab('sectors', document.getElementById('nav-universe'));
+    _navAfterJump();
+    renderSectorsList();
+    showSectorDetail(macro);
+    const row = document.querySelector(`#sectors-list .sector-row[data-macro="${macro}"]`);
+    if (row) row.scrollIntoView({ block: 'nearest' });
+  }
+
   // Moves the three-position slider thumb to pos (0=Left, 1=Mid, 2=Right) for
   // the given station card. Thumb position is driven purely by a data-pos CSS
   // attribute on the track element — no inline style writes on the thumb needed.
@@ -4671,16 +4686,21 @@
 
       // Drag-to-pan — anchored in map space so the grabbed point stays glued
       // to the cursor even though the plane is tilted.
-      let _dragging = false, _dragOrigin = null;
+      let _dragging = false, _dragOrigin = null, _downScreen = null, _moved = false;
       wrap.addEventListener('mousedown', function(e) {
         if (e.button !== 0) return;
         const m     = cursorToMap(e);
         _dragging   = true;
+        _downScreen = { x: e.clientX, y: e.clientY };
+        _moved      = false;
         _dragOrigin = { x: m.x - _universeTransform.x, y: m.y - _universeTransform.y };
         wrap.classList.add('panning');
       });
       window.addEventListener('mousemove', function(e) {
         if (!_dragging) return;
+        // Past a few pixels this is a pan, not a click — used to suppress the
+        // click-to-open-sector that would otherwise fire on mouseup.
+        if (_downScreen && Math.hypot(e.clientX - _downScreen.x, e.clientY - _downScreen.y) > 4) _moved = true;
         const m = cursorToMap(e);
         _universeTransform.x = m.x - _dragOrigin.x;
         _universeTransform.y = m.y - _dragOrigin.y;
@@ -4707,6 +4727,14 @@
         }
       });
       wrap.addEventListener('mouseleave', _hideUHoverPanel);
+
+      // Click a sector sub-hex (visible when zoomed in) to open its card on the
+      // Sectors tab. Skipped after a pan so dragging the map never navigates.
+      wrap.addEventListener('click', function(e) {
+        if (_moved) return;
+        const hex = e.target.closest('[data-sector]');
+        if (hex) goToSector(hex.dataset.sector);
+      });
 
       _universeBuilt = true;
     }
