@@ -205,6 +205,19 @@
               </select>
             </div>
           </div>
+          <div class="dfb-group">
+            <span class="dfb-label">Sort</span>
+            <div class="bhull">
+              <i class="ti ti-sort-descending" style="color:var(--teal);font-size:13px"></i>
+              <select id="designs-sort-select" onchange="designsSetSort(this.value)">
+                <option value="used">Used By</option>
+                <option value="size">Size</option>
+                <option value="faction">Faction</option>
+                <option value="type">Type</option>
+                <option value="cost">Cost</option>
+              </select>
+            </div>
+          </div>
           <div class="fleet-subtab" id="designs-toggle-all" style="margin-left:auto" onclick="designsToggleAll()">
             <i class="ti ti-chevrons-up"></i> Collapse All
           </div>

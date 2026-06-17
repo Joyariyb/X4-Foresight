@@ -77,9 +77,46 @@
       designItems(s).map(e => `${e.slot}:${e.macro}:${e.count}`).sort().join('|');
   }
 
+  // Hull price + the cost of every fitted item in the categories the card
+  // actually displays (DESIGN_SLOTS) — shared by the Cost sort and the card's
+  // own "Design total" line so the two can never drift apart.
+  function designTotalCost(d) {
+    let total = d.hullPrice || 0;
+    for (const [slot] of DESIGN_SLOTS) {
+      for (const e of (d.loadout || []))
+        if (e.slot === slot && !e.name.endsWith('_macro') && e.price) total += e.price * e.count;
+    }
+    return total;
+  }
+
   // Size + faction filter state for the bar above the grid. 'all' means no
   // restriction on that axis.
   let designsFilter = { size: 'all', faction: 'all' };
+
+  // Which designs the user has manually collapsed, keyed by design signature
+  // (stable across re-renders — same hull+loadout always hashes the same way).
+  // grid.innerHTML gets fully rebuilt on every render (tab switch, filter,
+  // sort), which would otherwise reset every card back to its hardcoded
+  // default open state, so the actual open/closed state lives here instead of
+  // on the DOM.
+  let designsCollapsed = new Set();
+
+  // Sort key for the design grid. Each entry is a comparator over the grouped
+  // design objects; alphabetical-by-type is the tiebreaker everywhere so the
+  // order stays stable when the primary key ties.
+  let designsSortBy = 'used';
+  const SIZE_RANK = { xs: 0, s: 1, m: 2, l: 3, xl: 4 };
+  const DESIGN_SORTERS = {
+    used:    (a, b) => b.ships.length - a.ships.length || a.type.localeCompare(b.type),
+    size:    (a, b) => (SIZE_RANK[(a.hullSize || '').toLowerCase()] ?? 99) - (SIZE_RANK[(b.hullSize || '').toLowerCase()] ?? 99) || a.type.localeCompare(b.type),
+    faction: (a, b) => (a.hullFaction || '').localeCompare(b.hullFaction || '') || a.type.localeCompare(b.type),
+    type:    (a, b) => (a.role || '').localeCompare(b.role || '') || a.type.localeCompare(b.type),
+    cost:    (a, b) => b.totalCost - a.totalCost || a.type.localeCompare(b.type),
+  };
+  function designsSetSort(sortBy) {
+    designsSortBy = sortBy;
+    renderDesigns();
+  }
 
   function designsSetSizeFilter(size, el) {
     designsFilter.size = size;
@@ -115,7 +152,22 @@
   function designsToggleAll() {
     const cards = document.querySelectorAll('#designs-grid .dcard');
     const anyOpen = [...cards].some(c => c.open);
-    cards.forEach(c => c.open = !anyOpen);
+    const newOpen = !anyOpen;
+    cards.forEach(c => {
+      c.open = newOpen;
+      if (newOpen) designsCollapsed.delete(c.dataset.sig); else designsCollapsed.add(c.dataset.sig);
+    });
+    designsUpdateToggleAllBtn();
+  }
+  // Persists a per-card collapse/expand from the native <details> chevron.
+  // designsToggleAll() updates designsCollapsed itself (some Chromium versions
+  // don't dispatch 'toggle' for a programmatic .open assignment), so this is
+  // really only load-bearing for the manual, one-card-at-a-time click.
+  function designsHandleToggle(ev) {
+    const card = ev.target;
+    const sig = card.dataset && card.dataset.sig;
+    if (!sig) return;
+    if (card.open) designsCollapsed.delete(sig); else designsCollapsed.add(sig);
     designsUpdateToggleAllBtn();
   }
   function designsUpdateToggleAllBtn() {
@@ -159,9 +211,10 @@
     }
     empty.style.display = 'none';
     // Individual cards toggle natively (no JS), so listen for that here to
-    // keep the Collapse/Expand All label honest. 'toggle' doesn't bubble, but
-    // a capturing listener on the grid still sees it from every descendant.
-    grid.addEventListener('toggle', designsUpdateToggleAllBtn, true);
+    // persist the open/closed state into designsCollapsed and keep the
+    // Collapse/Expand All label honest. 'toggle' doesn't bubble, but a
+    // capturing listener on the grid still sees it from every descendant.
+    grid.addEventListener('toggle', designsHandleToggle, true);
 
     // Group ships by signature.
     const groups = new Map();
@@ -169,13 +222,14 @@
       const sig = designSignature(s);
       if (!groups.has(sig))
         groups.set(sig, {
-          type: s.type_name || s.macro, loadout: s.loadout, ships: [],
+          sig, type: s.type_name || s.macro, loadout: s.loadout, ships: [],
           hullFaction: s.hull_origin, hullMax: s.hull_max, hullPrice: s.hull_price,
-          hullSize: s.size, hardpoints: s.hardpoints,
+          hullSize: s.size, hardpoints: s.hardpoints, role: s.role,
         });
       groups.get(sig).ships.push(s);
     }
     const designs = [...groups.values()];
+    designs.forEach(d => d.totalCost = designTotalCost(d));
 
     // Config letters per hull type, lettered by descending member count. A type
     // with only one config gets no letter (no "Config A" when there's no B).
@@ -187,8 +241,7 @@
         d.config = list.length > 1 ? ' · Config ' + String.fromCharCode(65 + i) : '');
     });
 
-    // Most-common designs first.
-    designs.sort((a, b) => b.ships.length - a.ships.length || a.type.localeCompare(b.type));
+    designs.sort(DESIGN_SORTERS[designsSortBy] || DESIGN_SORTERS.used);
     grid.innerHTML = designs.map((d, i) => designCardHtml(d, i)).join('');
     if (count) count.textContent = `${designs.length} design${designs.length > 1 ? 's' : ''} · ${ships.length} ship${ships.length > 1 ? 's' : ''}`;
     designsUpdateToggleAllBtn();
@@ -226,8 +279,6 @@
       </div>`;
     };
 
-    let total = d.hullPrice || 0;
-
     // ── Equipment column (left half) ──────────────────────────────────────
     let equip = '';
     for (const [slot, label] of DESIGN_SLOTS) {
@@ -243,7 +294,6 @@
         .filter((s, i, a) => a.indexOf(s) === i).map(s => s.toUpperCase()).join('/');
       const slotsText = cap != null ? `${fitted} / ${cap} · ${sizes}` : sizes;
       const rows = items.map(e => {
-        if (e.price) total += e.price * e.count;
         const mk = e.mk ? ` Mk${e.mk}` : '';
         return `<div class="drow">
           <span class="dcnt">${e.count}×</span>${designBadge(e.race)}
@@ -287,9 +337,12 @@
     </span>`;
 
     // Native <details> for the whole-card collapse (same idiom as the Sectors
-    // tab's "Your Ships" set) — collapses down to just the <summary> title bar,
-    // open by default so today's always-expanded view doesn't regress.
-    return `<details class="panel dcard" open>
+    // tab's "Your Ships" set) — collapses down to just the <summary> title bar.
+    // Open state is keyed off designsCollapsed (by signature) rather than a
+    // hardcoded attribute, since this markup gets rebuilt from scratch on
+    // every render and would otherwise forget any card the user collapsed.
+    const isOpen = !designsCollapsed.has(d.sig);
+    return `<details class="panel dcard" data-sig="${d.sig}" ${isOpen ? 'open' : ''}>
       <summary class="dcard-hd">
         <i class="ti ti-vector-triangle" style="color:${facColour};font-size:16px"></i>
         <span class="dcard-title">${d.type}${d.config}</span>
@@ -302,7 +355,7 @@
       </div>
       <div class="dcard-footer">
         <span class="dcard-used" id="design-used-${idx}" onclick="toggleDesignShips(${idx})">used by <b style="color:var(--lime)">${n}</b> ship${n > 1 ? 's' : ''} <i class="ti ti-chevron-down"></i></span>
-        <span class="dcard-total-val">Design total <b>${designCr(total)}</b> <span style="font-size:11px;color:var(--text-dim)">Cr</span></span>
+        <span class="dcard-total-val">Design total <b>${designCr(d.totalCost)}</b> <span style="font-size:11px;color:var(--text-dim)">Cr</span></span>
       </div>
       <div id="design-ships-${idx}" class="dcard-ships">${chips}</div>
     </details>`;
