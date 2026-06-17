@@ -249,7 +249,11 @@ def _ships(conn, scan_id) -> list[dict]:
         # player-given name.
         d['type_name'] = resolve_ship_type(d.get('macro') or '')
         # Hull buy price (credits) — the base of the design's total cost.
-        d['hull_price'] = SHIP_STATS.get(d.get('macro') or '', {}).get('price')
+        _hull = SHIP_STATS.get(d.get('macro') or '', {})
+        d['hull_price'] = _hull.get('price')
+        # Slot layout {type: {size: count}} — the blueprint builder uses it for
+        # capacity, and the design cards show fitted/total per section.
+        d['hardpoints'] = _hull.get('hardpoints')
         d['loadout'] = loadouts.get(d.get('object_id'), [])
         out.append(d)
     return out
@@ -529,6 +533,11 @@ def to_export(conn: sqlite3.Connection, scan_id: int | None = None) -> dict:
             }
             for r in conn.execute("SELECT * FROM ware_prices ORDER BY ware_id")
         },
+        # Full equipment catalog (macro → name/stats/price), invariant across
+        # scans. Embedded here so both the bridge and the dev-browser fetch path
+        # get it; the blueprint builder's fit panel reads it to list compatible
+        # gear per slot/size.
+        'equipment_catalog': dict(EQUIPMENT_STATS),
     }
 
 

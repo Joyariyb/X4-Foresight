@@ -346,11 +346,64 @@ def gen_station_names_py(wares, texts) -> str:
 #  ships.py + ship_stats.py
 # ──────────────────────────────────────────────────────────────────────────
 
-def load_ship_data(idx: CatalogIndex, texts: dict, prices: dict[str, int]) -> list[tuple]:
+# Slot tags in ship component XMLs: equipment type + mount size. Thruster is NOT
+# a connection (it's a thruster= attribute on the ship), so it isn't counted here.
+_HP_TYPES = {"weapon", "turret", "shield", "engine"}
+_HP_SIZES = {"small": "s", "medium": "m", "large": "l", "extralarge": "xl"}
+
+
+def load_hardpoints(idx: CatalogIndex) -> dict[str, dict]:
+    """component name (lowercase) → {equip_type: {size: count}}.
+
+    Read from the ship COMPONENT XMLs (not the macros): each equipment mount is a
+    <connection> whose tags carry an equipment type (weapon/turret/shield/engine)
+    and a size (small/medium/large/extralarge). Hull variants (_a/_b/_macro) share
+    one component, so the macro→component ref in load_ship_data maps them here.
     """
-    Reads every ship_*.xml macro from the catalogs (base + DLC) and returns
-    a list of (macro_id, display_name, ship_class, max_hull, price) tuples.
-    price is the hull's average buy price (0 if the hull isn't a sold ware).
+    out: dict[str, dict] = {}
+    paths = (idx.find("assets/units/*/ship_*.xml") +
+             idx.find("extensions/*/assets/units/*/ship_*.xml"))
+    for vp in paths:
+        comp_el = ET.fromstring(idx.read(vp)).find(".//component")
+        if comp_el is None:
+            continue
+        name = comp_el.get("name", "").lower()
+        if not name:
+            continue
+        hp: dict[str, dict] = {}
+        for conn in comp_el.iter("connection"):
+            toks  = set((conn.get("tags") or "").split())
+            types = toks & _HP_TYPES
+            sizes = toks & _HP_SIZES.keys()
+            if not types or not sizes:
+                continue
+            for t in types:
+                for s in sizes:
+                    bucket = hp.setdefault(t, {})
+                    bucket[_HP_SIZES[s]] = bucket.get(_HP_SIZES[s], 0) + 1
+        if hp:
+            out[name] = hp
+    return out
+
+
+def _fmt_hardpoints(hp: dict) -> str:
+    """Render a {type: {size: count}} dict as a deterministic one-line literal."""
+    if not hp:
+        return "{}"
+    parts = []
+    for t in sorted(hp):
+        inner = ", ".join(f"'{s}': {hp[t][s]}" for s in sorted(hp[t]))
+        parts.append(f"'{t}': {{{inner}}}")
+    return "{" + ", ".join(parts) + "}"
+
+
+def load_ship_data(idx: CatalogIndex, texts: dict, prices: dict[str, int],
+                   hardpoints: dict[str, dict]) -> list[tuple]:
+    """
+    Reads every ship_*.xml macro from the catalogs (base + DLC) and returns a
+    list of (macro_id, display_name, ship_class, max_hull, price, hardpoints)
+    tuples. price is the hull's average buy price (0 if the hull isn't sold);
+    hardpoints is the slot layout of the macro's referenced component.
 
     DLC ship macros are full documents (not diffs), so they're simply parsed
     alongside the base-game ones — no patch application needed.
@@ -377,8 +430,13 @@ def load_ship_data(idx: CatalogIndex, texts: dict, prices: dict[str, int]) -> li
         max_hull = int(hull_el.get("max", 0)) if hull_el is not None else 0
         price    = prices.get(macro_id.lower(), 0)
 
+        # The macro points at its hull component; that component owns the slots.
+        comp_ref = macro_el.find("component")
+        ref      = (comp_ref.get("ref") or "").lower() if comp_ref is not None else ""
+        hp       = hardpoints.get(ref, {})
+
         if macro_id:
-            ships.append((macro_id, display, ship_class, max_hull, price))
+            ships.append((macro_id, display, ship_class, max_hull, price, hp))
 
     ships.sort(key=lambda s: s[0])
     return ships
@@ -397,17 +455,20 @@ def gen_ships_py(ships) -> str:
 
 def gen_ship_stats_py(ships) -> str:
     blocks = []
-    for macro_id, _, ship_class, max_hull, price in ships:
+    for macro_id, _, ship_class, max_hull, price, hardpoints in ships:
         blocks.append(f"    '{macro_id}': {{\n"
-                      f"        'class':    '{ship_class}',\n"
-                      f"        'max_hull': {max_hull},\n"
-                      f"        'price':    {price},\n"
+                      f"        'class':      '{ship_class}',\n"
+                      f"        'max_hull':   {max_hull},\n"
+                      f"        'price':      {price},\n"
+                      f"        'hardpoints': {_fmt_hardpoints(hardpoints)},\n"
                       f"    }},")
     return (GENERATED_BANNER +
-            "\n# Ship macro id → static game stats (ship macro XML + wares.xml).\n"
-            "#   class    — ship size class (ship_s, ship_m, ship_l, ship_xl, ship_xs)\n"
-            "#   max_hull — base maximum hull HP before mods\n"
-            "#   price    — average buy price in credits (0 if the hull isn't sold)\n"
+            "\n# Ship macro id → static game stats (ship macro + component XML + wares.xml).\n"
+            "#   class      — ship size class (ship_s, ship_m, ship_l, ship_xl, ship_xs)\n"
+            "#   max_hull   — base maximum hull HP before mods\n"
+            "#   price      — average buy price in credits (0 if the hull isn't sold)\n"
+            "#   hardpoints — slot layout {type: {size: count}} from the hull component\n"
+            "#                (type = weapon/turret/shield/engine; size = s/m/l/xl)\n"
             "SHIP_STATS: dict[str, dict] = {\n" +
             "\n".join(blocks) + "\n}\n")
 
@@ -698,8 +759,10 @@ def main() -> int:
     #         ("\(Gas\)", "\(Mineral\)") referenced inside the 20101 entries
     texts_ships = load_texts(idx, {"20101", "20111"})
     prices = load_macro_prices(idx)   # macro → average buy price (hulls + equipment)
-    ships = load_ship_data(idx, texts_ships, prices)
-    print(f"Found {len(ships)} ship macros ({sum(1 for s in ships if s[4])} priced)")
+    hardpoints = load_hardpoints(idx) # component → {type: {size: count}}
+    ships = load_ship_data(idx, texts_ships, prices, hardpoints)
+    print(f"Found {len(ships)} ship macros "
+          f"({sum(1 for s in ships if s[4])} priced, {sum(1 for s in ships if s[5])} with slots)")
 
     # ── Station stats (structure modules + shields, page 20004 for sector names) ──
     # Page 20004 is also used by gen_sector_stats_py for display-name comments.

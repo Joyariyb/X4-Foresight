@@ -2383,6 +2383,10 @@
   // one design. Built entirely from the loadout the export already carries —
   // no backend. Deployables have no loadout, so they never appear here.
 
+  // Static equipment catalog (macro → name/stats/price), set by populate() from
+  // data.equipment_catalog. The blueprint builder's fit panel reads it.
+  let EQUIPMENT_CATALOG = {};
+
   const DESIGN_SLOTS = [
     ['weapon','Weapons'], ['turret','Turrets'], ['shield','Shields'],
     ['engine','Engine'],  ['thruster','Thruster'],
@@ -2447,7 +2451,7 @@
         groups.set(sig, {
           type: s.type_name || s.macro, loadout: s.loadout, ships: [],
           hullFaction: s.hull_origin, hullMax: s.hull_max, hullPrice: s.hull_price,
-          hullSize: s.size,
+          hullSize: s.size, hardpoints: s.hardpoints,
         });
       groups.get(sig).ships.push(s);
     }
@@ -2522,8 +2526,14 @@
       const items = (d.loadout || []).filter(e => e.slot === slot && !e.name.endsWith('_macro'));
       if (!items.length) continue;
       const defs = SLOT_STATS[slot] || [];
-      // Distinct mount sizes present (e.g. "M", or "M / L" if mixed).
-      const sizes = [...new Set(items.map(e => e.size).filter(Boolean))].map(s => s.toUpperCase()).join(' / ');
+      // Section header right side: "fitted / capacity · sizes" when the hull's
+      // hardpoints are known, else just the mount sizes seen on the fitted gear.
+      const hp = (d.hardpoints && d.hardpoints[slot]) || null;
+      const fitted = items.reduce((a, e) => a + e.count, 0);
+      const cap = hp ? Object.values(hp).reduce((a, b) => a + b, 0) : null;
+      const sizes = (hp ? Object.keys(hp) : items.map(e => e.size).filter(Boolean))
+        .filter((s, i, a) => a.indexOf(s) === i).map(s => s.toUpperCase()).join('/');
+      const slotsText = cap != null ? `${fitted} / ${cap} · ${sizes}` : sizes;
       const rows = items.map(e => {
         if (e.price) total += e.price * e.count;
         const mk = e.mk ? ` Mk${e.mk}` : '';
@@ -2534,7 +2544,7 @@
           <span class="dcost">${e.price != null ? designCr(e.price) : '—'}</span>
         </div>`;
       }).join('');
-      body += section(slot, label, sizes, headerRow(defs) + rows);
+      body += section(slot, label, slotsText, headerRow(defs) + rows);
     }
 
     const n = d.ships.length;
@@ -3118,6 +3128,10 @@
     // top-level grouping than this UI was first written against. Rather than
     // rename every read site, we augment each record IN PLACE with the alias
     // fields the rendering code already expects. Originals are left intact.
+
+    // Stash the static equipment catalog (invariant across scans) for the
+    // Designs tab + blueprint builder's fit panel.
+    EQUIPMENT_CATALOG = data.equipment_catalog || {};
 
     // Keep the picker button label in sync whenever a scan loads.
     if (data.meta && data.meta.scan_id != null) {
