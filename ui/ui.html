@@ -180,18 +180,42 @@
       </div>
 
       <!-- DESIGNS TAB -->
-      <!-- Second entry under the Naval dropdown. Phase 0 is the empty shell;
-           the deduped design cards + blueprint builder land in later phases. -->
+      <!-- Second entry under the Naval dropdown. -->
       <div class="tab-panel" id="tab-designs">
         <div class="sec-header"><div class="sec-title">Ship Designs</div><div class="sec-line"></div></div>
+
+        <!-- Filter bar: size chips (reuses .fleet-subtab so it matches every
+             other chip strip in the app) + a faction dropdown, populated from
+             whatever hull factions are actually present in the fleet. -->
+        <div class="designs-filter-bar">
+          <div class="dfb-group" id="designs-size-filter">
+            <span class="dfb-label">Size</span>
+            <div class="fleet-subtab active" data-size="all" onclick="designsSetSizeFilter('all',this)">All</div>
+            <div class="fleet-subtab" data-size="S" onclick="designsSetSizeFilter('S',this)">S</div>
+            <div class="fleet-subtab" data-size="M" onclick="designsSetSizeFilter('M',this)">M</div>
+            <div class="fleet-subtab" data-size="L" onclick="designsSetSizeFilter('L',this)">L</div>
+            <div class="fleet-subtab" data-size="XL" onclick="designsSetSizeFilter('XL',this)">XL</div>
+          </div>
+          <div class="dfb-group">
+            <span class="dfb-label">Faction</span>
+            <div class="bhull">
+              <i class="ti ti-flag" style="color:var(--teal);font-size:13px"></i>
+              <select id="designs-faction-select" onchange="designsSetFactionFilter(this.value)">
+                <option value="all">All</option>
+              </select>
+            </div>
+          </div>
+          <span class="dfb-count" id="designs-result-count"></span>
+        </div>
+
         <div id="designs-grid"></div>
-        <!-- Placeholder until loadout extraction + the dedup view exist. -->
+        <!-- Shown when there's no loadout data yet, or the current filters match nothing. -->
         <div id="designs-empty" style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:80px 20px;color:var(--text-dim)">
           <i class="ti ti-vector-triangle" style="font-size:40px;color:var(--teal);opacity:0.5"></i>
-          <div class="cond" style="font-size:18px;font-weight:600;color:var(--text)">Blueprint builder coming soon</div>
-          <div style="font-size:13px;max-width:420px;text-align:center;line-height:1.6">
-            This tab will list your fleet's unique ship configurations and let you
-            design new loadouts. Equipment data isn't scanned yet — that's the next step.
+          <div class="cond" id="designs-empty-title" style="font-size:18px;font-weight:600;color:var(--text)">No ship designs found</div>
+          <div id="designs-empty-body" style="font-size:13px;max-width:420px;text-align:center;line-height:1.6">
+            This tab lists your fleet's unique ship configurations, deduplicated by
+            hull and fitted equipment. Run a scan with a fleet in it to populate it.
           </div>
         </div>
       </div>

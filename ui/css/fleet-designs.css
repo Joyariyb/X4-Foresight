@@ -21,22 +21,62 @@
     .fleet-panel { display: none; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
     .fleet-panel.active { display: flex; }
 
+    /* ── DESIGNS FILTER BAR ──
+       Size chips reuse .fleet-subtab so they read as the same control as every
+       other chip strip in the app; the faction picker reuses .bhull (icon +
+       native select) from the blueprint builder below for the same reason. */
+    .designs-filter-bar { display: flex; align-items: center; gap: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .dfb-group { display: flex; align-items: center; gap: 6px; }
+    .dfb-label { font-family: var(--font-cond); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); flex-shrink: 0; }
+    .dfb-count { margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
+
     /* ── SHIP DESIGN CARDS ──
-       Each equipment category is its own bounded panel (.dsect) with a coloured
-       icon + tinted header. The stat columns inside every section share one grid
-       so count / badge / name / stats / cost line up. */
+       Each card splits into a left equipment column (one bounded .dsect panel
+       per category) and a right .dhull preview panel — the "switchable view"
+       slot, Hull/wireframe only for now but laid out so more views can sit
+       alongside it later without reshaping the equipment side. */
+    .dcard { padding: 14px; margin-bottom: 12px; }
+    .dcard-hd { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 10px; }
+    .dcard-title { font-family: var(--font-cond); font-weight: 600; font-size: 16px; color: var(--text); }
+    .dcard-used { margin-left: auto; cursor: pointer; color: var(--text-dim); font-size: 12px; white-space: nowrap; }
+    .dcard-body { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 14px; align-items: start; }
+    .dcard-equip { display: flex; flex-direction: column; min-width: 0; }
+    .dcard-total { display: flex; align-items: baseline; gap: 10px; border-top: 1px solid var(--border); margin-top: 10px; padding-top: 9px; }
+    .dcard-total-lbl { font-family: var(--font-cond); font-weight: 600; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); }
+    .dcard-total-val { margin-left: auto; font-family: var(--font-mono); font-size: 16px; color: var(--amber); }
+    .dcard-ships { display: none; gap: 6px; flex-wrap: wrap; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+
     .dsect { border: 1px solid var(--border); border-radius: 4px; background: var(--bg-panel); margin-bottom: 8px; overflow: hidden; }
     .dsect-hd { display: flex; align-items: center; gap: 8px; padding: 5px 10px; border-bottom: 1px solid var(--border); }
     .dsect-hd i { font-size: 15px; }
     .dsect-hd .lbl { font-family: var(--font-cond); font-weight: 600; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; }
     .dsect-hd .slots { margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); }
     .dsect-body { padding: 5px 10px 7px; }
-    .drow { display: grid; grid-template-columns: 34px 46px minmax(110px,1fr) 60px 60px 60px 60px 80px; align-items: center; gap: 5px 9px; padding: 2px 0; }
+    /* Narrower than the old full-width card row — this now lives in a half-card
+       column, so every fixed column lost a few px versus the original layout. */
+    .drow { display: grid; grid-template-columns: 28px 38px minmax(70px,1fr) 44px 44px 44px 44px 64px; align-items: center; gap: 4px 6px; padding: 2px 0; }
     .dhd   { font-size: 9px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-faint); text-align: right; }
     .dst   { font-family: var(--font-mono); font-size: 11px; color: var(--text); text-align: right; }
     .dcost { font-family: var(--font-mono); font-size: 11px; color: var(--amber); text-align: right; }
     .dcnt  { font-family: var(--font-mono); color: var(--lime); font-size: 12px; text-align: right; }
     .dnm   { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* ── HULL PREVIEW PANEL (right half of a design card) ──
+       Border/glow colour comes from --dhull-border / --dhull-glow, set inline
+       per-card (faction colour at low alpha) — color-mix() isn't used here
+       since QtWebEngine's bundled Chromium version isn't guaranteed to support it. */
+    .dhull { border: 1px solid var(--dhull-border, rgba(45,212,191,0.35)); border-radius: 4px; background: radial-gradient(ellipse at 50% 0%, var(--dhull-glow, rgba(45,212,191,0.08)), var(--bg-panel) 70%); padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .dhull-hd { align-self: flex-start; display: flex; align-items: center; gap: 7px; }
+    .dhull-hd i { font-size: 14px; }
+    .dhull-hd .lbl { font-family: var(--font-cond); font-weight: 600; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); }
+    .dhull-wire { width: 100%; max-width: 260px; padding: 10px 0; }
+    .dhull-wire svg { width: 100%; height: auto; display: block; }
+    .dhull-id { display: flex; align-items: center; gap: 8px; }
+    .dhull-nm { font-family: var(--font-cond); font-weight: 600; font-size: 15px; color: var(--text); }
+    .dhull-stats { width: 100%; display: flex; gap: 8px; border-top: 1px solid var(--border); padding-top: 8px; }
+    .dhull-stat { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .dhs-lbl { font-size: 9px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-faint); }
+    .dhs-val { font-family: var(--font-mono); font-size: 13px; color: var(--text); }
 
     /* ── BLUEPRINT BUILDER — two-pane master/detail ── */
     .bhdr   { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 12px; }

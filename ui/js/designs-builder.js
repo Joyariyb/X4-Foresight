@@ -16,6 +16,14 @@
 
   const designCr = n => Number(n).toLocaleString();
 
+  // '#rrggbb' -> 'rgba(r,g,b,a)'. Used to tint the hull preview panel border/
+  // glow by faction colour without relying on CSS color-mix(), which isn't
+  // guaranteed to be supported by QtWebEngine's bundled Chromium version.
+  function hexA(hex, a) {
+    const n = parseInt(hex.replace('#', ''), 16);
+    return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+  }
+
   // Per-category icon + colour for the section headers (.dsect-hd). The tint is
   // the same colour at low alpha, used as the header background.
   const SLOT_META = {
@@ -58,11 +66,64 @@
       designItems(s).map(e => `${e.slot}:${e.macro}:${e.count}`).sort().join('|');
   }
 
+  // Size + faction filter state for the bar above the grid. 'all' means no
+  // restriction on that axis.
+  let designsFilter = { size: 'all', faction: 'all' };
+
+  function designsSetSizeFilter(size, el) {
+    designsFilter.size = size;
+    document.querySelectorAll('#designs-size-filter .fleet-subtab').forEach(t => t.classList.remove('active'));
+    (el || document.querySelector(`#designs-size-filter [data-size="${size}"]`))?.classList.add('active');
+    renderDesigns();
+  }
+  function designsSetFactionFilter(faction) {
+    designsFilter.faction = faction;
+    renderDesigns();
+  }
+
+  // Rebuilds the faction <option> list from whatever hull origins are present
+  // in the unfiltered fleet. Cached on the joined faction list so it doesn't
+  // rebuild (and drop focus) every render when nothing actually changed.
+  let _designsFactionOptionsKey = null;
+  function designsPopulateFactionOptions(ships) {
+    const sel = document.getElementById('designs-faction-select');
+    if (!sel) return;
+    const factions = [...new Set(ships.map(s => s.hull_origin).filter(Boolean))].sort();
+    const key = factions.join('|');
+    if (key === _designsFactionOptionsKey) return;
+    _designsFactionOptionsKey = key;
+    sel.innerHTML = '<option value="all">All</option>' +
+      factions.map(f => `<option value="${f}">${f}</option>`).join('');
+    if (!factions.includes(designsFilter.faction)) designsFilter.faction = 'all';
+    sel.value = designsFilter.faction;
+  }
+
   function renderDesigns() {
     const grid  = document.getElementById('designs-grid');
     const empty = document.getElementById('designs-empty');
-    const ships = (allPlayerShips || []).filter(s => designItems(s).length);
-    if (!ships.length) { grid.innerHTML = ''; empty.style.display = 'flex'; return; }
+    const emptyTitle = document.getElementById('designs-empty-title');
+    const emptyBody  = document.getElementById('designs-empty-body');
+    const count = document.getElementById('designs-result-count');
+    const allShips = (allPlayerShips || []).filter(s => designItems(s).length);
+    designsPopulateFactionOptions(allShips);
+
+    let ships = allShips;
+    if (designsFilter.size !== 'all') ships = ships.filter(s => s.size === designsFilter.size);
+    if (designsFilter.faction !== 'all') ships = ships.filter(s => s.hull_origin === designsFilter.faction);
+
+    if (!ships.length) {
+      grid.innerHTML = '';
+      empty.style.display = 'flex';
+      if (count) count.textContent = '';
+      if (!allShips.length) {
+        emptyTitle.textContent = 'No ship designs found';
+        emptyBody.textContent = "This tab lists your fleet's unique ship configurations, deduplicated by hull and fitted equipment. Run a scan with a fleet in it to populate it.";
+      } else {
+        emptyTitle.textContent = 'No designs match these filters';
+        emptyBody.textContent = 'Try a different size or faction.';
+      }
+      return;
+    }
     empty.style.display = 'none';
 
     // Group ships by signature.
@@ -92,11 +153,14 @@
     // Most-common designs first.
     designs.sort((a, b) => b.ships.length - a.ships.length || a.type.localeCompare(b.type));
     grid.innerHTML = designs.map((d, i) => designCardHtml(d, i)).join('');
+    if (count) count.textContent = `${designs.length} design${designs.length > 1 ? 's' : ''} · ${ships.length} ship${ships.length > 1 ? 's' : ''}`;
   }
 
   // Generic placeholder hull wireframe. Replaced per-hull by the .xmf mesh
   // render in a later phase; kept neutral so it reads as a preview, not data.
-  const WIRE_SVG = `<svg viewBox="0 0 140 64" style="width:140px;height:64px;filter:drop-shadow(0 0 3px rgba(45,212,191,0.5))" aria-hidden="true">
+  // Sizing is left to the .dhull-wire CSS so it can scale up in the bigger
+  // preview panel without a second copy of this markup.
+  const WIRE_SVG = `<svg viewBox="0 0 140 64" style="filter:drop-shadow(0 0 4px rgba(45,212,191,0.5))" aria-hidden="true">
     <g fill="none" stroke="var(--teal)" stroke-width="1.1"><polygon points="70,5 80,26 76,54 70,60 64,54 60,26"/><line x1="70" y1="5" x2="70" y2="60"/><polygon points="60,30 41,38 44,49 60,45"/><polygon points="80,30 99,38 96,49 80,45"/></g>
     <g fill="none" stroke="var(--lime)" stroke-width="1.1"><line x1="66" y1="56" x2="66" y2="63"/><line x1="74" y1="56" x2="74" y2="63"/></g></svg>`;
 
@@ -126,24 +190,8 @@
 
     let total = d.hullPrice || 0;
 
-    // ── Hull section: wireframe preview + the priced hull row ────────────────
-    const hullDefs = [['hull_max', 'Hull HP', designCr]];
-    const hullInner = `<div style="display:flex;gap:12px;align-items:center">
-      <div style="border:1px solid rgba(45,212,191,0.27);border-radius:3px;background:#0a0e13;padding:3px;flex-shrink:0">${WIRE_SVG}</div>
-      <div style="flex:1">
-        ${headerRow(hullDefs)}
-        <div class="drow">
-          <span class="dcnt">1×</span>${designBadge(d.hullFaction)}
-          <span style="font-family:var(--font-cond);font-weight:600;font-size:14px">${d.type}</span>
-          ${statCells({ hull_max: d.hullMax }, hullDefs)}
-          <span class="dcost">${d.hullPrice != null ? designCr(d.hullPrice) : '—'}</span>
-        </div>
-      </div>
-    </div>`;
-    let body = section('hull', 'Hull',
-      `${d.hullSize || ''}${d.hullFaction ? ' · ' + d.hullFaction : ''}`, hullInner);
-
-    // ── Equipment sections ──────────────────────────────────────────────────
+    // ── Equipment column (left half) ──────────────────────────────────────
+    let equip = '';
     for (const [slot, label] of DESIGN_SLOTS) {
       const items = (d.loadout || []).filter(e => e.slot === slot && !e.name.endsWith('_macro'));
       if (!items.length) continue;
@@ -166,26 +214,45 @@
           <span class="dcost">${e.price != null ? designCr(e.price) : '—'}</span>
         </div>`;
       }).join('');
-      body += section(slot, label, slotsText, headerRow(defs) + rows);
+      equip += section(slot, label, slotsText, headerRow(defs) + rows);
     }
+    if (!equip) equip = `<div style="padding:30px 10px;text-align:center;color:var(--text-dim);font-size:12px">No equipment fitted.</div>`;
+
+    // ── Hull preview (right half) — the swappable view, Hull/wireframe is the
+    // only one built so far; more views (loadout diagram, stats) can slot in
+    // alongside it later without touching the equipment column. ──────────────
+    const facColour = FACTION_COLOURS[(d.hullFaction || '').toLowerCase()] || '#2dd4bf';
+    const hullPanel = `<div class="dhull" style="--dhull-border:${hexA(facColour, 0.35)};--dhull-glow:${hexA(facColour, 0.1)}">
+      <div class="dhull-hd"><i class="ti ti-ufo" style="color:${facColour}"></i><span class="lbl">Hull</span></div>
+      <div class="dhull-wire">${WIRE_SVG}</div>
+      <div class="dhull-id">${designBadge(d.hullFaction)}<span class="dhull-nm">${d.type}</span></div>
+      <div class="dhull-stats">
+        <div class="dhull-stat"><span class="dhs-lbl">Size</span><span class="dhs-val">${d.hullSize || '—'}</span></div>
+        <div class="dhull-stat"><span class="dhs-lbl">Hull HP</span><span class="dhs-val">${d.hullMax != null ? designCr(d.hullMax) : '—'}</span></div>
+        <div class="dhull-stat"><span class="dhs-lbl">Hull Cost</span><span class="dhs-val">${d.hullPrice != null ? designCr(d.hullPrice) : '—'}</span></div>
+      </div>
+    </div>`;
 
     const n = d.ships.length;
     const chips = d.ships.map(s =>
       `<span onclick="jumpToShip('${s.code}')" style="cursor:pointer;font-family:var(--font-mono);font-size:11px;color:var(--teal);border:1px solid var(--border);border-radius:2px;padding:2px 8px">${s.code}${s.name ? ' · ' + s.name : ''}</span>`
     ).join('');
 
-    return `<div class="panel" style="margin-bottom:12px;padding:14px">
-      <div style="display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:8px">
-        <i class="ti ti-vector-triangle" style="color:var(--teal);font-size:16px"></i>
-        <span style="font-family:var(--font-cond);font-weight:600;font-size:16px;color:var(--text)">${d.type}${d.config}</span>
-        <span onclick="toggleDesignShips(${idx})" style="margin-left:auto;cursor:pointer;color:var(--text-dim);font-size:12px;white-space:nowrap">used by <b style="color:var(--lime)">${n}</b> ship${n > 1 ? 's' : ''} <i class="ti ti-chevron-down" style="vertical-align:-2px"></i></span>
+    return `<div class="panel dcard">
+      <div class="dcard-hd">
+        <i class="ti ti-vector-triangle" style="color:${facColour};font-size:16px"></i>
+        <span class="dcard-title">${d.type}${d.config}</span>
+        <span class="dcard-used" onclick="toggleDesignShips(${idx})">used by <b style="color:var(--lime)">${n}</b> ship${n > 1 ? 's' : ''} <i class="ti ti-chevron-down" style="vertical-align:-2px"></i></span>
       </div>
-      ${body}
-      <div style="display:flex;align-items:baseline;gap:10px;border-top:1px solid var(--border);margin-top:2px;padding-top:9px">
-        <span style="font-family:var(--font-cond);font-weight:600;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim)">Design total</span>
-        <span style="margin-left:auto;font-family:var(--font-mono);font-size:16px;color:var(--amber)">${designCr(total)} <span style="font-size:11px;color:var(--text-dim)">Cr</span></span>
+      <div class="dcard-body">
+        <div class="dcard-equip">${equip}</div>
+        ${hullPanel}
       </div>
-      <div id="design-ships-${idx}" style="display:none;gap:6px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">${chips}</div>
+      <div class="dcard-total">
+        <span class="dcard-total-lbl">Design total</span>
+        <span class="dcard-total-val">${designCr(total)} <span style="font-size:11px;color:var(--text-dim)">Cr</span></span>
+      </div>
+      <div id="design-ships-${idx}" class="dcard-ships">${chips}</div>
     </div>`;
   }
 

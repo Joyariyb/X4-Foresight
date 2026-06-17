@@ -3,7 +3,7 @@
   const MINER_ROLES     = new Set(["Miner (Solid)","Miner (Liquid)"]);
 
   const ORDER_COLOURS = { Trading:"var(--green)", Mining:"var(--amber)", Escorting:"var(--teal)", Waiting:"var(--text-faint)" };
-  const SIZE_COLOURS  = { L:"var(--amber)", M:"var(--teal)", S:"var(--text-dim)" };
+  const SIZE_COLOURS  = { XL:"var(--purple)", L:"var(--amber)", M:"var(--teal)", S:"var(--text-dim)" };
 
   // Bright accent colour for each production ware, keyed by display name.
   // Unrecognised wares fall back to --text-dim in the renderer.
