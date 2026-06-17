@@ -471,6 +471,27 @@ def _internal(conn, scan_id, game_time) -> list[dict]:
     } for r in rows]
 
 
+def _hull_catalog() -> dict:
+    """All hulls with equipment slots → {name, class, max_hull, price, hardpoints}.
+
+    The blueprint builder's hull selector reads this. Keyed by macro; deployables
+    and drones (no hardpoints) are excluded so the selector only lists real ships.
+    """
+    out = {}
+    for macro, st in SHIP_STATS.items():
+        hp = st.get('hardpoints')
+        if not hp:
+            continue
+        out[macro] = {
+            'name':       resolve_ship_type(macro),
+            'class':      st.get('class'),
+            'max_hull':   st.get('max_hull'),
+            'price':      st.get('price'),
+            'hardpoints': hp,
+        }
+    return out
+
+
 # ── Top-level assembly ─────────────────────────────────────────────────────────
 
 def to_export(conn: sqlite3.Connection, scan_id: int | None = None) -> dict:
@@ -538,6 +559,9 @@ def to_export(conn: sqlite3.Connection, scan_id: int | None = None) -> dict:
         # get it; the blueprint builder's fit panel reads it to list compatible
         # gear per slot/size.
         'equipment_catalog': dict(EQUIPMENT_STATS),
+        # All buildable hulls (name + slot layout + price) for the builder's
+        # hull selector.
+        'hull_catalog': _hull_catalog(),
     }
 
 
