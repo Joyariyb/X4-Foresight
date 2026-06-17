@@ -1,0 +1,36 @@
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #0d1117;
+      --bg-panel:     #161b22;
+      --bg-card:      #1c2128;
+      --border:       #21262d;
+      --teal:         #2dd4bf;
+      --teal-dim:     rgba(45,212,191,0.12);
+      --amber:        #d29922;
+      --amber-dim:    rgba(210,153,34,0.12);
+      --red:          #f85149;
+      --red-dim:      rgba(248,81,73,0.10);
+      --green:        #3fb950;
+      --green-dim:    rgba(63,185,80,0.10);
+      --purple:       #a371f7;
+      --yellow:       #e3b341;
+      --lime:         #39ff14;
+      --text:         #c9d1d9;
+      --text-dim:     #8b949e;
+      --text-faint:   #3fb950;
+      --font-ui:      'Barlow', sans-serif;
+      --font-mono:    'Share Tech Mono', monospace;
+      --font-cond:    'Barlow Condensed', sans-serif;
+    }
+
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: 14px; overflow: hidden; }
+
+    /* height:100% (not 100vh): with the CSS zoom updateZoom() puts on <html>,
+       Chromium computes 100vh larger than the real viewport, so the shell
+       overflowed <body> and scrollIntoView (crew/station/ship jump links)
+       could scroll the overflow:hidden body — pushing the top bars off-screen
+       with no way to scroll back. 100% chains through html/body, which are
+       zoom-aware, so the shell always exactly fits and body never scrolls. */
+    #shell { display: flex; flex-direction: column; height: 100%; }
+

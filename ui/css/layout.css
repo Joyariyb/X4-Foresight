@@ -1,0 +1,89 @@
+    /* ── TOP BAR ── */
+    #topbar { display: flex; align-items: stretch; background: var(--bg-panel); border-bottom: 1px solid var(--border); height: 48px; flex-shrink: 0; }
+    .tb-logo { display: flex; align-items: center; gap: 8px; padding: 0 20px; border-right: 1px solid var(--border); font-family: var(--font-cond); font-weight: 700; font-size: 15px; letter-spacing: 0.12em; color: var(--teal); white-space: nowrap; }
+    .tb-logo i { font-size: 18px; }
+    .tb-field { display: flex; flex-direction: column; justify-content: center; padding: 0 18px; border-right: 1px solid var(--border); }
+    .tb-field .lbl { font-size: 10px; font-family: var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); }
+    .tb-field .val { font-family: var(--font-mono); font-size: 13px; color: var(--text); margin-top: 1px; }
+    .tb-field .val.teal  { color: var(--teal); }
+    .tb-field .val.amber { color: var(--amber); }
+    /* Scan-history picker — pushed to the far right of the bar. */
+    .tb-field.tb-scan { margin-left: auto; }
+    .scan-picker { position: relative; margin-top: 1px; }
+    .scan-picker-btn { background: var(--bg-panel); color: var(--text); border: 1px solid var(--border); border-radius: 4px; font-family: var(--font-mono); font-size: 12px; padding: 3px 8px; cursor: pointer; display: flex; align-items: center; gap: 3px; white-space: nowrap; }
+    .scan-picker-btn:hover { border-color: var(--teal); }
+    .scan-picker-caret { font-size: 9px; color: var(--text-dim); margin-left: 1px; }
+    .scan-picker-menu { position: absolute; top: calc(100% + 4px); right: 0; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px; min-width: 300px; box-shadow: 0 6px 18px rgba(0,0,0,0.5); z-index: 9999; overflow: hidden; }
+    .scan-picker-row { display: flex; align-items: center; padding: 7px 10px; cursor: pointer; border-bottom: 1px solid var(--border); gap: 10px; }
+    .scan-picker-row:last-child { border-bottom: none; }
+    .scan-picker-row:hover { background: var(--bg-card); }
+    .scan-picker-row.active { background: var(--teal-dim); }
+    .scan-picker-info { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+    .scan-picker-num { font-family: var(--font-mono); font-size: 12px; color: var(--teal); }
+    .scan-picker-detail { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
+    .scan-picker-del { background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 3px 5px; border-radius: 3px; line-height: 1; flex-shrink: 0; }
+    .scan-picker-del:hover { color: var(--red); background: var(--red-dim); }
+
+    /* ── NAV (tabs now live inside #topbar) ── */
+    .nav-tab { padding: 0 16px; display: flex; align-items: center; gap: 6px; font-family: var(--font-cond); font-weight: 500; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); cursor: pointer; border-bottom: 2px solid transparent; position: relative; top: 1px; transition: color 0.15s; user-select: none; }
+    .nav-tab:hover { color: var(--text); }
+    .nav-tab.active { color: var(--teal); border-bottom-color: var(--teal); }
+    .nav-tab i { font-size: 16px; }
+    .nav-badge { font-size: 10px; font-family: var(--font-mono); background: var(--teal-dim); color: var(--teal); padding: 1px 5px; border-radius: 3px; }
+    .nav-badge.warn { background: var(--red-dim); color: var(--red); }
+
+    /* ── NAV DROPDOWN (Universe → Map / Sectors) ──
+       The parent .nav-tab is a non-clickable label; the menu opens on hover.
+       Pure CSS :hover keeps a small invisible bridge so the cursor can travel
+       from the label into the menu without the gap closing it. */
+    .nav-dropdown { position: relative; }
+    .nav-dd-caret { font-size: 12px !important; opacity: 0.6; margin-left: -2px; }
+    .nav-dd-menu {
+      position: absolute; top: 100%; left: 0; min-width: 150px; z-index: 50;
+      background: var(--bg-panel); border: 1px solid var(--border); border-top: none;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+      display: none; flex-direction: column; padding: 4px 0;
+    }
+    .nav-dropdown:hover .nav-dd-menu { display: flex; }
+    .nav-dd-item {
+      display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+      font-family: var(--font-cond); font-size: 12px; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--text-dim); cursor: pointer;
+      white-space: nowrap; transition: background 0.12s, color 0.12s;
+    }
+    .nav-dd-item:hover { background: var(--bg); color: var(--teal); }
+    .nav-dd-item i { font-size: 15px; }
+
+    /* ── MAIN AREA ── */
+    #main { display: flex; flex: 1; overflow: hidden; }
+
+    /* ── SIDEBAR ── */
+    #sidebar { width: 190px; background: var(--bg-panel); border-right: 1px solid var(--border); padding: 10px 0; overflow-y: auto; flex-shrink: 0; }
+    .sb-heading { font-size: 10px; font-family: var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-faint); padding: 8px 14px 3px; }
+    /* Back button — sits right-justified on the Views heading row, revealed only
+       after a cross-tab jump (pilot/ship/station link). Sheared parallelogram +
+       burnt-orange (matches the scrubber accent) with bright text, for a HUD feel. */
+    .nav-back-btn { font-family: var(--font-cond); font-weight: 700; font-size: 10px;
+                    letter-spacing: 0.12em; text-transform: uppercase; color: #ffe9d6;
+                    background: #d4540a; border: none; padding: 3px 10px 3px 11px; cursor: pointer;
+                    clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
+                    transition: background 0.12s, color 0.12s; }
+    .nav-back-btn:hover  { background: #ff6f1a; color: #fff; }
+    .nav-back-btn:active { background: #b8470a; }
+    .sb-item { display: flex; align-items: center; gap: 7px; justify-content: space-between; padding: 6px 14px; font-size: 12px; font-family: var(--font-cond); letter-spacing: 0.03em; color: var(--text-dim); cursor: pointer; border-left: 2px solid transparent; transition: background 0.1s, color 0.1s; }
+    .sb-item:hover { background: var(--bg-card); color: var(--text); }
+    .sb-item.active { background: var(--teal-dim); color: var(--teal); border-left-color: var(--teal); }
+    .sb-item.warn { color: var(--red); }
+    .sb-item-label { display: flex; align-items: center; gap: 7px; }
+    .sb-item i { font-size: 15px; flex-shrink: 0; }
+    .sb-item .sb-count { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); margin-left: auto; }
+    .sb-item.warn .sb-count { color: rgba(248,81,73,0.5); }
+    .sb-divider { border: none; border-top: 1px solid var(--border); margin: 6px 0; }
+
+    /* ── CONTENT ── */
+    #content { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+
+    /* ── TABS ── */
+    .tab-panel { display: none; flex-direction: column; gap: 12px; }
+    .tab-panel.active { display: flex; }
+

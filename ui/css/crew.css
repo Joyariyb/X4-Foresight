@@ -1,0 +1,29 @@
+    /* ── CREW TAB ── */
+    .crew-layout { display: flex; gap: 12px; flex: 1; min-height: 0; }
+    .crew-roster { flex: 0 0 56%; overflow: auto; max-height: calc(100vh - 200px); }
+    .crew-file   { flex: 1; overflow-y: auto; max-height: calc(100vh - 200px); }
+
+    /* File card — the dossier panel on the right */
+    .file-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; }
+    .file-header { padding: 14px; border-bottom: 1px solid var(--border); background: var(--bg-panel); }
+    .file-name { font-family: var(--font-cond); font-weight: 700; font-size: 20px; color: var(--lime); letter-spacing: 0.05em; margin-bottom: 8px; }
+    .file-section { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+    .file-section:last-child { border-bottom: none; }
+    .file-sec-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 6px; }
+    .file-skill-row { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
+    .file-skill-name { min-width: 90px; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); text-transform: capitalize; }
+    .file-assign-name { font-size: 14px; font-family: var(--font-cond); font-weight: 600; color: var(--text); }
+    .file-assign-code { font-family: var(--font-mono); font-size: 11px; color: var(--yellow); margin-left: 6px; }
+    .file-assign-sector { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); margin-top: 4px; }
+    .file-meta-val { font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); }
+    .file-seed { font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); margin-top: 6px; word-break: break-all; }
+    .file-empty { display: flex; align-items: center; justify-content: center; height: 160px; font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; }
+    /* Selected row highlight in the crew roster table */
+    .crew-row-active td { background: var(--teal-dim) !important; }
+    /* Clickable elements in the fleet table — hover turns amber + underlines */
+    .crew-link { cursor: pointer; }
+    .crew-link:hover { color: var(--amber) !important; text-decoration: underline; }
+    /* Station code links — teal base, same amber hover as crew-link */
+    .stn-link { cursor: pointer; color: var(--teal); font-family: var(--font-mono); font-size: 11px; font-weight: 700; }
+    .stn-link:hover { color: var(--amber) !important; text-decoration: underline; }
+

@@ -1,0 +1,7 @@
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    #loading { display: flex; align-items: center; justify-content: center; height: 100%; font-family: var(--font-mono); color: var(--text-faint); font-size: 12px; gap: 10px; }
+    #loading i { font-size: 20px; color: var(--teal); }

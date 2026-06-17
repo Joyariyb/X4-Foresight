@@ -1,0 +1,62 @@
+    /* ── UNIVERSE TAB ── */
+    /* Negative margin cancels the 14px padding of #content so the map fills edge-to-edge. */
+    #tab-universe { flex: 1; min-height: 0; margin: -14px; gap: 0; }
+    .universe-filter-bar { height: 38px; padding: 0 14px; display: flex; align-items: center; gap: 8px; background: var(--bg-panel); border-bottom: 1px solid var(--border); flex-shrink: 0; font-family: var(--font-cond); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
+    #universe-map-wrap { flex: 1; min-height: 0; overflow: hidden; cursor: grab; position: relative; background: var(--bg); user-select: none; }
+    #universe-map-wrap.panning { cursor: grabbing; }
+    /* The "almost 3D" tilt: the map plane leans away from the camera like a
+       chart table. The rotateX/perspective values are applied from JS (U_TILT_*
+       constants) so the label-projection maths always matches the CSS. The tilt
+       sits OUTSIDE the zoom layer, so pan/zoom gestures just play out on a
+       tilted plane; labels live OUTSIDE the tilt (see #universe-labels). */
+    #universe-tilt { position: absolute; inset: 0; transform-origin: 50% 50%; }
+    /* The HTML div that pan/zoom gestures animate (see comment in the markup).
+       will-change keeps it on its own GPU layer so per-frame transform updates
+       are a cheap composite; transform-origin 0 0 makes the gesture-delta maths
+       in _uApplyTransform line up with the committed <g> translate/scale. */
+    /* Overscan: the layer paints 50% beyond each edge of the wrap (200% size,
+       offset -50%) so that mid-gesture pans reveal already-painted map instead
+       of blank space. The wrap's overflow:hidden clips the excess. JS reads the
+       actual offset via offsetLeft/Top, so only this rule defines the amount. */
+    #universe-zoom-layer { position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; will-change: transform; transform-origin: 0 0; }
+    #universe-svg { width: 100%; height: 100%; display: block; }
+    /* Map labels are plain HTML OUTSIDE the tilted plane: anything rasterised
+       inside a 3D transform is stretched from a fixed-resolution texture and
+       goes blurry, but a flat overlay renders as normal crisp text. JS projects
+       each label's map position through the same tilt maths on every commit.
+       They can't cheaply follow per-frame gestures, so they fade out while a
+       gesture is active and pop back when it settles (like web map apps). */
+    #universe-labels { position: absolute; inset: 0; overflow: hidden; pointer-events: none; transition: opacity 0.15s; }
+    #universe-labels.u-gesturing { opacity: 0; }
+    #universe-labels span { position: absolute; left: 0; top: 0; white-space: nowrap; font-family: 'Barlow Condensed', sans-serif; display: none; }
+    #universe-labels .u-hex-label    { font-weight: 500; letter-spacing: 0.04em; font-size: 11px; opacity: 0.9; }
+    #universe-labels .u-sector-label { font-size: 9px; opacity: 0.85; }
+    #universe-labels.show-clusters .u-hex-label    { display: block; }
+    #universe-labels.show-sectors  .u-sector-label { display: block; }
+    #universe-labels.show-sectors  .u-hex-label    { display: none; }
+    .u-sector-hex   { opacity: 0; pointer-events: none; }
+    #universe-viewport.zoom-sectors .u-sector-hex { opacity: 1; pointer-events: all; }
+    .u-conn-sector { opacity: 0; }
+    #universe-viewport.zoom-sectors .u-conn-sector    { opacity: 1; }
+    #universe-viewport.zoom-sectors #u-conns-cluster  { opacity: 0; }
+
+    /* ── UNIVERSE HOVER PANEL ── */
+    #u-hover-panel {
+      position: fixed; pointer-events: none; z-index: 200;
+      background: rgba(22,27,34,0.94); border: 1px solid var(--border);
+      border-radius: 5px; padding: 9px 11px; min-width: 150px;
+      font-family: var(--font-cond); font-size: 12px; line-height: 1.4;
+      display: none; backdrop-filter: blur(6px);
+    }
+    #u-hover-panel.visible { display: block; }
+    .uhp-name  { font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: 0.03em; }
+    .uhp-owner { font-size: 11px; margin-top: 1px; }
+    .uhp-sep   { border-top: 1px solid var(--border); margin: 6px 0; }
+    .uhp-nearest { display: flex; justify-content: space-between; gap: 12px; color: var(--text-dim); font-size: 11px; }
+    .uhp-nearest .uhp-stname { color: var(--text); }
+    .uhp-nearest .uhp-jumps  { color: var(--teal); white-space: nowrap; }
+    .uhp-faction-row { display: flex; align-items: center; gap: 6px; margin: 2px 0; }
+    .uhp-fdot  { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .uhp-fcode { flex: 1; color: var(--text); font-size: 11px; letter-spacing: 0.05em; }
+    .uhp-fcount{ color: var(--text-dim); font-size: 11px; font-family: var(--font-mono); }
+
