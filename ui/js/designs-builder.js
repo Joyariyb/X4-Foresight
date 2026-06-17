@@ -35,6 +35,17 @@
     thruster: { icon:'ti-windmill',   color:'var(--lime)',   tint:'rgba(57,255,20,0.08)' },
   };
 
+  // Colour + tint for the size badge in the card summary. Mirrors the S/M/L
+  // colours already used for the Size column in the fleet/crew tables
+  // (SIZE_COLOURS in constants.js); XL doesn't exist there yet so it's only
+  // defined here for now.
+  const SIZE_TINT = {
+    S:  { c: 'var(--text-dim)', bg: 'rgba(255,255,255,0.05)' },
+    M:  { c: 'var(--teal)',     bg: 'rgba(45,212,191,0.08)' },
+    L:  { c: 'var(--amber)',    bg: 'rgba(210,153,34,0.08)' },
+    XL: { c: 'var(--purple)',   bg: 'rgba(163,113,247,0.08)' },
+  };
+
   // Per-slot stat columns: [catalog key, header label, value formatter].
   const SLOT_STATS = {
     weapon:   [['damage_hull','Damage',designCr], ['range_m','Range',v=>(v/1000).toFixed(1)+' km'], ['reload_rate','Rate',v=>v+'/s']],
@@ -98,6 +109,27 @@
     sel.value = designsFilter.faction;
   }
 
+  // Flips every card's <details open> together. Reads majority state so one
+  // click always does the obvious thing (collapse if most are open, else
+  // expand), rather than tracking a separate "last action" flag.
+  function designsToggleAll() {
+    const cards = document.querySelectorAll('#designs-grid .dcard');
+    const anyOpen = [...cards].some(c => c.open);
+    cards.forEach(c => c.open = !anyOpen);
+    designsUpdateToggleAllBtn();
+  }
+  function designsUpdateToggleAllBtn() {
+    const btn = document.getElementById('designs-toggle-all');
+    if (!btn) return;
+    const cards = document.querySelectorAll('#designs-grid .dcard');
+    if (!cards.length) { btn.style.display = 'none'; return; }
+    btn.style.display = '';
+    const anyOpen = [...cards].some(c => c.open);
+    btn.innerHTML = anyOpen
+      ? '<i class="ti ti-chevrons-up"></i> Collapse All'
+      : '<i class="ti ti-chevrons-down"></i> Expand All';
+  }
+
   function renderDesigns() {
     const grid  = document.getElementById('designs-grid');
     const empty = document.getElementById('designs-empty');
@@ -115,6 +147,7 @@
       grid.innerHTML = '';
       empty.style.display = 'flex';
       if (count) count.textContent = '';
+      designsUpdateToggleAllBtn();
       if (!allShips.length) {
         emptyTitle.textContent = 'No ship designs found';
         emptyBody.textContent = "This tab lists your fleet's unique ship configurations, deduplicated by hull and fitted equipment. Run a scan with a fleet in it to populate it.";
@@ -125,6 +158,10 @@
       return;
     }
     empty.style.display = 'none';
+    // Individual cards toggle natively (no JS), so listen for that here to
+    // keep the Collapse/Expand All label honest. 'toggle' doesn't bubble, but
+    // a capturing listener on the grid still sees it from every descendant.
+    grid.addEventListener('toggle', designsUpdateToggleAllBtn, true);
 
     // Group ships by signature.
     const groups = new Map();
@@ -154,6 +191,7 @@
     designs.sort((a, b) => b.ships.length - a.ships.length || a.type.localeCompare(b.type));
     grid.innerHTML = designs.map((d, i) => designCardHtml(d, i)).join('');
     if (count) count.textContent = `${designs.length} design${designs.length > 1 ? 's' : ''} · ${ships.length} ship${ships.length > 1 ? 's' : ''}`;
+    designsUpdateToggleAllBtn();
   }
 
   // Generic placeholder hull wireframe. Replaced per-hull by the .xmf mesh
@@ -238,27 +276,44 @@
       `<span onclick="jumpToShip('${s.code}')" style="cursor:pointer;font-family:var(--font-mono);font-size:11px;color:var(--teal);border:1px solid var(--border);border-radius:2px;padding:2px 8px">${s.code}${s.name ? ' · ' + s.name : ''}</span>`
     ).join('');
 
-    return `<div class="panel dcard">
-      <div class="dcard-hd">
+    // Summary strip — size badge, faction badge, ship count — lives in the
+    // <summary> itself so it stays visible when the card is collapsed, not
+    // just the bare title.
+    const sizeTint = SIZE_TINT[d.hullSize] || SIZE_TINT.S;
+    const summaryMeta = `<span class="dcard-meta">
+      <span class="dcard-size-badge" style="color:${sizeTint.c};background:${sizeTint.bg};border-color:${sizeTint.c}">${d.hullSize || '—'}</span>
+      ${designBadge(d.hullFaction)}
+      <span class="dcard-meta-used">used by <b style="color:var(--lime)">${n}</b> ship${n > 1 ? 's' : ''}</span>
+    </span>`;
+
+    // Native <details> for the whole-card collapse (same idiom as the Sectors
+    // tab's "Your Ships" set) — collapses down to just the <summary> title bar,
+    // open by default so today's always-expanded view doesn't regress.
+    return `<details class="panel dcard" open>
+      <summary class="dcard-hd">
         <i class="ti ti-vector-triangle" style="color:${facColour};font-size:16px"></i>
         <span class="dcard-title">${d.type}${d.config}</span>
-        <span class="dcard-used" onclick="toggleDesignShips(${idx})">used by <b style="color:var(--lime)">${n}</b> ship${n > 1 ? 's' : ''} <i class="ti ti-chevron-down" style="vertical-align:-2px"></i></span>
-      </div>
+        ${summaryMeta}
+        <i class="ti ti-chevron-down dcard-chev"></i>
+      </summary>
       <div class="dcard-body">
         <div class="dcard-equip">${equip}</div>
         ${hullPanel}
       </div>
-      <div class="dcard-total">
-        <span class="dcard-total-lbl">Design total</span>
-        <span class="dcard-total-val">${designCr(total)} <span style="font-size:11px;color:var(--text-dim)">Cr</span></span>
+      <div class="dcard-footer">
+        <span class="dcard-used" id="design-used-${idx}" onclick="toggleDesignShips(${idx})">used by <b style="color:var(--lime)">${n}</b> ship${n > 1 ? 's' : ''} <i class="ti ti-chevron-down"></i></span>
+        <span class="dcard-total-val">Design total <b>${designCr(total)}</b> <span style="font-size:11px;color:var(--text-dim)">Cr</span></span>
       </div>
       <div id="design-ships-${idx}" class="dcard-ships">${chips}</div>
-    </div>`;
+    </details>`;
   }
 
   function toggleDesignShips(idx) {
     const el = document.getElementById('design-ships-' + idx);
-    if (el) el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
+    if (!el) return;
+    const open = el.style.display !== 'flex';
+    el.style.display = open ? 'flex' : 'none';
+    document.getElementById('design-used-' + idx)?.classList.toggle('open', open);
   }
 
   // ══ SHIP BUILDER (interactive blueprint builder) ═══════════════════════════
