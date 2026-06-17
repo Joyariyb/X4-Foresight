@@ -94,11 +94,13 @@
         ? `<span class="stn-link" data-stn-code="${s.homebase_code}">${s.homebase_code}</span>`
         : `<span style="color:var(--text-faint)">—</span>`;
 
-      // Equipment loadout drives the hover tooltip on the ship name. Attach only
-      // when at least one resolvable item exists, so deployables (whose only gear
-      // is an unresolved internal part) don't show an empty tooltip.
-      const loadoutAttr = (s.loadout && s.loadout.some(e => !e.name.endsWith('_macro')))
-        ? ` data-loadout-tip="${encodeURIComponent(JSON.stringify(s.loadout))}" style="cursor:help"`
+      // Equipment loadout drives the hover tooltip on the ship name, and also
+      // means there's a Designs-tab card for this ship to jump to. Both are
+      // gated on the same condition, so deployables (whose only gear is an
+      // unresolved internal part) get neither.
+      const hasDesign = s.loadout && s.loadout.some(e => !e.name.endsWith('_macro'));
+      const loadoutAttr = hasDesign
+        ? ` data-loadout-tip="${encodeURIComponent(JSON.stringify(s.loadout))}" onclick="jumpToDesign('${s.code}')" style="cursor:pointer"`
         : '';
 
       return `<tr data-code="${s.code}">

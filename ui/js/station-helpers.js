@@ -103,6 +103,37 @@
     });
   }
 
+  // Jump from a player ship's name (Fleet tab) to its Designs-tab card — the
+  // inverse of the ship-code chips designCardHtml() puts under "used by N
+  // ships", which call jumpToShip() the other way. Clears the Designs filters
+  // first so the target card can't be hidden by whatever was left set from a
+  // previous visit, then expands it if the user had it collapsed.
+  function jumpToDesign(code) {
+    const ship = (allPlayerShips || []).find(s => s.code === code);
+    if (!ship) return;
+    const sig = designSignature(ship);
+    _navRecord();
+    switchTab('designs', document.getElementById('nav-naval'));
+    _navAfterJump();
+    designsSetSizeFilter('all');
+    designsSetFactionFilter('all');
+
+    const card = document.querySelector(`#designs-grid [data-sig="${sig}"]`);
+    if (!card) return;
+    if (!card.open) {
+      card.open = true;
+      designsCollapsed.delete(sig);
+      designsUpdateToggleAllBtn();
+    }
+    card.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    card.style.transition = '';
+    card.style.background = 'var(--teal-dim)';
+    requestAnimationFrame(() => {
+      card.style.transition = 'background 1.5s';
+      card.style.background = '';
+    });
+  }
+
   function stationTypeLabel(s) {
     const wares = s.production ? s.production.split(',').filter(w => w.trim()) : [];
     if (wares.length === 0) return 'Defence Platform';

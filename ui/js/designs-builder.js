@@ -315,6 +315,7 @@
       <div class="dhull-wire">${WIRE_SVG}</div>
       <div class="dhull-id">${designBadge(d.hullFaction)}<span class="dhull-nm">${d.type}</span></div>
       <div class="dhull-stats">
+        <div class="dhull-stat"><span class="dhs-lbl">Type</span><span class="dhs-val">${d.role || '—'}</span></div>
         <div class="dhull-stat"><span class="dhs-lbl">Size</span><span class="dhs-val">${d.hullSize || '—'}</span></div>
         <div class="dhull-stat"><span class="dhs-lbl">Hull HP</span><span class="dhs-val">${d.hullMax != null ? designCr(d.hullMax) : '—'}</span></div>
         <div class="dhull-stat"><span class="dhs-lbl">Hull Cost</span><span class="dhs-val">${d.hullPrice != null ? designCr(d.hullPrice) : '—'}</span></div>

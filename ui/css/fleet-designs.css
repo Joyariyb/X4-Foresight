@@ -94,9 +94,11 @@
     .dhull-id { display: flex; align-items: center; gap: 8px; }
     .dhull-nm { font-family: var(--font-cond); font-weight: 600; font-size: 15px; color: var(--text); }
     .dhull-stats { width: 100%; display: flex; gap: 8px; border-top: 1px solid var(--border); padding-top: 8px; }
-    .dhull-stat { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .dhull-stat { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
     .dhs-lbl { font-size: 9px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-faint); }
-    .dhs-val { font-family: var(--font-mono); font-size: 13px; color: var(--text); }
+    /* min-width:0 above lets this wrap instead of overflowing for longer
+       values like role names ("Miner (Solid)") now that there are 4 columns. */
+    .dhs-val { font-family: var(--font-mono); font-size: 13px; color: var(--text); text-align: center; }
 
     /* ── BLUEPRINT BUILDER — two-pane master/detail ── */
     .bhdr   { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 12px; }
