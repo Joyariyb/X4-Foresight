@@ -106,6 +106,62 @@ def load_macro_prices(idx: CatalogIndex) -> dict[str, int]:
     return prices
 
 
+# Owner factions that never run a wharf/shipyard the player can buy from —
+# Xenon and Kha'ak are permanently hostile; "ownerless" means no faction flies
+# it at all (story/event-reward hulls). A hull owned ONLY by these is never
+# sold, though Xenon/Kha'ak ones may still be captured by boarding (a runtime
+# mechanic with no static-file flag, so we keep them in the catalog instead
+# of dropping them).
+_NON_PLAYER_FACTIONS = {"xenon", "khaak", "ownerless"}
+_NO_BLUEPRINT_TAGS    = {"noblueprint", "noplayerblueprint", "noplayerbuild"}
+
+# Owner sets meaning "no NPC faction ever flies this" — distinct from
+# "ownerless" (a real derelict/event ship with no faction, but still a
+# flyable hull someone might hand the player). "player" alone is a wares.xml
+# scripting placeholder for internal mission/logistics props (e.g. the
+# "transdrone" cargo bots) — nobody, including the player, ever pilots one in
+# the normal sense, so unlike ownerless hulls these are dropped entirely
+# rather than kept as capture-only. Cross-checked against qsna.eu's X4 ship
+# builder, which omits exactly these macros.
+_PLACEHOLDER_ONLY_OWNERS = {"player"}
+
+
+def load_macro_availability(idx: CatalogIndex) -> dict[str, dict]:
+    """component macro id (lowercase) → {"owners": set[str], "purchasable": bool}.
+
+    Read from each ship's wares.xml <ware><owner faction="..."/></ware> entry.
+    A macro is ABSENT from this dict — and load_ship_data() drops it entirely
+    — if any of:
+      * it has no <ware> entry at all (NPC skin variant, escape pod,
+        colony-ship set-piece part, etc. — never offered to anyone),
+      * its <ware> entry has zero <owner> factions (deployable drones,
+        lasertowers, a handful of "_story" mission props — nobody in the
+        game world is ever assigned to fly, sell, or guard them), or
+      * its only owner is the "player" scripting placeholder (see
+        _PLACEHOLDER_ONLY_OWNERS) — an internal prop, not a real ship.
+    A macro present with purchasable=False has a real owner (so it's a flown,
+    encounterable ship) but no faction the player can ever buy from — still
+    a real ship the player could end up owning via capture or a story
+    reward, so it stays in the catalog, just marked accordingly.
+    """
+    root = load_merged_wares(idx)
+    out: dict[str, dict] = {}
+    for w in root.findall("ware"):
+        comp = w.find("component")
+        if comp is None:
+            continue
+        ref = (comp.get("ref") or "").lower()
+        if not ref:
+            continue
+        owners = {o.get("faction") for o in w.findall("owner") if o.get("faction")}
+        if not owners or owners <= _PLACEHOLDER_ONLY_OWNERS:
+            continue
+        tags = set((w.get("tags") or "").split())
+        purchasable = bool(owners - _NON_PLAYER_FACTIONS) and not (tags & _NO_BLUEPRINT_TAGS)
+        out[ref] = {"owners": owners, "purchasable": purchasable}
+    return out
+
+
 def load_group_textids(idx: CatalogIndex) -> dict[str, int]:
     """
     waregroups.xml: group id → page 20215 base textId.
@@ -398,12 +454,29 @@ def _fmt_hardpoints(hp: dict) -> str:
 
 
 def load_ship_data(idx: CatalogIndex, texts: dict, prices: dict[str, int],
-                   hardpoints: dict[str, dict]) -> list[tuple]:
+                   hardpoints: dict[str, dict],
+                   availability: dict[str, dict]) -> list[tuple]:
     """
     Reads every ship_*.xml macro from the catalogs (base + DLC) and returns a
-    list of (macro_id, display_name, ship_class, max_hull, price, hardpoints)
-    tuples. price is the hull's average buy price (0 if the hull isn't sold);
-    hardpoints is the slot layout of the macro's referenced component.
+    list of (macro_id, display_name, ship_class, max_hull, price, hardpoints,
+    purchasable, flown) tuples. price is the hull's average buy price (0 if
+    the hull isn't sold); hardpoints is the slot layout of the macro's
+    referenced component.
+
+    EVERY macro is kept here, including drones/NPC skin variants/set-piece
+    parts — SHIP_NAMES (gen_ships_py) is used to label any ship the live
+    scanner encounters (police drones, defense lasertowers, NPC traders...),
+    not just the design builder's hull catalog, so narrowing the list here
+    would silently degrade names for ships that genuinely appear in scans.
+
+    flown is True if some faction actually owns/flies the hull in wares.xml
+    (see load_macro_availability) — False means it's a pure asset that's
+    never a real or encounterable ship (NPC skin variant, escape pod,
+    deployable drone, colony-ship set-piece part). purchasable is True only
+    if flown is also True AND the player can buy it new at a shipyard (False
+    for Xenon/Kha'ak/story-reward hulls, which are still flown/capturable).
+    Both flags exist so jsonexport's hull catalog can drop non-flown hulls
+    while still badging capture-only ones instead of hiding them.
 
     DLC ship macros are full documents (not diffs), so they're simply parsed
     alongside the base-game ones — no patch application needed.
@@ -419,7 +492,10 @@ def load_ship_data(idx: CatalogIndex, texts: dict, prices: dict[str, int],
         if macro_el is None:
             continue
 
-        macro_id   = macro_el.get("name", "")
+        macro_id = macro_el.get("name", "")
+        if not macro_id:
+            continue
+
         ship_class = macro_el.get("class", "")
         ident      = root.find(".//identification")
         hull_el    = root.find(".//hull")
@@ -429,14 +505,16 @@ def load_ship_data(idx: CatalogIndex, texts: dict, prices: dict[str, int],
 
         max_hull = int(hull_el.get("max", 0)) if hull_el is not None else 0
         price    = prices.get(macro_id.lower(), 0)
+        avail    = availability.get(macro_id.lower())
+        flown       = avail is not None
+        purchasable = avail["purchasable"] if avail else False
 
         # The macro points at its hull component; that component owns the slots.
         comp_ref = macro_el.find("component")
         ref      = (comp_ref.get("ref") or "").lower() if comp_ref is not None else ""
         hp       = hardpoints.get(ref, {})
 
-        if macro_id:
-            ships.append((macro_id, display, ship_class, max_hull, price, hp))
+        ships.append((macro_id, display, ship_class, max_hull, price, hp, purchasable, flown))
 
     ships.sort(key=lambda s: s[0])
     return ships
@@ -455,20 +533,31 @@ def gen_ships_py(ships) -> str:
 
 def gen_ship_stats_py(ships) -> str:
     blocks = []
-    for macro_id, _, ship_class, max_hull, price, hardpoints in ships:
+    for macro_id, _, ship_class, max_hull, price, hardpoints, purchasable, flown in ships:
         blocks.append(f"    '{macro_id}': {{\n"
-                      f"        'class':      '{ship_class}',\n"
-                      f"        'max_hull':   {max_hull},\n"
-                      f"        'price':      {price},\n"
-                      f"        'hardpoints': {_fmt_hardpoints(hardpoints)},\n"
+                      f"        'class':       '{ship_class}',\n"
+                      f"        'max_hull':    {max_hull},\n"
+                      f"        'price':       {price},\n"
+                      f"        'hardpoints':  {_fmt_hardpoints(hardpoints)},\n"
+                      f"        'purchasable': {purchasable},\n"
+                      f"        'flown':       {flown},\n"
                       f"    }},")
     return (GENERATED_BANNER +
             "\n# Ship macro id → static game stats (ship macro + component XML + wares.xml).\n"
-            "#   class      — ship size class (ship_s, ship_m, ship_l, ship_xl, ship_xs)\n"
-            "#   max_hull   — base maximum hull HP before mods\n"
-            "#   price      — average buy price in credits (0 if the hull isn't sold)\n"
-            "#   hardpoints — slot layout {type: {size: count}} from the hull component\n"
-            "#                (type = weapon/turret/shield/engine; size = s/m/l/xl)\n"
+            "#   class       — ship size class (ship_s, ship_m, ship_l, ship_xl, ship_xs)\n"
+            "#   max_hull    — base maximum hull HP before mods\n"
+            "#   price       — average buy price in credits (0 if the hull isn't sold)\n"
+            "#   hardpoints  — slot layout {type: {size: count}} from the hull component\n"
+            "#                 (type = weapon/turret/shield/engine; size = s/m/l/xl)\n"
+            "#   purchasable — True if the player can buy this new at a shipyard. False\n"
+            "#                 for hulls only obtainable by capture or story reward (e.g.\n"
+            "#                 Xenon/Kha'ak ships) — still real, ownable ships.\n"
+            "#   flown       — False means no faction owns/flies this hull at all (NPC\n"
+            "#                 skin variant, escape pod, deployable drone, colony-ship\n"
+            "#                 set-piece part) — never a real or encounterable ship.\n"
+            "#                 The design builder's hull catalog drops these; naming\n"
+            "#                 tables (ships.py) keep them so any scanned entity still\n"
+            "#                 resolves to a name.\n"
             "SHIP_STATS: dict[str, dict] = {\n" +
             "\n".join(blocks) + "\n}\n")
 
@@ -758,11 +847,14 @@ def main() -> int:
     # 20111 — variant suffixes ("Vanguard", "Sentinel") and type qualifiers
     #         ("\(Gas\)", "\(Mineral\)") referenced inside the 20101 entries
     texts_ships = load_texts(idx, {"20101", "20111"})
-    prices = load_macro_prices(idx)   # macro → average buy price (hulls + equipment)
-    hardpoints = load_hardpoints(idx) # component → {type: {size: count}}
-    ships = load_ship_data(idx, texts_ships, prices, hardpoints)
+    prices = load_macro_prices(idx)         # macro → average buy price (hulls + equipment)
+    hardpoints = load_hardpoints(idx)       # component → {type: {size: count}}
+    availability = load_macro_availability(idx)  # macro → owners + purchasable
+    ships = load_ship_data(idx, texts_ships, prices, hardpoints, availability)
     print(f"Found {len(ships)} ship macros "
-          f"({sum(1 for s in ships if s[4])} priced, {sum(1 for s in ships if s[5])} with slots)")
+          f"({sum(1 for s in ships if s[4])} priced, {sum(1 for s in ships if s[5])} with slots, "
+          f"{sum(1 for s in ships if s[7])} flown, "
+          f"{sum(1 for s in ships if s[7] and not s[6])} capture/story-only)")
 
     # ── Station stats (structure modules + shields, page 20004 for sector names) ──
     # Page 20004 is also used by gen_sector_stats_py for display-name comments.

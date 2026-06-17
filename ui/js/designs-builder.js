@@ -286,7 +286,7 @@
       (byFac[hullFactionOf(m)] = byFac[hullFactionOf(m)] || []).push([m, h]);
     const groups = Object.keys(byFac).sort().map(fac => {
       const opts = byFac[fac].sort((a, b) => a[1].name.localeCompare(b[1].name)).map(([m, h]) =>
-        `<option value="${m}" ${m === builderState.hull ? 'selected' : ''}>${h.name} · ${SIZE_WORD[sizeFromClass(h.class)] || sizeFromClass(h.class).toUpperCase()}</option>`).join('');
+        `<option value="${m}" ${m === builderState.hull ? 'selected' : ''}>${h.name} · ${SIZE_WORD[sizeFromClass(h.class)] || sizeFromClass(h.class).toUpperCase()}${h.purchasable === false ? ' · Capture Only' : ''}</option>`).join('');
       return `<optgroup label="${fac}">${opts}</optgroup>`;
     }).join('');
     // Ship icon + native select (grouped by faction); option text carries the

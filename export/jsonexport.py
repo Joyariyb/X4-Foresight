@@ -471,23 +471,45 @@ def _internal(conn, scan_id, game_time) -> list[dict]:
     } for r in rows]
 
 
-def _hull_catalog() -> dict:
-    """All hulls with equipment slots → {name, class, max_hull, price, hardpoints}.
+# Unique scripted boss/superstructure hulls — they have a real wares.xml owner
+# (so SHIP_STATS marks them flown) but aren't a normal ship anyone pilots or
+# captures; they're one-off multi-part battle set-pieces. No static-file flag
+# distinguishes this from a regular capturable Xenon/Kha'ak hull, so this list
+# is manually curated — cross-checked against qsna.eu's X4 ship builder, which
+# also omits it.
+_MANUAL_HULL_EXCLUSIONS = {'ship_xen_xl_mothership_01_a_macro'}
 
-    The blueprint builder's hull selector reads this. Keyed by macro; deployables
-    and drones (no hardpoints) are excluded so the selector only lists real ships.
+
+def _hull_catalog() -> dict:
+    """All hulls with equipment slots → {name, class, max_hull, price, hardpoints,
+    purchasable}.
+
+    The blueprint builder's hull selector reads this. Keyed by macro; deployables/
+    drones (no hardpoints), never-flown macros (flown=False — NPC skin variants,
+    escape pods, colony-ship set-piece parts; nobody in the game world ever owns
+    them), the whole ship_xs class, and _MANUAL_HULL_EXCLUSIONS are excluded so
+    the selector only lists real, player-pilotable ships. XS has no
+    player-flyable hull at all — it's drones, escape pods, satellites and
+    AI-only police escorts; a few of those have a real owner + a stray
+    engine/shield slot so they'd otherwise slip past the flown/hardpoints
+    checks (e.g. ship_arg_xs_police_01_a). purchasable is False for hulls
+    SHIP_STATS marks capture/story-only (Xenon, Kha'ak, a few unique faction
+    ships) — still real, ownable ships, just never sold at a shipyard, so the
+    UI can badge them instead of hiding them.
     """
     out = {}
     for macro, st in SHIP_STATS.items():
         hp = st.get('hardpoints')
-        if not hp:
+        if (not hp or not st.get('flown', True) or st.get('class') == 'ship_xs'
+                or macro in _MANUAL_HULL_EXCLUSIONS):
             continue
         out[macro] = {
-            'name':       resolve_ship_type(macro),
-            'class':      st.get('class'),
-            'max_hull':   st.get('max_hull'),
-            'price':      st.get('price'),
-            'hardpoints': hp,
+            'name':        resolve_ship_type(macro),
+            'class':       st.get('class'),
+            'max_hull':    st.get('max_hull'),
+            'price':       st.get('price'),
+            'hardpoints':  hp,
+            'purchasable': st.get('purchasable', True),
         }
     return out
 
