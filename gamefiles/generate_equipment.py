@@ -3,10 +3,13 @@
 # ════════════════════════════════════════════════════════════════════════════
 #
 # Builds the equipment catalog the ship-loadout feature needs: every weapon,
-# turret, shield, engine and thruster the game ships, with a readable name and
-# the stats players care about. Read straight from the .cat/.dat archives (base
-# + DLC), exactly like gamefiles/generate_data.py — generate-and-commit, so a
-# game patch shows up as a reviewable `git diff data/equipment_stats.py`.
+# turret, missile launcher/turret, shield, engine and thruster the game ships
+# (all races, no faction filter), with a readable name and the stats players
+# care about -- including the derived numbers the in-game tooltip shows
+# (sustained damage rate, time to overheat, etc.), not just the raw XML
+# values. Read straight from the .cat/.dat archives (base + DLC), exactly
+# like gamefiles/generate_data.py — generate-and-commit, so a game patch
+# shows up as a reviewable `git diff data/equipment_stats.py`.
 #
 # Run after a game update or DLC install:
 #
@@ -18,16 +21,24 @@
 #                      to a second name; a save can reference either)
 #
 # WHERE THE DATA LIVES (verified against the 9.00 files):
-#   weapons   assets/props/weaponsystems/<cat>/macros/weapon_*.xml  class="weapon"
-#   turrets   assets/props/weaponsystems/<cat>/macros/turret_*.xml  class="turret"
-#   shields   assets/props/surfaceelements/macros/shield_*.xml      class="shieldgenerator"
-#   engines   assets/props/engines/macros/engine_*.xml              class="engine"
-#   thrusters assets/props/engines/macros/thruster_*.xml            class="engine" + type="thrustertypes"
-#   bullets   assets/fx/weaponfx/macros/bullet_*.xml                class="bullet"
+#   weapons    assets/props/weaponsystems/<cat>/macros/weapon_*.xml   class="weapon"
+#   turrets    assets/props/weaponsystems/<cat>/macros/turret_*.xml   class="turret"
+#   launchers  assets/props/weaponsystems/<cat>/macros/weapon_*.xml   class="missilelauncher"
+#   m.turrets  assets/props/weaponsystems/<cat>/macros/turret_*.xml   class="missileturret"
+#   shields    assets/props/surfaceelements/macros/shield_*.xml       class="shieldgenerator"
+#   engines    assets/props/engines/macros/engine_*.xml               class="engine"
+#   thrusters  assets/props/engines/macros/thruster_*.xml             class="engine" + type="thrustertypes"
+#   bullets    assets/fx/weaponfx/macros/bullet_*.xml                 class="bullet"
+#   missiles   assets/props/weaponsystems/missile/macros/missile_*.xml class="missile"
 #
-# WEAPON DAMAGE IS ONE HOP AWAY: a weapon/turret macro doesn't hold its own
-# damage — it points at a <bullet class="bullet_..._macro"/>, and the damage
-# lives in that bullet macro. So we index the bullets first, then resolve.
+# WEAPON DAMAGE IS ONE HOP AWAY: a weapon/turret/launcher macro doesn't hold
+# its own damage — it points at a <bullet class="..._macro"/>, which names
+# either a bullet macro or (for missile launchers/turrets) a missile macro.
+# So we index bullets+missiles first, then resolve. Mines and the spacesuit
+# bomb launcher are NOT included here even though they share the
+# weaponsystems folder — verified via their component's hardpoint-mount tags
+# that they aren't ship-hardpoint equipment (mines are deployable="1"; the
+# bomblauncher mounts to a player EVA suit, not a ship).
 # ════════════════════════════════════════════════════════════════════════════
 
 import pathlib
@@ -41,7 +52,7 @@ from lxml import etree as ET
 
 from gamefiles.catalog import CatalogIndex, find_x4_install
 from gamefiles.langtext import _REF_RE, clean_text, load_texts
-from gamefiles.generate_data import load_macro_prices
+from gamefiles.generate_data import load_macro_price_ranges
 
 DATA_DIR = REPO / "data"
 
@@ -62,11 +73,20 @@ GENERATED_BANNER = (
 )
 
 # Field order for the emitted per-entry dicts: identity first, then the
-# slot-specific stats. Absent fields are simply skipped.
+# slot-specific stats. Absent fields are simply skipped. (heat_per_shot,
+# heat_initial and is_beam are intermediate values used while computing the
+# fields below and are deliberately NOT listed here, so they never reach the
+# generated file.)
 _FIELD_ORDER = [
-    "slot", "name", "mk", "size", "race", "group", "price",
+    "slot", "class", "name", "mk", "size", "race", "group",
+    "price", "price_min", "price_max",
     # weapon / turret
-    "damage_hull", "damage_shield", "reload_rate", "range_m",
+    "damage_hull", "damage_shield", "damage_hull_while_shielded",
+    "reload_rate", "range_m", "projectile_speed_m_s",
+    "ammo_clip", "ammo_clip_reload_s",
+    "rotation_speed", "rotation_accel", "hull_max", "storage_capacity",
+    "damage_rate_burst", "damage_rate_sustained",
+    "time_to_overheat", "cooldown_duration",
     # shield
     "capacity", "recharge_rate", "recharge_delay",
     # engine
@@ -120,6 +140,27 @@ def _round(el, attr: str, ndigits: int = 1):
         return None
 
 
+def _float(el, attr: str):
+    """Attribute as an unrounded float, or None if missing/blank/non-numeric."""
+    if el is None:
+        return None
+    v = el.get(attr)
+    try:
+        return float(v) if v not in (None, "") else None
+    except (ValueError, TypeError):
+        return None
+
+
+def _num(v):
+    """Round to 1dp, then collapse to a plain int when that's exact (X4 damage/
+    capacity values are almost always whole numbers; keeps the generated file's
+    existing int-heavy style instead of sprouting '.0' on every multiplied value)."""
+    if v is None:
+        return None
+    r = round(v, 1)
+    return int(r) if r == int(r) else r
+
+
 def _glob(idx: CatalogIndex, *patterns: str) -> list[str]:
     """Union of catalog matches for several wildcards, deduped and sorted."""
     seen: set[str] = set()
@@ -133,16 +174,48 @@ def _glob(idx: CatalogIndex, *patterns: str) -> list[str]:
 # ──────────────────────────────────────────────────────────────────────────
 
 def load_bullets(idx: CatalogIndex) -> dict[str, dict]:
-    """macro id → {damage_hull, damage_shield, reload_rate, range_m}.
+    """macro id → per-shot combat stats, for everything a <bullet class=.../>
+    can point at: ordinary bullets AND missile macros (a missilelauncher/
+    missileturret's <bullet class=.../> points at a missile_..._macro the
+    exact same way a normal weapon's points at a bullet_..._macro -- just
+    with <explosiondamage>/<missile> instead of <damage>/<bullet>).
 
-    A weapon/turret's <bullet class="X"/> names one of these; X4 keeps the
-    actual damage on the bullet, not the weapon. Range is the bullet's reach:
-    speed (m/s) × lifetime (s).
+      damage_hull, damage_shield, damage_hull_while_shielded
+                  Per-SHOT damage, already multiplied by amount x barrelamount
+                  -- X4 weapons often release several barrels/pellets per
+                  trigger pull (e.g. the L Pulse Turret fires 2 barrels per
+                  shot; the Shard Turret fires 6 pellets), and the raw
+                  <damage value=> is only ONE of those. damage_shield defaults
+                  to the hull value when the bullet has no separate shield=
+                  attribute (no attribute means "same as hull", not "zero").
+                  Falls back to <areadamage value=> when <damage> has no
+                  value= at all (flak-type weapons keep their damage there).
+      reload_rate Sustained shots/sec, averaged over a full ammo-clip-then-
+                  reload cycle for weapons that have one. <reload> carries
+                  EITHER rate= (shots/sec) or time= (seconds/shot) -- the same
+                  stat written two different ways, not two mechanics (e.g. the
+                  ARG L and M Pulse Turrets are the same weapon family and use
+                  time=/rate= respectively) -- both are normalized here.
+      heat_per_shot, heat_initial
+                  Heat this bullet generates per shot (already x amount x
+                  barrelamount) and any heat the weapon starts "pre-loaded"
+                  with. Combined with the WEAPON's own <heat overheat= ...>
+                  block in load_equipment() to get time-to-overheat/cooldown
+                  -- not emitted directly, intermediate values only.
+      range_m, projectile_speed_m_s, ammo_clip, ammo_clip_reload_s
+                  Effective range (explicit <bullet range=> if present, else
+                  speed x lifetime), raw projectile speed, and the raw ammo
+                  clip size/reload for hover display.
     """
     bullets: dict[str, dict] = {}
-    for vp in _glob(idx,
-                    "assets/fx/weaponfx/macros/bullet_*.xml",
-                    "extensions/*/assets/fx/weaponfx/macros/bullet_*.xml"):
+    paths = _glob(
+        idx,
+        "assets/fx/weaponfx/macros/bullet_*.xml",
+        "extensions/*/assets/fx/weaponfx/macros/bullet_*.xml",
+        "assets/props/weaponsystems/*/macros/missile_*.xml",
+        "extensions/*/assets/props/weaponsystems/*/macros/missile_*.xml",
+    )
+    for vp in paths:
         root = ET.fromstring(idx.read(vp))
         macro_el = root.find(".//macro")
         if macro_el is None:
@@ -151,26 +224,88 @@ def load_bullets(idx: CatalogIndex) -> dict[str, dict]:
         if not mid:
             continue
 
-        dmg_el    = root.find(".//damage")
+        is_missile = macro_el.get("class") == "missile"
+        phys_el = root.find(".//missile") if is_missile else root.find(".//bullet")
+        dmg_el  = root.find(".//explosiondamage") if is_missile else root.find(".//damage")
+        area_el = root.find(".//areadamage")
         reload_el = root.find(".//reload")
-        bullet_el = root.find(".//bullet")
+        ammo_el   = root.find(".//ammunition")
+        heat_el   = root.find(".//heat")
+
+        amount  = _int(phys_el, "amount")      or 1
+        barrels = _int(phys_el, "barrelamount") or 1
+        multiplier = amount * barrels
 
         entry: dict = {}
-        if (v := _int(dmg_el, "value"))  is not None: entry["damage_hull"]   = v
-        if (v := _int(dmg_el, "shield")) is not None: entry["damage_shield"] = v
-        if (v := _round(reload_el, "rate", 2)) is not None: entry["reload_rate"] = v
 
-        # Range: beam bullets carry an explicit range= (their speed is set to
-        # light-speed, so speed×lifetime is meaningless). Prefer that; fall back
-        # to speed (m/s) × lifetime (s) for ordinary projectiles.
-        rng = _int(bullet_el, "range")
-        if rng is not None:
-            entry["range_m"] = rng
-        else:
-            speed    = _round(bullet_el, "speed",    1)
-            lifetime = _round(bullet_el, "lifetime", 3)
-            if speed and lifetime:
-                entry["range_m"] = round(speed * lifetime)
+        # damage_hull: <damage value=>, or <areadamage value=> when <damage>
+        # has none at all (flak-type weapons -- confirmed against the ARG M
+        # Flak Turret tooltip this session).
+        dmg_hull = _float(dmg_el, "value")
+        if dmg_hull is None:
+            dmg_hull = _float(area_el, "value")
+        if dmg_hull is not None:
+            # Beam bullets (light-speed projectiles) deal 4x the listed shield
+            # damage in-game -- confirmed against two real tooltips this
+            # session (ARG M Beam Turret, generic M Beam Emitter). The
+            # mechanism isn't in any libraries/*.xml file; likely hardcoded
+            # engine behaviour. Flagging as an open question, not fully
+            # explained -- the per-slot headline-rate split this also needs
+            # is handled in load_equipment(), where the slot is known.
+            speed = _float(phys_el, "speed")
+            is_beam = bool(speed and speed >= 1e8)
+            dmg_shield = _float(dmg_el, "shield")
+            if dmg_shield is None:
+                dmg_shield = _float(area_el, "shield")
+            if dmg_shield is None:
+                dmg_shield = dmg_hull
+            if is_beam:
+                dmg_shield *= 4
+
+            entry["damage_hull"]   = _num(dmg_hull * multiplier)
+            entry["damage_shield"] = _num(dmg_shield * multiplier)
+            dmg_hull_shielded = _float(dmg_el, "hull")
+            if dmg_hull_shielded:
+                entry["damage_hull_while_shielded"] = _num(dmg_hull_shielded * multiplier)
+            entry["is_beam"] = is_beam
+
+        # Range + projectile speed.
+        speed    = _float(phys_el, "speed")
+        lifetime = _float(phys_el, "lifetime")
+        rng      = _float(phys_el, "range")
+        if rng:
+            entry["range_m"] = _num(rng)
+        elif speed and lifetime:
+            entry["range_m"] = _num(speed * lifetime)
+        if speed is not None:
+            entry["projectile_speed_m_s"] = _num(speed)
+
+        # Reload: normalize rate=/time= to an interval, then average over the
+        # ammo clip (if any) for the true sustained rate of fire.
+        rate     = _float(reload_el, "rate")
+        interval = (1.0 / rate) if rate else _float(reload_el, "time")
+        clip        = _float(ammo_el, "value")
+        clip_reload = _float(ammo_el, "reload")
+        if interval:
+            if clip and clip_reload is not None:
+                cycle = (clip - 1) * interval + clip_reload
+                sustained = (clip / cycle) if cycle else None
+            else:
+                sustained = 1.0 / interval
+            if sustained:
+                entry["reload_rate"] = round(sustained, 3)
+        if clip:
+            entry["ammo_clip"] = int(clip)
+        if clip_reload is not None:
+            entry["ammo_clip_reload_s"] = clip_reload
+
+        # Heat-per-shot (the weapon's own overheat/coolrate/cooldelay block
+        # lives on the WEAPON macro, not here -- load_equipment() combines
+        # the two once it knows which weapon/turret this bullet belongs to).
+        heat_per_shot = _float(heat_el, "value")
+        if heat_per_shot:
+            entry["heat_per_shot"] = heat_per_shot * multiplier
+            entry["heat_initial"]  = (_float(heat_el, "initial") or 0.0) * multiplier
 
         if entry:
             bullets[mid] = entry
@@ -181,7 +316,7 @@ def load_bullets(idx: CatalogIndex) -> dict[str, dict]:
 #  Pass 2 — equipment macros
 # ──────────────────────────────────────────────────────────────────────────
 
-def load_equipment(idx: CatalogIndex, bullets: dict[str, dict], prices: dict[str, int]):
+def load_equipment(idx: CatalogIndex, bullets: dict[str, dict], prices: dict[str, tuple[int, int, int]]):
     """Returns (records, aliases, name_pages).
 
     records   list of {macro, slot, name_ref, ...stats} (name still unresolved)
@@ -222,16 +357,27 @@ def load_equipment(idx: CatalogIndex, bullets: dict[str, dict], prices: dict[str
         ident_type = ident.get("type", "") if ident is not None else ""
 
         # ── classify into a slot bucket ──────────────────────────────────────
+        # missileturret/missilelauncher are real ship-hardpoint equipment, not
+        # deployables -- confirmed via their component's hardpoint-mount tags
+        # this session ("turret ... missile" / "...weapon...missile"), unlike
+        # mines (deployable="1") or the spacesuit bomblauncher (a player EVA
+        # item, mount tag "...spacesuit weapon"). They slot in exactly where
+        # their name suggests: a launcher takes a weapon mount, a turret takes
+        # a turret mount.
         if cls == "weapon":
             slot = "weapon"
         elif cls == "turret":
+            slot = "turret"
+        elif cls == "missilelauncher":
+            slot = "weapon"
+        elif cls == "missileturret":
             slot = "turret"
         elif cls == "shieldgenerator":
             slot = "shield"
         elif cls == "engine":
             slot = "thruster" if ident_type == "thrustertypes" else "engine"
         else:
-            continue   # bullets, effects, decorative — not equipment
+            continue   # bullets, mines, effects, decorative — not equipment
 
         # ── an alias-only macro (no identification of its own) inherits from
         #    the macro it points at; record and resolve after concrete macros. ─
@@ -262,19 +408,72 @@ def load_equipment(idx: CatalogIndex, bullets: dict[str, dict], prices: dict[str
         race = ident.get("makerrace")
         if race:
             rec["race"] = race
-        price = prices.get(macro)
-        if price:
-            rec["price"] = price
+        price_range = prices.get(macro)
+        if price_range:
+            rec["price"] = price_range[1]       # average — unchanged existing behaviour
+            rec["price_min"] = price_range[0]
+            rec["price_max"] = price_range[2]   # live shop price can exceed even this
 
         # ── slot-specific stats ──────────────────────────────────────────────
         if slot in ("weapon", "turret"):
+            rec["class"] = cls   # tells a missile-/regular- turret/weapon apart for the UI
             grp = _group_from_path(vp)
             if grp:
                 rec["group"] = grp
-            # damage comes from the referenced bullet macro
+            if (v := _int(root.find(".//rotationspeed"), "max"))      is not None: rec["rotation_speed"] = v
+            if (v := _int(root.find(".//rotationacceleration"), "max")) is not None: rec["rotation_accel"] = v
+            if (v := _int(root.find(".//hull"), "max"))               is not None: rec["hull_max"] = v
+            if (v := _int(root.find(".//storage"), "capacity"))       is not None: rec["storage_capacity"] = v
+
+            # damage/reload/heat-per-shot come from the referenced bullet (or
+            # missile) macro
             bullet_el = root.find(".//bullet")
             bref = (bullet_el.get("class") or "").lower() if bullet_el is not None else ""
             rec.update(bullets.get(bref, {}))
+
+            # Burst damage rate: hull_damage x reload_rate normally. Beam
+            # weapons are the validated exception -- the headline number is
+            # built from a x4'd hull value for turret-class beams (ARG M Beam
+            # Turret: 126 hull x4 x 0.143/s = 72.0, matching the real
+            # tooltip) but from the already-x4'd damage_shield as-is for
+            # weapon-class beams (M Beam Emitter: 180 shield x 1.0/s = 180,
+            # also matching). damage_hull itself stays UNSCALED in storage so
+            # the displayed "Hull Damage" stat is correct either way -- only
+            # this rate calc needs the x4 on the turret side. Not generalized
+            # further without more data points; see load_bullets()'s comment.
+            rate = rec.get("reload_rate")
+            if rate:
+                if rec.get("is_beam"):
+                    base = rec.get("damage_shield") if slot == "weapon" else (rec.get("damage_hull") or 0) * 4
+                else:
+                    base = rec.get("damage_hull")
+                if base is not None:
+                    rec["damage_rate_burst"] = _num(base * rate)
+
+            # Heat: a second, independent throttle on top of the ammo clip,
+            # only present on items with a weapon-level <heat> block (most
+            # turrets don't have one in this dataset). Falls back to the
+            # burst rate (never further throttled) when there's no heat data.
+            heat_el = root.find(".//heat")
+            heat_per_shot = rec.get("heat_per_shot")
+            if heat_el is not None and heat_per_shot and rate:
+                overheat = _float(heat_el, "overheat")
+                coolrate = _float(heat_el, "coolrate")
+                if overheat and coolrate:
+                    initial           = rec.get("heat_initial") or 0.0
+                    cooldelay         = _float(heat_el, "cooldelay") or 0.0
+                    overheatcooldelay = _float(heat_el, "overheatcooldelay") or 0.0
+                    avg_heat_rate = heat_per_shot * rate
+                    if avg_heat_rate:
+                        tto = (overheat - initial) / avg_heat_rate
+                        cooldown = cooldelay + overheatcooldelay + overheat / coolrate
+                        rec["time_to_overheat"]  = round(tto, 1)
+                        rec["cooldown_duration"] = round(cooldown, 1)
+                        if rec.get("damage_rate_burst") is not None:
+                            rec["damage_rate_sustained"] = _num(
+                                rec["damage_rate_burst"] * tto / (tto + cooldown))
+            if "damage_rate_sustained" not in rec and rec.get("damage_rate_burst") is not None:
+                rec["damage_rate_sustained"] = rec["damage_rate_burst"]
 
         elif slot == "shield":
             recharge = root.find(".//recharge")
@@ -339,10 +538,24 @@ def gen_equipment_py(records: list[dict], aliases: dict[str, str]) -> str:
     return (
         GENERATED_BANNER +
         "\n# Equipment macro id → static game stats.\n"
-        "#   slot           — weapon / turret / shield / engine / thruster\n"
+        "#   slot, class    — slot is weapon/turret/shield/engine/thruster (what hardpoint\n"
+        "#                    it fits); class is the raw macro class (e.g. missileturret),\n"
+        "#                    kept alongside slot so the UI can tell those apart\n"
         "#   name           — display name (identification ref, t-file resolved)\n"
         "#   mk, size, race — mark, size class (s/m/l/xl), maker faction\n"
-        "#   weapon/turret  — damage_hull, damage_shield, reload_rate, range_m\n"
+        "#   price, price_min, price_max — average/min/max wares.xml buy price. The live\n"
+        "#                    in-game shop price can run above even price_max (reputation/\n"
+        "#                    station markup the static files don't capture) — treat as a\n"
+        "#                    range, not an exact figure\n"
+        "#   weapon/turret  — damage_hull, damage_shield, damage_hull_while_shielded (all\n"
+        "#                    per-shot, already scaled by barrels/pellets-per-shot),\n"
+        "#                    reload_rate (sustained shots/sec), range_m, projectile_speed_m_s,\n"
+        "#                    ammo_clip, ammo_clip_reload_s, rotation_speed, rotation_accel,\n"
+        "#                    hull_max (its own hitpoints), storage_capacity (missile bay,\n"
+        "#                    missileturret/missilelauncher only), damage_rate_burst,\n"
+        "#                    damage_rate_sustained, time_to_overheat, cooldown_duration\n"
+        "#                    (the last 4 are derived, matched against real tooltips —\n"
+        "#                    see gamefiles/generate_equipment.py's load_bullets/load_equipment)\n"
         "#   shield         — capacity, recharge_rate, recharge_delay\n"
         "#   engine         — thrust_forward, thrust_reverse, travel_thrust, boost_thrust\n"
         "#   thruster       — strafe, pitch, yaw, roll\n"
@@ -368,9 +581,9 @@ def main() -> int:
     idx = CatalogIndex.from_game_dir(game_dir)
 
     bullets = load_bullets(idx)
-    print(f"Indexed {len(bullets)} bullet macros (damage table)")
+    print(f"Indexed {len(bullets)} bullet/missile macros (damage table)")
 
-    prices = load_macro_prices(idx)   # macro → average buy price
+    prices = load_macro_price_ranges(idx)   # macro → (min, average, max) buy price
     records, aliases, name_pages = load_equipment(idx, bullets, prices)
     print(f"Found {len(records)} equipment macros, {len(aliases)} alias refs")
 

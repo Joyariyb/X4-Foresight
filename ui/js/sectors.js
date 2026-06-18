@@ -375,6 +375,75 @@
       return `<div style="min-width:200px;max-width:280px;padding:2px 0">${sections || '—'}</div>`;
     }
 
+    function weaponTipHtml(e) {
+      // Weapon/turret stats hover — Compatibility + Price up top (no header),
+      // then three sections named exactly what the real in-game tooltip
+      // calls them: Weapon Damage Rate, Projectile, Heat. Every formula here
+      // (including the beam-weapon ×4 shield quirk and the burst/sustained
+      // split) was reverse-engineered and validated against real in-game
+      // tooltips this session — see gamefiles/generate_equipment.py.
+      const fmt = n => Math.round(n).toLocaleString();
+      const km  = n => (n / 1000).toFixed(1) + ' km';
+      const sp  = n => n >= 1e8 ? '1c' : fmt(n) + ' m/s';
+
+      // Missile/Standard/Advanced — a hypothesis from 2 confirmed data points
+      // this session (every Argon-branded item checked said Standard, every
+      // race-less "gen_" weapon said Advanced), not proven across the whole
+      // catalog. Easy to revisit here without touching the data pipeline.
+      const compat = (e.class === 'missileturret' || e.class === 'missilelauncher')
+        ? 'Missile' : (e.race ? 'Standard' : 'Advanced');
+
+      const row = (label, value, color) => value == null ? '' :
+        `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:1px 0">
+           <span style="color:var(--text-dim);font-size:11px">${label}</span>
+           <span style="font-family:var(--font-mono);font-size:11px;white-space:nowrap${color ? `;color:${color}` : ''}">${value}</span>
+         </div>`;
+
+      const section = (icon, color, title, rows) => !rows ? '' :
+        `<div style="margin:8px 0 2px">
+           <div style="display:flex;align-items:center;gap:5px;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:${color};margin-bottom:4px;padding-bottom:3px;border-bottom:1px solid var(--border)">
+             <i class="ti ${icon}" style="font-size:11px"></i>${title}
+           </div>
+           ${rows}
+         </div>`;
+
+      let dmgRows = '';
+      if (e.damage_rate_burst != null) {
+        if (e.time_to_overheat != null) {
+          dmgRows += row('Burst Weapon Damage', `${fmt(e.damage_rate_burst)} MW`, 'var(--red)');
+          dmgRows += row('Sustained Weapon Damage', `${fmt(e.damage_rate_sustained)} MW`, 'var(--amber)');
+        } else {
+          dmgRows += row('Weapon Damage', `${fmt(e.damage_rate_burst)} MW`, 'var(--red)');
+        }
+      }
+
+      let projRows = '';
+      projRows += row('Shield Damage', e.damage_shield != null ? `${fmt(e.damage_shield)} MJ` : null);
+      projRows += row('Hull Damage (Shielded)', e.damage_hull != null ? `${fmt(e.damage_hull_while_shielded || 0)} MJ` : null);
+      projRows += row('Hull Damage', e.damage_hull != null ? `${fmt(e.damage_hull)} MJ` : null);
+      projRows += row('Effective Range', e.range_m != null ? km(e.range_m) : null);
+      projRows += row('Projectile Speed', e.projectile_speed_m_s != null ? sp(e.projectile_speed_m_s) : null);
+
+      let heatRows = '';
+      heatRows += row('Rate of Fire', e.reload_rate != null ? `${e.reload_rate.toFixed(2)} /s` : null);
+      heatRows += row('Rotation Speed', e.rotation_speed != null ? `${e.rotation_speed}°/s` : null);
+      heatRows += row('Max Hull Integrity', e.hull_max != null ? `${fmt(e.hull_max)} MJ` : null);
+      if (e.time_to_overheat != null) {
+        heatRows += row('Time to Overheat', `${e.time_to_overheat.toFixed(1)} s`);
+        heatRows += row('Cooldown Duration', `${e.cooldown_duration.toFixed(1)} s`);
+      }
+
+      return `<div style="min-width:215px;max-width:280px;padding:2px 0">
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">${e.name}${e.mk ? ` Mk${e.mk}` : ''}</div>
+        ${row('Compatibility', compat)}
+        ${row('Storage Capacity', e.storage_capacity != null ? fmt(e.storage_capacity) : null)}
+        ${row('Price', e.price_min != null ? `${fmt(e.price_min)}–${fmt(e.price_max)} Cr` : (e.price != null ? `${fmt(e.price)} Cr` : null))}
+        ${section('ti-bolt', 'var(--red)', 'Weapon Damage Rate', dmgRows)}
+        ${section('ti-target', 'var(--teal)', 'Projectile', projRows)}
+        ${section('ti-flame', 'var(--amber)', 'Heat', heatRows)}
+      </div>`;
+    }
+
     function budgetTipHtml(d) {
       // Per-slice economy tooltip: ware name in its colour, share of budget, the
       // amount × price = value figures, and which rule set the value (basis).
@@ -599,7 +668,7 @@
       document.querySelectorAll('.avg-bars rect.avg-hot').forEach(r => r.classList.remove('avg-hot'));
       document.querySelectorAll('.avg-hot-line').forEach(l => { l.style.opacity = '0'; });
 
-      const el = e.target.closest('[data-hull-tip],[data-pilot-skills],[data-storage-tip],[data-modules-tip],[data-loadout-tip],[data-fleet-tip],[data-budget-tip],[data-cashflow-tip],[data-cfdetail],[data-cfware],[data-avgtip]');
+      const el = e.target.closest('[data-hull-tip],[data-pilot-skills],[data-storage-tip],[data-modules-tip],[data-loadout-tip],[data-weapon-tip],[data-fleet-tip],[data-budget-tip],[data-cashflow-tip],[data-cfdetail],[data-cfware],[data-avgtip]');
       if (!el) { tip.style.display = 'none'; return; }
 
       if (el.dataset.cfdetail) {
@@ -698,6 +767,11 @@
       } else if (el.dataset.loadoutTip) {
         // Ship equipment: grouped by slot with faction + counts
         tip.innerHTML = loadoutTipHtml(JSON.parse(decodeURIComponent(el.dataset.loadoutTip)));
+        tip.style.color      = '';
+        tip.style.whiteSpace = 'normal';
+      } else if (el.dataset.weaponTip) {
+        // Ship Builder weapon/turret row: full combat stats
+        tip.innerHTML = weaponTipHtml(JSON.parse(decodeURIComponent(el.dataset.weaponTip)));
         tip.style.color      = '';
         tip.style.whiteSpace = 'normal';
       } else if (el.dataset.fleetTip) {

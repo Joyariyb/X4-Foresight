@@ -46,6 +46,7 @@ elif hasattr(sys.stdout, 'reconfigure'):
 
 from PyQt6.QtCore import QObject, QThread, QUrl, Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtWebChannel import QWebChannel
+from PyQt6.QtWebEngineCore import QWebEngineProfile
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWidgets import (
     QApplication, QDialog, QHBoxLayout, QLabel, QListWidget,
@@ -292,6 +293,16 @@ class EmpireWindow(QMainWindow):
         self.setWindowTitle("X4 · Empire Intelligence")
         self.resize(1536, 960)        # 1536px is the UI's zoom=1.0 reference width
         self.setMinimumSize(900, 600)
+
+        # QtWebEngine's default profile keeps a persistent on-disk HTTP cache
+        # that survives full app restarts -- it caches the ui/css and ui/js
+        # files loaded via file://, so editing them while developing (or
+        # pulling an update from git) can silently keep showing stale styles
+        # forever. There's no upside to caching local files for this app, so
+        # disable it outright rather than rely on the user clearing a cache
+        # they don't know exists.
+        QWebEngineProfile.defaultProfile().setHttpCacheType(
+            QWebEngineProfile.HttpCacheType.NoCache)
 
         self.view    = QWebEngineView()
         self.channel = QWebChannel()

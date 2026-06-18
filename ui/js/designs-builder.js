@@ -586,12 +586,17 @@
       }).join('');
       const headerCells = [0,1,2,3].map(i => `<span class="boh">${defs[i] ? defs[i][1] : ''}</span>`).join('');
 
+      // Weapon/turret rows carry data-weapon-tip for the full stat hover
+      // (sectors.js's shared tooltip dispatcher) — shields/engines/thrusters
+      // don't have the damage/heat fields it shows, so skip them for now.
+      const wantsTip = sel === 'weapon' || sel === 'turret';
       const opts = Object.entries(EQUIPMENT_CATALOG)
         .filter(([, e]) => e.slot === sel && e.size === selSize)
         .sort((a, b) => (a[1].price || 0) - (b[1].price || 0))
         .map(([mac, e]) => {
           const on = fitted.has(mac);
-          return `<div class="borow ${on ? 'on' : ''}" onclick="builderFitAdd('${sel}','${mac}')">
+          const tipAttr = wantsTip ? ` data-weapon-tip="${encodeURIComponent(JSON.stringify(e))}"` : '';
+          return `<div class="borow ${on ? 'on' : ''}" onclick="builderFitAdd('${sel}','${mac}')"${tipAttr}>
             ${designBadge(e.race)}<span style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${on ? 'color:var(--lime)' : ''}">${e.name}${e.mk ? ` Mk${e.mk}` : ''}</span>
             ${statCells(e)}<span class="dcost">${e.price != null ? designCr(e.price) : '—'}</span>
             <i class="ti ${on ? 'ti-check' : 'ti-plus'}" style="color:var(--lime);font-size:13px"></i></div>`;

@@ -86,9 +86,10 @@ def load_merged_wares(idx: CatalogIndex):
 def load_macro_prices(idx: CatalogIndex) -> dict[str, int]:
     """component macro id (lowercase) → average buy price, from wares.xml.
 
-    Ships and equipment are sold as wares; each priced ware links back to its
-    component via <component ref="..._macro"/>, so the ref IS the macro id. Used
-    to price hulls in ship_stats and equipment in the equipment catalog.
+    Ships are sold as wares; each priced ware links back to its component via
+    <component ref="..._macro"/>, so the ref IS the macro id. Used to price
+    hulls in ship_stats. Equipment uses load_macro_price_ranges() instead —
+    see its docstring for why a single number isn't enough there.
     """
     root = load_merged_wares(idx)
     prices: dict[str, int] = {}
@@ -103,6 +104,35 @@ def load_macro_prices(idx: CatalogIndex) -> dict[str, int]:
                 prices[ref] = int(price.get("average", 0))
             except (ValueError, TypeError):
                 pass
+    return prices
+
+
+def load_macro_price_ranges(idx: CatalogIndex) -> dict[str, tuple[int, int, int]]:
+    """component macro id (lowercase) → (min, average, max) buy price.
+
+    Equipment-specific sibling of load_macro_prices(). The live in-game shop
+    price observed during testing (e.g. 64718cr for a turret whose static
+    range here was 43277-52894) runs ABOVE even the static max — there's a
+    reputation/station markup the .cat files can't capture. A single
+    "average" number would silently look more precise than it is; exposing
+    the range is honest about that uncertainty for equipment tooltips.
+    """
+    root = load_merged_wares(idx)
+    prices: dict[str, tuple[int, int, int]] = {}
+    for w in root.findall("ware"):
+        comp  = w.find("component")
+        price = w.find("price")
+        if comp is None or price is None:
+            continue
+        ref = (comp.get("ref") or "").lower()
+        if not ref:
+            continue
+        try:
+            prices[ref] = (int(price.get("min", 0)),
+                           int(price.get("average", 0)),
+                           int(price.get("max", 0)))
+        except (ValueError, TypeError):
+            pass
     return prices
 
 
