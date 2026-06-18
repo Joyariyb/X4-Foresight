@@ -55,10 +55,14 @@
     .hull-bar-wrap { width: 80px; height: 11px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 0; }
     .hull-bar { height: 100%; border-radius: 2px; }
 
-    /* ── HULL HOVER TOOLTIP ── */
+    /* ── SHARED HOVER TOOLTIP ── (id is a legacy name from when it was hull-only;
+       every hover popup in the app — pilot skills, budget, cashflow, loadout,
+       weapon stats, etc. — reuses this one element via sectors.js's dispatcher)
+       Fixed background instead of var(--bg-panel) so it reads the same against
+       every tab's differently-coloured backdrop, instead of blending in on some. */
     #hull-tip {
       position: fixed; display: none; padding: 3px 8px;
-      background: var(--bg-panel); border: 1px solid var(--border);
+      background: #0f1712; border: 1px solid var(--border);
       font-family: var(--font-mono); font-size: 13px; color: var(--lime);
       white-space: nowrap; border-radius: 2px; pointer-events: none; z-index: 1000;
     }
