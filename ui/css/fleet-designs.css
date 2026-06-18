@@ -72,6 +72,15 @@
     .dsect-hd .lbl { font-family: var(--font-cond); font-weight: 600; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; }
     .dsect-hd .slots { margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); }
     .dsect-body { padding: 5px 10px 7px; }
+    /* Per-size sub-group inside a category body — each mount size (L, M, ...)
+       gets its own outlined, mostly-transparent "inner box" (border/bg tinted
+       per SIZE_BOX in JS) so items fitted under different sizes read as
+       physically separate compartments rather than one flat list. */
+    .dsub-box { border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px 6px; margin-top: 6px; }
+    .dsub-box:first-child { margin-top: 0; }
+    .dsub-hd { display: flex; align-items: center; gap: 8px; padding: 3px 0 3px; }
+    .dsub-badge { font-family: var(--font-mono); font-weight: 700; font-size: 10px; letter-spacing: 0.04em; padding: 1px 7px; border-radius: 2px; border: 1px solid; }
+    .dsub-cnt { margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); }
     /* Narrower than the old full-width card row — this now lives in a half-card
        column, so every fixed column lost a few px versus the original layout. */
     .drow { display: grid; grid-template-columns: 28px 38px minmax(70px,1fr) 44px 44px 44px 44px 64px; align-items: center; gap: 4px 6px; padding: 2px 0; }
@@ -112,18 +121,25 @@
     .bsave  { background: rgba(57,255,20,0.1); border: 1px solid var(--lime); color: var(--lime); border-radius: 3px; padding: 8px 16px; font-family: var(--font-cond); font-weight: 600; font-size: 14px; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; }
     .bsave:hover { filter: drop-shadow(0 0 6px rgba(57,255,20,0.45)); }
     .btwo   { display: grid; grid-template-columns: 300px minmax(0,1fr); gap: 12px; align-items: start; }
-    .bcat   { border: 1px solid var(--border); border-radius: 4px; background: var(--bg-panel); margin-bottom: 7px; }
-    .bcat.sel { border-color: var(--lime); box-shadow: 0 0 9px rgba(57,255,20,0.2); }
-    .bcat-h { display: flex; align-items: center; gap: 8px; padding: 5px 9px; cursor: pointer; }
+    .bcat   { border: 1px solid var(--border); border-radius: 4px; background: var(--bg-panel); margin-bottom: 7px; padding-bottom: 7px; }
+    .bcat-h { display: flex; align-items: center; gap: 8px; padding: 5px 9px; }
     .bcat-h i { font-size: 15px; }
     .bcat-h .lbl { font-family: var(--font-cond); font-weight: 600; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; }
     .bcat-h .cap { margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); }
-    .bfr    { display: flex; align-items: center; gap: 9px; padding: 3px 9px; }
+    /* Same per-size "inner box" idiom as .dsub-box on the design cards — each
+       mount size is its own outlined, mostly-transparent compartment (tinted
+       per SIZE_BOX in JS), with its own Fit button scoped to that size only. */
+    .bsub-box { border: 1px solid var(--border); border-radius: 4px; margin: 0 9px 6px; padding: 3px 7px 6px; }
+    .bsub-box.sel { border-color: var(--lime) !important; box-shadow: 0 0 9px rgba(57,255,20,0.2); }
+    .bsub-hd { display: flex; align-items: center; gap: 8px; padding: 3px 2px 3px; }
+    .bsub-badge { font-family: var(--font-mono); font-weight: 700; font-size: 9px; letter-spacing: 0.04em; padding: 1px 6px; border-radius: 2px; border: 1px solid; }
+    .bsub-cnt { margin-left: auto; font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); }
+    .bfr    { display: flex; align-items: center; gap: 9px; padding: 3px 2px; }
     .bstep  { display: flex; align-items: center; gap: 5px; }
     .bsb    { width: 17px; height: 17px; display: flex; align-items: center; justify-content: center; border: 1px solid #30363d; border-radius: 2px; color: var(--text-dim); font-family: var(--font-mono); font-size: 12px; cursor: pointer; user-select: none; }
     .bsb:hover { border-color: var(--teal); color: var(--teal); }
     .bcbox  { min-width: 24px; text-align: center; font-family: var(--font-mono); font-size: 12px; color: var(--lime); border: 1px solid rgba(45,212,191,0.4); border-radius: 3px; padding: 1px 4px; background: rgba(45,212,191,0.06); }
-    .bfit   { display: block; margin: 5px 9px 8px; text-align: center; padding: 5px; border: 1px solid var(--lime); border-radius: 3px; color: var(--lime); font-family: var(--font-cond); font-weight: 600; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; background: rgba(57,255,20,0.06); }
+    .bfit   { display: block; margin: 5px 0 0; text-align: center; padding: 5px; border: 1px solid var(--lime); border-radius: 3px; color: var(--lime); font-family: var(--font-cond); font-weight: 600; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; background: rgba(57,255,20,0.06); }
     .bfit:hover { box-shadow: 0 0 9px rgba(57,255,20,0.3); }
     .bopts  { border: 1px solid rgba(57,255,20,0.35); border-radius: 4px; background: var(--bg-panel); box-shadow: 0 0 10px rgba(57,255,20,0.12); }
     .bopts-h { display: flex; align-items: center; gap: 8px; padding: 5px 9px; border-bottom: 1px solid var(--border); background: rgba(57,255,20,0.05); }

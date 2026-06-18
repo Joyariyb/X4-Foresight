@@ -106,6 +106,22 @@
   // order stays stable when the primary key ties.
   let designsSortBy = 'used';
   const SIZE_RANK = { xs: 0, s: 1, m: 2, l: 3, xl: 4 };
+  // Largest-first comparator for mount-size keys ('l','m',...) — shared by the
+  // design card and blueprint builder so a category's size groups (and their
+  // "fitted/cap SIZE" header fractions) always list big mounts before small ones.
+  const sizeRank = s => SIZE_RANK[(s || '').toLowerCase()] ?? -1;
+  const bySizeDesc = (a, b) => sizeRank(b) - sizeRank(a);
+  // Border/fill colour per mount size, used to give each size's "inner box"
+  // (design card sub-groups, builder size groups) its own tint — same hue
+  // language as SIZE_TINT/SIZE_COLOURS elsewhere, but as plain hex since the
+  // box border needs hexA() alpha-blending rather than a bare CSS var().
+  const SIZE_BOX = {
+    xs: { hex: '#8b949e', bg: 'rgba(139,148,158,0.05)' },
+    s:  { hex: '#8b949e', bg: 'rgba(139,148,158,0.05)' },
+    m:  { hex: '#2dd4bf', bg: 'rgba(45,212,191,0.05)' },
+    l:  { hex: '#d29922', bg: 'rgba(210,153,34,0.05)' },
+    xl: { hex: '#a371f7', bg: 'rgba(163,113,247,0.05)' },
+  };
   const DESIGN_SORTERS = {
     used:    (a, b) => b.ships.length - a.ships.length || a.type.localeCompare(b.type),
     size:    (a, b) => (SIZE_RANK[(a.hullSize || '').toLowerCase()] ?? 99) - (SIZE_RANK[(b.hullSize || '').toLowerCase()] ?? 99) || a.type.localeCompare(b.type),
@@ -285,24 +301,42 @@
       const items = (d.loadout || []).filter(e => e.slot === slot && !e.name.endsWith('_macro'));
       if (!items.length) continue;
       const defs = SLOT_STATS[slot] || [];
-      // Section header right side: "fitted / capacity · sizes" when the hull's
-      // hardpoints are known, else just the mount sizes seen on the fitted gear.
+      // Mount sizes never get pooled into one combined total anymore — a hull
+      // with 9 L and 8 M turrets used to show as one "17/17 · L/M" line, which
+      // hid how the count actually split. Each size gets its own fraction in
+      // the header (largest first) and its own sub-group of rows in the body.
       const hp = (d.hardpoints && d.hardpoints[slot]) || null;
-      const fitted = items.reduce((a, e) => a + e.count, 0);
-      const cap = hp ? Object.values(hp).reduce((a, b) => a + b, 0) : null;
-      const sizes = (hp ? Object.keys(hp) : items.map(e => e.size).filter(Boolean))
-        .filter((s, i, a) => a.indexOf(s) === i).map(s => s.toUpperCase()).join('/');
-      const slotsText = cap != null ? `${fitted} / ${cap} · ${sizes}` : sizes;
-      const rows = items.map(e => {
-        const mk = e.mk ? ` Mk${e.mk}` : '';
-        return `<div class="drow">
-          <span class="dcnt">${e.count}×</span>${designBadge(e.race)}
-          <span class="dnm">${e.name}${mk}</span>
-          ${statCells(e, defs)}
-          <span class="dcost">${e.price != null ? designCr(e.price) : '—'}</span>
-        </div>`;
+      const sizesPresent = [...new Set([
+        ...(hp ? Object.keys(hp) : []),
+        ...items.map(e => (e.size || '').toLowerCase()).filter(Boolean),
+      ])].sort(bySizeDesc);
+      const sizeGroups = sizesPresent.map(sz => ({
+        size: sz,
+        items: items.filter(e => (e.size || '').toLowerCase() === sz),
+        cap: hp ? (hp[sz] || 0) : null,
+      }));
+      const slotsText = sizeGroups.map(g => {
+        const fitted = g.items.reduce((a, e) => a + e.count, 0);
+        return (g.cap != null ? `${fitted}/${g.cap}` : `${fitted}`) + ` ${g.size.toUpperCase()}`;
+      }).join(' · ');
+      const body = sizeGroups.map(g => {
+        const fitted = g.items.reduce((a, e) => a + e.count, 0);
+        const box = SIZE_BOX[g.size] || SIZE_BOX.s;
+        const subHd = `<div class="dsub-hd">
+          <span class="dsub-badge" style="color:${box.hex};background:${box.bg};border-color:${box.hex}">${g.size.toUpperCase()}</span>
+          <span class="dsub-cnt">${g.cap != null ? `${fitted} / ${g.cap}` : fitted}</span></div>`;
+        const rows = g.items.map(e => {
+          const mk = e.mk ? ` Mk${e.mk}` : '';
+          return `<div class="drow">
+            <span class="dcnt">${e.count}×</span>${designBadge(e.race)}
+            <span class="dnm">${e.name}${mk}</span>
+            ${statCells(e, defs)}
+            <span class="dcost">${e.price != null ? designCr(e.price) : '—'}</span>
+          </div>`;
+        }).join('');
+        return `<div class="dsub-box" style="border-color:${hexA(box.hex, 0.3)};background:${box.bg}">${subHd}${rows}</div>`;
       }).join('');
-      equip += section(slot, label, slotsText, headerRow(defs) + rows);
+      equip += section(slot, label, slotsText, headerRow(defs) + body);
     }
     if (!equip) equip = `<div style="padding:30px 10px;text-align:center;color:var(--text-dim);font-size:12px">No equipment fitted.</div>`;
 
@@ -374,7 +408,11 @@
   // Reuses the design-card layout (.dsect sections, SLOT_META, SLOT_STATS,
   // designBadge, WIRE_SVG) but makes it editable. State: chosen hull + per-slot
   // fitted equipment. fits[slot] = [{macro, count}].
-  let builderState = { hull: null, name: '', fits: {}, selectedSlot: null };
+  let builderState = { hull: null, name: '', fits: {}, selectedSlot: null, selectedSize: null };
+
+  // Singular slot label for the per-size "Fit Large Shield" button text —
+  // DESIGN_SLOTS labels (Weapons, Turrets, ...) are plural for headers.
+  const SLOT_SINGULAR = { weapon:'Weapon', turret:'Turret', shield:'Shield', engine:'Engine', thruster:'Thruster' };
 
   const HULL_FACTION_NAMES = {
     arg:'Argon', tel:'Teladi', par:'Paranid', tri:'Paranid', spl:'Split',
@@ -408,9 +446,16 @@
     builderState.hull = macro;
     builderState.fits = {};
     builderState.name = (hull ? hull.name : 'Ship') + ' · Custom';
-    // Pre-select the first category this hull actually has slots for.
-    builderState.selectedSlot = DESIGN_SLOTS.map(([s]) => s)
-      .find(s => Object.values(builderCapacity(s)).reduce((a, b) => a + b, 0) > 0) || null;
+    // Pre-select the first category this hull actually has slots for, and
+    // within it the largest mount size — each size now has its own Fit
+    // button, so the default selection needs a specific size, not just a slot.
+    builderState.selectedSlot = null;
+    builderState.selectedSize = null;
+    for (const [s] of DESIGN_SLOTS) {
+      const cap = builderCapacity(s);
+      const sizes = Object.keys(cap).filter(sz => cap[sz] > 0).sort(bySizeDesc);
+      if (sizes.length) { builderState.selectedSlot = s; builderState.selectedSize = sizes[0]; break; }
+    }
     renderBuilder();
   }
 
@@ -431,8 +476,9 @@
     return out;
   }
 
-  function builderSelect(slot) {
+  function builderSelect(slot, size) {
     builderState.selectedSlot = slot;
+    builderState.selectedSize = size;
     renderBuilder();
   }
   function builderFitAdd(slot, macro) {
@@ -477,8 +523,12 @@
 
     let total = hull.price || 0;
     const sel = builderState.selectedSlot;
+    const selSize = builderState.selectedSize;
 
-    // ── LEFT pane: a card per category (count box + name + stepper + Fit) ────
+    // ── LEFT pane: a card per category, split into one outlined box per mount
+    // size with its own "Fit Large Shield · 2 free" button — picking a size's
+    // Fit button (not the whole category) is what drives the right pane below,
+    // so the equipment list it shows is always scoped to one specific size. ──
     let left = '';
     for (const [slot, label] of DESIGN_SLOTS) {
       const cap = builderCapacity(slot);
@@ -486,38 +536,47 @@
       if (!capTotal) continue;   // hull has no slots of this type
       const m = SLOT_META[slot];
       const fits = builderState.fits[slot] || [];
-      const fittedTotal = fits.reduce((a, f) => a + f.count, 0);
-      const sizes = Object.keys(cap).map(s => s.toUpperCase()).join('/');
+      const fittedBySize = builderFittedBySize(slot);
+      const sizesSorted = Object.keys(cap).sort(bySizeDesc);
+      const capText = sizesSorted.map(sz => `${fittedBySize[sz] || 0}/${cap[sz]} ${sz.toUpperCase()}`).join(' · ');
 
-      const rows = fits.map(f => {
-        const e = EQUIPMENT_CATALOG[f.macro] || { name: f.macro };
-        if (e.price) total += e.price * f.count;
-        const mk = e.mk ? ` Mk${e.mk}` : '';
-        return `<div class="bfr">
-          <span class="bstep"><span class="bsb" onclick="builderCount('${slot}','${f.macro}',-1)">−</span><span class="bcbox">${f.count}</span><span class="bsb" onclick="builderCount('${slot}','${f.macro}',1)">+</span></span>
-          <span style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.name}${mk}</span>
+      const groups = sizesSorted.map(sz => {
+        const box = SIZE_BOX[sz] || SIZE_BOX.s;
+        const szFits = fits.filter(f => ((EQUIPMENT_CATALOG[f.macro] || {}).size || '?') === sz);
+        const itemRows = szFits.map(f => {
+          const e = EQUIPMENT_CATALOG[f.macro] || { name: f.macro };
+          if (e.price) total += e.price * f.count;
+          const mk = e.mk ? ` Mk${e.mk}` : '';
+          return `<div class="bfr">
+            <span class="bstep"><span class="bsb" onclick="builderCount('${slot}','${f.macro}',-1)">−</span><span class="bcbox">${f.count}</span><span class="bsb" onclick="builderCount('${slot}','${f.macro}',1)">+</span></span>
+            <span style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.name}${mk}</span>
+          </div>`;
+        }).join('');
+        const free = cap[sz] - (fittedBySize[sz] || 0);
+        const isSel = sel === slot && selSize === sz;
+        const fitBtn = free > 0
+          ? `<div class="bfit" onclick="builderSelect('${slot}','${sz}')"><i class="ti ti-plus" style="font-size:11px;vertical-align:-1px"></i> Fit ${SIZE_WORD[sz] || sz.toUpperCase()} ${SLOT_SINGULAR[slot] || label} · ${free} free</div>`
+          : '';
+        return `<div class="bsub-box ${isSel ? 'sel' : ''}" style="border-color:${hexA(box.hex, 0.3)};background:${box.bg}">
+          <div class="bsub-hd"><span class="bsub-badge" style="color:${box.hex};background:${box.bg};border-color:${box.hex}">${sz.toUpperCase()}</span><span class="bsub-cnt">${fittedBySize[sz] || 0} / ${cap[sz]}</span></div>
+          ${itemRows}${fitBtn}
         </div>`;
       }).join('');
 
-      const free = capTotal - fittedTotal;
-      const fitBtn = free > 0
-        ? `<div class="bfit" onclick="builderSelect('${slot}')"><i class="ti ti-plus" style="font-size:11px;vertical-align:-1px"></i> Fit ${label.toLowerCase()} · ${free} free</div>` : '';
-
-      left += `<div class="bcat ${sel === slot ? 'sel' : ''}">
-        <div class="bcat-h" style="background:${m.tint}" onclick="builderSelect('${slot}')"><i class="ti ${m.icon}" style="color:${m.color}"></i><span class="lbl">${label}</span><span class="cap">${fittedTotal} / ${capTotal} · ${sizes}</span></div>
-        ${rows}${fitBtn}
+      left += `<div class="bcat">
+        <div class="bcat-h" style="background:${m.tint}"><i class="ti ${m.icon}" style="color:${m.color}"></i><span class="lbl">${label}</span><span class="cap">${capText}</span></div>
+        ${groups}
       </div>`;
     }
 
-    // ── RIGHT pane: available equipment for the selected category, with stats ─
+    // ── RIGHT pane: available equipment for the selected size, with stats ────
     let right;
-    if (sel) {
+    if (sel && selSize) {
       const cap = builderCapacity(sel);
-      const sizesSet = new Set(Object.keys(cap));
       const defs = SLOT_STATS[sel] || [];
       const m = SLOT_META[sel];
       const fitted = new Set((builderState.fits[sel] || []).map(f => f.macro));
-      const full = [...sizesSet].every(s => (builderFittedBySize(sel)[s] || 0) >= cap[s]);
+      const full = (builderFittedBySize(sel)[selSize] || 0) >= cap[selSize];
       const label = (DESIGN_SLOTS.find(([s]) => s === sel) || [, sel])[1];
 
       const statCells = e => [0,1,2,3].map(i => {
@@ -528,7 +587,7 @@
       const headerCells = [0,1,2,3].map(i => `<span class="boh">${defs[i] ? defs[i][1] : ''}</span>`).join('');
 
       const opts = Object.entries(EQUIPMENT_CATALOG)
-        .filter(([, e]) => e.slot === sel && sizesSet.has(e.size))
+        .filter(([, e]) => e.slot === sel && e.size === selSize)
         .sort((a, b) => (a[1].price || 0) - (b[1].price || 0))
         .map(([mac, e]) => {
           const on = fitted.has(mac);
@@ -539,13 +598,13 @@
         }).join('');
 
       right = `<div class="bopts">
-        <div class="bopts-h"><i class="ti ${m.icon}" style="color:${m.color};font-size:15px"></i><span class="lbl">Available · ${label}</span><span class="mt">${[...sizesSet].map(s => s.toUpperCase()).join('/')} mount${full ? ' · full' : ''}</span></div>
+        <div class="bopts-h"><i class="ti ${m.icon}" style="color:${m.color};font-size:15px"></i><span class="lbl">Available · ${SIZE_WORD[selSize] || selSize.toUpperCase()} ${label}</span><span class="mt">${selSize.toUpperCase()} mount${full ? ' · full' : ''}</span></div>
         <div style="padding:5px 8px">
           <div class="borow"><span></span><span></span>${headerCells}<span class="boh">Cost</span><span></span></div>
           ${opts || '<div style="color:var(--text-dim);font-size:11px;padding:8px">No compatible equipment.</div>'}
         </div></div>`;
     } else {
-      right = `<div class="bopts" style="padding:30px;text-align:center;color:var(--text-dim)">Select a category to fit equipment.</div>`;
+      right = `<div class="bopts" style="padding:30px;text-align:center;color:var(--text-dim)">Select a Fit button to choose equipment for that mount size.</div>`;
     }
 
     root.innerHTML = `
