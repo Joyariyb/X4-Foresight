@@ -128,9 +128,21 @@ def load_macro_price_ranges(idx: CatalogIndex) -> dict[str, tuple[int, int, int]
         if not ref:
             continue
         try:
-            prices[ref] = (int(price.get("min", 0)),
-                           int(price.get("average", 0)),
-                           int(price.get("max", 0)))
+            min_raw = price.get("min", "0")
+            min_v   = int(min_raw)
+            avg_v   = int(price.get("average", 0))
+            max_v   = int(price.get("max", 0))
+            # Split Vendetta's shipped wares.xml has min="1536515365" for
+            # shield_spl_m_standard_02_mk1 -- "15365" pasted twice in a row
+            # (confirmed against the live, MD5-verified .cat/.dat archive, so
+            # it's Egosoft's data bug, not a parsing one). A real price range
+            # can never have min > max, so only when that invariant breaks do
+            # we try undoing a same-length self-duplication in the min text.
+            if min_v > max_v:
+                half = len(min_raw) // 2
+                if half and len(min_raw) % 2 == 0 and min_raw[:half] == min_raw[half:]:
+                    min_v = int(min_raw[:half])
+            prices[ref] = (min_v, avg_v, max_v)
         except (ValueError, TypeError):
             pass
     return prices
@@ -489,9 +501,19 @@ def load_ship_data(idx: CatalogIndex, texts: dict, prices: dict[str, int],
     """
     Reads every ship_*.xml macro from the catalogs (base + DLC) and returns a
     list of (macro_id, display_name, ship_class, max_hull, price, hardpoints,
-    purchasable, flown) tuples. price is the hull's average buy price (0 if
-    the hull isn't sold); hardpoints is the slot layout of the macro's
-    referenced component.
+    purchasable, flown, weapon_heat_factor) tuples. price is the hull's
+    average buy price (0 if the hull isn't sold); hardpoints is the slot
+    layout of the macro's referenced component.
+
+    weapon_heat_factor is the hull's <modifiers><weapon heat=X/></modifiers>
+    multiplier (1.0 when the macro has no such element, the common case) --
+    confirmed this session against real Time to Overheat tooltips: e.g. the
+    Quasar Vanguard and Cerberus Vanguard both carry heat="1.3" and both show
+    a Time to Overheat 1.3x shorter than the weapon's own unmodified figure,
+    while ships with no <modifiers> block (Eclipse Vanguard, Minotaur
+    Vanguard) match the unmodified weapon stat exactly. Time to Overheat is
+    therefore genuinely ship-dependent, not a pure weapon stat -- Sustained
+    Weapon Damage and Cooldown Duration are unaffected by it.
 
     EVERY macro is kept here, including drones/NPC skin variants/set-piece
     parts — SHIP_NAMES (gen_ships_py) is used to label any ship the live
@@ -544,7 +566,14 @@ def load_ship_data(idx: CatalogIndex, texts: dict, prices: dict[str, int],
         ref      = (comp_ref.get("ref") or "").lower() if comp_ref is not None else ""
         hp       = hardpoints.get(ref, {})
 
-        ships.append((macro_id, display, ship_class, max_hull, price, hp, purchasable, flown))
+        weapon_heat_el = root.find(".//modifiers/weapon")
+        try:
+            weapon_heat_factor = float(weapon_heat_el.get("heat", 1.0)) if weapon_heat_el is not None else 1.0
+        except (ValueError, TypeError):
+            weapon_heat_factor = 1.0
+
+        ships.append((macro_id, display, ship_class, max_hull, price, hp, purchasable, flown,
+                      weapon_heat_factor))
 
     ships.sort(key=lambda s: s[0])
     return ships
@@ -563,14 +592,15 @@ def gen_ships_py(ships) -> str:
 
 def gen_ship_stats_py(ships) -> str:
     blocks = []
-    for macro_id, _, ship_class, max_hull, price, hardpoints, purchasable, flown in ships:
+    for macro_id, _, ship_class, max_hull, price, hardpoints, purchasable, flown, weapon_heat_factor in ships:
         blocks.append(f"    '{macro_id}': {{\n"
-                      f"        'class':       '{ship_class}',\n"
-                      f"        'max_hull':    {max_hull},\n"
-                      f"        'price':       {price},\n"
-                      f"        'hardpoints':  {_fmt_hardpoints(hardpoints)},\n"
-                      f"        'purchasable': {purchasable},\n"
-                      f"        'flown':       {flown},\n"
+                      f"        'class':              '{ship_class}',\n"
+                      f"        'max_hull':           {max_hull},\n"
+                      f"        'price':              {price},\n"
+                      f"        'hardpoints':         {_fmt_hardpoints(hardpoints)},\n"
+                      f"        'purchasable':        {purchasable},\n"
+                      f"        'flown':              {flown},\n"
+                      f"        'weapon_heat_factor': {weapon_heat_factor},\n"
                       f"    }},")
     return (GENERATED_BANNER +
             "\n# Ship macro id → static game stats (ship macro + component XML + wares.xml).\n"
@@ -588,6 +618,10 @@ def gen_ship_stats_py(ships) -> str:
             "#                 The design builder's hull catalog drops these; naming\n"
             "#                 tables (ships.py) keep them so any scanned entity still\n"
             "#                 resolves to a name.\n"
+            "#   weapon_heat_factor — multiplies every mounted weapon's heat generation\n"
+            "#                 (1.0 = no effect, the common case). Confirmed against real\n"
+            "#                 tooltips: lowers Time to Overheat proportionally, does NOT\n"
+            "#                 affect Sustained Weapon Damage or Cooldown Duration.\n"
             "SHIP_STATS: dict[str, dict] = {\n" +
             "\n".join(blocks) + "\n}\n")
 

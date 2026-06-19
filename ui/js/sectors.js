@@ -407,9 +407,14 @@
            ${rows}
          </div>`;
 
+      // weapon-slot items (player-aimed weapons/launchers) always show the
+      // Burst/Sustained split, even when they're numerically equal (no heat
+      // throttling) -- confirmed against the Ion Blasters, which have no
+      // bullet heat data at all yet still show both lines in-game. Turret-
+      // slot items show a single "Weapon Damage" line instead.
       let dmgRows = '';
       if (e.damage_rate_burst != null) {
-        if (e.time_to_overheat != null) {
+        if (e.slot === 'weapon') {
           dmgRows += row('Burst Weapon Damage', `${fmt(e.damage_rate_burst)} MW`, 'var(--red)');
           dmgRows += row('Sustained Weapon Damage', `${fmt(e.damage_rate_sustained)} MW`, 'var(--amber)');
         } else {
@@ -429,7 +434,18 @@
       heatRows += row('Rotation Speed', e.rotation_speed != null ? `${e.rotation_speed}°/s` : null);
       heatRows += row('Max Hull Integrity', e.hull_max != null ? `${fmt(e.hull_max)} MJ` : null);
       if (e.time_to_overheat != null) {
-        heatRows += row('Time to Overheat', `${e.time_to_overheat.toFixed(1)} s`);
+        // Time to Overheat is genuinely ship-dependent -- confirmed against
+        // real tooltips this session: a ship's <modifiers><weapon heat=X/>
+        // multiplies heat generation, shortening it proportionally, while
+        // Sustained Weapon Damage and Cooldown Duration are unaffected.
+        // _shipHeatFactor rides along in the data-weapon-tip payload from
+        // designs-builder.js (the currently selected hull's factor, 1 if none).
+        // Truncated (not rounded) to 1dp -- the game does the same for at
+        // least one other derived stat (rate of fire), confirmed this
+        // session: 0.4762 displayed as 0.47, not the rounded 0.48.
+        const heatFactor = e._shipHeatFactor || 1;
+        const tto = Math.floor((e.time_to_overheat / heatFactor) * 10) / 10;
+        heatRows += row('Time to Overheat', `${tto.toFixed(1)} s`);
         heatRows += row('Cooldown Duration', `${e.cooldown_duration.toFixed(1)} s`);
       }
 

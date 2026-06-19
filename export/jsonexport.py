@@ -482,7 +482,7 @@ _MANUAL_HULL_EXCLUSIONS = {'ship_xen_xl_mothership_01_a_macro'}
 
 def _hull_catalog() -> dict:
     """All hulls with equipment slots → {name, class, max_hull, price, hardpoints,
-    purchasable}.
+    purchasable, weapon_heat_factor}.
 
     The blueprint builder's hull selector reads this. Keyed by macro; deployables/
     drones (no hardpoints), never-flown macros (flown=False — NPC skin variants,
@@ -510,6 +510,11 @@ def _hull_catalog() -> dict:
             'price':       st.get('price'),
             'hardpoints':  hp,
             'purchasable': st.get('purchasable', True),
+            # Ship-specific multiplier on mounted weapons' heat generation
+            # (1.0 = no effect) -- the Ship Builder's weapon hover tooltip
+            # needs this to show the correct Time to Overheat for the
+            # currently selected hull; see SHIP_STATS' docstring.
+            'weapon_heat_factor': st.get('weapon_heat_factor', 1.0),
         }
     return out
 

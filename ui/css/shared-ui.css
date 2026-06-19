@@ -41,11 +41,6 @@
     .badge.neutral  { background: var(--bg-card);   color: var(--text-dim); border: 1px solid var(--border); }
     .badge.hostile  { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(210,153,34,0.3); }
     .badge.atwar    { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(248,81,73,0.3); }
-    .badge.xenon    { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(248,81,73,0.3); }
-    .badge.yaki     { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(210,153,34,0.3); }
-    .badge.argon    { background: rgba(56,139,253,0.1); color: #388bfd; border: 1px solid rgba(56,139,253,0.25); }
-    .badge.teladi   { background: var(--green-dim); color: #70d890; border: 1px solid rgba(80,200,120,0.25); }
-    .badge.paranid  { background: rgba(163,113,247,0.1); color: var(--purple); border: 1px solid rgba(163,113,247,0.25); }
 
     /* ── REP BAR ── */
     .rep-bar-wrap { width: 80px; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; display: inline-block; vertical-align: middle; }

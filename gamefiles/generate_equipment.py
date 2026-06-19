@@ -42,6 +42,7 @@
 # ════════════════════════════════════════════════════════════════════════════
 
 import pathlib
+import re
 import sys
 
 # Allow running as a script from anywhere: put the repo root on sys.path.
@@ -53,6 +54,7 @@ from lxml import etree as ET
 from gamefiles.catalog import CatalogIndex, find_x4_install
 from gamefiles.langtext import _REF_RE, clean_text, load_texts
 from gamefiles.generate_data import load_macro_price_ranges
+from gamefiles.xmlpatch import apply_diff
 
 DATA_DIR = REPO / "data"
 
@@ -169,6 +171,49 @@ def _glob(idx: CatalogIndex, *patterns: str) -> list[str]:
     return sorted(seen)
 
 
+_EXT_PREFIX_RE = re.compile(r'^extensions/[^/]+/')
+
+
+def _load_merged_roots(idx: CatalogIndex, paths: list[str]) -> list[tuple[str, ET._Element]]:
+    """Parses each catalog path, merging DLC files into their base-game
+    counterpart at the same relative path before the caller ever sees them.
+
+    Unlike wares.xml (one big file generate_data.py's load_merged_wares()
+    diffs as a whole), equipment is one macro per file -- but a DLC can still
+    ship a <diff> patching an existing base macro at the identical relative
+    path (e.g. extensions/<dlc>/assets/.../weapon_x_macro.xml patching
+    assets/.../weapon_x_macro.xml). Without this merge, that diff file was
+    being parsed as its own standalone document and produced a second, sparse
+    record for the same macro id -- the duplicate-equipment-entries bug.
+
+    Returns (relative_path, merged_root) pairs, one per logical macro: base
+    + merged diffs where a base file exists, or the DLC's own document where
+    a DLC introduces a brand new macro (no base file to diff against).
+    """
+    by_relpath: dict[str, list[str]] = {}
+    for vp in paths:
+        rel = _EXT_PREFIX_RE.sub("", vp)
+        by_relpath.setdefault(rel, []).append(vp)
+
+    out: list[tuple[str, ET._Element]] = []
+    for rel, group in by_relpath.items():
+        # Base-game path (no extensions/ prefix) sorts first when present;
+        # DLC diffs then apply on top of it in (deterministic) sorted order.
+        group.sort(key=lambda vp: vp.startswith("extensions/"))
+        root = ET.fromstring(idx.read(group[0]))
+        for vp in group[1:]:
+            patch_root = ET.fromstring(idx.read(vp))
+            if patch_root.tag == "diff":
+                apply_diff(root, patch_root, source=vp)
+            else:
+                # A second DLC shipping a full (non-diff) macro at the same
+                # path is unexpected, but if it happens the later one wins --
+                # same "later catalog overrides" rule the .cat index uses.
+                root = patch_root
+        out.append((rel, root))
+    return out
+
+
 # ──────────────────────────────────────────────────────────────────────────
 #  Pass 1 — bullets (the weapon/turret damage table)
 # ──────────────────────────────────────────────────────────────────────────
@@ -185,11 +230,15 @@ def load_bullets(idx: CatalogIndex) -> dict[str, dict]:
                   -- X4 weapons often release several barrels/pellets per
                   trigger pull (e.g. the L Pulse Turret fires 2 barrels per
                   shot; the Shard Turret fires 6 pellets), and the raw
-                  <damage value=> is only ONE of those. damage_shield defaults
-                  to the hull value when the bullet has no separate shield=
-                  attribute (no attribute means "same as hull", not "zero").
-                  Falls back to <areadamage value=> when <damage> has no
-                  value= at all (flak-type weapons keep their damage there).
+                  <damage value=> is only ONE of those. damage_shield is
+                  damage_hull PLUS the bullet's shield= attribute (a bonus on
+                  top, not a replacement total -- confirmed against the ARG
+                  Ion Blaster Mk1/Mk2 tooltips: file hull=125 shield=500,
+                  real Shield Damage shown is 625, i.e. hull+shield); defaults
+                  to just the hull value when there's no shield= attribute at
+                  all. Falls back to <areadamage value=>/<shield=> when
+                  <damage> has no value= at all (flak-type weapons keep their
+                  damage there).
       reload_rate Sustained shots/sec, averaged over a full ammo-clip-then-
                   reload cycle for weapons that have one. <reload> carries
                   EITHER rate= (shots/sec) or time= (seconds/shot) -- the same
@@ -215,8 +264,7 @@ def load_bullets(idx: CatalogIndex) -> dict[str, dict]:
         "assets/props/weaponsystems/*/macros/missile_*.xml",
         "extensions/*/assets/props/weaponsystems/*/macros/missile_*.xml",
     )
-    for vp in paths:
-        root = ET.fromstring(idx.read(vp))
+    for _rel, root in _load_merged_roots(idx, paths):
         macro_el = root.find(".//macro")
         if macro_el is None:
             continue
@@ -245,22 +293,20 @@ def load_bullets(idx: CatalogIndex) -> dict[str, dict]:
         if dmg_hull is None:
             dmg_hull = _float(area_el, "value")
         if dmg_hull is not None:
-            # Beam bullets (light-speed projectiles) deal 4x the listed shield
-            # damage in-game -- confirmed against two real tooltips this
-            # session (ARG M Beam Turret, generic M Beam Emitter). The
-            # mechanism isn't in any libraries/*.xml file; likely hardcoded
-            # engine behaviour. Flagging as an open question, not fully
-            # explained -- the per-slot headline-rate split this also needs
-            # is handled in load_equipment(), where the slot is known.
+            # damage_shield = hull damage + the shield= bonus (NOT a
+            # replacement total) -- confirmed against the ARG Ion Blaster
+            # Mk1/Mk2 tooltips this session (file hull=125 shield=500, real
+            # Shield Damage shown is 625 = 125+500, not 500). This also
+            # retroactively explains why beam weapons earlier looked like
+            # they needed a x4 shield multiplier: their files happen to have
+            # hull = 3x shield, so hull+shield and shield*4 coincide there by
+            # pure chance -- the additive rule is the real, general one.
             speed = _float(phys_el, "speed")
             is_beam = bool(speed and speed >= 1e8)
-            dmg_shield = _float(dmg_el, "shield")
-            if dmg_shield is None:
-                dmg_shield = _float(area_el, "shield")
-            if dmg_shield is None:
-                dmg_shield = dmg_hull
-            if is_beam:
-                dmg_shield *= 4
+            shield_bonus = _float(dmg_el, "shield")
+            if shield_bonus is None:
+                shield_bonus = _float(area_el, "shield")
+            dmg_shield = dmg_hull + (shield_bonus or 0.0)
 
             entry["damage_hull"]   = _num(dmg_hull * multiplier)
             entry["damage_shield"] = _num(dmg_shield * multiplier)
@@ -341,8 +387,7 @@ def load_equipment(idx: CatalogIndex, bullets: dict[str, dict], prices: dict[str
         "extensions/*/assets/props/engines/macros/*.xml",
     )
 
-    for vp in paths:
-        root = ET.fromstring(idx.read(vp))
+    for rel, root in _load_merged_roots(idx, paths):
         macro_el = root.find(".//macro")
         if macro_el is None:
             continue
@@ -417,7 +462,7 @@ def load_equipment(idx: CatalogIndex, bullets: dict[str, dict], prices: dict[str
         # ── slot-specific stats ──────────────────────────────────────────────
         if slot in ("weapon", "turret"):
             rec["class"] = cls   # tells a missile-/regular- turret/weapon apart for the UI
-            grp = _group_from_path(vp)
+            grp = _group_from_path(rel)
             if grp:
                 rec["group"] = grp
             if (v := _int(root.find(".//rotationspeed"), "max"))      is not None: rec["rotation_speed"] = v
@@ -431,22 +476,27 @@ def load_equipment(idx: CatalogIndex, bullets: dict[str, dict], prices: dict[str
             bref = (bullet_el.get("class") or "").lower() if bullet_el is not None else ""
             rec.update(bullets.get(bref, {}))
 
-            # Burst damage rate: hull_damage x reload_rate normally. Beam
-            # weapons are the validated exception -- the headline number is
-            # built from a x4'd hull value for turret-class beams (ARG M Beam
-            # Turret: 126 hull x4 x 0.143/s = 72.0, matching the real
-            # tooltip) but from the already-x4'd damage_shield as-is for
-            # weapon-class beams (M Beam Emitter: 180 shield x 1.0/s = 180,
-            # also matching). damage_hull itself stays UNSCALED in storage so
-            # the displayed "Hull Damage" stat is correct either way -- only
-            # this rate calc needs the x4 on the turret side. Not generalized
-            # further without more data points; see load_bullets()'s comment.
+            # Burst damage rate: weapon-class items use the FULL damage_shield
+            # total (hull + shield bonus) x reload_rate as their headline --
+            # confirmed against the Ion Blasters (756 shield x 0.5/s = 378,
+            # matching the real tooltip) as well as every weapon-class item
+            # with no shield bonus at all, where damage_shield == damage_hull
+            # so this is equivalent to plain hull x rate (Behemoth Main
+            # Battery, M/S Plasma Cannon, M Beam Emitter all matched this way).
+            # Turret-class items use plain damage_hull x rate, EXCEPT
+            # turret-class beams need an extra x4 on hull that the shield-bonus
+            # formula doesn't explain (ARG M Beam Turret: 126 hull x4 x
+            # 0.143/s = 72, matching the real tooltip; hull+shield=168 x rate
+            # gives only 24, which does NOT match) -- still an open question,
+            # not generalized further without more data points.
             rate = rec.get("reload_rate")
             if rate:
-                if rec.get("is_beam"):
-                    base = rec.get("damage_shield") if slot == "weapon" else (rec.get("damage_hull") or 0) * 4
+                if slot == "weapon":
+                    base = rec.get("damage_shield")
                 else:
                     base = rec.get("damage_hull")
+                    if rec.get("is_beam") and base is not None:
+                        base *= 4
                 if base is not None:
                     rec["damage_rate_burst"] = _num(base * rate)
 
@@ -555,7 +605,13 @@ def gen_equipment_py(records: list[dict], aliases: dict[str, str]) -> str:
         "#                    missileturret/missilelauncher only), damage_rate_burst,\n"
         "#                    damage_rate_sustained, time_to_overheat, cooldown_duration\n"
         "#                    (the last 4 are derived, matched against real tooltips —\n"
-        "#                    see gamefiles/generate_equipment.py's load_bullets/load_equipment)\n"
+        "#                    see gamefiles/generate_equipment.py's load_bullets/load_equipment).\n"
+        "#                    time_to_overheat is the UNMODIFIED weapon-only baseline (heat\n"
+        "#                    factor 1.0) — confirmed this session that it's also genuinely\n"
+        "#                    ship-dependent via SHIP_STATS' weapon_heat_factor, which the UI\n"
+        "#                    applies at display time once a hull is selected (see\n"
+        "#                    ui/js/sectors.js's weaponTipHtml). damage_rate_sustained and\n"
+        "#                    cooldown_duration are NOT affected by that factor.\n"
         "#   shield         — capacity, recharge_rate, recharge_delay\n"
         "#   engine         — thrust_forward, thrust_reverse, travel_thrust, boost_thrust\n"
         "#   thruster       — strafe, pitch, yaw, roll\n"
@@ -567,6 +623,61 @@ def gen_equipment_py(records: list[dict], aliases: dict[str, str]) -> str:
         "EQUIPMENT_ALIASES: dict[str, str] = {\n" +
         "\n".join(alias_lines) + "\n}\n"
     )
+
+
+def dedupe_variant_records(records: list[dict]) -> tuple[list[dict], dict[str, str]]:
+    """Collapses X4's own duplicate ware listings into one catalog entry.
+
+    X4 ships several equipment families (most visibly every M-size turret/
+    weapon, e.g. turret_arg_m_beam_01_mk1 / turret_arg_m_beam_02_mk1) as TWO
+    separate <ware> entries pointing at two near-identical macros -- same
+    name/mk/size/race/price/combat stats, verified directly against
+    wares.xml. Both are real, independently purchasable items in-game, but
+    showing two indistinguishable rows in the ship-builder catalog is pure
+    noise the player can't act on.
+
+    Within each (slot, name, mk, size, race) group, the lowest macro id
+    becomes canonical and absorbs any field a sibling defines that it's
+    missing (so e.g. hull_max, which X4 only puts on the "_02" macro of a
+    pair, isn't lost). A group is only merged when its members don't
+    disagree on any field they both define -- a real stat conflict (logged,
+    not silently dropped) means they're genuinely different items and stay
+    separate, e.g. the one turret_arg_m_plasma_01/02 pair whose rotation
+    speed actually differs.
+
+    Returns (deduped_records, extra_aliases). extra_aliases maps each
+    dropped macro id to its replacement, merged into EQUIPMENT_ALIASES
+    alongside the XML alias= ones -- so a save referencing the dropped
+    macro still resolves to a name and stats.
+    """
+    groups: dict[tuple, list[dict]] = {}
+    for rec in records:
+        key = (rec["slot"], rec["name"], rec.get("mk"), rec.get("size"), rec.get("race"))
+        groups.setdefault(key, []).append(rec)
+
+    kept: list[dict] = []
+    extra_aliases: dict[str, str] = {}
+
+    for group in groups.values():
+        if len(group) == 1:
+            kept.append(group[0])
+            continue
+        group = sorted(group, key=lambda r: r["macro"])
+        anchor = group[0]
+        for rec in group[1:]:
+            conflicts = {k: (anchor[k], rec[k]) for k in set(anchor) & set(rec)
+                         if k != "macro" and anchor[k] != rec[k]}
+            if conflicts:
+                kept.append(rec)   # genuinely different item -- keep separate
+                print(f"[dedupe] {anchor['macro']} vs {rec['macro']} both named "
+                      f"'{anchor['name']}' but disagree on {conflicts} -- kept separate")
+            else:
+                for k, v in rec.items():   # fill in anything anchor is missing
+                    anchor.setdefault(k, v)
+                extra_aliases[rec["macro"]] = anchor["macro"]
+        kept.append(anchor)
+
+    return kept, extra_aliases
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -599,6 +710,16 @@ def main() -> int:
     records = [r for r in records if r["name"] and "{" not in r["name"]]
     if before - len(records):
         print(f"Dropped {before - len(records)} records with no display name")
+
+    # Collapse X4's own duplicate ware listings (see dedupe_variant_records'
+    # docstring) before emitting -- one catalog row per real item, not one
+    # per <ware> entry.
+    before = len(records)
+    records, extra_aliases = dedupe_variant_records(records)
+    aliases.update(extra_aliases)
+    if before - len(records):
+        print(f"Merged {before - len(records)} duplicate-listing records into "
+              f"existing entries ({len(extra_aliases)} aliased)")
 
     by_slot: dict[str, int] = {}
     for rec in records:

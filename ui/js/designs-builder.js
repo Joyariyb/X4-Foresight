@@ -55,16 +55,21 @@
     thruster: [['strafe','Strafe',designCr], ['pitch','Pitch',designCr], ['yaw','Yaw',designCr], ['roll','Roll',designCr]],
   };
 
-  // 3-letter faction tag in the hull-badge style (.badge .{faction} colour).
+  // 3-letter faction tag in the hull-badge style.
   // Generic / no-maker parts (thrusters) get a neutral GEN badge.
   const FAC3 = {
     argon:'ARG', paranid:'PAR', teladi:'TEL', split:'SPL', terran:'TER',
     boron:'BOR', xenon:'XEN', khaak:'KHA', pirate:'PIR', yaki:'YAK',
   };
+  // Coloured from FACTION_COLOURS (defined below) rather than a per-faction
+  // CSS class — the CSS classes only ever covered 5 of the 24 factions, so
+  // every other faction rendered as a plain grey badge.
   function designBadge(faction) {
     if (!faction) return '<span class="badge neutral">GEN</span>';
     const f = faction.toLowerCase();
-    return `<span class="badge ${f}">${FAC3[f] || f.slice(0,3).toUpperCase()}</span>`;
+    const colour = FACTION_COLOURS[f] || '#6e7681';
+    const style = `background:${hexA(colour, 0.1)};color:${colour};border:1px solid ${hexA(colour, 0.25)}`;
+    return `<span class="badge" style="${style}">${FAC3[f] || f.slice(0,3).toUpperCase()}</span>`;
   }
 
   // Resolvable equipment only — drops the unresolved internal parts (raw macros).
@@ -408,7 +413,28 @@
   // Reuses the design-card layout (.dsect sections, SLOT_META, SLOT_STATS,
   // designBadge, WIRE_SVG) but makes it editable. State: chosen hull + per-slot
   // fitted equipment. fits[slot] = [{macro, count}].
-  let builderState = { hull: null, name: '', fits: {}, selectedSlot: null, selectedSize: null };
+  // factionFilter: array of selected race strings; empty array means "all factions".
+  let builderState = { hull: null, name: '', fits: {}, selectedSlot: null, selectedSize: null, factionFilter: [] };
+
+  // Whether the equipment card's faction filter dropdown is open. Tracked
+  // outside builderState since renderBuilder() rebuilds the DOM from scratch —
+  // a plain CSS class on the menu element wouldn't survive a re-render
+  // triggered by checking another box, so the open/closed state has to live
+  // in JS and get reapplied each render instead.
+  let beqfOpen = false;
+
+  // Full names for the maker races that show up in EQUIPMENT_CATALOG (e.race),
+  // used by the equipment-list faction filter dropdown.
+  const RACE_FULL_NAMES = {
+    argon: 'Argon', paranid: 'Paranid', teladi: 'Teladi', split: 'Split',
+    terran: 'Terran', boron: 'Boron', xenon: 'Xenon', khaak: "Kha'ak",
+    pirate: 'Pirate', yaki: 'Yaki', generic: 'Generic',
+  };
+  // Equipment with no maker (e.g. most thrusters) carries no e.race at all —
+  // bucket it under 'generic' so the faction filter can target it explicitly,
+  // matching the neutral "GEN" badge designBadge() already shows for it.
+  const raceKeyOf = e => (e.race || '').toLowerCase() || 'generic';
+  const factionFilterBadge = r => r === 'generic' ? designBadge(null) : designBadge(r);
 
   // Singular slot label for the per-size "Fit Large Shield" button text —
   // DESIGN_SLOTS labels (Weapons, Turrets, ...) are plural for headers.
@@ -479,6 +505,8 @@
   function builderSelect(slot, size) {
     builderState.selectedSlot = slot;
     builderState.selectedSize = size;
+    builderState.factionFilter = [];   // each card starts unfiltered
+    beqfOpen = false;
     renderBuilder();
   }
   function builderFitAdd(slot, macro) {
@@ -500,6 +528,62 @@
     f.count += delta;
     if (f.count <= 0) builderState.fits[slot] = fits.filter(x => x !== f);
     renderBuilder();
+  }
+
+  // Toggling "All factions" clears the selection (empty array = unfiltered);
+  // toggling a race adds/removes just that one, so several can be checked at once.
+  function builderToggleFactionFilter(race) {
+    if (race === 'all') {
+      builderState.factionFilter = [];
+    } else {
+      const sel = builderState.factionFilter;
+      const i = sel.indexOf(race);
+      if (i >= 0) sel.splice(i, 1); else sel.push(race);
+    }
+    renderBuilder();   // beqfOpen stays true, so the menu re-renders open
+  }
+  function toggleEqFilterDropdown(e) {
+    if (e) e.stopPropagation();   // don't let the outside-click handler close it
+    beqfOpen = !beqfOpen;
+    document.getElementById('beqf-menu')?.classList.toggle('open', beqfOpen);
+  }
+  function closeEqFilterDropdown() {
+    beqfOpen = false;
+    document.getElementById('beqf-menu')?.classList.remove('open');
+  }
+  // Any click outside the dropdown dismisses the open menu.
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#beqf-dd')) closeEqFilterDropdown();
+  });
+
+  // Faction filter dropdown for the "Available · ..." equipment card — narrows
+  // the right pane's options to any number of maker races (plus a 'generic'
+  // bucket for unmade parts). Only built (and only offered) for races actually
+  // present among the current slot+size's equipment, so it never shows an
+  // empty "Boron" option on a card with no Boron parts.
+  function builderEqFilterDD(slot, size) {
+    const items = Object.values(EQUIPMENT_CATALOG).filter(e => e.slot === slot && e.size === size);
+    const races = [...new Set(items.map(raceKeyOf))].sort();
+    if (!races.length) return '';
+
+    const selected = builderState.factionFilter;
+    const triggerInner = selected.length === 0
+      ? 'All factions'
+      : selected.map(factionFilterBadge).join('');
+
+    const rows = ['all', ...races].map(r => {
+      const isSel = r === 'all' ? selected.length === 0 : selected.includes(r);
+      const label = r === 'all' ? 'All factions' : (RACE_FULL_NAMES[r] || r);
+      const badge = r === 'all' ? '' : factionFilterBadge(r);
+      return `<div class="beqf-item ${isSel ? 'sel' : ''}" onclick="builderToggleFactionFilter('${r}')">
+        <span class="beqf-check ${isSel ? 'sel' : ''}"></span>${badge}<span>${label}</span>
+      </div>`;
+    }).join('');
+
+    return `<div class="beqf-dd" id="beqf-dd">
+      <div class="beqf-trigger" onclick="toggleEqFilterDropdown(event)">${triggerInner}<i class="ti ti-chevron-down"></i></div>
+      <div class="beqf-menu ${beqfOpen ? 'open' : ''}" id="beqf-menu">${rows}</div>
+    </div>`;
   }
 
   function builderHullSelect() {
@@ -589,13 +673,21 @@
       // Weapon/turret rows carry data-weapon-tip for the full stat hover
       // (sectors.js's shared tooltip dispatcher) — shields/engines/thrusters
       // don't have the damage/heat fields it shows, so skip them for now.
+      // shipHeatFactor rides along in the payload: Time to Overheat is
+      // genuinely ship-dependent (the selected hull's <modifiers><weapon
+      // heat=>, confirmed against real tooltips this session — Sustained
+      // Damage and Cooldown Duration are NOT affected by it), so the tooltip
+      // needs to know which hull is currently selected to show it correctly.
       const wantsTip = sel === 'weapon' || sel === 'turret';
+      const shipHeatFactor = (HULL_CATALOG[builderState.hull] || {}).weapon_heat_factor || 1;
+      const factionFilter = builderState.factionFilter;
       const opts = Object.entries(EQUIPMENT_CATALOG)
-        .filter(([, e]) => e.slot === sel && e.size === selSize)
+        .filter(([, e]) => e.slot === sel && e.size === selSize &&
+          (factionFilter.length === 0 || factionFilter.includes(raceKeyOf(e))))
         .sort((a, b) => (a[1].price || 0) - (b[1].price || 0))
         .map(([mac, e]) => {
           const on = fitted.has(mac);
-          const tipAttr = wantsTip ? ` data-weapon-tip="${encodeURIComponent(JSON.stringify(e))}"` : '';
+          const tipAttr = wantsTip ? ` data-weapon-tip="${encodeURIComponent(JSON.stringify({...e, _shipHeatFactor: shipHeatFactor}))}"` : '';
           return `<div class="borow ${on ? 'on' : ''}" onclick="builderFitAdd('${sel}','${mac}')"${tipAttr}>
             ${designBadge(e.race)}<span style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${on ? 'color:var(--lime)' : ''}">${e.name}${e.mk ? ` Mk${e.mk}` : ''}</span>
             ${statCells(e)}<span class="dcost">${e.price != null ? designCr(e.price) : '—'}</span>
@@ -603,7 +695,7 @@
         }).join('');
 
       right = `<div class="bopts">
-        <div class="bopts-h"><i class="ti ${m.icon}" style="color:${m.color};font-size:15px"></i><span class="lbl">Available · ${SIZE_WORD[selSize] || selSize.toUpperCase()} ${label}</span><span class="mt">${selSize.toUpperCase()} mount${full ? ' · full' : ''}</span></div>
+        <div class="bopts-h"><i class="ti ${m.icon}" style="color:${m.color};font-size:15px"></i><span class="lbl">Available · ${SIZE_WORD[selSize] || selSize.toUpperCase()} ${label}</span>${builderEqFilterDD(sel, selSize)}<span class="mt">${selSize.toUpperCase()} mount${full ? ' · full' : ''}</span></div>
         <div style="padding:5px 8px">
           <div class="borow"><span></span><span></span>${headerCells}<span class="boh">Cost</span><span></span></div>
           ${opts || '<div style="color:var(--text-dim);font-size:11px;padding:8px">No compatible equipment.</div>'}
