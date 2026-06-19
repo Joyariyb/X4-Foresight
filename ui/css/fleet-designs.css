@@ -145,6 +145,14 @@
     .bopts-h { display: flex; align-items: center; gap: 8px; padding: 5px 9px; border-bottom: 1px solid var(--border); background: rgba(57,255,20,0.05); }
     .bopts-h .lbl { font-family: var(--font-cond); font-weight: 600; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--lime); }
     .bopts-h .mt { margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); }
+    /* True Stats toggle (weapon/turret hover stats: truncated in-game value vs
+       raw 3dp) -- red when off (in-game), green when on (true), so the state
+       reads at a glance without needing to read the label. */
+    .bstats-toggle { display: flex; align-items: center; gap: 4px; padding: 2px 8px; font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; user-select: none; border-radius: 2px; transition: color 0.12s, border-color 0.12s, background 0.12s;
+      color: var(--red); border: 1px solid rgba(248,81,73,0.4); background: rgba(248,81,73,0.06); }
+    .bstats-toggle:hover { box-shadow: 0 0 6px rgba(248,81,73,0.25); }
+    .bstats-toggle.on { color: var(--lime); border-color: rgba(57,255,20,0.5); background: rgba(57,255,20,0.08); }
+    .bstats-toggle.on:hover { box-shadow: 0 0 6px rgba(57,255,20,0.3); }
     /* Equipment-card faction filter — a multi-select checkbox dropdown sitting
        right after the card title (e.g. "Available · Medium Turrets"). Other
        card filters (besides faction) will land here too, so keep the .beqf-

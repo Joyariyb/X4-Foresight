@@ -9,6 +9,18 @@
   let EQUIPMENT_CATALOG = {};
   let HULL_CATALOG = {};
 
+  // Weapon/turret hover stats mode -- 'ingame' truncates derived stats (damage
+  // rates, rate of fire, cooldown/overheat) the same way the real in-game
+  // tooltip does; 'true' shows the raw computed value to 3dp with no
+  // truncation. Read by weaponTipHtml() in tooltips.js. Persisted across
+  // sessions since it's a verification preference, not per-design state.
+  let weaponStatsMode = localStorage.getItem('weaponStatsMode') || 'ingame';
+  function setWeaponStatsMode(mode) {
+    weaponStatsMode = mode;
+    localStorage.setItem('weaponStatsMode', mode);
+    renderBuilder();
+  }
+
   const DESIGN_SLOTS = [
     ['weapon','Weapons'], ['turret','Turrets'], ['shield','Shields'],
     ['engine','Engine'],  ['thruster','Thruster'],
@@ -694,8 +706,19 @@
             <i class="ti ${on ? 'ti-check' : 'ti-plus'}" style="color:var(--lime);font-size:13px"></i></div>`;
         }).join('');
 
+      // In-Game/True Stats toggle for the hover tooltip's derived combat stats
+      // (see setWeaponStatsMode + weaponTipHtml in tooltips.js) -- only
+      // meaningful for weapon/turret cards, which are the only ones that
+      // carry data-weapon-tip at all. One button: red = off (in-game,
+      // truncated like the real tooltip), green = on (raw 3dp, no truncation).
+      const trueOn = weaponStatsMode === 'true';
+      const statsToggle = wantsTip ? `<button class="bstats-toggle ${trueOn ? 'on' : ''}"
+          onclick="setWeaponStatsMode('${trueOn ? 'ingame' : 'true'}')"
+          title="${trueOn ? 'Showing True Stats (raw, 3dp, no truncation) — click for In-Game' : 'Showing In-Game stats (truncated to match the real tooltip) — click for True Stats'}">
+          <i class="ti ti-flask" style="font-size:11px"></i> True Stats</button>` : '';
+
       right = `<div class="bopts">
-        <div class="bopts-h"><i class="ti ${m.icon}" style="color:${m.color};font-size:15px"></i><span class="lbl">Available · ${SIZE_WORD[selSize] || selSize.toUpperCase()} ${label}</span>${builderEqFilterDD(sel, selSize)}<span class="mt">${selSize.toUpperCase()} mount${full ? ' · full' : ''}</span></div>
+        <div class="bopts-h"><i class="ti ${m.icon}" style="color:${m.color};font-size:15px"></i><span class="lbl">Available · ${SIZE_WORD[selSize] || selSize.toUpperCase()} ${label}</span>${builderEqFilterDD(sel, selSize)}${statsToggle}<span class="mt">${selSize.toUpperCase()} mount${full ? ' · full' : ''}</span></div>
         <div style="padding:5px 8px">
           <div class="borow"><span></span><span></span>${headerCells}<span class="boh">Cost</span><span></span></div>
           ${opts || '<div style="color:var(--text-dim);font-size:11px;padding:8px">No compatible equipment.</div>'}

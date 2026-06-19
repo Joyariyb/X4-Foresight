@@ -163,3 +163,24 @@
     updateSortHeaders('#fleet-table', currentSortKey, currentSortDir);
   }
 
+  // Click handlers for the fleet table:
+  //   .crew-link  → jump to that pilot's crew file
+  //   .stn-link   → switch to Stations tab and scroll to that station's card
+  document.getElementById('fleet-table').addEventListener('click', function(e) {
+    // Crew file navigation (pilot stars)
+    const crewLink = e.target.closest('.crew-link');
+    if (crewLink) {
+      e.stopPropagation();
+      const allIdx = parseInt(crewLink.dataset.crewIdx, 10);
+      if (!isNaN(allIdx) && allIdx >= 0) jumpToCrew(allIdx);
+      return;
+    }
+    // Station navigation (homebase code)
+    const stnLink = e.target.closest('.stn-link');
+    if (stnLink) {
+      e.stopPropagation();
+      const code = stnLink.dataset.stnCode;
+      if (code) goToStation(code);
+    }
+  });
+

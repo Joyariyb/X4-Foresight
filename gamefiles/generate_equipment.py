@@ -154,12 +154,16 @@ def _float(el, attr: str):
 
 
 def _num(v):
-    """Round to 1dp, then collapse to a plain int when that's exact (X4 damage/
+    """Round to 3dp, then collapse to a plain int when that's exact (X4 damage/
     capacity values are almost always whole numbers; keeps the generated file's
-    existing int-heavy style instead of sprouting '.0' on every multiplied value)."""
+    existing int-heavy style instead of sprouting '.0' on every multiplied value).
+    3dp (not 1dp) so the UI has enough precision to truncate down to the in-game
+    tooltip's displayed value instead of rounding to it -- the game truncates
+    these derived stats, it doesn't round, so pre-rounding away the sub-tenth
+    digits here would make that truncation impossible downstream."""
     if v is None:
         return None
-    r = round(v, 1)
+    r = round(v, 3)
     return int(r) if r == int(r) else r
 
 
@@ -517,8 +521,12 @@ def load_equipment(idx: CatalogIndex, bullets: dict[str, dict], prices: dict[str
                     if avg_heat_rate:
                         tto = (overheat - initial) / avg_heat_rate
                         cooldown = cooldelay + overheatcooldelay + overheat / coolrate
-                        rec["time_to_overheat"]  = round(tto, 1)
-                        rec["cooldown_duration"] = round(cooldown, 1)
+                        # 3dp, not 1dp -- same reasoning as _num(): the game
+                        # truncates these to 1dp for its tooltip rather than
+                        # rounding, so the UI needs the extra digits to
+                        # reproduce that truncation itself.
+                        rec["time_to_overheat"]  = round(tto, 3)
+                        rec["cooldown_duration"] = round(cooldown, 3)
                         if rec.get("damage_rate_burst") is not None:
                             rec["damage_rate_sustained"] = _num(
                                 rec["damage_rate_burst"] * tto / (tto + cooldown))
