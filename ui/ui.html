@@ -66,6 +66,27 @@
       <div class="sb-item" onclick="switchTab('builder',document.getElementById('nav-naval')); initBuilder()">
         <span class="sb-item-label"><i class="ti ti-tools"></i> Ship Builder</span>
       </div>
+      <!-- Resource Library — an in-app wiki of every hull/equipment macro the
+           game ships, read straight from the same EQUIPMENT_CATALOG/HULL_CATALOG
+           the Ship Builder already uses. Click pops a flyout (not hover, so it
+           works the same on a trackpad as a mouse); picking a category jumps
+           straight to that table. -->
+      <div class="reslib-wrap" id="reslib-wrap">
+        <div class="sb-item">
+          <span class="sb-item-label"><i class="ti ti-books"></i> Resource Library</span>
+          <i class="ti ti-chevron-right" style="font-size:11px;opacity:0.6"></i>
+        </div>
+        <div class="reslib-menu" id="reslib-menu">
+          <div class="reslib-menu-item" onclick="openResLib('hull')"><i class="ti ti-ufo"></i> Hulls</div>
+          <div class="reslib-menu-item" onclick="openResLib('weapon')"><i class="ti ti-bolt"></i> Weapons</div>
+          <div class="reslib-menu-item" onclick="openResLib('turret')"><i class="ti ti-circle-dot"></i> Turrets</div>
+          <div class="reslib-menu-item" onclick="openResLib('shield')"><i class="ti ti-shield"></i> Shields</div>
+          <div class="reslib-menu-item" onclick="openResLib('engine')"><i class="ti ti-engine"></i> Engines</div>
+          <div class="reslib-menu-item" onclick="openResLib('thruster')"><i class="ti ti-windmill"></i> Thrusters</div>
+          <div class="reslib-menu-item" onclick="openResLib('software')"><i class="ti ti-cpu"></i> Software</div>
+          <div class="reslib-menu-item" onclick="openResLib('item')"><i class="ti ti-box"></i> Items</div>
+        </div>
+      </div>
       <div class="sb-divider"></div>
       <div class="sb-heading">Advisors</div>
       <div class="sb-item" id="sb-military">
@@ -242,6 +263,36 @@
         <div id="builder-root"></div>
       </div>
 
+      <!-- RESOURCE LIBRARY TAB — read-only wiki of every hull/equipment macro
+           the game ships (reached from the left sidebar's Resource Library
+           flyout, never from a link on another resource page). Filled by
+           renderResLib()/renderResLibHeader() in resource-library.js: the
+           header shows the page you're actually on instead of a static
+           "Resource Library" title, and for Hulls doubles as the List/
+           Inspector tab switch plus the Faction/Size/Type filter row. -->
+      <div class="tab-panel" id="tab-reslib">
+        <div id="reslib-header"></div>
+
+        <div class="panel" id="reslib-panel" style="overflow:auto; max-height: calc(100vh - 230px);">
+          <table class="data-table" id="reslib-table">
+            <thead id="reslib-thead"></thead>
+            <tbody id="reslib-tbody"></tbody>
+          </table>
+        </div>
+
+        <!-- Hull Inspector — per-hull detail view, shown in place of
+             reslib-panel once a hull is clicked in the Hull List. -->
+        <div class="panel" id="reslib-inspector" style="display:none; overflow:auto; max-height: calc(100vh - 230px); padding:14px;"></div>
+
+        <!-- Shown for categories with no data pipeline yet (Software/Items), or
+             before any scan has loaded the static equipment/hull catalogs. -->
+        <div id="reslib-empty" style="display:none;flex-direction:column;align-items:center;gap:10px;padding:80px 20px;color:var(--text-dim)">
+          <i class="ti ti-books" id="reslib-empty-icon" style="font-size:40px;color:var(--teal);opacity:0.5"></i>
+          <div class="cond" id="reslib-empty-title" style="font-size:18px;font-weight:600;color:var(--text)"></div>
+          <div id="reslib-empty-body" style="font-size:13px;max-width:420px;text-align:center;line-height:1.6"></div>
+        </div>
+      </div>
+
       <!-- STATIONS TAB -->
       <div class="tab-panel" id="tab-stations">
         <div class="sec-header"><div class="sec-title">Stations</div><div class="sec-line"></div></div>
@@ -410,6 +461,7 @@
 <script src="js/formatters.js"></script>
 <script src="js/fleet.js"></script>
 <script src="js/designs-builder.js"></script>
+<script src="js/resource-library.js"></script>
 <script src="js/tooltips.js"></script>
 <script src="js/faction-tabs.js"></script>
 <script src="js/navigation.js"></script>
