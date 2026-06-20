@@ -1,4 +1,4 @@
-  // ── STATION CARD HELPERS ─────────────────────────────────────────────────
+  // Core role: Station tab switcher, trader highlight, and budget stat display.
 
   // Switches the visible tab panel within a single station card.
   function switchStationTab(code, tab) {

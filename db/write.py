@@ -1,13 +1,4 @@
-"""
-db/write.py
-
-write_scan(conn, ctx) — persist one ScanContext to the database.
-
-The DB is the source of truth for scan_id: we INSERT the scans row, take the
-auto-incremented id, and stamp every child row with it (ignoring the placeholder
-scan_id the scanner stamped on the entities).
-
-Three storage classes, handled differently (see schema.sql):
+"""Core role: Persists scan context to database in three storage classes (HISTORY, LEDGER, REFERENCE).
   HISTORY    one row per entity, this scan      → plain INSERT
   LEDGER     each trade once, dedup by trade_key → INSERT ... ON CONFLICT
   REFERENCE  galaxy data, latest-only           → INSERT OR REPLACE

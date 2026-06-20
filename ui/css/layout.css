@@ -1,4 +1,5 @@
-    /* ── TOP BAR ── */
+    /* Core role: Main layout grid (top bar, tabs, sidebar, responsive zones). */
+    /* TOP BAR */
     #topbar { display: flex; align-items: stretch; background: var(--bg-panel); border-bottom: 1px solid var(--border); height: 48px; flex-shrink: 0; }
     .tb-logo { display: flex; align-items: center; gap: 8px; padding: 0 20px; border-right: 1px solid var(--border); font-family: var(--font-cond); font-weight: 700; font-size: 15px; letter-spacing: 0.12em; color: var(--teal); white-space: nowrap; }
     .tb-logo i { font-size: 18px; }

@@ -1,3 +1,5 @@
+  // Core role: Shared UI formatters (credits, percentages, times, durations, quantities).
+
   function fmtCredits(n) {
     n = parseFloat(n);
     if (isNaN(n)) return "—";

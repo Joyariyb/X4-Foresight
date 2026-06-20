@@ -1,17 +1,10 @@
-  // ── SHARED HOVER TOOLTIP ────────────────────────────────────────────────────
-  // Single dispatcher for every hover tooltip in the app: hull bars, pilot
-  // skills, module/loadout/weapon lists, storage breakdowns, and the station
-  // economy charts (budget pie, cash-flow, ware price, avg price). Each
-  // hoverable element just stamps a data-*-tip attribute (JSON-encoded where
-  // the payload isn't plain text); this listens on the whole document and
-  // routes to the matching *TipHtml() builder below. Centralising it here
-  // means a chart only needs to know its own data shape, not how to draw a
-  // tooltip.
+  // Core role: Central hover tooltip dispatcher for all interactive elements (hulls, equipment, charts).
+  // Elements stamp data-*-tip attributes; this routes to matching *TipHtml() builders. Centralizing here
+  // lets charts focus on their data, not tooltip rendering.
   (function() {
     const tip = document.getElementById('hull-tip');
 
     function moduleTipHtml(groups) {
-      // Renders module groups as category headers followed by name × count rows.
       return `<div style="min-width:180px;max-width:260px;padding:2px 0">` +
         groups.map(g =>
           `<div style="margin-bottom:8px">
@@ -32,9 +25,7 @@
     }
 
     function loadoutTipHtml(loadout) {
-      // Ship equipment grouped by slot — same category + "name ×count" layout as
-      // moduleTipHtml. Each row shows the maker faction (when the part has one;
-      // generic parts like thrusters don't) and the installed count.
+      // Same layout as moduleTipHtml, plus maker faction when available.
       const SLOT_ORDER = [
         ['weapon',   'Weapons'],
         ['turret',   'Turrets'],

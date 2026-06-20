@@ -1,34 +1,12 @@
-# ════════════════════════════════════════════════════════════════════════════
-#              DATA TABLE GENERATOR — wares.xml → data/*.py
-# ════════════════════════════════════════════════════════════════════════════
+# Core role: Regenerates game-derived lookup tables (wares, prices, production) by parsing X4's .cat/.dat archives; designed to show diffs after game updates.
 #
-# Regenerates the ware-derived lookup tables in data/ straight from the game's
-# own files, read out of the .cat/.dat archives (no extraction needed):
+# Output: data/wares.py, data/ware_prices.py, data/production_stats.py
+# Run after game update or DLC install: python gamefiles/generate_data.py
 #
-#   data/wares.py            WARE_NAMES, WARE_VOLUME, WARE_TRANSPORT,
-#                            WARE_GROUPS (+ WARE_GROUP_PRIORITY, editorial)
-#   data/ware_prices.py      WARE_PRICES
-#   data/production_stats.py PRODUCTION_STATS
+# DESIGN: generate-and-commit, not read-at-runtime. Data files stay importable without game install;
+# value changes show as reviewable diffs instead of silent runtime drift.
 #
-# Run it after a game update or DLC install:
-#
-#   python gamefiles/generate_data.py
-#
-# then review `git diff data/` — the diff IS the change report: every value
-# the patch touched shows up as a changed line. Nothing else in the codebase
-# needs to change; the generated files keep the exact same dict names and
-# shapes the scanner already imports.
-#
-# DESIGN: generate-and-commit, not read-at-runtime. The data files stay
-# importable without a game install (UI-only use, CI, other machines), and
-# value changes arrive as reviewable diffs instead of silent runtime drift.
-#
-# WHAT COUNTS AS "EDITORIAL": WARE_GROUP_PRIORITY encodes our chosen station
-# auto-naming order — it does not exist in the game files (waregroups.xml has
-# a `tier` attribute but it orders tech progression, not naming priority), so
-# it is emitted verbatim from the template below. Edit it HERE, not in the
-# generated file.
-# ════════════════════════════════════════════════════════════════════════════
+# EDITORIAL: WARE_GROUP_PRIORITY is hand-maintained (doesn't exist in game files). Edit it below.
 
 import pathlib
 import re
@@ -67,8 +45,7 @@ GENERATED_BANNER = (
 )
 
 
-# clean_text / load_texts / _REF_RE / _COMMENT_RE are imported from
-# gamefiles.langtext above (shared with generate_equipment.py).
+# Imports from gamefiles.langtext are shared with generate_equipment.py
 
 
 # ──────────────────────────────────────────────────────────────────────────

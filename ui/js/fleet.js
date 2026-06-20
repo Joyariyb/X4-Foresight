@@ -1,11 +1,8 @@
-  // ── FLEET SORT ────────────────────────────────────────────────────────────
-  // currentSortKey  — which field we're sorting by
-  // currentSortDir  — 1 = ascending (A→Z, low→high), -1 = descending (Z→A, high→low)
-  // allPlayerShips  — full ship list kept so setSort() can re-render without
-  //                   re-running populate()
+  // Core role: Displays and filters player fleet with sortable columns (role, pilot, health, etc.).
+
   let currentSortKey = 'role';
   let currentSortDir = 1;
-  let allPlayerShips = [];
+  let allPlayerShips = []; // Cache to avoid re-running populate() on sort
 
   // Returns a comparable value for a given ship and sort key.
   // Numeric keys (size, health) return numbers so they sort correctly.
@@ -163,9 +160,6 @@
     updateSortHeaders('#fleet-table', currentSortKey, currentSortDir);
   }
 
-  // Click handlers for the fleet table:
-  //   .crew-link  → jump to that pilot's crew file
-  //   .stn-link   → switch to Stations tab and scroll to that station's card
   document.getElementById('fleet-table').addEventListener('click', function(e) {
     // Crew file navigation (pilot stars)
     const crewLink = e.target.closest('.crew-link');

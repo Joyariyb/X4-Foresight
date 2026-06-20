@@ -1,3 +1,5 @@
+# Core role: Extracts player and NPC stations from save, including modules, cargo, crew, and budget.
+
 from __future__ import annotations
 import re
 from data.factions import FACTION_NAMES
@@ -19,19 +21,16 @@ from ..xml_utils import iter_station_components
 #  MODULE-LEVEL CONSTANTS
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Maps the raw state attribute on a station <component> to a display label.
-# Operational stations have NO state attribute — absent maps to "Operational".
+# Station state attribute → display label (absent=Operational)
 _STATE_LABELS = {
     "construction": "Under Construction",
     "wreck":        "Destroyed",
 }
 
-# Matches production module macros: prod_{faction}_{ware}_macro
-# Group 1 is the produced ware ID.
+# Production module macros (prod_..._macro); Group 1 = produced ware ID
 _PROD_MACRO_RE = re.compile(r'^prod_(?:\w+?)_(\w+)_macro$', re.IGNORECASE)
 
-# Maps the category token (first token of a module macro) to a display label.
-# Used to produce a human-readable category for StationModule.
+# Module macro first token → display label (e.g., prod_xyz_macro → "Production")
 _MODULE_CATEGORIES: dict[str, str] = {
     "buildmodule": "Build Module",
     "cargo":       "Cargo",
@@ -53,16 +52,9 @@ _MODULE_CATEGORIES: dict[str, str] = {
 # ─────────────────────────────────────────────────────────────────────────────
 
 class StationHandler:
-    """
-    Extracts all player station data from buffered station subtrees.
+    """Extract player station data from buffered subtrees (modules, cargo, health, budget, crew).
 
-    Called twice per station:
-      on_start() — captures sector context from the component stack while the
-                   opening tag is still being processed.
-      on_end()   — the full subtree is in memory; walks it to extract modules,
-                   cargo, health, budget, account, and manager crew.
-
-    All extraction emits typed dataclasses rather than raw dicts.
+    on_start: capture sector context. on_end: walk full subtree, extract and append to ctx.
     """
 
     def __init__(self, sector_names: dict, texts: dict) -> None:
@@ -76,27 +68,14 @@ class StationHandler:
     # ── Dispatcher entry points ───────────────────────────────────────────────
 
     def on_start(self, elem, ctx) -> None:
-        """
-        Capture the sector context before the subtree is buffered.
-
-        We read ctx.current_sector_macro (set by SectorHandler) rather than
-        walking the component stack. The stack depth between a sector and a
-        station varies — zone and other components also push frames — so
-        frame_at(1) is not reliably the sector frame.
-        """
+        """Capture sector context. Read ctx.current_sector_macro (stack depth varies due to zones)."""
         self._sector_macro = ctx.current_sector_macro
         self._sector_name  = (
             macro_to_sector_name(self._sector_macro, self._sector_names) or ''
         )
 
     def on_end(self, elem, ctx) -> None:
-        """
-        Build the Station entity once the full subtree is in memory.
-
-        Walks the buffered element to extract modules, health, cargo,
-        inventory, budget, and manager. Appends to ctx.stations and
-        registers the object_id in ctx.player_station_ids.
-        """
+        """Build Station entity from full subtree. Extract modules, health, cargo, budget, crew."""
         object_id = elem.get('id',    '')
         code      = elem.get('code',  '')
         macro     = elem.get('macro', '')
@@ -107,9 +86,7 @@ class StationHandler:
         name = self._resolve_name(elem, macro)
 
         # ── Module list and health ─────────────────────────────────────────────
-        # _parse_modules walks the subtree once and returns both the
-        # StationModule list and the per-module hull/shield data needed for
-        # health totals — avoids a second traversal.
+        # Single traversal returns modules + hull/shield data (avoids second walk)
         modules, hull_hp, hull_max, shield_hp, shield_max = self._parse_modules(elem)
         hull_pct   = (hull_hp   / hull_max   * 100.0) if hull_max   else None
         shield_pct = (shield_hp / shield_max * 100.0) if shield_max else None
@@ -119,8 +96,7 @@ class StationHandler:
             self._parse_storage(elem)
 
         # ── Station account ───────────────────────────────────────────────────
-        # own="1" marks the station's operating cash account; other <account>
-        # elements inside the station are trade escrow accounts.
+        # own="1" = station cash (other <account> elements are trade escrow)
         acct_elem      = elem.find('account[@own="1"]')
         account_amount = None
         if acct_elem is not None:
@@ -130,13 +106,11 @@ class StationHandler:
                 pass
 
         # ── Module count ──────────────────────────────────────────────────────
-        # Count every entry in the construction sequence (including structural
-        # pieces, dock areas, etc.) for the true total module count.
+        # Count all construction sequence entries (structural pieces, docks, etc.)
         module_count = self._count_modules(elem)
 
         # ── Budget estimate ───────────────────────────────────────────────────
-        # Reverse-engineered supply budget. Needs the resolved sector name for
-        # the sunlight multiplier used in energy-cell production.
+        # Reverse-engineered from production modules; uses sector sunlight multiplier
         budget = estimate_station_budget(elem, self._sector_macro)
 
         # ── Build Station dataclass ───────────────────────────────────────────

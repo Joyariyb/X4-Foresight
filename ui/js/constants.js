@@ -1,3 +1,5 @@
+  // Core role: Shared UI constants (role/faction/ware sets, color mappings, faction metadata).
+
   const HOSTILE_ORIGINS = new Set(["Xenon", "Yaki", "Kha'ak"]);
   const MILITARY_ROLES  = new Set(["Fighter","Heavy Fighter","Corvette","Destroyer","Frigate","Gunboat"]);
   const MINER_ROLES     = new Set(["Miner (Solid)","Miner (Liquid)"]);
@@ -5,8 +7,6 @@
   const ORDER_COLOURS = { Trading:"var(--green)", Mining:"var(--amber)", Escorting:"var(--teal)", Waiting:"var(--text-faint)" };
   const SIZE_COLOURS  = { XL:"var(--purple)", L:"var(--amber)", M:"var(--teal)", S:"var(--text-dim)" };
 
-  // Bright accent colour for each production ware, keyed by display name.
-  // Unrecognised wares fall back to --text-dim in the renderer.
   const WARE_COLOURS = {
     // Raw resources
     "Ore":                          "#cd7f32",

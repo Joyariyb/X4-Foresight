@@ -1,17 +1,4 @@
-"""
-x4_save_scanner.py — command-line entry point.
-
-Runs the whole pipeline from one command:
-
-    select save  ->  scan  ->  resolve trades  ->  write to DB  ->  write JSON
-
-There are no mode / ship-tier / NPC-station prompts: the scanner is a single
-pass that extracts everything, so the only choice is which save to read.
-
-Usage:
-    python x4_save_scanner.py                 # interactive save picker
-    python x4_save_scanner.py path/to/save    # scan a specific file
-"""
+"""Core role: Command-line entry point (select save → scan → resolve → write DB → write JSON)."""
 from __future__ import annotations
 import sys
 import time

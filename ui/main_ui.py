@@ -1,19 +1,6 @@
-"""Desktop shell + launcher for the X4 Foresight dashboard.
+"""Core role: QtWebEngine desktop shell for the empire state dashboard (ui.html).
 
-Hosts ui.html inside a QtWebEngine window and feeds it the empire-state export
-through a QWebChannel bridge (the page calls `bridge.get_empire_data()`).
-
-Launch flow:
-  - If x4_empire_state.json already exists, ask whether to run a fresh scan.
-  - If no export exists yet, go straight to the save picker.
-  - Scanning runs in a background thread (QThread) so the window stays
-    responsive; it calls the scanner's run() — the single entry point that does
-    scan -> resolve -> DB -> JSON. We then read the freshly written JSON back.
-
-Run from the repo root:  python ui/main_ui.py
-(or double-click X4_Empire_Intelligence.pyw for a no-console launch)
-
-Requires: PyQt6, PyQt6-WebEngine.
+Manages scan scheduling, JSON export delivery via QWebChannel bridge, and background scanning threads.
 """
 
 import sys
@@ -190,7 +177,7 @@ class ScanProgressDialog(QDialog):
         self._status = QLabel("Starting…")
         layout.addWidget(self._status)
         bar = QProgressBar()
-        bar.setRange(0, 0)   # indeterminate — phases aren't a measurable %
+        bar.setRange(0, 0)
         layout.addWidget(bar)
 
         self.error_msg: str | None = None

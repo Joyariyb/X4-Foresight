@@ -1,13 +1,4 @@
-"""
-budget.py
-=========
-Estimates the credit budget a station needs to keep itself supplied — the same
-figure the in-game station manager shows as the station's allocated budget.
-
-The number is reverse-engineered, not read directly: X4 doesn't store the budget
-in the save. It recomputes it from each ware's storage/trade configuration. We
-reproduce that computation here and have validated it to the credit against real
-stations (GX HQ, Station BHS).
+"""Core role: Reverse-engineers station supply budget from ware storage/trade config (validated vs. real stations).
 
 PER-WARE DECISION TREE
 ----------------------

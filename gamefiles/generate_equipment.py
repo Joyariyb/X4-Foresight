@@ -1,45 +1,12 @@
-# ════════════════════════════════════════════════════════════════════════════
-#       EQUIPMENT CATALOG GENERATOR — prop macros → data/equipment_stats.py
-# ════════════════════════════════════════════════════════════════════════════
+# Core role: Generates equipment catalog (weapons, turrets, shields, engines, thrusters) with calculated stats by parsing equipment macros from .cat/.dat archives.
 #
-# Builds the equipment catalog the ship-loadout feature needs: every weapon,
-# turret, missile launcher/turret, shield, engine and thruster the game ships
-# (all races, no faction filter), with a readable name and the stats players
-# care about -- including the derived numbers the in-game tooltip shows
-# (sustained damage rate, time to overheat, etc.), not just the raw XML
-# values. Read straight from the .cat/.dat archives (base + DLC), exactly
-# like gamefiles/generate_data.py — generate-and-commit, so a game patch
-# shows up as a reviewable `git diff data/equipment_stats.py`.
+# Output: data/equipment_stats.py with EQUIPMENT_STATS (macro → stats) and EQUIPMENT_ALIASES (aliases → canonical)
+# Run after game update or DLC install: python gamefiles/generate_equipment.py
 #
-# Run after a game update or DLC install:
+# DESIGN: generate-and-commit for reviewable diffs on game patches.
 #
-#   python gamefiles/generate_equipment.py
-#
-# OUTPUT  data/equipment_stats.py
-#   EQUIPMENT_STATS    macro id → {slot, name, stats...}
-#   EQUIPMENT_ALIASES  alias macro id → canonical macro id (some macros answer
-#                      to a second name; a save can reference either)
-#
-# WHERE THE DATA LIVES (verified against the 9.00 files):
-#   weapons    assets/props/weaponsystems/<cat>/macros/weapon_*.xml   class="weapon"
-#   turrets    assets/props/weaponsystems/<cat>/macros/turret_*.xml   class="turret"
-#   launchers  assets/props/weaponsystems/<cat>/macros/weapon_*.xml   class="missilelauncher"
-#   m.turrets  assets/props/weaponsystems/<cat>/macros/turret_*.xml   class="missileturret"
-#   shields    assets/props/surfaceelements/macros/shield_*.xml       class="shieldgenerator"
-#   engines    assets/props/engines/macros/engine_*.xml               class="engine"
-#   thrusters  assets/props/engines/macros/thruster_*.xml             class="engine" + type="thrustertypes"
-#   bullets    assets/fx/weaponfx/macros/bullet_*.xml                 class="bullet"
-#   missiles   assets/props/weaponsystems/missile/macros/missile_*.xml class="missile"
-#
-# WEAPON DAMAGE IS ONE HOP AWAY: a weapon/turret/launcher macro doesn't hold
-# its own damage — it points at a <bullet class="..._macro"/>, which names
-# either a bullet macro or (for missile launchers/turrets) a missile macro.
-# So we index bullets+missiles first, then resolve. Mines and the spacesuit
-# bomb launcher are NOT included here even though they share the
-# weaponsystems folder — verified via their component's hardpoint-mount tags
-# that they aren't ship-hardpoint equipment (mines are deployable="1"; the
-# bomblauncher mounts to a player EVA suit, not a ship).
-# ════════════════════════════════════════════════════════════════════════════
+# Weapon damage is one hop away: weapon/turret/launcher macros reference bullet/missile macros which hold the damage values.
+# Mines and spacesuit bomb launcher are excluded (not ship-hardpoint equipment).
 
 import pathlib
 import re
@@ -132,7 +99,7 @@ def _int(el, attr: str):
 
 
 def _round(el, attr: str, ndigits: int = 1):
-    """Attribute as a rounded float, or None if missing."""
+    """Attribute as rounded float, or None if missing."""
     if el is None:
         return None
     v = el.get(attr)
@@ -143,7 +110,7 @@ def _round(el, attr: str, ndigits: int = 1):
 
 
 def _float(el, attr: str):
-    """Attribute as an unrounded float, or None if missing/blank/non-numeric."""
+    """Attribute as unrounded float, or None if missing/blank/non-numeric."""
     if el is None:
         return None
     v = el.get(attr)
@@ -168,7 +135,7 @@ def _num(v):
 
 
 def _glob(idx: CatalogIndex, *patterns: str) -> list[str]:
-    """Union of catalog matches for several wildcards, deduped and sorted."""
+    """Union of catalog matches for multiple wildcards."""
     seen: set[str] = set()
     for p in patterns:
         seen.update(idx.find(p))
@@ -290,9 +257,7 @@ def load_bullets(idx: CatalogIndex) -> dict[str, dict]:
 
         entry: dict = {}
 
-        # damage_hull: <damage value=>, or <areadamage value=> when <damage>
-        # has none at all (flak-type weapons -- confirmed against the ARG M
-        # Flak Turret tooltip this session).
+        # Flak-type weapons store damage in <areadamage> instead of <damage>
         dmg_hull = _float(dmg_el, "value")
         if dmg_hull is None:
             dmg_hull = _float(area_el, "value")

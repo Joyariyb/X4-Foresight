@@ -1,7 +1,5 @@
-    /* ── ECONOMY PIE CHART ── */
-    /* Slices dim slightly at rest and pop on hover; the hovered slice also nudges
-       outward via a per-slice translate set inline (transform-box keeps the
-       rotation/scale origin at the slice centroid). */
+    /* Core role: Styles for station economy/budget charts (pie, bar, trend curves). */
+    /* ECONOMY PIE CHART — slices pop on hover */
     /* Soft drop shadow under the whole ring so the donut lifts off the card.
        CSS drop-shadow is used instead of an SVG <filter> (feDropShadow renders
        inconsistently in this QtWebEngine build). */

@@ -1,46 +1,18 @@
-  // ── STATION CASH-FLOW CHART ────────────────────────────────────────────────
-  // Plots the station's trade cash flow over the last 24 h. Two views, switched
-  // by a toggle (setCashflowMode):
-  //   • Hourly — net credits per hour (sells + / buys −), one bar-like point per
-  //     hour; hover shows that hour's per-ware summary.
-  //   • By Trade — a smooth cumulative cash-flow curve with one vertex per
-  //     individual trade; hover (nearest point) shows that exact trade's full
-  //     details. This is the "drilled down" view.
-  // Both are measured directly from recorded trades — unlike account balance or
-  // inventory, which can't be reconstructed from a save snapshot (only
-  // player↔NPC trades are logged as events, not production/consumption).
+  // Core role: Plots station trade cash flow over 24 hours with two modes (hourly net per-ware, or cumulative by-trade) and zoom/scrubber navigation.
+  //
+  // Measured directly from recorded trades (account balance and inventory can't be reconstructed from a save snapshot).
   const HOURS = 24;
-  // Per-station point arrays for the By-Trade view's nearest-point hover,
-  // keyed by safeCode. Populated as the detail chart is built.
   const cashflowDetailData = {};
-  // Ware price bands from the export — { wareKey: { min, average, max } }.
-  // Populated in populate() from data.ware_prices.
   let warePrices = {};
-  // Per-station ware visibility for the By-Ware chart — { safeCode: { wareName: bool } }.
-  // Persists across re-renders so toggle state survives a mode switch.
   const wareVisibility = {};
-  // Per-station hover lookup tables for the By-Ware chart, keyed by safeCode.
-  // Each entry is an array of { fx, fy, vbx, vby, ware, colour, price, … }.
   const wareChartData = {};
-  // ── Scrubber zoom/pan state ────────────────────────────────────────────────
-  // Minimum and maximum visible window size (hours).  The full 24 h of history
-  // is always fetched; the window is just which slice is rendered.
+
   const CF_MIN_HOURS = 3, CF_MAX_HOURS = 24;
-  // Per-station zoom state: { hours, offsetHours }.
-  //   hours       — width of the visible window (CF_MIN_HOURS … CF_MAX_HOURS)
-  //   offsetHours — how far the window's right edge is from "now" (0 = right at now)
-  // Initialised to full-range on first render; persists across tab switches and
-  // data refreshes so the user's zoom position is remembered.
-  const cfZoom = {};
-  // Station data cache so rebuildCfChart() can regenerate chart bodies without
-  // receiving the original goodsChartSvg() arguments a second time.
-  const cfStationCache = {};
-  // Active scrubber drag state — set on mousedown, cleared on mouseup.
+  const cfZoom = {}; // Persists across tab switches
+  const cfStationCache = {}; // Reuse on scrubber drag (avoid recomputation)
   let cfScrubDrag = null;
-  // Per-station By-Ware direction toggle: 'sell' (Out trades, default) or 'buy' (In trades).
   const wareMode = {};
-  // ── Avg Price chart state (independent of the By-Ware toggle above) ─────────
-  // avgWare: the single selected ware (radio chips). avgMode: 'sell'/'buy'.
+
   const avgWare = {};
   const avgMode = {};
   const cfNiceStep = (range, target) => {
@@ -58,9 +30,7 @@
   };
   const cfFmtCr = n => (n < 0 ? '−' : '+') + Math.abs(Math.round(n)).toLocaleString() + ' cr';
 
-  // Render the full cash-flow section for one station.
-  // Station data is cached so rebuildCfChart() can regenerate the bodies without
-  // needing the original call arguments (scrubber drag only knows safeCode).
+  // Station data cached so rebuildCfChart() can regenerate without recomputing.
   function goodsChartSvg(station, allTrades) {
     const safeCode = station.code.replace(/[^a-z0-9]/gi, '');
 

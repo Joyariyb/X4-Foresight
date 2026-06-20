@@ -1,5 +1,5 @@
-    /* ── UNIVERSE TAB ── */
-    /* Negative margin cancels the 14px padding of #content so the map fills edge-to-edge. */
+    /* Core role: Styles for interactive galaxy hex map with zoom-driven label visibility. */
+    /* UNIVERSE TAB — map fills edge-to-edge via negative margin */
     #tab-universe { flex: 1; min-height: 0; margin: -14px; gap: 0; }
     .universe-filter-bar { height: 38px; padding: 0 14px; display: flex; align-items: center; gap: 8px; background: var(--bg-panel); border-bottom: 1px solid var(--border); flex-shrink: 0; font-family: var(--font-cond); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
     #universe-map-wrap { flex: 1; min-height: 0; overflow: hidden; cursor: grab; position: relative; background: var(--bg); user-select: none; }

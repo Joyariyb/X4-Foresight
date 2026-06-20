@@ -1,20 +1,6 @@
-"""
-display.py — colored console intelligence report.
+"""Core role: Renders scan context to terminal as a colored sector-grouped tree with reputation bars and threat flags.
 
-Renders a populated ScanContext to the terminal — a sector-grouped tree with
-reputation bars and dynamic columns, coloured to convey state at a glance:
-
-  - hull / shield graded green→yellow→red by health
-  - reputation bars tinted by standing
-  - HOSTILE factions (Xenon/Kha'ak, and anyone you're at war with) flagged RED
-    in the threat panel
-  - trade counterparties tinted by provenance (proven green / inferred yellow /
-    unknown grey)
-
-COLOUR + ALIGNMENT RULE: ANSI escape codes have zero display width but DO count
-as characters in f-string padding. So we always PAD the visible text first, then
-wrap colour around the finished cell — never pad an already-coloured string.
-"""
+ANSI codes have zero width but count as chars in f-string padding; pad visible text FIRST, then wrap color."""
 from __future__ import annotations
 import os
 import re
@@ -113,7 +99,7 @@ def _health_color(pct):
 
 
 def _health_str(pct, hp, mx) -> str:
-    """Colour-graded 'NN%  (hp / max)' or 'Full' / '—'."""
+    """Colour-graded health % with optional HP breakdown."""
     if pct is None:
         return paint("—", GREY)
     if pct >= 99.9:

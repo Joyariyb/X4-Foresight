@@ -1,11 +1,4 @@
-# ──────────────────────────────────────────────────────────────────────────
-#  X4 LANGUAGE-FILE TEXT RESOLVER  (t/0001-l044.xml)
-# ──────────────────────────────────────────────────────────────────────────
-#
-# Shared by the data generators (generate_data.py, generate_equipment.py).
-# X4 display strings are not stored inline — they are "{page,id}" references
-# into the language file, composed at runtime. This module turns those refs
-# into the finished display text.
+# Core role: Resolves X4 language-file text references ({page,id} → display strings).
 #
 # t-file format notes:
 #   - "{page,id}" references are the actual display text, composed at runtime.

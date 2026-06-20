@@ -1,6 +1,4 @@
-# ════════════════════════════════════════════════════════════════════════════
-#                          LANGUAGE FILE: SECTOR NAME RESOLUTION
-# ════════════════════════════════════════════════════════════════════════════
+# Core role: Language file parsing and text reference resolution for names and descriptions.
 
 import contextlib
 import gzip

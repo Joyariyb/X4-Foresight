@@ -1,3 +1,5 @@
+# Core role: Data entity definitions (Scan, Station, Ship, Crew, Trade, etc.) shared by scanner and export.
+
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional
@@ -9,13 +11,13 @@ from typing import Optional
 
 @dataclass
 class Scan:
-    scan_id:        int    # PK — auto-increment
-    scanned_at:     str    # real-world datetime e.g. "2026-06-02T14:32:00Z"
+    scan_id:        int    # PK
+    scanned_at:     str    # real-world ISO datetime
     save_file:      str    # filename e.g. "save_003.xml.gz"
-    game_time_s:    float  # in-game clock at save time — anchor for time_ago_s calculations
-    player_name:    str    # e.g. "Ares"
-    player_sector:  str    # e.g. "The Void"
-    player_credits: int    # credits at scan time
+    game_time_s:    float  # in-game clock (anchor for time_ago_s)
+    player_name:    str    # player name
+    player_sector:  str    # player location sector name
+    player_credits: int    # player credits at scan time
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -24,30 +26,27 @@ class Scan:
 
 @dataclass
 class ReputationEntry:
-    scan_id:      int    # FK → scans table
-    faction_id:   str    # raw internal ID e.g. "argon"
-    faction_name: str    # display name e.g. "Argon Federation"
-    value:        float  # scaled −30 to +30 (matches in-game display)
-    base:         float  # permanent standing component
-    booster:      float  # temporary mission bonus component
-    tier:         str    # label e.g. "Friendly", "Hostile"
-
-    # ── Computed properties ───────────────────────────────────────────────────
-    # Derived from value — no need to store separately.
+    scan_id:      int    # FK
+    faction_id:   str    # internal ID
+    faction_name: str    # display name
+    value:        float  # scaled -30 to +30 (in-game display)
+    base:         float  # permanent component
+    booster:      float  # temporary mission bonus
+    tier:         str    # label (Friendly, Hostile, etc.)
 
     @property
     def can_trade(self) -> bool:
-        """False when reputation is below −10 (trading blocked)."""
+        """True when >= -10 (trading not blocked)."""
         return self.value >= -10.0
 
     @property
     def is_hostile(self) -> bool:
-        """True when faction actively attacks player property (below −25)."""
+        """True when <= -25 (faction attacks player)."""
         return self.value <= -25.0
 
     @property
     def promotion_available(self) -> bool:
-        """True when player has reached a promotion threshold (+10 or +20)."""
+        """True when >= +10 or +20 (promotion threshold)."""
         return self.value >= 10.0
 
 
@@ -57,23 +56,18 @@ class ReputationEntry:
 
 @dataclass
 class FactionRelationEntry:
-    """
-    One NPC faction's standing toward one other faction (or the player).
+    """One NPC faction's standing toward another faction (or player).
 
-    Mirrors ReputationEntry but for non-player subjects. No base/booster split:
-    NPC boosters exist in the save but are deliberately ignored — only the
-    permanent <relation> value is captured (decision: 2026-06-12).
+    Like ReputationEntry but for NPC subjects. No base/booster split (NPC boosters ignored).
     """
-    scan_id:      int    # FK → scans table
-    faction_id:   str    # subject faction e.g. "argon" — whose standings these are
-    faction_name: str    # subject display name e.g. "[ARG] Argon Federation"
-    other_id:     str    # target faction e.g. "xenon", or "player"
+    scan_id:      int    # FK
+    faction_id:   str    # subject faction (whose standings)
+    faction_name: str    # subject display name
+    other_id:     str    # target faction or "player"
     other_name:   str    # target display name
-    value:        float  # scaled −30 to +30 (same scale as ReputationEntry)
-    tier:         str    # label e.g. "Friendly", "At War"
-    locked:       bool   # True when the save marks <relations locked="1"> —
-                         # the game never changes this faction's standings
-                         # (Xenon and Kha'ak in practice)
+    value:        float  # scaled -30 to +30
+    tier:         str    # label (Friendly, At War, etc.)
+    locked:       bool   # True when game hard-locks standings (Xenon, Kha'ak)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -83,14 +77,14 @@ class FactionRelationEntry:
 @dataclass
 class Sector:
     scan_id:       int
-    sector_macro:  str           # raw macro ID e.g. "cluster_43_sector001_macro"
-    sector_name:   str           # display name e.g. "The Void"
+    sector_macro:  str           # raw macro ID
+    sector_name:   str           # display name
     cluster_macro: str           # parent cluster macro
-    cluster_name:  str           # parent cluster display name
-    owner_id:      str           # faction ID e.g. "argon"
-    owner_name:    str           # faction display name e.g. "Argon Federation"
-    sunlight:      float         # solar multiplier — affects energy cell production
-    is_discovered: bool          # save had knownto="player" — player has seen this sector
+    cluster_name:  str           # parent cluster name
+    owner_id:      str           # faction ID
+    owner_name:    str           # faction display name
+    sunlight:      float         # solar multiplier (energy cell production)
+    is_discovered: bool          # player has seen this sector (knownto in save)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -99,20 +93,15 @@ class Sector:
 
 @dataclass
 class SectorResource:
-    """
-    One ware mineable in a sector, aggregated from the sector's <resourceareas>.
+    """One mineable ware per sector (aggregated from <resourceareas> across all areas).
 
-    The save stores resources per <area> (a resource field at an x/y/z position),
-    each listing <wares> (recharge capacity + refresh time) and <yields> (an
-    abundance level like low/medium/high). We aggregate across every area in the
-    sector to one row per ware: recharge_max is summed, yield_level is the highest
-    abundance seen. Keyed by sector_macro for a join back to the `sectors` table.
+    Aggregation: recharge_max=summed capacity; yield_level=highest abundance; recharge_time=longest.
     """
-    sector_macro:  str    # owning sector e.g. "cluster_43_sector001_macro"
-    ware:          str    # ware id e.g. "ore", "silicon", "hydrogen"
-    yield_level:   str    # abundance: verylow|low|lowplus|medium|medhigh|high
-    recharge_max:  int    # summed capacity across the sector's areas for this ware
-    recharge_time: int    # refresh time in ms (longest seen for this ware)
+    sector_macro:  str    # owning sector
+    ware:          str    # ware id
+    yield_level:   str    # abundance (verylow|low|lowplus|medium|medhigh|high)
+    recharge_max:  int    # summed recharge capacity
+    recharge_time: int    # longest refresh time (ms)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -121,28 +110,19 @@ class SectorResource:
 
 @dataclass
 class Gate:
-    """
-    One gate endpoint sitting in a single sector.
+    """One gate endpoint in a sector (paired gates form sector-to-sector links).
 
-    A traversable connection between two sectors is represented in the save as a
-    PAIR of gate components — one endpoint in each sector. Each endpoint stores
-    its own "destination" connection id plus the partner endpoint's connection id
-    (reciprocal). The galaxy-map builder pairs them by matching conn_id across all
-    gates, producing one edge per sector-to-sector link.
-
-    Both jump gates and orbital accelerators count as a 1-jump hop in X4 (verified
-    against the in-game trade-range rules), so gate_type is informational only —
-    it is not used to weight distance. Superhighways are NOT gates; intra-cluster
-    (0-jump) movement is derived separately from shared cluster membership.
+    Galaxy-map builder pairs by matching conn_id across all gates (one edge per link).
+    Gate_type (gate vs accelerator) both count as 1-jump; informational only, not weighted.
     """
     scan_id:         int
-    object_id:       str   # hex component ID e.g. "[0x48b8]"
-    code:            str   # display code e.g. "FYW-152"
-    macro:           str   # raw macro — e.g. "props_gates_anc_gate_macro"
-    gate_type:       str   # "gate" (jump gate) or "accelerator" — derived from macro
-    sector_macro:    str   # FK → sectors.sector_macro — the sector this endpoint is in
-    conn_id:         str   # this endpoint's own "destination" connection id (pairing key)
-    partner_conn_id: str   # the partner endpoint's connection id (resolves to the far sector)
+    object_id:       str   # hex component ID
+    code:            str   # display code
+    macro:           str   # raw macro
+    gate_type:       str   # "gate" or "accelerator"
+    sector_macro:    str   # FK: owning sector
+    conn_id:         str   # this endpoint's "destination" connection id (pairing key)
+    partner_conn_id: str   # partner endpoint's connection id (far sector)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

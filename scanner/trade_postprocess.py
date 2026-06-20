@@ -1,37 +1,7 @@
-"""
-scanner/trade_postprocess.py
+"""Core role: Converts raw economy-log rows into resolved TradeHistory entities with ship and counterparty distinction.
 
-TradePostProcessor — turns the raw economy-log rows harvested by EconomyHandler
-into resolved, typed TradeHistory / TradeHistoryInternal entities.
-
-Runs ONCE after the full parse, when every id index is final.
-
-THE CENTRAL MODEL — ship and counterparty are DIFFERENT things
---------------------------------------------------------------
-In a trade-log row, the side opposite a player station is the *immediate
-transacting party*. That is almost always the TRANSPORT SHIP, not the station
-the goods ultimately went to / came from. So every emitted trade has two
-distinct "other side" fields:
-
-  ship          the transport that carried the goods (the row's non-station id,
-                when that id is a ship). Empty for direct station↔station trades.
-  counterparty  the real NPC station at the far end of the route. Found EITHER
-                directly (the non-player side genuinely is a station) OR by
-                chasing the transport ship to its destination/home station.
-
-Conflating the two — e.g. naming the transport ship as the counterparty — is the
-classic bug. They are kept strictly separate here.
-
-RESOLUTION PATHS implemented in this slice (the high-coverage ones for a
-player-ship-dominated empire):
-  - direct station↔station
-  - player-courier BUY/SELL leg pairing (commercial-price attribution)
-  - in-progress delivery (delivery_dest_index)
-  - NPC-ship homebase chain (works once NPC homebase extraction lands)
-  - internal-transfer classification
-Despawned-object labels (removed_codes) are used ONLY for the ship column.
-NPC free-trader visits + sector-ware inference are a later slice;
-rows needing them currently end up provenance "unresolved".
+Runs once after full parse when all IDs are indexed. Key model: ship (transport) and counterparty (far-end station)
+are kept strictly separate to avoid conflating them — a classic bug.
 """
 from __future__ import annotations
 from collections import Counter, defaultdict
@@ -508,9 +478,8 @@ class TradePostProcessor:
         ))
 
     def _emit_internal(self, e) -> None:
-        # a is the player-station (or ship) that initiated the transfer;
-        # b is the other party. For buildstorage trades, player_is_buyer is
-        # False, so we can't use it to pick b — use direct buyer/seller instead.
+        # For buildstorage trades, player_is_buyer is False; pick b from
+        # direct buyer/seller instead of relying on the flag.
         if e['player_is_seller']:
             a_id, b_id = e['seller'], e['buyer']
         else:

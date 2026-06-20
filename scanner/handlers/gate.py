@@ -1,3 +1,5 @@
+# Core role: Extracts jump gate and highway topology from sector components.
+
 from __future__ import annotations
 from ..entities import Gate
 

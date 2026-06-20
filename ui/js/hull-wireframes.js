@@ -1,10 +1,4 @@
-  // ── HULL WIREFRAMES ──────────────────────────────────────────────────────
-  // Placeholder hull wireframes, one per size class. Replaced per-hull by the
-  // .xmf mesh render in a later phase; kept stylized/neutral so each reads as
-  // a preview, not data. Sizing is left to the .dhull-wire CSS (fleet-designs.css)
-  // so it can scale up in the bigger preview panel without a second copy of
-  // this markup. Consumed by designs-builder.js and resource-library.js via
-  // wireSvgFor() -- load this file before both.
+  // Core role: Stylized SVG hull wireframes (one per size class) used by designs and resource library previews.
   //
   // Every size keeps the same teal frame + lime thrusters so the family reads
   // as related, then layers on the new structural elements that size actually

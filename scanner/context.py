@@ -1,3 +1,5 @@
+# Core role: Parse context and component frame stack for streaming XML extraction.
+
 from __future__ import annotations
 from dataclasses import dataclass, field
 
@@ -8,13 +10,9 @@ from .entities import (
     TradeHistory, TradeHistoryMining, TradeHistoryInternal,
 )
 
-# Verified against save_001.xml.
-# All stations in the save use class="station". The additional values
-# ("factory", "headquarters", "complex") may occur in saves with the player HQ
-# or certain DLC content — kept for safety.
+# All saves use class="station"; others ("factory", "headquarters", "complex") may occur in DLC.
 STATION_CLASSES: frozenset[str] = frozenset({"station", "factory", "headquarters", "complex"})
 
-# Verified against save_001.xml — exactly these four size classes exist.
 SHIP_CLASSES: frozenset[str] = frozenset({"ship_s", "ship_m", "ship_l", "ship_xl"})
 
 
@@ -24,14 +22,9 @@ SHIP_CLASSES: frozenset[str] = frozenset({"ship_s", "ship_m", "ship_l", "ship_xl
 
 @dataclass
 class ComponentFrame:
-    """
-    Represents one <component> element on the parse stack.
+    """One <component> element on the parse stack (pushed on 'start', popped on 'end').
 
-    Pushed when iterparse fires a 'start' event for <component>.
-    Popped when iterparse fires the matching 'end' event.
-
-    Handlers inspect the stack to know what context they are currently inside
-    (e.g. "am I inside a player station?") without needing their own flags.
+    Handlers inspect the stack to determine parsing context without per-handler flags.
     """
     object_id: str   # hex component ID e.g. "[0x4f44]"
     cls:       str   # element class e.g. "ship_m", "station", "storage"
@@ -45,75 +38,41 @@ class ComponentFrame:
 
 @dataclass
 class ScanContext:
-    """
-    Shared state object for the entire scan.
+    """Shared state for scan coordinator and all handlers (one per scan).
 
-    The Scanner coordinator creates one ScanContext per scan and passes it to
-    every handler. Handlers read from it (for context) and write to it (to
-    accumulate results). Nothing is returned from individual handlers — all
-    output flows through this object.
-
-    Three distinct sections:
-      1. Parse-time state   — changes moment to moment as iterparse progresses
-      2. Accumulated results — entity lists built up during the scan
-      3. Cross-handler refs  — data one handler builds that another handler needs
+    Handlers read for context and write to accumulate results; nothing is returned.
+    Three sections: parse-time state (changes per-element), accumulated results, cross-handler refs.
     """
 
     # ── Scan metadata ─────────────────────────────────────────────────────────
-    # Set once before the scan starts; every entity records these as FK / anchor.
-
-    scan_id:     int   # FK on every entity table — identifies this scan
+    scan_id:     int   # FK on every entity table
     save_file:   str   # filename e.g. "save_003.xml.gz"
-
-    # Read from the save XML near the top of the file, before any entities.
-    # Anchors the time_ago_s calculation on every trade record.
-    game_time_s: float = 0.0
-
-    # Player identity — populated early in the parse from <player> and
-    # <faction id="player"><account> elements. Written to the Scan record
-    # after the parse completes.
+    game_time_s: float = 0.0  # Anchor for time_ago calculations on trades
+    # Player identity from <player> + <faction id="player"><account> elements
     player_name:    str = ''
     player_credits: int = 0
     player_sector:  str = ''
 
 
     # ── Parse-time state ──────────────────────────────────────────────────────
-    # These fields change every time iterparse moves to a new element.
-    # Handlers must never hold on to these after their event handler returns.
-
-    # Full component nesting stack — see ComponentFrame above.
+    # Fields change per-element; handlers must not hold references after returning.
     component_stack: list[ComponentFrame] = field(default_factory=list)
-
-    # Tracks the most recently entered sector macro. Updated by SectorHandler
-    # each time a sector component is processed. All station and ship handlers
-    # read this instead of walking the stack — the stack depth between a sector
-    # and its child stations/ships varies (zones and other components also push
-    # frames), so frame_at(1) is unreliable for sector resolution.
+    # Most recent sector macro (stack depth varies due to zones/components)
     current_sector_macro: str = ''
-
-    # The entity object currently being built. Set by a handler when it opens a
-    # relevant component; cleared when the closing </component> is processed.
+    # Entity objects currently being built (cleared at closing </component>)
     current_station:     Station     | None = None
     current_ship:        Ship        | None = None
     current_npc_station: NpcStation  | None = None
 
 
     # ── Accumulated results ───────────────────────────────────────────────────
-    # Appended to throughout the scan. Read in full by the post-processor and
-    # then the exporter once the parse is complete.
-
+    # Appended throughout scan; read by post-processor and exporter after parse completes.
     stations:               list[Station]               = field(default_factory=list)
     ships:                  list[Ship]                  = field(default_factory=list)
     crew:                   list[CrewMember]            = field(default_factory=list)
     reputation:             list[ReputationEntry]       = field(default_factory=list)
-    # ReputationHandler → db/export (Diplomacy faction tabs)
-    # NPC-faction standings toward every other known faction + the player.
-    # Grouped by subject faction, each group sorted value-descending — same
-    # display order as ctx.reputation.
     faction_relations:      list[FactionRelationEntry]  = field(default_factory=list)
     sectors:                list[Sector]                = field(default_factory=list)
-    # ResourceHandler → db/export (Sectors-tab resource panel). One row per
-    # (sector, ware); built from each sector's <resourceareas> subtree.
     sector_resources:       list[SectorResource]        = field(default_factory=list)
     gates:                  list[Gate]                  = field(default_factory=list)
     npc_stations:           list[NpcStation]            = field(default_factory=list)
@@ -125,26 +84,11 @@ class ScanContext:
 
 
     # ── Cross-handler reference data ──────────────────────────────────────────
-    # Built by one handler early in the parse; read by another handler later.
-    # This is safe because the XML stream guarantees stations and ships appear
-    # before their associated trade records.
-
-    # StationHandler → EconomyHandler, TradeHandler
-    # Needed to classify whether a trade involves a player station.
-    player_station_ids: set[str] = field(default_factory=set)
-
-    # Scanner → post-processor
-    # Player-owned construction platforms (class="buildstorage"). These are NOT
-    # production stations and do not trade with the market, but energy cell sales
-    # from a player station module to a buildstorage are internal player transfers.
-    # Kept separate from player_station_ids so their NPC purchases (construction
-    # materials bought from despawned/NPC sellers) are not misclassified as player
-    # station "In" trades.
+    # Built early; read later. Safe: XML guarantees stations/ships before trades.
+    player_station_ids: set[str] = field(default_factory=set)  # For trade classification
+    # Buildstorages separate from player_station_ids to avoid misclassifying NPC material purchases
     player_buildstorage_ids: set[str] = field(default_factory=set)
-
-    # ShipHandler → TradeHandler
-    # Needed to classify whether a transport ship is player-owned.
-    player_ship_ids: set[str] = field(default_factory=set)
+    player_ship_ids: set[str] = field(default_factory=set)  # For transport ship classification
 
     # NpcStationHandler → post-processor (counterparty resolution)
     # Maps object_id → NpcStation for O(1) counterparty lookup after the scan.

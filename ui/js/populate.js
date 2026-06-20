@@ -1,13 +1,11 @@
-  function populate(data) {
-    // ── Export shape adapter ──────────────────────────────────────────────
-    // The scanner export uses suffixed/flat field names (ship_order,
-    // hull_origin_name, sector_macro, skill_piloting, …) and a different
-    // top-level grouping than this UI was first written against. Rather than
-    // rename every read site, we augment each record IN PLACE with the alias
-    // fields the rendering code already expects. Originals are left intact.
+  // Core role: Ingests scanner JSON export, adapts field names to UI conventions, and populates all tab data models.
 
-    // Stash the static catalogs (invariant across scans) for the Designs tab
-    // and the blueprint builder (fit panel + hull selector).
+  function populate(data) {
+    // The scanner export uses suffixed/flat field names (ship_order, hull_origin_name, sector_macro, skill_piloting, …).
+    // Rather than rename every read site, we augment each record IN PLACE with the alias fields the rendering code expects.
+    // Originals are left intact.
+
+    // Static catalogs (invariant across scans) for Designs tab
     EQUIPMENT_CATALOG = data.equipment_catalog || {};
     HULL_CATALOG = data.hull_catalog || {};
 
@@ -25,8 +23,7 @@
     (data.sectors || []).forEach(s => { sectorName[s.sector_macro] = s.sector_name; });
     const resolveSector = s => sectorName[s.sector_macro] || s.sector_name || s.sector_macro || null;
 
-    // Crew: nest the flat skill_* fields and add display aliases. Index by
-    // object_id so each ship's pilot_id can be joined to its crew record.
+    // Nest flat skill_* fields; index by object_id for ship→pilot joins
     const crew = data.crew || [];
     const crewById = {};
     crew.forEach(c => {
@@ -82,11 +79,8 @@
     document.getElementById("ov-pilot").textContent  = player.name || "—";
     document.getElementById("nav-ships").textContent = fleet.total || "—";
 
-    // Derived counts (used for alerts badge)
     const hostile  = players.filter(s => HOSTILE_ORIGINS.has(s.hull_origin));
     const waiting  = players.filter(s => s.order === "Waiting");
-
-    // Alerts badge
     const alertCount = (hostile.length > 0 ? 1 : 0) + (waiting.length > 0 ? 1 : 0);
     document.getElementById("nav-alerts").textContent = alertCount;
 

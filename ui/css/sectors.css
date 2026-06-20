@@ -1,6 +1,5 @@
-    /* ── SECTORS TAB ──
-       Master-detail: a cluster-grouped sector list on the left, the selected
-       sector's data on the right. Negative margin fills #content like the map. */
+    /* Core role: Styles for sectors master-detail view (cluster list + sector detail card). */
+    /* SECTORS TAB — master-detail layout */
     #tab-sectors { flex: 1; min-height: 0; margin: -14px; gap: 0; flex-direction: row; }
     /* Left column = sort bar (fixed) above a scrolling list. */
     #sectors-left {

@@ -1,22 +1,4 @@
-"""
-scanner/handlers/ship.py
-
-ShipHandler — extracts all player and NPC ships from the save.
-
-Called in two ways by scanner.py:
-
-  on_start()  Fires for EVERY ship component (player and NPC) when its opening
-              tag is seen. NPC ships are not buffered, so this is their only
-              extraction point. Player ships just save the sector_macro here;
-              on_end() does the full extraction once the subtree is in memory.
-
-  on_end()    Fires ONLY for PLAYER SHIPS when the buffered subtree closes.
-              Extracts hull, shields, orders, homebase, commander, pilot, crew.
-              Also walks carrier subtrees to pull out docked fighters/scouts.
-
-ALL XML attribute names in this file have been verified against save_001.xml.
-No guesswork.
-"""
+"""Core role: Extracts player and NPC ships from save, including hull, equipment, crew, and docked fighters."""
 from __future__ import annotations
 import re
 from data.factions   import FACTION_NAMES
@@ -40,8 +22,7 @@ from ..ship_names    import (
 #  LOOKUP TABLES  (verified from save_001.xml)
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Maps X4's internal order identifier to a human-readable label shown in the UI.
-# Verified from actual order= values seen in save_001.xml.
+# X4 internal order IDs → human-readable labels (verified from save_001.xml)
 _ORDER_LABELS: dict[str, str] = {
     "MiningRoutine":     "Mining",
     "MiningCollect":     "Mining (Collecting)",
@@ -73,17 +54,14 @@ _ORDER_LABELS: dict[str, str] = {
     "Explore":           "Exploring",
 }
 
-# Ship size classes that can carry docked ships inside their hull.
-# X4 only allows docking inside L (resupplier/carrier variants) and XL hulls.
-# Checking both avoids hardcoding specific carrier macros.
+# X4 only allows docking inside L and XL hulls (verified from save_001.xml)
 _CARRIER_CLASSES = frozenset({"ship_l", "ship_xl"})
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  MODULE-LEVEL HELPERS  (stateless, called by the handler methods)
-#  Ship naming/classification helpers (extract_role/hull_origin/resolve_ship_type
-#  and SIZE_LABELS) now live in scanner/ship_names.py — imported above.
+#  MODULE-LEVEL HELPERS
 # ─────────────────────────────────────────────────────────────────────────────
+# Ship naming/classification helpers moved to scanner/ship_names.py
 
 def _parse_char_macro(macro: str) -> tuple[str | None, str | None]:
     """
@@ -109,20 +87,15 @@ def _parse_hull(
     macro: str,
     ship_elem,
 ) -> tuple[float | None, float | None, float | None]:
-    """
-    Returns (hull_hp, hull_max, hull_pct) for a ship.
+    """Returns (hull_hp, hull_max, hull_pct) for a ship.
 
-    X4 only writes <hull value="..."/> when hull is below the maximum.
-    Absence of the element means the ship is undamaged — hull_pct = 100.0.
-    Maximum hull HP comes from SHIP_STATS[macro]['max_hull'].
-    hull_hp is None when the ship is undamaged (X4 doesn't write the element).
+    X4 omits <hull> element when ship is undamaged (hull_hp=None means 100.0% health).
     """
     hull_elem = ship_elem.find("hull")
     max_hull  = SHIP_STATS.get(macro, {}).get("max_hull")
 
     if hull_elem is None:
-        # No element → ship is at full health.
-        # If we know the max, set pct = 100. Otherwise leave None.
+        # Ship is at full health
         return None, max_hull, (100.0 if max_hull else None)
 
     try:
@@ -188,11 +161,8 @@ def _parse_shields(
     return current, max_total, pct
 
 
-# Equipment <component> classes installed on a ship → the catalog slot bucket
-# (data/equipment_stats.py). Verified against save_001.xml: each item is a
-# <component class=... macro=...> in the ship's connections — the same structure
-# _parse_shields walks. Thrusters are the exception: they are NOT components,
-# they're a `thruster=` attribute on the ship element itself.
+# Map equipment component classes to catalog slots (verified against save_001.xml).
+# Thrusters are an exception: stored as ship attribute, not <component>.
 _EQUIP_SLOTS = {
     "weapon":          "weapon",
     "turret":          "turret",
@@ -200,11 +170,8 @@ _EQUIP_SLOTS = {
     "engine":          "engine",
 }
 
-# Deployable structures (laser towers, satellites, nav/distress beacons, resource
-# probes) are player-owned like ships but aren't real ship designs. We give them
-# no loadout at all so they never reach the DB, the export, or the Designs view.
-# NB: "mine" is deliberately absent — it would also match "miner". Patterns
-# verified against save_001.xml (lasertower, distressbeacon present).
+# Deployables excluded from ship designs (empty loadout → never in DB/export).
+# "mine" deliberately absent (would match "miner").
 _DEPLOYABLE_RE = re.compile(r'lasertower|satellite|beacon|resourceprobe|navsat', re.I)
 
 

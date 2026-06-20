@@ -1,3 +1,5 @@
+# Core role: XML helper utilities (ID normalization, component tree iteration).
+
 from __future__ import annotations
 
 

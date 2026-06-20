@@ -1,4 +1,5 @@
-    /* ── CREW TAB ── */
+    /* Core role: Styles for crew roster and detail file (biography, assignments). */
+    /* CREW TAB */
     .crew-layout { display: flex; gap: 12px; flex: 1; min-height: 0; }
     .crew-roster { flex: 0 0 56%; overflow: auto; max-height: calc(100vh - 200px); }
     .crew-file   { flex: 1; overflow-y: auto; max-height: calc(100vh - 200px); }

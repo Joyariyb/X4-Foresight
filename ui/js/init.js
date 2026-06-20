@@ -1,6 +1,6 @@
-  // ── Responsive zoom ───────────────────────────────────────────────────────
-  // Scales the entire UI proportionally to the viewport width.
-  // Reference: 1536px wide = zoom 1.0 (natural size).
+  // Core role: Initializes responsive zoom, event routing, and tab persistence.
+
+  // Responsive zoom scaled to viewport width (1536px = zoom 1.0).
   //   At 1920px fullscreen → zoom 1.25  (25% larger)
   //   At 1280px             → zoom 0.83 (17% smaller)
   //

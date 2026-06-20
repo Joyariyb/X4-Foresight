@@ -1,6 +1,4 @@
-  // ── Universe map ─────────────────────────────────────────────────────────────
-  // Flat-top hex grid of X4's galaxy. Cluster positions are static (derived from
-  // the game XML); sector data and ownership come from the JSON export at runtime.
+  // Core role: Renders the interactive galaxy map as a flat-top hex grid with zoom-driven visibility layers (clusters → sectors → sector names).
   //
   // Zoom thresholds:
   //   scale ≥ 0.55 → cluster name labels appear
@@ -304,13 +302,13 @@
     { r: 0.333, offs: [[0, -0.5774], [-0.5, -0.2887], [0.5, -0.2887], [-0.5, 0.2887], [0.5, 0.2887], [0, 0.5774]] },
   ];
 
-  let _universeBuilt    = false; // SVG elements created at least once
-  let _universeViewInited = false; // initial fit-to-view applied
+  let _universeBuilt    = false;
+  let _universeViewInited = false;
   let _universeTransform  = { x: 0, y: 0, scale: 1 };
   let _uTransformRaf    = 0;
   let _uPendingTransform = null;
-  let _uCommitted   = null; // transform currently baked into the <g> attribute
-  let _uCommitTimer = 0;    // idle timer that bakes the gesture once input stops
+  let _uCommitted   = null;
+  let _uCommitTimer = 0;
 
   // ── Tilt ("almost 3D") constants ─────────────────────────────────────────
   // Applied to the DOM from here (not hardcoded in CSS) so the projection
@@ -341,14 +339,14 @@
   }
   let _uLabelEls      = [];
   let _uSecLabelEls   = [];
-  let _nearestStation = {}; // {sector_macro → {name, jumps}} — nearest player station
-  let _sectorInfoMap  = {}; // {sector_macro → sector row from data.sectors}
-  let _npcBySector    = {}; // {sector_macro → [{owner_id, owner_name, count}]}
-  let _playerStaBySector = {}; // {sector_macro → [station, …]} — the player's own stations
-  let _playerShipsBySector = {}; // {sector_macro → [ship, …]} — the player's own ships
-  let _repByFaction      = {}; // {faction_id → reputation row} — player standing per faction
-  let _distFromEmpire    = {}; // {sector_macro → jumps from your nearest territory}
-  let _sectorAdj      = {}; // {sector_macro → [{macro, cost}]} — gate/highway links
+  let _nearestStation = {}; // sector_macro → {name, jumps}
+  let _sectorInfoMap  = {}; // sector_macro → sector row
+  let _npcBySector    = {}; // sector_macro → [{owner_id, owner_name, count}]
+  let _playerStaBySector = {}; // sector_macro → [station, …]
+  let _playerShipsBySector = {}; // sector_macro → [ship, …]
+  let _repByFaction      = {}; // faction_id → reputation row
+  let _distFromEmpire    = {}; // sector_macro → jumps from empire
+  let _sectorAdj      = {}; // sector_macro → [{macro, cost}]
 
   // Fit all clusters inside the map container, called on first tab open when
   // the element has real dimensions (deferred via requestAnimationFrame).
@@ -530,8 +528,7 @@
     });
 
     function clusterDisplayName(macro) {
-      // Static names from qsna.eu API take priority; sector-data cluster_name
-      // is used as a last resort since it may still be the raw macro string.
+      // API names take priority; sector-data cluster_name may still be the raw macro.
       if (CLUSTER_NAMES[macro]) return CLUSTER_NAMES[macro];
       const ci = clusterInfo[macro];
       if (ci && ci.name) return ci.name;
@@ -539,7 +536,6 @@
                   .replace(/\b\w/g, c => c.toUpperCase());
     }
 
-    // Pick the dominant-faction colour for a cluster.
     function clusterColour(macro) {
       const ci = clusterInfo[macro];
       if (!ci || !Object.keys(ci.owners).length) return '#3d444d';
@@ -551,7 +547,6 @@
       return '#3d444d';
     }
 
-    // Neutral gray for sectors the player hasn't discovered yet.
     const UNDISCOVERED_COLOUR = '#3d444d';
 
     // ── Render SVG ────────────────────────────────────────────────────────────
@@ -653,7 +648,7 @@
 
       const id = `ug${i}`;
 
-      // Cross-cluster: line between the two cluster centers.
+      // Cross-cluster lines
       if (a.clusterMacro !== b.clusterMacro) {
         const ca = clusterColour(a.clusterMacro);
         const cb = clusterColour(b.clusterMacro);
@@ -674,7 +669,7 @@
         }));
       }
 
-      // Sector-level: gate position → gate position (falls back to sub-hex centre).
+      // Sector-level lines (with gate-position precision, fallback to sub-hex centre)
       const ptA = gateXY(edge[0], b.clusterMacro, a.sx, a.sy, a.gateScale);
       const ptB = gateXY(edge[1], a.clusterMacro, b.sx, b.sy, b.gateScale);
       const gs = el('linearGradient', {
@@ -694,7 +689,7 @@
       }));
     });
 
-    vp.appendChild(cgCluster); // behind hex polygons
+    vp.appendChild(cgCluster);
 
     for (const [macro, [q, r]] of Object.entries(CLUSTER_POS)) {
       const { x: cx, y: cy } = hexCenter(q, r);
@@ -736,7 +731,6 @@
           const [ox, oy] = layout.offs[i] || [0, 0];
           const sx = cx + ox * HEX_BODY;
           const sy = cy + oy * HEX_BODY;
-          // Undiscovered sectors draw gray; discovered ones use their owner colour.
           const discovered = !!sec.is_discovered;
           const sc = discovered ? (FACTION_COLOURS[sec.owner_id] || '#6e7681')
                                 : UNDISCOVERED_COLOUR;

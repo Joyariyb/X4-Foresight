@@ -1,8 +1,5 @@
-    /* ── THREE-POSITION STATION SLIDER ─────────────────────────────────────── */
-    /* The track is a recessed dark channel (inset shadows make it look carved   */
-    /* into the surface). The thumb is a raised teal pill (drop shadow beneath   */
-    /* + bright gradient + inner top-edge highlight). The 2px gap between the    */
-    /* thumb and the channel walls is what makes it read as physically 3D.       */
+    /* Core role: Styles for station selection slider (three-position custom input). */
+    /* THREE-POSITION STATION SLIDER — 3D physical appearance via drop shadow + gradient */
     .tri-track {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;

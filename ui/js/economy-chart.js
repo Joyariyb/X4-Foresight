@@ -1,10 +1,4 @@
-  // ── ECONOMY PIE CHART ──────────────────────────────────────────────────────
-  // Builds an interactive SVG donut/pie of a station's supply budget. Each slice
-  // is sized by its share of the total budget value and filled with the ware's
-  // text colour (WARE_COLOURS). Ware names are placed just outside their slice
-  // and rotated to the slice's mid-angle so they splay outward like spokes
-  // (flipped on the left half so text never reads upside-down). Every slice
-  // carries a data-budget-tip so the shared hover tooltip shows the full figures.
+  // Core role: Renders station budget as an interactive donut/pie chart with per-ware slices.
   function economyPieSvg(bud) {
     // Largest share first so the slices sweep from big to small clockwise.
     const lines = (bud.lines || []).filter(l => l.value > 0)

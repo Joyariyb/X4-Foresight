@@ -1,12 +1,4 @@
-"""
-scanner/galaxy_map.py
-
-Builds the galaxy graph from scan results and answers jump-distance queries.
-
-This is a pure derivation step: it takes the Gate and Sector entities the scanner
-already collected and produces a weighted adjacency graph, plus BFS helpers. No
-file I/O, no DB — the caller (DB writer / exporter / display) decides what to do
-with the result.
+"""Core role: Builds galaxy jump graph (adjacency + BFS) from Gate and Sector scan results (pure derivation)."""
 
 THE DISTANCE MODEL (verified against X4's in-game trade-range rules)
 -------------------------------------------------------------------

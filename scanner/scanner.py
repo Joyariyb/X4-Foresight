@@ -1,3 +1,5 @@
+# Core role: Single-pass streaming XML parser that coordinates save file extraction across domain-specific handlers.
+
 from __future__ import annotations
 from pathlib import Path
 from lxml.etree import iterparse as lxml_iterparse
@@ -16,48 +18,22 @@ from .handlers.resource    import ResourceHandler
 
 
 class Scanner:
-    """
-    Single-pass save file coordinator.
+    """Single-pass save file coordinator.
 
-    Responsibilities — and nothing beyond these:
-      - Open the save file via open_save()
-      - Drive the lxml iterparse loop
-      - Manage the component stack on ScanContext
-      - Dispatch element events to the right handler
-      - Return the populated ScanContext when done
+    Responsibilities:
+      - Open save file, drive iterparse, manage component stack, dispatch events, return populated context
+      - Domain knowledge lives in handlers; only knows <component> (push/pop stack) and <game> (game_time_s)
 
-    All domain knowledge (what data to extract, how to parse it) lives in the
-    handlers. This class only knows about two structural concerns:
-      1. <component> — every component tag is pushed/popped on the stack
-      2. <game>       — game_time_s is read here and stored on the context
-
-    BUFFERING STRATEGY
-    ------------------
-    Some handlers need the full XML subtree of a component to be in memory
-    when that component closes (e.g. StationHandler walks the station tree
-    to extract modules, cargo, and budget in one pass).
-
-    When iterparse enters a bufferable component, buffer_depth is set to the
-    current stack depth. While inside that depth, child elements are NOT
-    cleared — they stay attached to the parent in memory. When iterparse closes
-    the root of that buffered section, the full element is handed to the handler
-    via on_end(), then cleared.
-
-    Buffered:     all stations (player and NPC), player ships
-    Not buffered: NPC ships — only top-level attributes are needed
+    Buffering strategy: some handlers need the full subtree in memory at close time.
+    When buffer_depth is set, child elements are kept in memory until the buffer root closes.
+    Buffered: all stations (player/NPC), player ships. Not buffered: NPC ships (top-level attributes only).
     """
 
     def __init__(self, lang_path: Path | None = None) -> None:
-        # Load the language file once at startup. load_language_root() reads it
-        # straight from the game's .cat/.dat archives; a local file at
-        # lang_path (if one exists) acts as a manual override. Parsed a single
-        # time here — both loaders below share the same XML root.
+        # Load language file once; lang_path is a manual override if it exists.
         lang_root    = load_language_root(lang_path)
         sector_names = load_sector_names(lang_root)
-
-        # Pages needed by NpcStationHandler (and later StationHandler):
-        #   20102 — station basename text refs  e.g. "{20102,1301}" → "Advanced Electronics"
-        #   20215 — factory category names used by resolve_station_type()
+        # Pages: 20102=station basename refs, 20215=factory categories (resolve_station_type)
         texts = load_text_pages(lang_root, {20102, 20215})
 
         self._station = StationHandler(sector_names, texts)
@@ -75,20 +51,15 @@ class Scanner:
         self._texts        = texts
 
     def scan(self, save_path: str | Path, scan_id: int) -> ScanContext:
-        """
-        Parse save_path in a single pass and return a fully populated
-        ScanContext.
+        """Parse save_path in single pass; return populated ScanContext.
 
-        scan_id is assigned by the caller (DB auto-increment or a simple
-        counter for CLI-only runs) — the Scanner has no persistence dependency.
+        scan_id assigned by caller (DB auto-increment or counter); Scanner has no persistence dependency.
         """
         save_path = Path(save_path)
         ctx = ScanContext(scan_id=scan_id, save_file=save_path.name)
 
         with open_save(save_path) as f:
-            # When None: streaming normally — elements are cleared after use.
-            # When int: we are inside a buffered component at that stack depth.
-            # Child elements at greater depth are kept in memory for the handler.
+            # None=streaming (elements cleared); int=buffer depth (child elements kept in memory)
             buffer_depth: int | None = None
 
             for event, elem in lxml_iterparse(f, events=('start', 'end')):
@@ -114,30 +85,17 @@ class Scanner:
                         )
                         ctx.push(frame)
 
-                        # Start buffering if this component needs a subtree
-                        # walk at close time. Only starts when we are NOT
-                        # already buffering — nested components are covered by
-                        # the outer buffer.
+                        # Start buffering if component needs subtree walk at close (not already buffering).
                         if buffer_depth is None:
                             if frame.cls in STATION_CLASSES:
-                                # All stations — player and NPC — are buffered.
-                                # NPC stations need trade offer children for
-                                # ware extraction; player stations need modules
-                                # and cargo children for budget calculations.
                                 buffer_depth = ctx.depth
                             elif frame.cls in SHIP_CLASSES and frame.owner == 'player':
-                                # Player ships only. NPC ships are streamed with
-                                # top-level attributes — no subtree walk needed.
                                 buffer_depth = ctx.depth
                             elif frame.cls == 'gate':
-                                # Gates carry their pairing connection ids as
-                                # children, not attributes — buffer the (tiny)
-                                # subtree so GateHandler.on_end() can read them.
+                                # Gates have pairing connection ids as children, not attributes
                                 buffer_depth = ctx.depth
 
-                        # Dispatch component start. When we are already inside
-                        # a buffered subtree, skip — the parent handler processes
-                        # nested components itself via tree walk on end.
+                        # Dispatch start. Skip if inside buffered subtree (parent handler walks children).
                         if buffer_depth is None or ctx.depth == buffer_depth:
                             self._on_component_start(frame, elem, ctx)
 
@@ -145,37 +103,29 @@ class Scanner:
                         frame = ctx.top
 
                         if buffer_depth is not None and ctx.depth == buffer_depth:
-                            # Closing the buffer root — the full subtree is
-                            # still in memory. Hand it to the handler, then
-                            # release the buffer and clear.
+                            # Closing buffer root with full subtree in memory. Hand to handler, release buffer.
                             self._on_buffered_end(frame, elem, ctx)
                             buffer_depth = None
                             ctx.pop()
                             elem.clear()
 
                         elif buffer_depth is None:
-                            # Normal streaming — clear after processing.
+                            # Normal streaming mode
                             ctx.pop()
                             elem.clear()
 
                         else:
-                            # Nested component inside a buffered section.
-                            # Do NOT clear — the buffered root's on_end handler
-                            # needs to walk this element. Just pop the frame.
+                            # Nested inside buffer; don't clear (parent handler needs to walk it).
                             ctx.pop()
 
                     continue
 
                 # ── Non-component elements ────────────────────────────────
-                # Inside a buffered subtree: skip dispatch and do NOT clear.
-                # The buffered handler walks children during its on_end() call.
+                # Inside buffer: skip dispatch, don't clear (parent handler walks during on_end).
                 if buffer_depth is not None:
                     continue
 
-                # Outside a buffered section: dispatch start and end events.
-                # Only clear on END so that element attributes remain available
-                # across the full start→end lifetime (e.g. <faction id="player">
-                # must still have its id attribute when on_faction_end fires).
+                # Outside buffer: dispatch events. Clear only on END to keep attributes available.
                 if event == 'start':
                     self._on_element_start(tag, elem, ctx)
                 elif event == 'end':
@@ -189,11 +139,7 @@ class Scanner:
     def _on_component_start(
         self, frame: ComponentFrame, elem, ctx: ScanContext
     ) -> None:
-        """
-        Dispatch for component start events that are not inside a buffered
-        subtree. Handlers receive only the component's own attributes here —
-        children have not been parsed yet.
-        """
+        """Dispatch component start (outside buffered subtree). Handlers get attributes only (children not yet parsed)."""
         if frame.cls in STATION_CLASSES:
             if frame.owner == 'player':
                 self._station.on_start(elem, ctx)
@@ -201,43 +147,32 @@ class Scanner:
                 self._npc.on_start(elem, ctx)
 
         elif frame.cls in SHIP_CLASSES:
-            # Player ships trigger buffering and will get on_end() later.
-            # NPC ships are not buffered — this is their only dispatch point.
+            # Player ships buffer for on_end(); NPC ships stream (top-level only).
             self._ship.on_start(elem, ctx)
 
         elif frame.cls == 'sector':
-            # All sector data is on the opening tag — no buffering needed.
+            # All data on opening tag
             self._sector.on_sector(elem, ctx)
 
         elif frame.cls == 'gate':
-            # Gate endpoint — capture attributes + sector now; the connection
-            # ids are read from the buffered subtree at on_end().
+            # Capture attributes + sector; connection ids read from buffered subtree at on_end()
             self._gate.on_start(elem, ctx)
 
         elif frame.cls == 'buildstorage' and frame.owner == 'player':
-            # Construction platforms are player-owned but are not production
-            # stations — they only accept incoming build materials. Tracked
-            # separately so the post-processor can identify station→buildstorage
-            # transfers as internal without pulling in their NPC purchases.
+            # Buildstorages tracked separately from stations to avoid misclassifying NPC purchases
             ctx.player_buildstorage_ids.add(frame.object_id)
 
     def _on_buffered_end(
         self, frame: ComponentFrame | None, elem, ctx: ScanContext
     ) -> None:
-        """
-        Dispatch for the closing tag of a buffered component. elem still has
-        its complete subtree intact. The handler extracts everything it needs
-        and appends results to ctx before returning.
-        """
+        """Dispatch buffered component close. elem has complete subtree; handler extracts and appends to ctx."""
         if frame is None:
             return
 
         if frame.cls in STATION_CLASSES:
             if frame.owner == 'player':
                 self._station.on_end(elem, ctx)
-                # Ships parked in this station's dock piers are nested in its
-                # buffered subtree (the main loop never saw them). Pull out the
-                # player-owned ones now while the subtree is still in memory.
+                # Extract docked ships (nested in buffered subtree, never seen by main loop)
                 self._ship.extract_station_docked_ships(elem, ctx)
             else:
                 self._npc.on_end(elem, ctx)
@@ -252,23 +187,13 @@ class Scanner:
     def _on_element_start(
         self, tag: str, elem, ctx: ScanContext
     ) -> None:
-        """
-        Dispatch for non-component start events outside any buffered section.
-        Each handler does its own context check before doing any work, so it
-        is safe to always call through — unrecognised contexts are simply
-        ignored by the handler.
-        """
-        # Sector <resourceareas> subtree — a self-contained state machine. While
-        # active it owns every child tag (area/wares/ware/recharge/yields/yield),
-        # so short-circuit before the generic chain. resourceareas always closes
-        # before any of the sector's child components open, so this never eats
-        # tags meant for other handlers.
+        """Dispatch non-component start events (outside buffered section). Handlers check context themselves."""
+        # Sector <resourceareas> state machine (owns area/wares/ware/recharge/yields/yield children).
         if tag == 'resourceareas' or self._resource.active:
             self._resource.on_start(tag, elem, ctx)
             return
 
         if tag == 'player' and not ctx.player_name:
-            # <player name="..." location="..."> appears once near the top.
             ctx.player_name = elem.get('name', '')
             loc = elem.get('location', '')
             if loc:
@@ -277,9 +202,7 @@ class Scanner:
                 )
 
         elif tag == 'account' and self._rep._active:
-            # Player faction cash account — <account amount="..."> inside the
-            # <faction id="player"> block. RepHandler._active is True only
-            # while we're inside that block.
+            # Player faction cash (<account> inside <faction id="player"> block)
             if not ctx.player_credits:
                 try:
                     ctx.player_credits = int(
@@ -289,9 +212,7 @@ class Scanner:
                     pass
 
         elif tag == 'faction':
-            # Opening tag of a faction block — RepHandler collects the player
-            # faction (reputation) and known NPC factions (faction_relations);
-            # visitor stubs and role-label factions are ignored.
+            # Faction block (reputation + faction_relations; visitor/role-label factions ignored)
             self._rep.on_faction_start(elem, ctx)
 
         elif tag == 'relations':

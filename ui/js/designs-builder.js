@@ -1,19 +1,13 @@
-  // ── DESIGNS TAB ───────────────────────────────────────────────────────────
-  // A "design" is a unique ship configuration: same hull macro + the same
-  // installed equipment (same macros, same counts). Many ships collapse onto
-  // one design. Built entirely from the loadout the export already carries —
-  // no backend. Deployables have no loadout, so they never appear here.
+  // Core role: Displays and compares unique ship designs (hull + installed equipment loadout) with per-slot editing, price calculation, and faction-tinted preview.
+  //
+  // A "design" is a unique ship configuration: same hull macro + same installed equipment (same macros, same counts).
+  // Built entirely from export loadout data; no backend computation. Deployables have no loadout and don't appear.
 
-  // Static catalogs set by populate(): equipment (macro → name/stats/price) and
-  // hulls (macro → name/class/hardpoints/price). The blueprint builder reads both.
-  let EQUIPMENT_CATALOG = {};
-  let HULL_CATALOG = {};
+  let EQUIPMENT_CATALOG = {}; // Set by populate(): macro → {name, stats, price}
+  let HULL_CATALOG = {}; // Set by populate(): macro → {name, class, hardpoints, price}
 
-  // Weapon/turret hover stats mode -- 'ingame' truncates derived stats (damage
-  // rates, rate of fire, cooldown/overheat) the same way the real in-game
-  // tooltip does; 'true' shows the raw computed value to 3dp with no
-  // truncation. Read by weaponTipHtml() in tooltips.js. Persisted across
-  // sessions since it's a verification preference, not per-design state.
+  // 'ingame' truncates stats like in-game tooltips; 'true' shows raw computed values.
+  // Persisted across sessions (verification preference, not per-design state).
   let weaponStatsMode = localStorage.getItem('weaponStatsMode') || 'ingame';
   function setWeaponStatsMode(mode) {
     weaponStatsMode = mode;
@@ -58,7 +52,6 @@
     XL: { c: 'var(--purple)',   bg: 'rgba(163,113,247,0.08)' },
   };
 
-  // Per-slot stat columns: [catalog key, header label, value formatter].
   const SLOT_STATS = {
     weapon:   [['damage_hull','Damage',designCr], ['range_m','Range',v=>(v/1000).toFixed(1)+' km'], ['reload_rate','Rate',v=>v+'/s']],
     turret:   [['damage_hull','Damage',designCr], ['range_m','Range',v=>(v/1000).toFixed(1)+' km'], ['reload_rate','Rate',v=>v+'/s']],
@@ -67,8 +60,6 @@
     thruster: [['strafe','Strafe',designCr], ['pitch','Pitch',designCr], ['yaw','Yaw',designCr], ['roll','Roll',designCr]],
   };
 
-  // 3-letter faction tag in the hull-badge style.
-  // Generic / no-maker parts (thrusters) get a neutral GEN badge.
   const FAC3 = {
     argon:'ARG', paranid:'PAR', teladi:'TEL', split:'SPL', terran:'TER',
     boron:'BOR', xenon:'XEN', khaak:'KHA', pirate:'PIR', yaki:'YAK',

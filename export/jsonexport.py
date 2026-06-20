@@ -1,17 +1,6 @@
-"""
-export/jsonexport.py
+"""Core role: Builds JSON export (x4_empire_state.json) by reading snapshot from database for a given scan_id.
 
-Builds the JSON export (x4_empire_state.json) that the UI and AI consume.
-
-DB-READ, by design: the snapshot is read back FROM the database for a given
-scan_id (default = latest). This is the permanent export path — when cross-scan
-trends are added later they become extra queries here, with no rework, and the
-same function can already export any historical scan.
-
-Top-level keys: stations / reputation / crew / station_trades / ships, plus:
-  - meta block (scan_id, timing)
-  - resolution tag on every station trade (proven / inferred / unknown)
-  - mining_deliveries and internal_transfers as their own keys
+Reads FROM database (not cache) so historical exports and future cross-scan trends add only extra queries, no rework.
 """
 from __future__ import annotations
 import json
@@ -24,8 +13,7 @@ from scanner.ship_names import ship_display_name, resolve_ship_type
 from data.equipment_stats import EQUIPMENT_STATS, EQUIPMENT_ALIASES
 from data.ship_stats import SHIP_STATS
 
-# Catalog stat fields copied onto each exported loadout entry. The UI picks
-# which to show per slot; price drives the per-item cost + design total.
+# Stat fields copied onto loadout entries; price drives cost calculations
 _EQUIP_STAT_KEYS = (
     'damage_hull', 'damage_shield', 'reload_rate', 'range_m',
     'capacity', 'recharge_rate', 'recharge_delay',

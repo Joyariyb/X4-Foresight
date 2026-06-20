@@ -1,14 +1,11 @@
--- ─────────────────────────────────────────────────────────────────────────────
---  X4 Foresight — SQLite schema
+-- Core role: SQLite schema for scan history, trade ledger, and reference galaxy data.
 --
---  THREE STORAGE CLASSES (see dataset plan):
---    HISTORY   one row per entity PER SCAN  → trajectory of YOUR empire
---    LEDGER    each trade stored ONCE       → cumulative, dedup'd by game time
---    REFERENCE latest-only, upserted        → galaxy data that rarely changes
+-- THREE STORAGE CLASSES:
+--   HISTORY   — one row per entity per scan (track YOUR empire trajectory)
+--   LEDGER    — each trade stored once, deduplicated by game time (cumulative)
+--   REFERENCE — latest-only, upserted (galaxy data that rarely changes)
 --
---  All HISTORY rows FK to scans.scan_id. Deleting a scan cascades to its rows.
---  Pragmas (foreign_keys, WAL) are set by connection.py, not here.
--- ─────────────────────────────────────────────────────────────────────────────
+-- All HISTORY rows FK to scans.scan_id with CASCADE delete. Pragmas (foreign_keys, WAL) set by connection.py.
 
 
 -- ══ ROOT ═════════════════════════════════════════════════════════════════════
@@ -37,9 +34,8 @@ CREATE TABLE IF NOT EXISTS reputation (
     PRIMARY KEY (scan_id, faction_id)
 );
 
--- NPC faction → faction standings (Diplomacy tabs). Base values only — NPC
--- boosters exist in the save but are intentionally not stored. other_id may
--- be "player": how that faction sees the player.
+-- Faction standings (Diplomacy tabs). Base values only — NPC boosters intentionally not stored.
+-- other_id may be "player": how that faction sees the player.
 CREATE TABLE IF NOT EXISTS faction_relations (
     scan_id       INTEGER NOT NULL REFERENCES scans(scan_id) ON DELETE CASCADE,
     faction_id    TEXT    NOT NULL,               -- subject e.g. "argon"
@@ -151,11 +147,9 @@ CREATE TABLE IF NOT EXISTS ships (
     PRIMARY KEY (scan_id, object_id)
 );
 
--- Equipment installed on each player ship: weapons, turrets, shields, engines,
--- thrusters. One row per (ship, slot, macro) with a count — this is the dedup
--- source for ship "designs". The macro resolves to a display name + stats via
--- data/equipment_stats.py at export time. Player ships only (NPC ship subtrees
--- aren't buffered, so their equipment can't be read).
+-- Player ship equipment (weapons, turrets, shields, engines, thrusters).
+-- Dedup source for ship "designs"; macros resolve to stats via equipment_stats.py at export time.
+-- Player ships only (NPC subtrees aren't buffered).
 CREATE TABLE IF NOT EXISTS ship_equipment (
     scan_id   INTEGER NOT NULL REFERENCES scans(scan_id) ON DELETE CASCADE,
     ship_id   TEXT    NOT NULL,            -- FK → ships.object_id
@@ -165,10 +159,8 @@ CREATE TABLE IF NOT EXISTS ship_equipment (
     -- no PK: aggregated per (ship, slot, macro); a ship holds many of each
 );
 
--- NPC ships in the player's station sectors — situational awareness (who is
--- operating near your stations). Bounded subset (~hundreds), per-scan so threat
--- presence can be tracked over time. Identity-level only (no hull/crew); the
--- full ~12k NPC ships are NOT stored.
+-- NPC ships in player's station sectors (threat awareness). Bounded subset (~hundreds) per scan.
+-- Identity-level only; full ~12k NPC ships not stored.
 CREATE TABLE IF NOT EXISTS npc_ships (
     scan_id      INTEGER NOT NULL REFERENCES scans(scan_id) ON DELETE CASCADE,
     object_id    TEXT,
@@ -243,10 +235,9 @@ CREATE TABLE IF NOT EXISTS active_auto_trades (
 
 
 -- ══ LEDGER (cumulative, dedup'd across scans) ════════════════════════════════
--- A completed trade happened once, at game_time_s. Overlapping log windows mean
--- the same trade reappears in consecutive scans — so we INSERT OR IGNORE on a
--- synthetic trade_key. first_scan_id = when we first saw it; last_scan_id lets a
--- later scan refresh a previously-inferred/unresolved counterparty.
+-- Completed trades (once per trade, dedup'd by game_time_s). INSERT OR IGNORE on trade_key
+-- since overlapping log windows show the same trade in consecutive scans.
+-- first_scan_id=discovery; last_scan_id allows refresh of previously-unresolved counterparties.
 
 CREATE TABLE IF NOT EXISTS trade_history (
     trade_key         TEXT    PRIMARY KEY,        -- game_time:station:dir:ware:amount:ship
@@ -316,9 +307,7 @@ CREATE INDEX IF NOT EXISTS ix_internal_time ON trade_history_internal(game_time_
 
 
 -- ══ REFERENCE (latest-only, upserted) ════════════════════════════════════════
--- Galaxy data that rarely changes. One row per object, refreshed each scan via
--- INSERT OR REPLACE. last_scan_id reveals when an object was last seen (so a
--- destroyed NPC station stops advancing and can be detected as stale).
+-- Galaxy data refreshed via INSERT OR REPLACE. last_scan_id detects destroyed/stale objects.
 
 CREATE TABLE IF NOT EXISTS sectors (
     sector_macro   TEXT    PRIMARY KEY,
@@ -335,9 +324,8 @@ CREATE TABLE IF NOT EXISTS sectors (
     is_discovered  INTEGER
 );
 
--- Mineable resources per sector, aggregated from the save's <resourceareas>.
--- One row per (sector, ware). Reference data (latest-only): write.py clears the
--- whole table each scan and rewrites it, like sector_links.
+-- Mineable resources per sector (aggregated from save's <resourceareas>).
+-- Reference data: cleared each scan like sector_links.
 CREATE TABLE IF NOT EXISTS sector_resources (
     sector_macro   TEXT    NOT NULL,
     ware           TEXT    NOT NULL,
@@ -367,10 +355,8 @@ CREATE TABLE IF NOT EXISTS npc_station_wares (
     PRIMARY KEY (station_id, ware_id)
 );
 
--- Static ware properties sourced from libraries/wares.xml. Written once from
--- data/wares.py at connection time; never changes between game versions without
--- a generator re-run. Provides a single queryable source for name, cargo type,
--- and volume so the export layer can eventually avoid all Python-dict imports.
+-- Static ware properties from libraries/wares.xml. Written once at connection time.
+-- Single queryable source for name, cargo type, volume (avoids Python-dict imports in export layer).
 CREATE TABLE IF NOT EXISTS ware_metadata (
     ware_id        TEXT PRIMARY KEY,
     name           TEXT NOT NULL,
@@ -378,9 +364,8 @@ CREATE TABLE IF NOT EXISTS ware_metadata (
     volume_m3      REAL
 );
 
--- Market price bands sourced from libraries/wares.xml. Written once from
--- data/ware_prices.py at connection time. Replaces the static WARE_PRICES dict
--- in the export layer so price data is queryable alongside other ware fields.
+-- Market price bands from libraries/wares.xml. Written once at connection time.
+-- Replaces Python dict in export layer so price data is queryable with other ware fields.
 CREATE TABLE IF NOT EXISTS ware_prices (
     ware_id    TEXT PRIMARY KEY,
     price_min  INTEGER NOT NULL,
@@ -388,9 +373,8 @@ CREATE TABLE IF NOT EXISTS ware_prices (
     price_max  INTEGER NOT NULL
 );
 
--- Per-scan production analytics for each ware a station produces. Computed
--- during scanning (in scanner/handlers/station.py) so the export layer is a
--- pure DB read. Enables cross-scan trend analysis later.
+-- Per-scan production analytics. Computed during scanning (export layer is pure DB read).
+-- Enables cross-scan trend analysis.
 CREATE TABLE IF NOT EXISTS station_production_analytics (
     scan_id            INTEGER NOT NULL REFERENCES scans(scan_id) ON DELETE CASCADE,
     station_id         TEXT    NOT NULL,
@@ -407,13 +391,10 @@ CREATE TABLE IF NOT EXISTS station_production_analytics (
     PRIMARY KEY (scan_id, station_id, ware_id)
 );
 
--- Galaxy connectivity graph: one row per undirected sector-to-sector link.
---   cost 1 = a gate / orbital accelerator hop (counts toward jump range)
---   cost 0 = an intra-cluster superhighway hop (free — same "big hex")
--- Unlike the other REFERENCE tables (which accumulate one row per object and
--- track staleness via last_scan_id), the topology is ONE coherent graph, so the
--- writer clears and rewrites it every scan rather than upserting per row.
--- sector_a < sector_b canonicalises each undirected edge to a single stored row.
+-- Galaxy connectivity graph: sector-to-sector links (one row per undirected edge).
+-- Cost 1=gate/accelerator (counts toward jump range); cost 0=superhighway (free).
+-- Unique among REFERENCE tables: topology is ONE coherent graph, so cleared+rewritten each scan.
+-- sector_a < sector_b canonicalizes each edge to one stored row.
 CREATE TABLE IF NOT EXISTS sector_links (
     sector_a      TEXT    NOT NULL,
     sector_b      TEXT    NOT NULL,

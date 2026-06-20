@@ -1,11 +1,6 @@
+# Core role: Faction metadata (names, colors, relationships) and reputation scale conversion.
+
 import math
-
-
-# =============================================================================
-# FACTION REPUTATION UTILITIES
-# 
-# This module handles the conversion and display of faction reputation values
-# in the X4 game universe. It manages:
 #   • Converting internal log10-scale reputation to in-game display scale (-30..+30)
 #   • Mapping reputation scores to descriptive tier labels (At War -> Allied)
 #   • Managing faction name lookups and excluding non-playable factions from reports

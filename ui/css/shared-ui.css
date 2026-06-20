@@ -1,4 +1,5 @@
-    /* ── SECTION HEADER ── */
+    /* Core role: Shared UI elements (badges, sections, dialogs, modals). */
+    /* SECTION HEADER */
     .sec-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
     .sec-title { font-family: var(--font-cond); font-weight: 600; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); white-space: nowrap; }
     .sec-line { flex: 1; height: 1px; background: var(--border); }

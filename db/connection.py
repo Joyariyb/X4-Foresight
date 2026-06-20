@@ -1,8 +1,4 @@
-"""
-db/connection.py
-
-Opens (creating if needed) the X4 Foresight SQLite database and applies the
-schema. One entry point: get_connection().
+"""Core role: Opens/creates SQLite database and applies schema (entry point: get_connection())."""
 """
 from __future__ import annotations
 import sqlite3

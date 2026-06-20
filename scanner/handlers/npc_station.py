@@ -1,3 +1,5 @@
+# Core role: Extracts NPC stations from save, including faction affiliation and trade resources.
+
 from __future__ import annotations
 import re
 from data.factions import FACTION_NAMES
@@ -184,5 +186,4 @@ class NpcStationHandler:
         # with any faction's station anywhere in the galaxy.
         ctx.npc_station_index[self._object_id] = station
 
-        # Clear instance state ready for the next station.
         self._object_id = ''

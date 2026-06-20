@@ -1,15 +1,5 @@
-  // ── RESOURCE LIBRARY ──────────────────────────────────────────────────────
-  // Read-only wiki over the same static game data the Ship Builder already
-  // loads: EQUIPMENT_CATALOG (weapon/turret/shield/engine/thruster, set by
-  // populate.js from data/equipment_stats.py) and HULL_CATALOG (set from
-  // data/ship_stats.py). No backend of its own — just a different view onto
-  // those two globals (declared in designs-builder.js), plus a sortable table
-  // instead of the builder's pick-to-fit cards.
-  //
-  // Software and Items have no generator yet (nothing under gamefiles/ reads
-  // those ware categories out of the .cat archives the way generate_equipment.py
-  // does for hulls/weapons/etc.), so those two categories render an honest
-  // "not available yet" placeholder rather than fabricated rows.
+  // Core role: Read-only sortable tables for equipment catalog and hull statistics (hulls, weapons, shields, engines).
+  // Reuses EQUIPMENT_CATALOG and HULL_CATALOG globals from designs-builder.js; no backend computation.
 
   let reslibCat     = 'hull';
   let reslibSortKey = null;
@@ -29,13 +19,8 @@
     engine: 'Engines', thruster: 'Thrusters', software: 'Software', item: 'Items',
   };
 
-  // Fallback role guesser for the rare hull with no <ship type=...> in its own
-  // macro (story/unique hulls mostly — generate_data.py's ship_type field
-  // covers ~91% of the catalog). Walks past the faction/size segments of the
-  // macro id and collects everything up to the first numeric segment (the
-  // model number) or the trailing "macro" token, so multi-word guesses like
-  // "miner_liquid"/"trans_container" stay intact. hullTypeFor() below always
-  // prefers the real game data over this guess.
+  // Fallback role guesser for rare hulls without <ship type=...> in their macro (covers ~91%).
+  // Extracts multi-word role names (miner_liquid, trans_container) for display.
   function hullTypeOf(macro) {
     const parts = macro.split('_');
     const out = [];
@@ -45,10 +30,7 @@
     }
     return out.join('_') || 'other';
   }
-  // A few of the game's own <ship type=...> values run two words together
-  // with no separator (e.g. "heavyfighter") — split_'_'-and-capitalize alone
-  // can't fix that, so these get an explicit nicer label; everything else
-  // falls through to the generic split.
+  // Game type values without separators (heavyfighter, largeminer) need explicit labels.
   const HULL_TYPE_LABELS = {
     heavyfighter: 'Heavy Fighter', largeminer: 'Large Miner',
     personalvehicle: 'Personal Vehicle', xsdrone: 'XS Drone',

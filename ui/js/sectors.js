@@ -1,7 +1,5 @@
-  // ── SECTORS TAB ────────────────────────────────────────────────────────────
-  // Master-detail view sharing the universe map's data: _sectorInfoMap (rows),
-  // _sectorAdj (links), _nearestStation (jumps) and _npcBySector (presence) are
-  // all populated by renderUniverseMap, which always runs before this view opens.
+  // Core role: Master-detail sector view built from universe map data (_sectorInfoMap, _sectorAdj, _nearestStation, _npcBySector).
+
   let _selectedSector = null;
 
   // Cluster display name: same precedence the map uses — static API names first,
@@ -68,7 +66,6 @@
     return tags;
   }
 
-  // One sector row, shared by the grouped (alpha) and flat (metric) views.
   // metricHtml is an optional right-aligned value for the active sort.
   function _sectorRowHtml(s, metricHtml) {
     const dot    = FACTION_COLOURS[s.owner_id] || '#6e7681';

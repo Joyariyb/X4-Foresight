@@ -1,3 +1,5 @@
+# Core role: Extracts mineable sector resources and resource yield rates from save.
+
 from __future__ import annotations
 from ..entities import SectorResource
 

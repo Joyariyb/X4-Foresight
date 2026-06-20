@@ -1,8 +1,6 @@
-# ════════════════════════════════════════════════════════════════════════════
-#                       X4 XML DIFF-PATCH APPLIER
-# ════════════════════════════════════════════════════════════════════════════
+# Core role: Applies X4 XML diff-patches (add/remove/replace/insert operations) to target documents.
 #
-# DLC and patch XML files in X4 are often not full documents but *diffs*:
+# DLC and patch XML files in X4 are often diffs, not full documents:
 #
 #   <diff>
 #     <add sel="/wares">             ← XPath to the target node

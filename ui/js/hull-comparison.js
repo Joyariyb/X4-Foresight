@@ -1,11 +1,4 @@
-  // ── HULL COMPARISON ──────────────────────────────────────────────────────
-  // Third Hull sub-tab (next to Hull List / Hull Inspector in
-  // resource-library.js): two hull-picker dropdowns, each driving a
-  // .dhull stat card (hullStatCardHtml(), defined in resource-library.js so
-  // Inspector and this tab never drift), plus a third card of head-to-head
-  // bar rows. Kept in its own file (rather than growing resource-library.js
-  // further) the same way hull-wireframes.js already sits beside it as a
-  // separate concern both files pull from.
+  // Core role: Hull comparison view (two-hull picker with side-by-side stat cards).
 
   // Persisted like reslibInspectMacro — so flipping to Hull List/Inspector
   // and back to Comparison doesn't lose the picks.

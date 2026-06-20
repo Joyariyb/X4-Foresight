@@ -1,9 +1,6 @@
-# Axial hex grid coordinates (q, r) for each cluster macro.
+# Core role: Axial hex grid coordinates (q, r) for each cluster macro.
 #
-# Derived from the qsna.eu /api/x4/map endpoint (cross-referenced 2026-06-07).
-# Positions were originally extracted from galaxy.xml, but the vanilla XML
-# contained scale errors that made most vanilla clusters wrong.  The API data
-# (in km units, hexSize = 10 000 km) gives the authoritative positions:
+# Derived from qsna.eu/api/x4/map (authoritative; vanilla galaxy.xml had scale errors).
 #
 #   q = round(x_km / 15 000)
 #   r = round(z_km / 17 320.508 - q / 2)

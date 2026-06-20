@@ -1,7 +1,6 @@
-  // ── Back-navigation history ────────────────────────────────────────────────
-  // Cross-tab jumps (pilot/ship/station links) are otherwise one-way. Each jump
-  // records where it came from (tab + sub-tab + scroll) so the orange Back button
-  // on the Views heading can return there. A manual tab switch clears the trail.
+  // Core role: Cross-tab navigation with back-button history (pilot/ship/station links).
+
+  // Navigation stack records where each jump came from (tab + sub-tab + scroll).
   const _navStack = [];
   let   _navGuard = false; // true while a jump/goBack drives switchTab, so the
                            // clear-on-manual-nav rule doesn't wipe the trail.

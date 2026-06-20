@@ -1,8 +1,4 @@
-# ─────────────────────────────────────────────────────────────────────────────
-#  PRODUCTION CALCULATIONS
-#  Functions for computing effective production rates from static data.
-#  Add further production helpers here as the economy tab grows.
-# ─────────────────────────────────────────────────────────────────────────────
+# Core role: Production rate calculations (cycles, throughput, duration) from module and ware data.
 
 import re
 

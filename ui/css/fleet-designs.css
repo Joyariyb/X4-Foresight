@@ -1,6 +1,5 @@
-    /* ── SORTABLE COLUMN HEADERS ── */
-    /* Shared by the player fleet, NPC fleet and crew tables so every table
-       sorts the same way: click a header to sort, click again to reverse. */
+    /* Core role: Styles for fleet/crew tables, ship designs, and hull comparison. */
+    /* SORTABLE COLUMN HEADERS — shared by all tables */
     .data-table th[data-sort-key] { cursor: pointer; user-select: none; }
     .data-table th[data-sort-key]:hover { color: var(--teal); }
     .data-table th.sort-active { color: var(--teal); }

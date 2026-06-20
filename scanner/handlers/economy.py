@@ -1,9 +1,4 @@
-"""
-scanner/handlers/economy.py
-
-EconomyHandler — harvests completed trades from the save's economy log.
-
-DESIGN: pure collection, no classification.
+"""Core role: Harvests raw trade log entries from save (pure collection, no classification).
 --------------------------------------------------------------------------
 The economy log is a single global block near the END of the save:
 
