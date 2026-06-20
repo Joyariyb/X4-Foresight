@@ -137,9 +137,12 @@
     const tabs = `<div class="fleet-subtabs">
       <div class="fleet-subtab ${reslibHullView === 'list' ? 'active' : ''}" onclick="reslibShowHullList()"><i class="ti ti-list"></i> Hull List</div>
       <div class="fleet-subtab ${reslibHullView === 'inspect' ? 'active' : ''} ${reslibInspectMacro ? '' : 'disabled'}" onclick="reslibInspectMacro && reslibShowHullInspector(reslibInspectMacro)"><i class="ti ti-zoom-in"></i> Hull Inspector</div>
+      <div class="fleet-subtab ${reslibHullView === 'compare' ? 'active' : ''}" onclick="reslibShowHullCompare()"><i class="ti ti-arrows-left-right"></i> Hull Comparison</div>
     </div>`;
 
-    const row2 = reslibHullView === 'list' ? reslibHullFiltersHtml() : (() => {
+    const row2 = reslibHullView === 'list' ? reslibHullFiltersHtml() : reslibHullView === 'compare' ? (() => {
+      return `<div class="sec-header"><div class="sec-title">Hull Comparison</div><div class="sec-line"></div></div>`;
+    })() : (() => {
       const h = HULL_CATALOG[reslibInspectMacro] || {};
       return `<div class="sec-header"><div class="sec-title">${h.name || reslibInspectMacro}</div><div class="sec-line"></div></div>`;
     })();
@@ -264,6 +267,7 @@
   function reslibShowEmpty(icon, title, body) {
     document.getElementById('reslib-panel').style.display = 'none';
     document.getElementById('reslib-inspector').style.display = 'none';
+    document.getElementById('reslib-compare').style.display = 'none';
     const empty = document.getElementById('reslib-empty');
     empty.style.display = 'flex';
     document.getElementById('reslib-empty-icon').className = 'ti ' + icon;
@@ -282,6 +286,7 @@
 
     if (cat === 'hull') {
       if (reslibHullView === 'inspect') { renderResLibHullInspector(); return; }
+      if (reslibHullView === 'compare') { renderResLibHullCompare(); return; }
       renderResLibHulls();
       return;
     }
@@ -313,6 +318,7 @@
     }
     document.getElementById('reslib-panel').style.display = '';
     document.getElementById('reslib-inspector').style.display = 'none';
+    document.getElementById('reslib-compare').style.display = 'none';
     document.getElementById('reslib-empty').style.display = 'none';
 
     let rows = Object.entries(HULL_CATALOG).map(([macro, h]) => ({
@@ -370,6 +376,7 @@
     }
     document.getElementById('reslib-panel').style.display = '';
     document.getElementById('reslib-inspector').style.display = 'none';
+    document.getElementById('reslib-compare').style.display = 'none';
     document.getElementById('reslib-empty').style.display = 'none';
 
     const defs = RESLIB_EQUIP_COLUMNS[slot] || [];
@@ -406,26 +413,13 @@
     }).join('');
   }
 
-  // ── HULL INSPECTOR ───────────────────────────────────────────────────────
-  // Per-hull detail page, reached by clicking a row in Hull List. Reuses the
-  // same .dhull stat-card and .dsect/.dsub-box equipment-section markup as
-  // the Designs tab's design cards (designCardHtml() in designs-builder.js)
-  // for visual consistency, but instead of listing what's *fitted* on a
-  // specific ship, it cross-references EQUIPMENT_CATALOG by slot+size to
-  // show everything that's catalogued and COULD mount in each hardpoint.
-  function renderResLibHullInspector() {
-    const macro = reslibInspectMacro;
+  // ── HULL STAT CARD ───────────────────────────────────────────────────────
+  // The .dhull card for one hull, by macro. Shared by Hull Inspector below
+  // and the Hull Comparison tab (hull-comparison.js) so both pages render
+  // byte-identical cards from one source instead of drifting copies.
+  function hullStatCardHtml(macro) {
     const h = HULL_CATALOG[macro];
-    document.getElementById('reslib-panel').style.display = 'none';
-    document.getElementById('reslib-empty').style.display = 'none';
-    const panel = document.getElementById('reslib-inspector');
-    panel.style.display = '';
-
-    if (!h) {
-      panel.innerHTML = `<div style="padding:60px;text-align:center;color:var(--text-dim)">Hull not found — it may have dropped out of the loaded catalog.</div>`;
-      return;
-    }
-
+    if (!h) return '';
     const faction = hullFactionFor(macro, h);
     const size = sizeFromClass(h.class);
     const type = hullTypeFor(macro, h);
@@ -435,7 +429,7 @@
     // bays (e.g. "container solid liquid") -- show every one, not just the first.
     const cargoTagsLabel = (h.cargo_tags || '').split(' ').filter(Boolean).map(capitalize).join(' / ');
 
-    const hullCard = `<div class="dhull" style="--dhull-border:${hexA(facColour,0.35)};--dhull-glow:${hexA(facColour,0.1)};max-width:300px">
+    return `<div class="dhull" style="--dhull-border:${hexA(facColour,0.35)};--dhull-glow:${hexA(facColour,0.1)};max-width:300px">
       <div class="dhull-hd"><i class="ti ti-ufo" style="color:${facColour}"></i><span class="lbl">Hull</span></div>
       <div class="dhull-wire">${wireSvgFor(size)}</div>
       <div class="dhull-id">${designBadge(faction)}<span class="dhull-nm">${h.name}</span></div>
@@ -453,6 +447,32 @@
       </div>
       ${cargoTagsLabel ? `<div style="width:100%;text-align:center;font-size:10px;color:var(--text-faint);margin-top:-4px">Cargo: ${cargoTagsLabel}</div>` : ''}
     </div>`;
+  }
+
+  // ── HULL INSPECTOR ───────────────────────────────────────────────────────
+  // Per-hull detail page, reached by clicking a row in Hull List. Reuses the
+  // same .dhull stat-card and .dsect/.dsub-box equipment-section markup as
+  // the Designs tab's design cards (designCardHtml() in designs-builder.js)
+  // for visual consistency, but instead of listing what's *fitted* on a
+  // specific ship, it cross-references EQUIPMENT_CATALOG by slot+size to
+  // show everything that's catalogued and COULD mount in each hardpoint.
+  function renderResLibHullInspector() {
+    const macro = reslibInspectMacro;
+    const h = HULL_CATALOG[macro];
+    document.getElementById('reslib-panel').style.display = 'none';
+    document.getElementById('reslib-empty').style.display = 'none';
+    document.getElementById('reslib-compare').style.display = 'none';
+    const panel = document.getElementById('reslib-inspector');
+    panel.style.display = '';
+
+    if (!h) {
+      panel.innerHTML = `<div style="padding:60px;text-align:center;color:var(--text-dim)">Hull not found — it may have dropped out of the loaded catalog.</div>`;
+      return;
+    }
+
+    const size = sizeFromClass(h.class);
+    const capitalize = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+    const hullCard = hullStatCardHtml(macro);
 
     const badges = [
       h.purchasable === false ? '<span class="badge neutral">Capture Only</span>' : '',

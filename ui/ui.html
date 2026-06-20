@@ -284,6 +284,10 @@
              reslib-panel once a hull is clicked in the Hull List. -->
         <div class="panel" id="reslib-inspector" style="display:none; overflow:auto; max-height: calc(100vh - 230px); padding:14px;"></div>
 
+        <!-- Hull Comparison — two-hull side-by-side view. Filled by
+             renderResLibHullCompare() in hull-comparison.js. -->
+        <div class="panel" id="reslib-compare" style="display:none; overflow:auto; max-height: calc(100vh - 230px); padding:14px;"></div>
+
         <!-- Shown for categories with no data pipeline yet (Software/Items), or
              before any scan has loaded the static equipment/hull catalogs. -->
         <div id="reslib-empty" style="display:none;flex-direction:column;align-items:center;gap:10px;padding:80px 20px;color:var(--text-dim)">
@@ -463,6 +467,7 @@
 <script src="js/hull-wireframes.js"></script>
 <script src="js/designs-builder.js"></script>
 <script src="js/resource-library.js"></script>
+<script src="js/hull-comparison.js"></script>
 <script src="js/tooltips.js"></script>
 <script src="js/faction-tabs.js"></script>
 <script src="js/navigation.js"></script>

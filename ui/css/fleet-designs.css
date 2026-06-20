@@ -109,6 +109,30 @@
        values like role names ("Miner (Solid)") now that there are 4 columns. */
     .dhs-val { font-family: var(--font-mono); font-size: 13px; color: var(--text); text-align: center; }
 
+    /* ── HULL COMPARISON (Resource Library) ──
+       Two .dhull cards (reused as-is) + a third summary card of head-to-head
+       bar rows. Hull A's bar is always the top line in a row, hull B's
+       always the bottom — fixed position, not faction-tinted, so the eye
+       only has to track "top vs bottom" rather than re-learn a colour key
+       per pair of hulls compared. */
+    .hcmp-wrap    { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+    .hcmp-col     { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 260px; max-width: 320px; }
+    .hcmp-summary { flex: 1; min-width: 280px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-panel); padding: 12px; }
+    .hcmp-summary-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 200px; color: var(--text-dim); text-align: center; }
+    .hcmp-summary-empty i { font-size: 28px; color: var(--teal); opacity: 0.5; }
+    .hcmp-row     { display: flex; flex-direction: column; gap: 3px; padding: 7px 0; border-bottom: 1px solid var(--border); }
+    .hcmp-row:last-child { border-bottom: none; }
+    .hcmp-lbl     { font-family: var(--font-cond); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); }
+    .hcmp-bar-line  { display: flex; align-items: center; gap: 8px; }
+    .hcmp-bar-track { flex: 1; height: 10px; background: rgba(255,255,255,0.04); border-radius: 2px; overflow: hidden; }
+    .hcmp-bar-fill  { height: 100%; border-radius: 2px; transition: width 0.15s; }
+    .hcmp-val       { font-family: var(--font-mono); font-size: 11px; min-width: 70px; text-align: right; flex-shrink: 0; }
+    /* Placeholder card shown in a column before a hull's picked — dashed
+       border distinguishes it from a real .dhull (solid, faction-tinted)
+       at a glance, same footprint so picking a hull doesn't reflow the row. */
+    .hcmp-empty-card { border-style: dashed; min-height: 220px; justify-content: center; }
+    .hcmp-empty-msg  { color: var(--text-faint); font-size: 12px; text-align: center; }
+
     /* ── BLUEPRINT BUILDER — two-pane master/detail ── */
     .bhdr   { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 12px; }
     .bfield { display: flex; flex-direction: column; gap: 3px; }
