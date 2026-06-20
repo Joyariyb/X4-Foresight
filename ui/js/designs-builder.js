@@ -280,13 +280,8 @@
     designsUpdateToggleAllBtn();
   }
 
-  // Generic placeholder hull wireframe. Replaced per-hull by the .xmf mesh
-  // render in a later phase; kept neutral so it reads as a preview, not data.
-  // Sizing is left to the .dhull-wire CSS so it can scale up in the bigger
-  // preview panel without a second copy of this markup.
-  const WIRE_SVG = `<svg viewBox="0 0 140 64" style="filter:drop-shadow(0 0 4px rgba(45,212,191,0.5))" aria-hidden="true">
-    <g fill="none" stroke="var(--teal)" stroke-width="1.1"><polygon points="70,5 80,26 76,54 70,60 64,54 60,26"/><line x1="70" y1="5" x2="70" y2="60"/><polygon points="60,30 41,38 44,49 60,45"/><polygon points="80,30 99,38 96,49 80,45"/></g>
-    <g fill="none" stroke="var(--lime)" stroke-width="1.1"><line x1="66" y1="56" x2="66" y2="63"/><line x1="74" y1="56" x2="74" y2="63"/></g></svg>`;
+  // Hull wireframes (WIRE_SVG_BY_SIZE, wireSvgFor) now live in
+  // hull-wireframes.js, loaded before this file.
 
   function designCardHtml(d, idx) {
     // Four stat cells from a source object + the slot's column defs (pads empties).
@@ -363,7 +358,7 @@
     const facColour = FACTION_COLOURS[(d.hullFaction || '').toLowerCase()] || '#2dd4bf';
     const hullPanel = `<div class="dhull" style="--dhull-border:${hexA(facColour, 0.35)};--dhull-glow:${hexA(facColour, 0.1)}">
       <div class="dhull-hd"><i class="ti ti-ufo" style="color:${facColour}"></i><span class="lbl">Hull</span></div>
-      <div class="dhull-wire">${WIRE_SVG}</div>
+      <div class="dhull-wire">${wireSvgFor(d.hullSize)}</div>
       <div class="dhull-id">${designBadge(d.hullFaction)}<span class="dhull-nm">${d.type}</span></div>
       <div class="dhull-stats">
         <div class="dhull-stat"><span class="dhs-lbl">Type</span><span class="dhs-val">${d.role || '—'}</span></div>
@@ -423,7 +418,7 @@
 
   // ══ SHIP BUILDER (interactive blueprint builder) ═══════════════════════════
   // Reuses the design-card layout (.dsect sections, SLOT_META, SLOT_STATS,
-  // designBadge, WIRE_SVG) but makes it editable. State: chosen hull + per-slot
+  // designBadge, wireSvgFor) but makes it editable. State: chosen hull + per-slot
   // fitted equipment. fits[slot] = [{macro, count}].
   // factionFilter: array of selected race strings; empty array means "all factions".
   let builderState = { hull: null, name: '', fits: {}, selectedSlot: null, selectedSize: null, factionFilter: [] };

@@ -437,7 +437,7 @@
 
     const hullCard = `<div class="dhull" style="--dhull-border:${hexA(facColour,0.35)};--dhull-glow:${hexA(facColour,0.1)};max-width:300px">
       <div class="dhull-hd"><i class="ti ti-ufo" style="color:${facColour}"></i><span class="lbl">Hull</span></div>
-      <div class="dhull-wire">${WIRE_SVG}</div>
+      <div class="dhull-wire">${wireSvgFor(size)}</div>
       <div class="dhull-id">${designBadge(faction)}<span class="dhull-nm">${h.name}</span></div>
       <div class="dhull-stats">
         <div class="dhull-stat"><span class="dhs-lbl">Type</span><span class="dhs-val">${hullTypeLabel(type)}</span></div>
