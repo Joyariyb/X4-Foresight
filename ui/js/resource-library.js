@@ -29,13 +29,13 @@
     engine: 'Engines', thruster: 'Thrusters', software: 'Software', item: 'Items',
   };
 
-  // Hull macros don't carry an explicit role field (unlike faction/size,
-  // which come from SHIP_STATS' class + the macro's faction segment) — the
-  // role lives only in the macro id itself, e.g.
-  // "ship_arg_s_fighter_01_a_macro" -> faction=arg, size=s, type=fighter.
-  // Walk past the faction/size segments and collect everything up to the
-  // first numeric segment (the model number) or the trailing "macro" token,
-  // so multi-word roles like "miner_liquid"/"trans_container" stay intact.
+  // Fallback role guesser for the rare hull with no <ship type=...> in its own
+  // macro (story/unique hulls mostly — generate_data.py's ship_type field
+  // covers ~91% of the catalog). Walks past the faction/size segments of the
+  // macro id and collects everything up to the first numeric segment (the
+  // model number) or the trailing "macro" token, so multi-word guesses like
+  // "miner_liquid"/"trans_container" stay intact. hullTypeFor() below always
+  // prefers the real game data over this guess.
   function hullTypeOf(macro) {
     const parts = macro.split('_');
     const out = [];
@@ -45,7 +45,34 @@
     }
     return out.join('_') || 'other';
   }
-  const hullTypeLabel = t => t.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  // A few of the game's own <ship type=...> values run two words together
+  // with no separator (e.g. "heavyfighter") — split_'_'-and-capitalize alone
+  // can't fix that, so these get an explicit nicer label; everything else
+  // falls through to the generic split.
+  const HULL_TYPE_LABELS = {
+    heavyfighter: 'Heavy Fighter', largeminer: 'Large Miner',
+    personalvehicle: 'Personal Vehicle', xsdrone: 'XS Drone',
+    smalldrone: 'Small Drone', distressdrone: 'Distress Drone',
+    escapepod: 'Escape Pod', lasertower: 'Laser Tower',
+  };
+  const hullTypeLabel = t => HULL_TYPE_LABELS[t] ||
+    t.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+  // Real role classification from the game's own macro XML (generate_data.py's
+  // ship_type field — see data/ship_stats.py), falling back to the macro-id
+  // guess only for the handful of hulls missing it.
+  const hullTypeFor = (macro, h) => (h && h.ship_type) || hullTypeOf(macro);
+
+  // Real faction from <identification makerrace=...> (lowercase race key,
+  // same space as equipment's race field), mapped through the same
+  // RACE_FULL_NAMES table the equipment faction filter uses, falling back to
+  // the macro-id guess (hullFactionOf) for the handful of hulls with no
+  // makerrace attribute.
+  const hullFactionFor = (macro, h) => {
+    const mr = ((h && h.makerrace) || '').toLowerCase();
+    if (mr) return RACE_FULL_NAMES[mr] || (mr.charAt(0).toUpperCase() + mr.slice(1));
+    return hullFactionOf(macro);
+  };
 
   // Visibility is pure CSS (.reslib-wrap:hover .reslib-menu) — this just keeps
   // the fixed-position menu's coordinates pinned to the sidebar item, since
@@ -126,9 +153,10 @@
   function reslibHullFilterOptions() {
     const factions = new Set(), sizes = new Set(), types = new Set();
     for (const macro of Object.keys(HULL_CATALOG)) {
-      factions.add(hullFactionOf(macro));
-      sizes.add(sizeFromClass(HULL_CATALOG[macro].class));
-      types.add(hullTypeOf(macro));
+      const h = HULL_CATALOG[macro];
+      factions.add(hullFactionFor(macro, h));
+      sizes.add(sizeFromClass(h.class));
+      types.add(hullTypeFor(macro, h));
     }
     return { faction: [...factions].sort(), size: [...sizes].sort(bySizeDesc), type: [...types].sort() };
   }
@@ -288,8 +316,8 @@
     document.getElementById('reslib-empty').style.display = 'none';
 
     let rows = Object.entries(HULL_CATALOG).map(([macro, h]) => ({
-      macro, name: h.name, faction: hullFactionOf(macro), size: sizeFromClass(h.class),
-      type: hullTypeOf(macro), max_hull: h.max_hull, price: h.price,
+      macro, name: h.name, faction: hullFactionFor(macro, h), size: sizeFromClass(h.class),
+      type: hullTypeFor(macro, h), max_hull: h.max_hull, price: h.price,
       purchasable: h.purchasable !== false, hardpoints: h.hardpoints || {},
     }));
     const f = reslibHullFilters;
@@ -398,10 +426,14 @@
       return;
     }
 
-    const faction = hullFactionOf(macro);
+    const faction = hullFactionFor(macro, h);
     const size = sizeFromClass(h.class);
-    const type = hullTypeOf(macro);
+    const type = hullTypeFor(macro, h);
     const facColour = FACTION_COLOURS[faction.toLowerCase()] || '#2dd4bf';
+    const capitalize = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+    // cargo_tags can be several space-separated ware types on multi-purpose
+    // bays (e.g. "container solid liquid") -- show every one, not just the first.
+    const cargoTagsLabel = (h.cargo_tags || '').split(' ').filter(Boolean).map(capitalize).join(' / ');
 
     const hullCard = `<div class="dhull" style="--dhull-border:${hexA(facColour,0.35)};--dhull-glow:${hexA(facColour,0.1)};max-width:300px">
       <div class="dhull-hd"><i class="ti ti-ufo" style="color:${facColour}"></i><span class="lbl">Hull</span></div>
@@ -413,12 +445,24 @@
         <div class="dhull-stat"><span class="dhs-lbl">Hull HP</span><span class="dhs-val">${h.max_hull != null ? designCr(h.max_hull) : '—'}</span></div>
         <div class="dhull-stat"><span class="dhs-lbl">Price</span><span class="dhs-val">${h.price != null ? designCr(h.price) : '—'}</span></div>
       </div>
+      <div class="dhull-stats">
+        <div class="dhull-stat"><span class="dhs-lbl">Crew</span><span class="dhs-val">${h.crew_capacity != null ? designCr(h.crew_capacity) : '—'}</span></div>
+        <div class="dhull-stat"><span class="dhs-lbl">Cargo</span><span class="dhs-val">${h.cargo_max != null ? designCr(h.cargo_max) + ' m³' : '—'}</span></div>
+        <div class="dhull-stat"><span class="dhs-lbl">Missiles</span><span class="dhs-val">${h.missile_storage != null ? designCr(h.missile_storage) : '—'}</span></div>
+        <div class="dhull-stat"><span class="dhs-lbl">Units</span><span class="dhs-val">${h.unit_storage != null ? designCr(h.unit_storage) : '—'}</span></div>
+      </div>
+      ${cargoTagsLabel ? `<div style="width:100%;text-align:center;font-size:10px;color:var(--text-faint);margin-top:-4px">Cargo: ${cargoTagsLabel}</div>` : ''}
     </div>`;
 
     const badges = [
       h.purchasable === false ? '<span class="badge neutral">Capture Only</span>' : '',
+      h.purpose ? `<span class="badge neutral">${capitalize(h.purpose)}</span>` : '',
       (h.weapon_heat_factor && h.weapon_heat_factor !== 1) ? `<span class="badge neutral">Heat ×${h.weapon_heat_factor}</span>` : '',
-    ].join(' ');
+    ].filter(Boolean).join(' ');
+
+    const description = h.description
+      ? `<div style="font-size:12px;color:var(--text-dim);line-height:1.6;font-style:italic;margin-bottom:14px;max-width:820px">${h.description}</div>`
+      : '';
 
     // Same padded-to-4-columns convention as designCardHtml()'s statCells/
     // headerRow, so weapon/turret/shield (3 stat defs) and thruster (4)
@@ -491,6 +535,7 @@
 
     panel.innerHTML = `
       ${badges ? `<div style="margin-bottom:10px">${badges}</div>` : ''}
+      ${description}
       <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
         ${hullCard}
         <div style="flex:1;min-width:280px">${sections}</div>

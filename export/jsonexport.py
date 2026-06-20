@@ -482,7 +482,8 @@ _MANUAL_HULL_EXCLUSIONS = {'ship_xen_xl_mothership_01_a_macro'}
 
 def _hull_catalog() -> dict:
     """All hulls with equipment slots → {name, class, max_hull, price, hardpoints,
-    purchasable, weapon_heat_factor}.
+    purchasable, weapon_heat_factor, ship_type, purpose, makerrace, crew_capacity,
+    missile_storage, unit_storage, cargo_max, cargo_tags, description, variation}.
 
     The blueprint builder's hull selector reads this. Keyed by macro; deployables/
     drones (no hardpoints), never-flown macros (flown=False — NPC skin variants,
@@ -515,6 +516,19 @@ def _hull_catalog() -> dict:
             # needs this to show the correct Time to Overheat for the
             # currently selected hull; see SHIP_STATS' docstring.
             'weapon_heat_factor': st.get('weapon_heat_factor', 1.0),
+            # Game's own role classification (<ship type=...>/<purpose
+            # primary=...> in the macro XML) -- not guessed from the macro id,
+            # so the Resource Library can filter/label by it directly.
+            'ship_type':       st.get('ship_type', ''),
+            'purpose':         st.get('purpose', ''),
+            'makerrace':       st.get('makerrace', ''),
+            'crew_capacity':   st.get('crew_capacity'),
+            'missile_storage': st.get('missile_storage'),
+            'unit_storage':    st.get('unit_storage'),
+            'cargo_max':       st.get('cargo_max'),
+            'cargo_tags':      st.get('cargo_tags', ''),
+            'description':     st.get('description', ''),
+            'variation':       st.get('variation', ''),
         }
     return out
 

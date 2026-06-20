@@ -30,7 +30,7 @@ _REF_RE = re.compile(r'\{\s*(\d+)\s*,\s*(\d+)\s*\}')
 
 
 def clean_text(raw: str, texts: dict) -> str:
-    """Strips translator comments, resolves {page,id} refs, unescapes parentheses.
+    """Strips translator comments, resolves {page,id} refs, unescapes parentheses and newlines.
 
     X4 t-file entries often look like:
         (Behemoth Vanguard){20101,11001} {20111,1101}
@@ -45,7 +45,7 @@ def clean_text(raw: str, texts: dict) -> str:
         if new == raw:
             break
         raw = new
-    return raw.replace(r"\(", "(").replace(r"\)", ")").strip()
+    return raw.replace(r"\(", "(").replace(r"\)", ")").replace(r"\n", "\n").strip()
 
 
 def load_texts(idx: CatalogIndex, page_ids: set[str]) -> dict:

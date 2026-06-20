@@ -497,13 +497,17 @@ def _fmt_hardpoints(hp: dict) -> str:
 
 def load_ship_data(idx: CatalogIndex, texts: dict, prices: dict[str, int],
                    hardpoints: dict[str, dict],
-                   availability: dict[str, dict]) -> list[tuple]:
+                   availability: dict[str, dict]) -> list[dict]:
     """
     Reads every ship_*.xml macro from the catalogs (base + DLC) and returns a
-    list of (macro_id, display_name, ship_class, max_hull, price, hardpoints,
-    purchasable, flown, weapon_heat_factor) tuples. price is the hull's
+    list of per-ship dicts (see the keys built below). price is the hull's
     average buy price (0 if the hull isn't sold); hardpoints is the slot
     layout of the macro's referenced component.
+
+    A dict (not the old positional tuple) because this now carries ~17 fields
+    — adding one more as a positional slot would mean re-counting every
+    unpack site in the file to find where it landed; a dict key is self-
+    documenting at every call site instead.
 
     weapon_heat_factor is the hull's <modifiers><weapon heat=X/></modifiers>
     multiplier (1.0 when the macro has no such element, the common case) --
@@ -530,6 +534,16 @@ def load_ship_data(idx: CatalogIndex, texts: dict, prices: dict[str, int],
     Both flags exist so jsonexport's hull catalog can drop non-flown hulls
     while still badging capture-only ones instead of hiding them.
 
+    ship_type/purpose/makerrace/crew_capacity/missile_storage/unit_storage/
+    description/variation all come straight off <properties> in this same
+    macro file — no extra file read. cargo_max/cargo_tags are deliberately
+    NOT resolved here: the cargo bay is a separate macro referenced through
+    this macro's own <connections> block (a different file per hull, living
+    in several different assets/ subdirectories — not the fixed component-XML
+    glob hardpoints come from). The ref is captured into _storage_macro_ref
+    and resolved afterwards by load_cargo_for_ships(), which the caller must
+    run before writing these dicts out — see main().
+
     DLC ship macros are full documents (not diffs), so they're simply parsed
     alongside the base-game ones — no patch application needed.
     """
@@ -551,9 +565,21 @@ def load_ship_data(idx: CatalogIndex, texts: dict, prices: dict[str, int],
         ship_class = macro_el.get("class", "")
         ident      = root.find(".//identification")
         hull_el    = root.find(".//hull")
+        ship_el    = root.find(".//ship")
+        purpose_el = root.find(".//purpose")
+        people_el  = root.find(".//people")
+        storage_el = root.find(".//storage")
 
         name_ref = ident.get("name", "") if ident is not None else ""
         display  = clean_text(name_ref, texts) if name_ref else macro_id
+
+        desc_ref = ident.get("description", "") if ident is not None else ""
+        description = clean_text(desc_ref, texts) if desc_ref else ""
+
+        variation_ref = ident.get("variation", "") if ident is not None else ""
+        variation = clean_text(variation_ref, texts) if variation_ref else ""
+
+        makerrace = (ident.get("makerrace", "") if ident is not None else "").lower()
 
         max_hull = int(hull_el.get("max", 0)) if hull_el is not None else 0
         price    = prices.get(macro_id.lower(), 0)
@@ -572,16 +598,97 @@ def load_ship_data(idx: CatalogIndex, texts: dict, prices: dict[str, int],
         except (ValueError, TypeError):
             weapon_heat_factor = 1.0
 
-        ships.append((macro_id, display, ship_class, max_hull, price, hp, purchasable, flown,
-                      weapon_heat_factor))
+        def _int_or_none(el, attr):
+            if el is None or not el.get(attr):
+                return None
+            try:
+                return int(el.get(attr))
+            except (TypeError, ValueError):
+                return None
 
-    ships.sort(key=lambda s: s[0])
+        crew_capacity   = _int_or_none(people_el, "capacity")
+        missile_storage = _int_or_none(storage_el, "missile")
+        unit_storage    = _int_or_none(storage_el, "unit")
+
+        # Cargo bay macro ref, e.g. <connections><connection><macro
+        # ref="storage_arg_l_destroyer_01_a_macro"/></connection></connections>
+        # — sibling to <properties> on the macro, NOT inside it. The
+        # connection's own name varies (con_storage01/con_storage_01/...), so
+        # match by the referenced macro's "storage_" prefix instead.
+        storage_macro_ref = ""
+        conns_el = macro_el.find("connections")
+        if conns_el is not None:
+            for conn in conns_el.findall("connection"):
+                sm = conn.find("macro")
+                smref = (sm.get("ref") or "").lower() if sm is not None else ""
+                if smref.startswith("storage_"):
+                    storage_macro_ref = smref
+                    break
+
+        ships.append({
+            "macro_id":            macro_id,
+            "display":             display,
+            "description":         description,
+            "variation":           variation,
+            "class":               ship_class,
+            "max_hull":            max_hull,
+            "price":               price,
+            "hardpoints":          hp,
+            "purchasable":         purchasable,
+            "flown":               flown,
+            "weapon_heat_factor":  weapon_heat_factor,
+            "ship_type":           ship_el.get("type", "") if ship_el is not None else "",
+            "purpose":             purpose_el.get("primary", "") if purpose_el is not None else "",
+            "makerrace":           makerrace,
+            "crew_capacity":       crew_capacity,
+            "missile_storage":     missile_storage,
+            "unit_storage":        unit_storage,
+            "cargo_max":           None,
+            "cargo_tags":          "",
+            "_storage_macro_ref":  storage_macro_ref,
+        })
+
+    ships.sort(key=lambda s: s["macro_id"])
     return ships
 
 
+def load_cargo_for_ships(idx: CatalogIndex, ships: list[dict]) -> None:
+    """
+    Resolves each ship's cargo-bay macro (captured as _storage_macro_ref by
+    load_ship_data) into a max m3 + ware-type tag, mutating every ship dict
+    in place and removing the internal _storage_macro_ref key.
+
+    A second pass because the cargo-bay macro is a standalone file scattered
+    across several assets/ subdirectories per hull (ship-specific ones live
+    next to the hull's own macro, generic shared ones live under
+    assets/props/storagemodules/) — there's no single fixed glob like
+    hardpoints' component files, so each ref is resolved by filename via
+    idx.find("*/<ref>.xml") instead of a directory pattern.
+    """
+    # ref -> (cargo_max, cargo_tags); several hulls share the same generic
+    # storage macro (e.g. storage_gen_s_eight), so cache to avoid re-reading it.
+    cache: dict[str, tuple[int | None, str]] = {}
+
+    for ship in ships:
+        ref = ship.pop("_storage_macro_ref")
+        if not ref:
+            continue
+        if ref not in cache:
+            matches = idx.find(f"*/{ref}.xml")
+            cargo_el = ET.fromstring(idx.read(matches[0])).find(".//cargo") if matches else None
+            if cargo_el is None:
+                cache[ref] = (None, "")
+            else:
+                try:
+                    cmax = int(cargo_el.get("max", 0))
+                except (TypeError, ValueError):
+                    cmax = None
+                cache[ref] = (cmax, cargo_el.get("tags", ""))
+        ship["cargo_max"], ship["cargo_tags"] = cache[ref]
+
+
 def gen_ships_py(ships) -> str:
-    items = [(macro_id, repr(display))
-             for macro_id, display, *_ in ships]
+    items = [(s["macro_id"], repr(s["display"])) for s in ships]
     return (GENERATED_BANNER +
             "\n# Ship macro id → display name (ship macro XML identification/@name\n"
             "# resolved via page 20101 of the language file).\n"
@@ -592,36 +699,65 @@ def gen_ships_py(ships) -> str:
 
 def gen_ship_stats_py(ships) -> str:
     blocks = []
-    for macro_id, _, ship_class, max_hull, price, hardpoints, purchasable, flown, weapon_heat_factor in ships:
-        blocks.append(f"    '{macro_id}': {{\n"
-                      f"        'class':              '{ship_class}',\n"
-                      f"        'max_hull':           {max_hull},\n"
-                      f"        'price':              {price},\n"
-                      f"        'hardpoints':         {_fmt_hardpoints(hardpoints)},\n"
-                      f"        'purchasable':        {purchasable},\n"
-                      f"        'flown':              {flown},\n"
-                      f"        'weapon_heat_factor': {weapon_heat_factor},\n"
-                      f"    }},")
+    for s in ships:
+        blocks.append(
+            f"    '{s['macro_id']}': {{\n"
+            f"        'class':              '{s['class']}',\n"
+            f"        'max_hull':           {s['max_hull']},\n"
+            f"        'price':              {s['price']},\n"
+            f"        'hardpoints':         {_fmt_hardpoints(s['hardpoints'])},\n"
+            f"        'purchasable':        {s['purchasable']},\n"
+            f"        'flown':              {s['flown']},\n"
+            f"        'weapon_heat_factor': {s['weapon_heat_factor']},\n"
+            f"        'ship_type':          {s['ship_type']!r},\n"
+            f"        'purpose':            {s['purpose']!r},\n"
+            f"        'makerrace':          {s['makerrace']!r},\n"
+            f"        'crew_capacity':      {s['crew_capacity']!r},\n"
+            f"        'missile_storage':    {s['missile_storage']!r},\n"
+            f"        'unit_storage':       {s['unit_storage']!r},\n"
+            f"        'cargo_max':          {s['cargo_max']!r},\n"
+            f"        'cargo_tags':         {s['cargo_tags']!r},\n"
+            f"        'description':        {s['description']!r},\n"
+            f"        'variation':          {s['variation']!r},\n"
+            f"    }},")
     return (GENERATED_BANNER +
-            "\n# Ship macro id → static game stats (ship macro + component XML + wares.xml).\n"
-            "#   class       — ship size class (ship_s, ship_m, ship_l, ship_xl, ship_xs)\n"
-            "#   max_hull    — base maximum hull HP before mods\n"
-            "#   price       — average buy price in credits (0 if the hull isn't sold)\n"
-            "#   hardpoints  — slot layout {type: {size: count}} from the hull component\n"
-            "#                 (type = weapon/turret/shield/engine; size = s/m/l/xl)\n"
-            "#   purchasable — True if the player can buy this new at a shipyard. False\n"
-            "#                 for hulls only obtainable by capture or story reward (e.g.\n"
-            "#                 Xenon/Kha'ak ships) — still real, ownable ships.\n"
-            "#   flown       — False means no faction owns/flies this hull at all (NPC\n"
-            "#                 skin variant, escape pod, deployable drone, colony-ship\n"
-            "#                 set-piece part) — never a real or encounterable ship.\n"
-            "#                 The design builder's hull catalog drops these; naming\n"
-            "#                 tables (ships.py) keep them so any scanned entity still\n"
-            "#                 resolves to a name.\n"
+            "\n# Ship macro id → static game stats (ship macro XML + component XML +\n"
+            "# cargo-bay macro + wares.xml).\n"
+            "#   class          — ship size class (ship_s, ship_m, ship_l, ship_xl, ship_xs)\n"
+            "#   max_hull       — base maximum hull HP before mods\n"
+            "#   price          — average buy price in credits (0 if the hull isn't sold)\n"
+            "#   hardpoints     — slot layout {type: {size: count}} from the hull component\n"
+            "#                    (type = weapon/turret/shield/engine; size = s/m/l/xl)\n"
+            "#   purchasable    — True if the player can buy this new at a shipyard. False\n"
+            "#                    for hulls only obtainable by capture or story reward (e.g.\n"
+            "#                    Xenon/Kha'ak ships) — still real, ownable ships.\n"
+            "#   flown          — False means no faction owns/flies this hull at all (NPC\n"
+            "#                    skin variant, escape pod, deployable drone, colony-ship\n"
+            "#                    set-piece part) — never a real or encounterable ship.\n"
+            "#                    The design builder's hull catalog drops these; naming\n"
+            "#                    tables (ships.py) keep them so any scanned entity still\n"
+            "#                    resolves to a name.\n"
             "#   weapon_heat_factor — multiplies every mounted weapon's heat generation\n"
-            "#                 (1.0 = no effect, the common case). Confirmed against real\n"
-            "#                 tooltips: lowers Time to Overheat proportionally, does NOT\n"
-            "#                 affect Sustained Weapon Damage or Cooldown Duration.\n"
+            "#                    (1.0 = no effect, the common case). Confirmed against real\n"
+            "#                    tooltips: lowers Time to Overheat proportionally, does NOT\n"
+            "#                    affect Sustained Weapon Damage or Cooldown Duration.\n"
+            "#   ship_type      — the macro's own <ship type=...> role tag (e.g. 'destroyer',\n"
+            "#                    'heavyfighter', 'largeminer') — the game's own role\n"
+            "#                    classification, not guessed from the macro id.\n"
+            "#   purpose        — coarser <purpose primary=...> bucket: fight/trade/mine/\n"
+            "#                    build/auxiliary/salvage. '' if the macro has none.\n"
+            "#   makerrace      — <identification makerrace=...>, lowercase race key (e.g.\n"
+            "#                    'argon') — same key space as equipment's race field.\n"
+            "#   crew_capacity  — <people capacity=...>; None if the macro has no crew slot.\n"
+            "#   missile_storage/unit_storage — <storage missile=.. unit=..> counts; None if\n"
+            "#                    the macro has no such storage element.\n"
+            "#   cargo_max      — m3 capacity from the hull's cargo-bay macro (resolved via\n"
+            "#                    the ship macro's storage <connection>); None if the hull\n"
+            "#                    has no cargo bay (most fighters/drones).\n"
+            "#   cargo_tags     — ware-type tags on that cargo bay (e.g. 'container', 'solid',\n"
+            "#                    'liquid'); '' if cargo_max is None.\n"
+            "#   description/variation — flavour text + variant name (e.g. 'Vanguard'),\n"
+            "#                    resolved from the language file; '' if the macro has none.\n"
             "SHIP_STATS: dict[str, dict] = {\n" +
             "\n".join(blocks) + "\n}\n")
 
@@ -915,10 +1051,12 @@ def main() -> int:
     hardpoints = load_hardpoints(idx)       # component → {type: {size: count}}
     availability = load_macro_availability(idx)  # macro → owners + purchasable
     ships = load_ship_data(idx, texts_ships, prices, hardpoints, availability)
+    load_cargo_for_ships(idx, ships)
     print(f"Found {len(ships)} ship macros "
-          f"({sum(1 for s in ships if s[4])} priced, {sum(1 for s in ships if s[5])} with slots, "
-          f"{sum(1 for s in ships if s[7])} flown, "
-          f"{sum(1 for s in ships if s[7] and not s[6])} capture/story-only)")
+          f"({sum(1 for s in ships if s['price'])} priced, {sum(1 for s in ships if s['hardpoints'])} with slots, "
+          f"{sum(1 for s in ships if s['flown'])} flown, "
+          f"{sum(1 for s in ships if s['flown'] and not s['purchasable'])} capture/story-only, "
+          f"{sum(1 for s in ships if s['cargo_max'])} with cargo data)")
 
     # ── Station stats (structure modules + shields, page 20004 for sector names) ──
     # Page 20004 is also used by gen_sector_stats_py for display-name comments.
