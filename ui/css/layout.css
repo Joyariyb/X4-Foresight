@@ -154,6 +154,13 @@
     .tab-panel { display: none; flex-direction: column; gap: 12px; }
     .tab-panel.active { display: flex; }
 
+    /* ── SCAN STATUS CARD ── */
+    /* Same look as the existing .card/.panel components - background, border,
+       and radius reused from shared-ui.css rather than redeclared. */
+    .scan-status-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; padding: 14px 16px; }
+    .scan-status-idle { display: flex; align-items: center; gap: 10px; font-family: var(--font-cond); font-size: 14px; color: var(--text-dim); }
+    .scan-status-idle i { font-size: 18px; color: var(--teal); }
+
     /* ── SCAN PROGRESS ── */
     /* Four segments, one per pipeline stage. A segment is "done" (solid
        green) once its stage has passed, "active" (dim green track + a

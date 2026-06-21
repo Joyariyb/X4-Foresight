@@ -125,26 +125,34 @@
       <!-- OVERVIEW TAB -->
       <div class="tab-panel active" id="tab-overview">
 
-        <!-- Scan progress bar - hidden by default, shown by updateScanProgress()
-             in scan-loader.js while a New Scan is running, hidden again when
-             it finishes (success or failure). Stage order matches
-             pyweb/web_entry.py's run_scan_from_staged() exactly. -->
-        <div id="scan-progress-bar" class="scan-progress" style="display:none">
-          <div class="scan-progress-seg" data-stage="0">
-            <div class="scan-progress-fill"></div>
-            <div class="scan-progress-label">Scanning Save</div>
+        <!-- Scan status card - shown whenever there's no scan loaded yet
+             (idle text) or a New Scan is actively running (progress bar),
+             hidden once real data is loaded. refreshScanStatusCard() in
+             scan-loader.js decides idle-vs-hidden after every load attempt;
+             updateScanProgress() swaps in the bar while scanning. Stage
+             order matches pyweb/web_entry.py's run_scan_from_staged(). -->
+        <div id="scan-status-card" class="scan-status-card" style="display:none">
+          <div id="scan-status-idle" class="scan-status-idle">
+            <i class="ti ti-folder-open"></i>
+            <span>Load save file first</span>
           </div>
-          <div class="scan-progress-seg" data-stage="1">
-            <div class="scan-progress-fill"></div>
-            <div class="scan-progress-label">Resolving Trades</div>
-          </div>
-          <div class="scan-progress-seg" data-stage="2">
-            <div class="scan-progress-fill"></div>
-            <div class="scan-progress-label">Resolving Homebases</div>
-          </div>
-          <div class="scan-progress-seg" data-stage="3">
-            <div class="scan-progress-fill"></div>
-            <div class="scan-progress-label">Writing Database</div>
+          <div id="scan-progress-bar" class="scan-progress" style="display:none">
+            <div class="scan-progress-seg" data-stage="0">
+              <div class="scan-progress-fill"></div>
+              <div class="scan-progress-label">Scanning Save</div>
+            </div>
+            <div class="scan-progress-seg" data-stage="1">
+              <div class="scan-progress-fill"></div>
+              <div class="scan-progress-label">Resolving Trades</div>
+            </div>
+            <div class="scan-progress-seg" data-stage="2">
+              <div class="scan-progress-fill"></div>
+              <div class="scan-progress-label">Resolving Homebases</div>
+            </div>
+            <div class="scan-progress-seg" data-stage="3">
+              <div class="scan-progress-fill"></div>
+              <div class="scan-progress-label">Writing Database</div>
+            </div>
           </div>
         </div>
 

@@ -24,6 +24,7 @@
     _bridge.get_empire_data(scanId, function(jsonStr) {
       try {
         populate(JSON.parse(jsonStr));
+        refreshScanStatusCard();
       } catch(e) {
         document.getElementById("loading").textContent = "Error parsing data: " + e;
       }
@@ -89,18 +90,43 @@
     document.body.appendChild(overlay);
   }
 
-  // Lights up segments 0..stage-1 as done and `stage` as active (mid-sweep
-  // animation, since there's no finer-grained % within a stage). #scan-
-  // progress-bar only exists in ui/web/index.html (the desktop ui.html has
-  // no equivalent yet), so this and hideScanProgress() are no-ops there.
-  function updateScanProgress(stage) {
+  // Decides the scan status card's state from _currentScanId: hidden once a
+  // scan is loaded, "Load save file first" while none is. Called after every
+  // load attempt (success, failure, or cancel) - #scan-status-card only
+  // exists in ui/web/index.html (desktop's ui.html has no equivalent yet),
+  // so this is a no-op there.
+  function refreshScanStatusCard() {
+    const card = document.getElementById("scan-status-card");
     const bar = document.getElementById("scan-progress-bar");
-    if (!bar) return;
+    const idle = document.getElementById("scan-status-idle");
+    if (!card) return;
+    bar.style.display = "none";
+    bar.querySelectorAll(".scan-progress-seg").forEach(seg => {
+      seg.classList.remove("done", "active");
+    });
+    if (_currentScanId != null) {
+      card.style.display = "none";
+    } else {
+      card.style.display = "";
+      idle.style.display = "";
+    }
+  }
+
+  // Swaps the card into its progress-bar state and lights up segments
+  // 0..stage-1 as done, `stage` as active (mid-sweep animation, since
+  // there's no finer-grained % within a stage).
+  function updateScanProgress(stage) {
+    const card = document.getElementById("scan-status-card");
+    const bar = document.getElementById("scan-progress-bar");
+    const idle = document.getElementById("scan-status-idle");
+    if (!card) return;
     // New Scan is reachable from the sidebar on any tab, but #tab-overview
-    // (and the bar inside it) only renders while it's the active tab - jump
-    // there on the first stage so the bar is actually visible, regardless of
-    // which tab the user was on when they clicked New Scan.
+    // (and the card inside it) only renders while it's the active tab - jump
+    // there on the first stage so the card is actually visible, regardless
+    // of which tab the user was on when they clicked New Scan.
     if (stage === 0) switchTab("overview", document.getElementById("nav-overview"));
+    card.style.display = "";
+    idle.style.display = "none";
     bar.style.display = "";
     bar.querySelectorAll(".scan-progress-seg").forEach((seg, i) => {
       seg.classList.toggle("done", i < stage);
@@ -108,35 +134,29 @@
     });
   }
 
-  function hideScanProgress() {
-    const bar = document.getElementById("scan-progress-bar");
-    if (!bar) return;
-    bar.style.display = "none";
-    bar.querySelectorAll(".scan-progress-seg").forEach(seg => {
-      seg.classList.remove("done", "active");
-    });
-  }
-
   // Ask the Python backend to show the save-picker and run a fresh scan.
   // When the scan completes the picker and data are refreshed automatically.
   function requestNewScan() {
     if (!_bridge) return;
-    // Registering the listener doesn't show the bar by itself - it only
-    // appears once the first progress callback actually fires, which is
-    // after the user has picked a save file and the real scan has started
-    // (not while the folder/file picker dialogs are still up).
+    // Registering the listener doesn't show the card by itself - it only
+    // switches to the progress bar once the first progress callback actually
+    // fires, which is after the user has picked a save file and the real
+    // scan has started (not while the folder/file picker dialogs are still up).
     if (_bridge.on_progress) _bridge.on_progress(updateScanProgress);
     _bridge.trigger_scan(function(jsonStr) {
-      hideScanProgress();
       try {
         const result = JSON.parse(jsonStr);
         if (result.ok) {
           _bridge.list_scans(function(scansStr) {
             try { populateScanPicker(JSON.parse(scansStr)); } catch(e) {}
           });
-          loadScan(-1);
-        } else if (!result.cancelled) {
-          showScanErrorDialog(result.error);
+          loadScan(-1);   // re-populates and calls refreshScanStatusCard() itself
+        } else {
+          // Failed or cancelled - revert the card to whatever state already
+          // matched _currentScanId before this attempt (hidden if a scan was
+          // already loaded, idle text if not), then report a real error.
+          refreshScanStatusCard();
+          if (!result.cancelled) showScanErrorDialog(result.error);
         }
       } catch(e) {}
     });
