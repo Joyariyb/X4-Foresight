@@ -37,6 +37,15 @@ def main():
         pkg_dir = ROOT / pkg
         for ext in ("*.py", "*.sql"):
             for path in sorted(pkg_dir.rglob(ext)):
+                # __init__.py files are empty package markers here (verified -
+                # none of them have real code), and GitHub Pages' Jekyll build
+                # silently 404s any underscore-prefixed file regardless of a
+                # .nojekyll marker. Skipping them is safe: Python 3's implicit
+                # namespace packages (PEP 420) work fine with no __init__.py
+                # on disk, as long as the directory itself exists - which it
+                # does, since every package dir here has other staged files.
+                if path.name == "__init__.py":
+                    continue
                 paths.append(path.relative_to(ROOT).as_posix())
     paths.extend(TOP_LEVEL_MODULES)
     paths.sort()
