@@ -22,14 +22,18 @@ async function bootPyodide() {
   const pyodide = await loadPyodide();
   await pyodide.loadPackage(["lxml", "sqlite3"]);
 
-  const manifest = await (await fetch("../py-manifest.json")).json();
+  // "no-cache" forces a conditional revalidation (ETag check) against the
+  // server on every load instead of trusting the browser's HTTP cache - the
+  // Python source tree changes on every deploy, and a stale cached manifest
+  // or source file previously caused a fixed bug to keep reappearing.
+  const manifest = await (await fetch("../py-manifest.json", { cache: "no-cache" })).json();
   pyodide.FS.mkdirTree(APP_ROOT);
   for (const relPath of manifest) {
     // This worker script lives at ui/web/js/ - three levels below the repo
     // root, not two (a worker's fetch() resolves relative to its own script
     // location, same as a page does to its own URL - but this script sits
     // one directory deeper than ui/web/index.html does).
-    const response = await fetch("../../../" + relPath);
+    const response = await fetch("../../../" + relPath, { cache: "no-cache" });
     // A 404 here (e.g. a host silently dropping a file) must not be staged
     // as if it were real source - that previously wrote the host's HTML
     // error page in place of the .py file, surfacing as a baffling Python
