@@ -37,7 +37,7 @@ def _drop(d: dict, *keys) -> dict:
 def _fleet_by_station(conn, scan_id) -> dict[str, dict]:
     """Returns {station_id: {total, traders, miners, combat, other}} for this scan.
 
-    homebase_id in the ships table is set by _resolve_ship_homebases() in
+    homebase_id in the ships table is set by resolve_ship_homebases() in
     x4_save_scanner.py after the full parse.  That function resolves both the
     TradeRoutine `range` param (traders) and the commander connection ref (all
     other ship types) through dockingbay_index, so homebase_id is a reliable

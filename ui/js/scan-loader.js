@@ -118,7 +118,17 @@
     });
   }
 
-  if (typeof qt !== 'undefined' && qt.webChannelTransport) {
+  if (window._bridge) {
+    // Web build (Pyodide + Web Worker): pyodide-bridge.js already set this
+    // up before this script ran, with the same four-method shape a
+    // QWebChannel bridge has — no handshake needed since both sides are
+    // already JS. Same startup sequence as the QWebChannel branch below.
+    _bridge = window._bridge;
+    _bridge.list_scans(function(jsonStr) {
+      try { populateScanPicker(JSON.parse(jsonStr)); } catch(e) { /* picker stays hidden */ }
+    });
+    loadScan(-1);
+  } else if (typeof qt !== 'undefined' && qt.webChannelTransport) {
     new QWebChannel(qt.webChannelTransport, function(channel) {
       _bridge = channel.objects.bridge;
       // Build the history picker, then render the latest scan.

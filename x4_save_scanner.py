@@ -81,7 +81,7 @@ def select_save_file() -> Path:
 
 # ── Pipeline ───────────────────────────────────────────────────────────────────
 
-def _resolve_ship_homebases(ctx) -> None:
+def resolve_ship_homebases(ctx) -> None:
     """Resolve homebase_id to a player station object_id for all player ships.
 
     Both _parse_homebase() (traders) and _parse_commander() (all other types)
@@ -147,7 +147,7 @@ def run(save_path: Path, progress: Callable[[str], None] | None = None) -> None:
     TradePostProcessor().run(ctx)
 
     step("Resolving ship homebases…")
-    _resolve_ship_homebases(ctx)
+    resolve_ship_homebases(ctx)
 
     step("Writing database…")
     conn = get_connection(DB_PATH)

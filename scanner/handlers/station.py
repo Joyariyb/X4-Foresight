@@ -158,7 +158,7 @@ class StationHandler:
         ctx.player_station_ids.add(object_id)
 
         # Index every sub-element id → this station so EconomyHandler can resolve
-        # Econ_Manager $destination (a docking bay) and so _resolve_ship_homebases
+        # Econ_Manager $destination (a docking bay) and so resolve_ship_homebases
         # can map a ship's commander connection ref to its parent station.
         # Previously this only iterated <component> elements, which missed
         # <connection> elements — the station's <connection connection="subordinates"
