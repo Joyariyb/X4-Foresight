@@ -3,6 +3,13 @@
 from __future__ import annotations
 from data.factions import FACTION_NAMES, SKIP_FACTIONS, scale_reputation, reputation_label
 from ..entities import ReputationEntry, FactionRelationEntry
+
+
+class ReputationHandler:
+    """
+    Extracts faction standings from every <faction> block in the save.
+
+    Two outputs, one collection pass:
       - ctx.reputation        — the PLAYER's standings (base + booster split),
                                 exactly as before.
       - ctx.faction_relations — every NPC faction's standings toward other

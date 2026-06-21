@@ -8,6 +8,8 @@ from ..language import macro_to_sector_name
 
 
 class SectorHandler:
+    """
+    Extracts sector ownership and sunlight data from sector component elements.
 
     XML path:
         <component class="cluster" macro="cluster_43_macro" ...>   ← parent on stack

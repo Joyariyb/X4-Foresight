@@ -399,7 +399,8 @@
   // The .dhull card for one hull, by macro. Shared by Hull Inspector below
   // and the Hull Comparison tab (hull-comparison.js) so both pages render
   // byte-identical cards from one source instead of drifting copies.
-  function hullStatCardHtml(macro) {
+  // Optional slot parameter ('a' or 'b') used by Hull Comparison to label A/B.
+  function hullStatCardHtml(macro, slot) {
     const h = HULL_CATALOG[macro];
     if (!h) return '';
     const faction = hullFactionFor(macro, h);
@@ -410,9 +411,11 @@
     // cargo_tags can be several space-separated ware types on multi-purpose
     // bays (e.g. "container solid liquid") -- show every one, not just the first.
     const cargoTagsLabel = (h.cargo_tags || '').split(' ').filter(Boolean).map(capitalize).join(' / ');
+    // Hull Comparison uses slot='a' or slot='b' to show Hull A/Hull B labels instead of plain Hull
+    const hullLabel = slot ? `Hull ${slot.toUpperCase()}` : 'Hull';
 
     return `<div class="dhull" style="--dhull-border:${hexA(facColour,0.35)};--dhull-glow:${hexA(facColour,0.1)};max-width:300px">
-      <div class="dhull-hd"><i class="ti ti-ufo" style="color:${facColour}"></i><span class="lbl">Hull</span></div>
+      <div class="dhull-hd"><i class="ti ti-ufo" style="color:${facColour}"></i><span class="lbl">${hullLabel}</span></div>
       <div class="dhull-wire">${wireSvgFor(size)}</div>
       <div class="dhull-id">${designBadge(faction)}<span class="dhull-nm">${h.name}</span></div>
       <div class="dhull-stats">

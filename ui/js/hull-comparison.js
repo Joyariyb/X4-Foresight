@@ -55,6 +55,9 @@
     return `<i class="ti ${m.icon}" style="color:${m.color}"></i> ${text}`;
   };
 
+  // Stylized A/B indicator for comparison rows and hull cards
+  const hcmpLabel = (letter) => `<span class="hcmp-label">${letter}</span>`;
+
   // [label, getter, unit]. Mirrors the two stat rows on the .dhull card
   // (Hull HP/Price/Crew/Cargo/Missiles/Units) plus the three hardpoint
   // totals the Hull List table already surfaces — every number that's
@@ -95,14 +98,15 @@
       colorB = b > a ? 'var(--lime)' : 'var(--red)';
     }
     const fmt = v => v == null ? '—' : designCr(v) + (unit ? ' ' + unit : '');
-    const bar = (val, pct, color) => `<div class="hcmp-bar-line">
+    const bar = (val, pct, color, letter) => `<div class="hcmp-bar-line">
+      ${hcmpLabel(letter)}
       <div class="hcmp-bar-track"><div class="hcmp-bar-fill" style="width:${pct}%;background:${color}"></div></div>
       <span class="hcmp-val" style="color:${color}">${fmt(val)}</span>
     </div>`;
     return `<div class="hcmp-row">
       <div class="hcmp-lbl">${label}</div>
-      ${bar(vA, (a / max) * 100, colorA)}
-      ${bar(vB, (b / max) * 100, colorB)}
+      ${bar(vA, (a / max) * 100, colorA, 'A')}
+      ${bar(vB, (b / max) * 100, colorB, 'B')}
     </div>`;
   }
 
@@ -122,13 +126,17 @@
 
     // Same .dhull framing as a real card (dashed border swapped in via CSS)
     // so picking/clearing a hull doesn't reflow the other two columns.
-    const placeholderCard = `<div class="dhull hcmp-empty-card" style="max-width:300px">
-      <div class="dhull-hd"><i class="ti ti-ufo"></i><span class="lbl">Hull</span></div>
+    const placeholderA = `<div class="dhull hcmp-empty-card" style="max-width:300px">
+      <div class="dhull-hd"><i class="ti ti-ufo"></i><span class="lbl">Hull A</span></div>
+      <div class="hcmp-empty-msg">Select a hull above</div>
+    </div>`;
+    const placeholderB = `<div class="dhull hcmp-empty-card" style="max-width:300px">
+      <div class="dhull-hd"><i class="ti ti-ufo"></i><span class="lbl">Hull B</span></div>
       <div class="hcmp-empty-msg">Select a hull above</div>
     </div>`;
 
-    const colA = `<div class="hcmp-col">${reslibHullCompareSelect('a', reslibCompareMacroA)}${hA ? hullStatCardHtml(reslibCompareMacroA) : placeholderCard}</div>`;
-    const colB = `<div class="hcmp-col">${reslibHullCompareSelect('b', reslibCompareMacroB)}${hB ? hullStatCardHtml(reslibCompareMacroB) : placeholderCard}</div>`;
+    const colA = `<div class="hcmp-col">${reslibHullCompareSelect('a', reslibCompareMacroA)}${hA ? hullStatCardHtml(reslibCompareMacroA, 'a') : placeholderA}</div>`;
+    const colB = `<div class="hcmp-col">${reslibHullCompareSelect('b', reslibCompareMacroB)}${hB ? hullStatCardHtml(reslibCompareMacroB, 'b') : placeholderB}</div>`;
 
     const summary = (hA && hB)
       ? `<div class="hcmp-summary">${HCMP_STATS.map(([label, get, unit]) => hcmpStatRow(label, get, hA, hB, unit)).join('')}</div>`

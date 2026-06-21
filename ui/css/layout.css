@@ -128,8 +128,8 @@
        the same control language as the rest of the app rather than a bare
        OS dropdown. */
     .reslib-filters { display: flex; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
-    .reslib-fbox { border: 1px solid var(--border); border-radius: 3px; background: var(--bg-panel); padding: 4px 8px; }
-    .reslib-fbox select { background: var(--bg-panel); border: none; color: var(--text); font-family: var(--font-cond); font-size: 13px; cursor: pointer; }
+    .reslib-fbox { border: 1px solid var(--border); border-radius: 3px; background: var(--bg-panel); padding: 4px 8px; max-width: 300px; width: 100%; }
+    .reslib-fbox select { background: var(--bg-panel); border: none; color: var(--text); font-family: var(--font-cond); font-size: 13px; cursor: pointer; width: 100%; }
     .reslib-fbox select:focus { outline: none; }
 
     /* Hull Inspector — collapsed-by-default "N Size Slot Hardpoints" sub-card

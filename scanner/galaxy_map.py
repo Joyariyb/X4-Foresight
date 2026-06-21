@@ -1,4 +1,5 @@
-"""Core role: Builds galaxy jump graph (adjacency + BFS) from Gate and Sector scan results (pure derivation)."""
+"""
+Core role: Builds galaxy jump graph (adjacency + BFS) from Gate and Sector scan results (pure derivation).
 
 THE DISTANCE MODEL (verified against X4's in-game trade-range rules)
 -------------------------------------------------------------------
