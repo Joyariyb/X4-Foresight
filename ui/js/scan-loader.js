@@ -96,6 +96,11 @@
   function updateScanProgress(stage) {
     const bar = document.getElementById("scan-progress-bar");
     if (!bar) return;
+    // New Scan is reachable from the sidebar on any tab, but #tab-overview
+    // (and the bar inside it) only renders while it's the active tab - jump
+    // there on the first stage so the bar is actually visible, regardless of
+    // which tab the user was on when they clicked New Scan.
+    if (stage === 0) switchTab("overview", document.getElementById("nav-overview"));
     bar.style.display = "";
     bar.querySelectorAll(".scan-progress-seg").forEach((seg, i) => {
       seg.classList.toggle("done", i < stage);
