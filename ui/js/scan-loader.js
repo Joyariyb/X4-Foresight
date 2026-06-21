@@ -89,11 +89,40 @@
     document.body.appendChild(overlay);
   }
 
+  // Lights up segments 0..stage-1 as done and `stage` as active (mid-sweep
+  // animation, since there's no finer-grained % within a stage). #scan-
+  // progress-bar only exists in ui/web/index.html (the desktop ui.html has
+  // no equivalent yet), so this and hideScanProgress() are no-ops there.
+  function updateScanProgress(stage) {
+    const bar = document.getElementById("scan-progress-bar");
+    if (!bar) return;
+    bar.style.display = "";
+    bar.querySelectorAll(".scan-progress-seg").forEach((seg, i) => {
+      seg.classList.toggle("done", i < stage);
+      seg.classList.toggle("active", i === stage);
+    });
+  }
+
+  function hideScanProgress() {
+    const bar = document.getElementById("scan-progress-bar");
+    if (!bar) return;
+    bar.style.display = "none";
+    bar.querySelectorAll(".scan-progress-seg").forEach(seg => {
+      seg.classList.remove("done", "active");
+    });
+  }
+
   // Ask the Python backend to show the save-picker and run a fresh scan.
   // When the scan completes the picker and data are refreshed automatically.
   function requestNewScan() {
     if (!_bridge) return;
+    // Registering the listener doesn't show the bar by itself - it only
+    // appears once the first progress callback actually fires, which is
+    // after the user has picked a save file and the real scan has started
+    // (not while the folder/file picker dialogs are still up).
+    if (_bridge.on_progress) _bridge.on_progress(updateScanProgress);
     _bridge.trigger_scan(function(jsonStr) {
+      hideScanProgress();
       try {
         const result = JSON.parse(jsonStr);
         if (result.ok) {

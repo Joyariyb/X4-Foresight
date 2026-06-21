@@ -125,6 +125,29 @@
       <!-- OVERVIEW TAB -->
       <div class="tab-panel active" id="tab-overview">
 
+        <!-- Scan progress bar - hidden by default, shown by updateScanProgress()
+             in scan-loader.js while a New Scan is running, hidden again when
+             it finishes (success or failure). Stage order matches
+             pyweb/web_entry.py's run_scan_from_staged() exactly. -->
+        <div id="scan-progress-bar" class="scan-progress" style="display:none">
+          <div class="scan-progress-seg" data-stage="0">
+            <div class="scan-progress-fill"></div>
+            <div class="scan-progress-label">Scanning Save</div>
+          </div>
+          <div class="scan-progress-seg" data-stage="1">
+            <div class="scan-progress-fill"></div>
+            <div class="scan-progress-label">Resolving Trades</div>
+          </div>
+          <div class="scan-progress-seg" data-stage="2">
+            <div class="scan-progress-fill"></div>
+            <div class="scan-progress-label">Resolving Homebases</div>
+          </div>
+          <div class="scan-progress-seg" data-stage="3">
+            <div class="scan-progress-fill"></div>
+            <div class="scan-progress-label">Writing Database</div>
+          </div>
+        </div>
+
         <div style="display:flex; align-items:baseline; gap:10px; padding-bottom:2px">
           <div style="font-family:var(--font-cond); font-weight:600; font-size:18px; color:var(--teal)" id="ov-pilot">—</div>
           <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-dim)">PILOT</div>

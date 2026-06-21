@@ -7,12 +7,23 @@
 let _scanWorker = null;
 let _nextRequestId = 1;
 const _pending = new Map();
+// Set via window._bridge.on_progress() by scan-loader.js, only on the web
+// build - the desktop QWebChannel bridge has no equivalent, so callers must
+// check on_progress exists before relying on it.
+let _progressListener = null;
 
 function getScanWorker() {
   if (!_scanWorker) {
     _scanWorker = new Worker("js/scan-worker.js");
     _scanWorker.onmessage = (event) => {
       const { id, type, payload, message } = event.data;
+      // Progress messages have no request id (one trigger_scan call emits
+      // several of these, not a single resolve) - handle before the
+      // id-keyed lookup below, which would otherwise just drop them.
+      if (type === "progress") {
+        if (_progressListener) _progressListener(payload.stage);
+        return;
+      }
       const entry = _pending.get(id);
       if (!entry) return;
       _pending.delete(id);
@@ -45,6 +56,10 @@ async function ensureSavesDir() {
 }
 
 window._bridge = {
+  on_progress(listener) {
+    _progressListener = listener;
+  },
+
   trigger_scan(cb) {
     (async () => {
       try {

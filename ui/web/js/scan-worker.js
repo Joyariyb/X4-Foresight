@@ -71,9 +71,17 @@ async function handleTriggerScan(pyodide, payload) {
 
   pyodide.globals.set("_save_path", STAGED_SAVE_PATH);
   pyodide.globals.set("_lang_path", STAGED_LANG_PATH);
+  // Pyodide auto-wraps a JS function set into globals as a callable Python
+  // can invoke directly. Sent as its own message type (no request `id`) so
+  // it doesn't get routed through the id-keyed request/response map in
+  // pyodide-bridge.js - that map only resolves one promise per id, but a
+  // single scan call needs to emit several of these along the way.
+  pyodide.globals.set("_progress_cb", (stage) => {
+    self.postMessage({ type: "progress", payload: { stage } });
+  });
   return await pyodide.runPythonAsync(`
 import pyweb.web_entry as web_entry
-web_entry.run_scan_from_staged(_save_path, _lang_path)
+web_entry.run_scan_from_staged(_save_path, _lang_path, progress=_progress_cb)
 `);
 }
 

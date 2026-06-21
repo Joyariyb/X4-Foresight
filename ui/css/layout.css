@@ -154,3 +154,26 @@
     .tab-panel { display: none; flex-direction: column; gap: 12px; }
     .tab-panel.active { display: flex; }
 
+    /* ── SCAN PROGRESS ── */
+    /* Four segments, one per pipeline stage. A segment is "done" (solid
+       green) once its stage has passed, "active" (dim green track + a
+       sweeping highlight) while its stage is running - there's no finer
+       progress within a stage, so the sweep just signals "still working"
+       rather than showing real percent-complete. */
+    .scan-progress { display: flex; gap: 6px; }
+    .scan-progress-seg { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .scan-progress-fill { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.06); overflow: hidden; position: relative; transition: background 0.25s; }
+    .scan-progress-seg.done .scan-progress-fill { background: var(--green); }
+    .scan-progress-seg.active .scan-progress-fill { background: var(--green-dim); }
+    .scan-progress-seg.active .scan-progress-fill::after {
+      content: ""; position: absolute; inset: 0; width: 40%; border-radius: 3px;
+      background: var(--green); animation: scan-progress-sweep 1.1s ease-in-out infinite;
+    }
+    @keyframes scan-progress-sweep {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(350%); }
+    }
+    .scan-progress-label { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); transition: color 0.25s; }
+    .scan-progress-seg.active .scan-progress-label,
+    .scan-progress-seg.done .scan-progress-label { color: var(--green); }
+

@@ -24,23 +24,38 @@ from export.jsonexport import to_export
 DB_PATH = "/home/pyodide/x4_foresight.db"
 
 
-def run_scan_from_staged(save_path: str, lang_path: str) -> str:
+def run_scan_from_staged(save_path: str, lang_path: str, progress=None) -> str:
     """Run the full scan pipeline against an already-staged save file and
     language asset (both written into Pyodide's MEMFS by the caller).
 
+    `progress`, when supplied, is called with a stage index (0-3) at the
+    start of each phase - mirrors x4_save_scanner.run()'s progress callback,
+    but with a plain index instead of a status string since the caller here
+    is JS (scan-worker.js), which already owns its own display labels and
+    just needs to know which stage is current.
+
     Returns JSON {"ok": true, "scan_id": N} or {"ok": false, "error": "..."}.
     """
+    def step(stage: int) -> None:
+        if progress is not None:
+            progress(stage)
+
     try:
         # load_language_root() calls .exists() directly on lang_path, so it
         # must be a real Path - JS strings cross the Pyodide boundary as
         # plain Python str, not Path, even though Scanner's lang_path
         # parameter is typed Path | None.
+        step(0)
         scanner = Scanner(lang_path=Path(lang_path))
         ctx = scanner.scan(save_path, scan_id=1)   # scan_id reassigned by the DB
 
+        step(1)
         TradePostProcessor().run(ctx)
+
+        step(2)
         resolve_ship_homebases(ctx)
 
+        step(3)
         conn = get_connection(DB_PATH)
         try:
             scan_id = write_scan(conn, ctx)
