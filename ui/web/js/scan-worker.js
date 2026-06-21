@@ -29,7 +29,15 @@ async function bootPyodide() {
     // root, not two (a worker's fetch() resolves relative to its own script
     // location, same as a page does to its own URL - but this script sits
     // one directory deeper than ui/web/index.html does).
-    const text = await (await fetch("../../../" + relPath)).text();
+    const response = await fetch("../../../" + relPath);
+    // A 404 here (e.g. a host silently dropping a file) must not be staged
+    // as if it were real source - that previously wrote the host's HTML
+    // error page in place of the .py file, surfacing as a baffling Python
+    // SyntaxError instead of a clear "file missing" message.
+    if (!response.ok) {
+      throw new Error(`Failed to fetch staged file "${relPath}": HTTP ${response.status}`);
+    }
+    const text = await response.text();
     const fullPath = APP_ROOT + "/" + relPath;
     pyodide.FS.mkdirTree(fullPath.substring(0, fullPath.lastIndexOf("/")));
     pyodide.FS.writeFile(fullPath, text);
