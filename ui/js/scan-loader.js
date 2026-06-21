@@ -114,7 +114,10 @@
 
   // Swaps the card into its progress-bar state and lights up segments
   // 0..stage-1 as done, `stage` as active (mid-sweep animation, since
-  // there's no finer-grained % within a stage).
+  // there's no finer-grained % within a stage). `stage` 4 is a synthetic
+  // "all done" marker (there's no real 5th pipeline phase) used right before
+  // the card hides, so the user sees a completed bar instead of segment 3
+  // stuck mid-sweep.
   function updateScanProgress(stage) {
     const card = document.getElementById("scan-status-card");
     const bar = document.getElementById("scan-progress-bar");
@@ -134,6 +137,22 @@
     });
   }
 
+  // Resolving trades/homebases and writing the DB are all fast compared to
+  // the initial XML parse (which can run 80s+ on a large save) - without a
+  // floor here, those three stages fire and resolve within the same paint
+  // cycle and the bar visibly never seems to leave "Scanning Save" even
+  // though the callbacks did fire. Routes every progress update through a
+  // promise chain so each stage is guaranteed at least this long on screen.
+  const SCAN_STAGE_MIN_DWELL_MS = 400;
+  let _scanProgressQueue = Promise.resolve();
+
+  function queueScanProgress(stage) {
+    _scanProgressQueue = _scanProgressQueue.then(() => {
+      updateScanProgress(stage);
+      return new Promise(resolve => setTimeout(resolve, SCAN_STAGE_MIN_DWELL_MS));
+    });
+  }
+
   // Ask the Python backend to show the save-picker and run a fresh scan.
   // When the scan completes the picker and data are refreshed automatically.
   function requestNewScan() {
@@ -142,23 +161,29 @@
     // switches to the progress bar once the first progress callback actually
     // fires, which is after the user has picked a save file and the real
     // scan has started (not while the folder/file picker dialogs are still up).
-    if (_bridge.on_progress) _bridge.on_progress(updateScanProgress);
+    if (_bridge.on_progress) _bridge.on_progress(queueScanProgress);
     _bridge.trigger_scan(function(jsonStr) {
-      try {
-        const result = JSON.parse(jsonStr);
-        if (result.ok) {
-          _bridge.list_scans(function(scansStr) {
-            try { populateScanPicker(JSON.parse(scansStr)); } catch(e) {}
-          });
-          loadScan(-1);   // re-populates and calls refreshScanStatusCard() itself
-        } else {
-          // Failed or cancelled - revert the card to whatever state already
-          // matched _currentScanId before this attempt (hidden if a scan was
-          // already loaded, idle text if not), then report a real error.
-          refreshScanStatusCard();
-          if (!result.cancelled) showScanErrorDialog(result.error);
-        }
-      } catch(e) {}
+      // Wait for any already-queued stage animations to finish their dwell
+      // time before reacting to the final result - otherwise a fast scan
+      // could hide the card mid-animation.
+      _scanProgressQueue.then(() => {
+        try {
+          const result = JSON.parse(jsonStr);
+          if (result.ok) {
+            updateScanProgress(4);   // brief "all done" confirmation
+            _bridge.list_scans(function(scansStr) {
+              try { populateScanPicker(JSON.parse(scansStr)); } catch(e) {}
+            });
+            setTimeout(() => loadScan(-1), SCAN_STAGE_MIN_DWELL_MS);
+          } else {
+            // Failed or cancelled - revert the card to whatever state already
+            // matched _currentScanId before this attempt (hidden if a scan was
+            // already loaded, idle text if not), then report a real error.
+            refreshScanStatusCard();
+            if (!result.cancelled) showScanErrorDialog(result.error);
+          }
+        } catch(e) {}
+      });
     });
   }
 
