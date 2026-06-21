@@ -1,0 +1,17 @@
+<!-- Root redirect for GitHub Pages. Pages must serve from the repo root (not
+     a subdirectory) because ui/web/js/scan-worker.js fetches the Python
+     pipeline (scanner/, data/, db/, export/) by repo-root-relative paths -
+     those directories live outside ui/ entirely, so a narrower Pages root
+     (e.g. /docs) would break the fetches. This file just sends visitors
+     from the bare domain to the actual dashboard at ui/web/. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="0; url=ui/web/index.html">
+  <title>X4 · Empire Intelligence</title>
+</head>
+<body>
+  <p>Redirecting to <a href="ui/web/index.html">the dashboard</a>…</p>
+</body>
+</html>
