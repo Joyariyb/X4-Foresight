@@ -28,6 +28,13 @@
 
     html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: 14px; overflow: hidden; }
 
+    /* #app-root is shell-loader.js's injection target (see body.html) — it sits
+       between body and #shell in the DOM, so the height:100% chain below needs
+       it explicitly sized too, or #shell's height:100% resolves against an
+       auto-height parent and collapses to content height instead of the
+       viewport. */
+    #app-root { height: 100%; }
+
     /* height:100% (not 100vh): with the CSS zoom updateZoom() puts on <html>,
        Chromium computes 100vh larger than the real viewport, so the shell
        overflowed <body> and scrollIntoView (crew/station/ship jump links)
