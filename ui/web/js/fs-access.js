@@ -67,14 +67,23 @@ async function grantSavesRoot() {
   return handle;
 }
 
-// Mirrors x4_save_scanner.py's _find_game_saves_dir(): walks
-// <granted root>/Egosoft/X4/<steamid>/save. No path string, no OS username
-// needed - pure folder-name navigation, so (unlike the grant itself) this
-// has no gesture requirement and works on a handle restored from IndexedDB.
-async function walkToSavesDir(documentsHandle) {
-  const egosoft = await documentsHandle.getDirectoryHandle("Egosoft");
-  const x4 = await egosoft.getDirectoryHandle("X4");
-  for await (const [name, handle] of x4.entries()) {
+const SAVE_FILE_PATTERN = /^(save|autosave)_\d+\.xml(\.gz)?$/i;
+
+// True if a folder directly contains at least one compatible save file -
+// cheap existence check (no getFile() calls), used to detect the case where
+// the user granted the "save" folder itself.
+async function hasCompatibleSaves(dirHandle) {
+  for await (const [name, handle] of dirHandle.entries()) {
+    if (handle.kind === "file" && SAVE_FILE_PATTERN.test(name)) return true;
+  }
+  return false;
+}
+
+// Mirrors x4_save_scanner.py's _find_game_saves_dir()'s steamid-agnostic
+// search: tries every immediate child directory of an "X4" folder for a
+// "save" subfolder.
+async function findSaveUnderX4(x4Handle) {
+  for await (const [name, handle] of x4Handle.entries()) {
     if (handle.kind !== "directory") continue;
     try {
       return await handle.getDirectoryHandle("save");
@@ -85,13 +94,43 @@ async function walkToSavesDir(documentsHandle) {
   throw new Error("No <steamid>/save folder found under Egosoft/X4");
 }
 
+// showDirectoryPicker() only opens AT Documents - it doesn't stop the user
+// there. In practice people click "Select Folder" at whatever depth feels
+// natural, often drilling all the way down into the real "save" folder
+// itself rather than stopping at Documents. So instead of assuming one
+// fixed depth, try each known depth (save itself, <steamid>, X4, Egosoft,
+// Documents-or-higher) until one resolves. No path string, no OS username
+// needed - pure folder-name navigation, so (unlike the grant itself) this
+// has no gesture requirement and works on a handle restored from IndexedDB.
+async function findSavesDir(rootHandle) {
+  if (await hasCompatibleSaves(rootHandle)) return rootHandle;
+  try {
+    return await rootHandle.getDirectoryHandle("save");
+  } catch (e) {
+    // Not the <steamid> folder - keep trying shallower guesses.
+  }
+  try {
+    return await findSaveUnderX4(rootHandle);
+  } catch (e) {
+    // Not the "X4" folder - keep trying shallower guesses.
+  }
+  try {
+    const x4 = await rootHandle.getDirectoryHandle("X4");
+    return await findSaveUnderX4(x4);
+  } catch (e) {
+    // Not the "Egosoft" folder - keep trying shallower guesses.
+  }
+  const egosoft = await rootHandle.getDirectoryHandle("Egosoft");
+  const x4 = await egosoft.getDirectoryHandle("X4");
+  return await findSaveUnderX4(x4);
+}
+
 // Enumerates save_*.xml(.gz) / autosave_*.xml(.gz), newest first - mirrors
 // the desktop app's save picker sort order.
 async function listSaveFiles(savesDirHandle) {
-  const pattern = /^(save|autosave)_\d+\.xml(\.gz)?$/i;
   const files = [];
   for await (const [name, handle] of savesDirHandle.entries()) {
-    if (handle.kind !== "file" || !pattern.test(name)) continue;
+    if (handle.kind !== "file" || !SAVE_FILE_PATTERN.test(name)) continue;
     const file = await handle.getFile();
     files.push({ name, handle, size: file.size, lastModified: file.lastModified });
   }
@@ -101,5 +140,5 @@ async function listSaveFiles(savesDirHandle) {
 
 window.FSAccess = {
   persistHandle, restoreHandle, ensurePermission,
-  grantSavesRoot, walkToSavesDir, listSaveFiles,
+  grantSavesRoot, findSavesDir, listSaveFiles,
 };

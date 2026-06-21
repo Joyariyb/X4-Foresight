@@ -42,6 +42,8 @@
             try { populateScanPicker(JSON.parse(scansStr)); } catch(e) {}
           });
           loadScan(-1);
+        } else if (!result.cancelled) {
+          alert("New Scan failed: " + result.error);
         }
       } catch(e) {}
     });

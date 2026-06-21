@@ -38,10 +38,10 @@ function callWorker(type, payload) {
 async function ensureSavesDir() {
   let handle = await FSAccess.restoreHandle("savesRoot");
   if (handle && (await FSAccess.ensurePermission(handle))) {
-    return await FSAccess.walkToSavesDir(handle);
+    return await FSAccess.findSavesDir(handle);
   }
   handle = await FSAccess.grantSavesRoot();
-  return await FSAccess.walkToSavesDir(handle);
+  return await FSAccess.findSavesDir(handle);
 }
 
 window._bridge = {
