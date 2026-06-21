@@ -30,6 +30,65 @@
     });
   }
 
+  // Shows a copyable error dialog - native alert() text isn't reliably
+  // selectable across browsers/OSes, which leaves error reports stuck
+  // unreadable. Always also logs to console.error so DevTools is a fallback.
+  function showScanErrorDialog(message) {
+    console.error("New Scan failed:", message);
+
+    const overlay = document.createElement("div");
+    overlay.style.cssText =
+      "position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;" +
+      "display:flex;align-items:center;justify-content:center;font-family:sans-serif";
+
+    const box = document.createElement("div");
+    box.style.cssText =
+      "background:#161b22;border:1px solid #30363d;border-radius:8px;" +
+      "min-width:360px;max-width:520px;color:#e6edf3;padding:16px";
+
+    const title = document.createElement("div");
+    title.textContent = "New Scan failed";
+    title.style.cssText = "font-size:15px;font-weight:600;margin-bottom:12px";
+    box.appendChild(title);
+
+    const textarea = document.createElement("textarea");
+    textarea.value = message;
+    textarea.readOnly = true;
+    textarea.style.cssText =
+      "width:100%;height:120px;resize:vertical;box-sizing:border-box;" +
+      "background:#0d1117;border:1px solid #30363d;border-radius:6px;" +
+      "color:#e6edf3;font-family:monospace;font-size:12px;padding:8px";
+    box.appendChild(textarea);
+
+    const btnRow = document.createElement("div");
+    btnRow.style.cssText = "margin-top:12px;display:flex;gap:8px;justify-content:flex-end";
+    const btnStyle =
+      "padding:6px 14px;background:#21262d;border:1px solid #30363d;" +
+      "border-radius:6px;color:#e6edf3;cursor:pointer";
+
+    const copyBtn = document.createElement("button");
+    copyBtn.textContent = "Copy";
+    copyBtn.style.cssText = btnStyle;
+    copyBtn.onclick = () => {
+      textarea.select();
+      (navigator.clipboard ? navigator.clipboard.writeText(message) : Promise.reject())
+        .catch(() => document.execCommand("copy"));
+      copyBtn.textContent = "Copied!";
+      setTimeout(() => { copyBtn.textContent = "Copy"; }, 1500);
+    };
+    btnRow.appendChild(copyBtn);
+
+    const closeBtn = document.createElement("button");
+    closeBtn.textContent = "Close";
+    closeBtn.style.cssText = btnStyle;
+    closeBtn.onclick = () => document.body.removeChild(overlay);
+    btnRow.appendChild(closeBtn);
+
+    box.appendChild(btnRow);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+  }
+
   // Ask the Python backend to show the save-picker and run a fresh scan.
   // When the scan completes the picker and data are refreshed automatically.
   function requestNewScan() {
@@ -43,7 +102,7 @@
           });
           loadScan(-1);
         } else if (!result.cancelled) {
-          alert("New Scan failed: " + result.error);
+          showScanErrorDialog(result.error);
         }
       } catch(e) {}
     });
