@@ -10,10 +10,15 @@
 
   function hullBadge(origin) {
     if (!origin) return '<span class="badge">—</span>';
+    // Coloured from FACTION_COLOURS (same source as designBadge() in
+    // designs-builder.js) rather than a per-faction CSS class — there is no
+    // ".badge.argon" etc. defined in CSS, so the old per-faction class names
+    // rendered every origin as a plain, uncoloured box.
     const hostile = HOSTILE_ORIGINS.has(origin);
-    const cls = origin.toLowerCase();
-    const label = hostile ? `* ${origin}` : origin;
-    return `<span class="badge ${cls}">${label}</span>`;
+    const colour  = FACTION_COLOURS[origin.toLowerCase()] || '#6e7681';
+    const style   = `background:${hexA(colour, 0.1)};color:${colour};border:1px solid ${hexA(colour, 0.25)}`;
+    const label   = hostile ? `* ${origin}` : origin;
+    return `<span class="badge" style="${style}">${label}</span>`;
   }
 
   function tierBadge(tier) {
