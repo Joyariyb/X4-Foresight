@@ -5,18 +5,18 @@
     const tip = document.getElementById('hull-tip');
 
     function moduleTipHtml(groups) {
-      return `<div style="min-width:180px;max-width:260px;padding:2px 0">` +
+      return `<div style="min-width:18rem;max-width:26rem;padding:0.2rem 0">` +
         groups.map(g =>
-          `<div style="margin-bottom:8px">
-             <div style="font-size:9px;letter-spacing:0.12em;text-transform:uppercase;
-                         color:var(--text-faint);margin-bottom:4px;padding-bottom:3px;
+          `<div style="margin-bottom:0.8rem">
+             <div style="font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;
+                         color:var(--text-faint);margin-bottom:0.4rem;padding-bottom:0.3rem;
                          border-bottom:1px solid var(--border)">${g.category}</div>
              ${g.items.map(([name, count]) =>
                `<div style="display:flex;justify-content:space-between;align-items:baseline;
-                            gap:12px;padding:1px 0">
-                  <span style="color:var(--text-dim);font-size:11px;white-space:nowrap;
+                            gap:1.2rem;padding:1px 0">
+                  <span style="color:var(--text-dim);font-size:1.1rem;white-space:nowrap;
                                overflow:hidden;text-overflow:ellipsis">${name}</span>
-                  <span style="color:var(--text-faint);font-size:10px;flex-shrink:0">×${count}</span>
+                  <span style="color:var(--text-faint);font-size:1rem;flex-shrink:0">×${count}</span>
                 </div>`
              ).join('')}
            </div>`
@@ -46,18 +46,18 @@
         const rows = items.map(e => {
           const mk  = e.mk ? ` Mk${e.mk}` : '';
           const fac = FACTION[e.race]
-            ? `<span style="color:var(--text-dim);font-size:10px;margin-right:8px">${FACTION[e.race]}</span>` : '';
-          return `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:1px 0">
-                    <span style="color:var(--text-dim);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.name}${mk}</span>
-                    <span style="flex-shrink:0;white-space:nowrap">${fac}<span style="color:var(--text-faint);font-size:10px">×${e.count}</span></span>
+            ? `<span style="color:var(--text-dim);font-size:1rem;margin-right:0.8rem">${FACTION[e.race]}</span>` : '';
+          return `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;padding:1px 0">
+                    <span style="color:var(--text-dim);font-size:1.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.name}${mk}</span>
+                    <span style="flex-shrink:0;white-space:nowrap">${fac}<span style="color:var(--text-faint);font-size:1rem">×${e.count}</span></span>
                   </div>`;
         }).join('');
-        return `<div style="margin-bottom:8px">
-                  <div style="font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-faint);margin-bottom:4px;padding-bottom:3px;border-bottom:1px solid var(--border)">${label}</div>
+        return `<div style="margin-bottom:0.8rem">
+                  <div style="font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-faint);margin-bottom:0.4rem;padding-bottom:0.3rem;border-bottom:1px solid var(--border)">${label}</div>
                   ${rows}
                 </div>`;
       }).join('');
-      return `<div style="min-width:200px;max-width:280px;padding:2px 0">${sections || '—'}</div>`;
+      return `<div style="min-width:20rem;max-width:28rem;padding:0.2rem 0">${sections || '—'}</div>`;
     }
 
     function weaponTipHtml(e) {
@@ -99,15 +99,15 @@
         ? 'Missile' : (e.race ? 'Standard' : 'Advanced');
 
       const row = (label, value, color) => value == null ? '' :
-        `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:1px 0">
-           <span style="color:var(--text-dim);font-size:11px">${label}</span>
-           <span style="font-family:var(--font-mono);font-size:11px;white-space:nowrap${color ? `;color:${color}` : ''}">${value}</span>
+        `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.4rem;padding:1px 0">
+           <span style="color:var(--text-dim);font-size:1.1rem">${label}</span>
+           <span style="font-family:var(--font-mono);font-size:1.1rem;white-space:nowrap${color ? `;color:${color}` : ''}">${value}</span>
          </div>`;
 
       const section = (icon, color, title, rows) => !rows ? '' :
-        `<div style="margin:8px 0 2px">
-           <div style="display:flex;align-items:center;gap:5px;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:${color};margin-bottom:4px;padding-bottom:3px;border-bottom:1px solid var(--border)">
-             <i class="ti ${icon}" style="font-size:11px"></i>${title}
+        `<div style="margin:0.8rem 0 0.2rem">
+           <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;color:${color};margin-bottom:0.4rem;padding-bottom:0.3rem;border-bottom:1px solid var(--border)">
+             <i class="ti ${icon}" style="font-size:1.1rem"></i>${title}
            </div>
            ${rows}
          </div>`;
@@ -150,8 +150,8 @@
         heatRows += row('Cooldown Duration', `${truncFixed(e.cooldown_duration, 1)} s`);
       }
 
-      return `<div style="min-width:215px;max-width:280px;padding:2px 0">
-        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">${e.name}${e.mk ? ` Mk${e.mk}` : ''}</div>
+      return `<div style="min-width:21.5rem;max-width:28rem;padding:0.2rem 0">
+        <div style="font-size:1.3rem;font-weight:600;color:var(--text);margin-bottom:0.2rem">${e.name}${e.mk ? ` Mk${e.mk}` : ''}</div>
         ${row('Compatibility', compat)}
         ${row('Storage Capacity', e.storage_capacity != null ? fmt(e.storage_capacity) : null)}
         ${row('Price', e.price_min != null ? `${fmt(e.price_min)}–${fmt(e.price_max)} Cr` : (e.price != null ? `${fmt(e.price)} Cr` : null))}
@@ -171,15 +171,15 @@
       const compat = e.race ? 'Standard' : 'Advanced';
 
       const row = (label, value, color) => value == null ? '' :
-        `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:1px 0">
-           <span style="color:var(--text-dim);font-size:11px">${label}</span>
-           <span style="font-family:var(--font-mono);font-size:11px;white-space:nowrap${color ? `;color:${color}` : ''}">${value}</span>
+        `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.4rem;padding:1px 0">
+           <span style="color:var(--text-dim);font-size:1.1rem">${label}</span>
+           <span style="font-family:var(--font-mono);font-size:1.1rem;white-space:nowrap${color ? `;color:${color}` : ''}">${value}</span>
          </div>`;
 
       const section = (icon, color, title, rows) => !rows ? '' :
-        `<div style="margin:8px 0 2px">
-           <div style="display:flex;align-items:center;gap:5px;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:${color};margin-bottom:4px;padding-bottom:3px;border-bottom:1px solid var(--border)">
-             <i class="ti ${icon}" style="font-size:11px"></i>${title}
+        `<div style="margin:0.8rem 0 0.2rem">
+           <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;color:${color};margin-bottom:0.4rem;padding-bottom:0.3rem;border-bottom:1px solid var(--border)">
+             <i class="ti ${icon}" style="font-size:1.1rem"></i>${title}
            </div>
            ${rows}
          </div>`;
@@ -197,12 +197,12 @@
       // inventing a new colour pairing.
       const resistant = e.disruption_stability != null;
       const integRows = row('Hull Integrity', e.hull_max != null ? `${fmt(e.hull_max)} MJ` : null) +
-        `<div style="margin-top:5px"><span class="badge ${resistant ? 'allied' : 'atwar'}">
+        `<div style="margin-top:0.5rem"><span class="badge ${resistant ? 'allied' : 'atwar'}">
            ${resistant ? `Disruptor Resistant (${e.disruption_stability})` : 'Not Disruptor Resistant'}
          </span></div>`;
 
-      return `<div style="min-width:215px;max-width:280px;padding:2px 0">
-        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">${e.name}${e.mk ? ` Mk${e.mk}` : ''}</div>
+      return `<div style="min-width:21.5rem;max-width:28rem;padding:0.2rem 0">
+        <div style="font-size:1.3rem;font-weight:600;color:var(--text);margin-bottom:0.2rem">${e.name}${e.mk ? ` Mk${e.mk}` : ''}</div>
         ${row('Compatibility', compat)}
         ${row('Price', e.price_min != null ? `${fmt(e.price_min)}–${fmt(e.price_max)} Cr` : (e.price != null ? `${fmt(e.price)} Cr` : null))}
         ${section('ti-shield', 'var(--teal)', 'Shield Output', chargeRows)}
@@ -222,15 +222,15 @@
       const compat = e.race ? 'Standard' : 'Advanced';
 
       const row = (label, value, color) => value == null ? '' :
-        `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:1px 0">
-           <span style="color:var(--text-dim);font-size:11px">${label}</span>
-           <span style="font-family:var(--font-mono);font-size:11px;white-space:nowrap${color ? `;color:${color}` : ''}">${value}</span>
+        `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.4rem;padding:1px 0">
+           <span style="color:var(--text-dim);font-size:1.1rem">${label}</span>
+           <span style="font-family:var(--font-mono);font-size:1.1rem;white-space:nowrap${color ? `;color:${color}` : ''}">${value}</span>
          </div>`;
 
       const section = (icon, color, title, rows) => !rows ? '' :
-        `<div style="margin:8px 0 2px">
-           <div style="display:flex;align-items:center;gap:5px;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:${color};margin-bottom:4px;padding-bottom:3px;border-bottom:1px solid var(--border)">
-             <i class="ti ${icon}" style="font-size:11px"></i>${title}
+        `<div style="margin:0.8rem 0 0.2rem">
+           <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;color:${color};margin-bottom:0.4rem;padding-bottom:0.3rem;border-bottom:1px solid var(--border)">
+             <i class="ti ${icon}" style="font-size:1.1rem"></i>${title}
            </div>
            ${rows}
          </div>`;
@@ -250,8 +250,8 @@
 
       const integRows = row('Hull Integrity', e.hull_max != null ? `${fmt(e.hull_max)} MJ` : null);
 
-      return `<div style="min-width:215px;max-width:280px;padding:2px 0">
-        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">${e.name}${e.mk ? ` Mk${e.mk}` : ''}</div>
+      return `<div style="min-width:21.5rem;max-width:28rem;padding:0.2rem 0">
+        <div style="font-size:1.3rem;font-weight:600;color:var(--text);margin-bottom:0.2rem">${e.name}${e.mk ? ` Mk${e.mk}` : ''}</div>
         ${row('Compatibility', compat)}
         ${row('Price', e.price_min != null ? `${fmt(e.price_min)}–${fmt(e.price_max)} Cr` : (e.price != null ? `${fmt(e.price)} Cr` : null))}
         ${section('ti-engine', 'var(--teal)', 'Thrust', thrustRows)}
@@ -272,20 +272,20 @@
         'trade (max price)':     'Trade ware · max price',
         'buy order (unverified)':'Buy order',
       };
-      return `<div style="min-width:200px;padding:2px 0">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:5px">
-          <span style="color:${d.colour};font-size:11px;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap">${d.ware}</span>
-          <span style="color:${d.colour};font-family:var(--font-mono);font-size:12px">${d.pct}%</span>
+      return `<div style="min-width:20rem;padding:0.2rem 0">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem">
+          <span style="color:${d.colour};font-size:1.1rem;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap">${d.ware}</span>
+          <span style="color:${d.colour};font-family:var(--font-mono);font-size:1.2rem">${d.pct}%</span>
         </div>
-        <div style="display:flex;justify-content:space-between;gap:12px;padding:1px 0">
-          <span style="color:var(--text-faint);font-size:10px">Amount × Price</span>
-          <span style="color:var(--text-dim);font-family:var(--font-mono);font-size:10px">${fmt(d.amount)} × ${fmt(d.price)}</span>
+        <div style="display:flex;justify-content:space-between;gap:1.2rem;padding:1px 0">
+          <span style="color:var(--text-faint);font-size:1rem">Amount × Price</span>
+          <span style="color:var(--text-dim);font-family:var(--font-mono);font-size:1rem">${fmt(d.amount)} × ${fmt(d.price)}</span>
         </div>
-        <div style="display:flex;justify-content:space-between;gap:12px;padding:1px 0">
-          <span style="color:var(--text-faint);font-size:10px">Value</span>
-          <span style="color:var(--lime);font-family:var(--font-mono);font-size:11px">${fmt(d.value)} Cr</span>
+        <div style="display:flex;justify-content:space-between;gap:1.2rem;padding:1px 0">
+          <span style="color:var(--text-faint);font-size:1rem">Value</span>
+          <span style="color:var(--lime);font-family:var(--font-mono);font-size:1.1rem">${fmt(d.value)} Cr</span>
         </div>
-        <div style="margin-top:5px;padding-top:4px;border-top:1px solid var(--border);font-size:10px;color:var(--text-faint)">${BASIS[d.basis] || d.basis}</div>
+        <div style="margin-top:0.5rem;padding-top:0.4rem;border-top:1px solid var(--border);font-size:1rem;color:var(--text-faint)">${BASIS[d.basis] || d.basis}</div>
       </div>`;
     }
 
@@ -298,21 +298,21 @@
       const MAX = 8;
       const shown = d.rows.slice(0, MAX);
       const more  = d.rows.length - shown.length;
-      return `<div style="min-width:230px;padding:2px 0">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid var(--border)">
-          <span style="color:var(--text-faint);font-size:10px;letter-spacing:0.08em;text-transform:uppercase">${span}</span>
-          <span style="color:${d.net >= 0 ? '#19e6c8' : '#ef5350'};font-family:var(--font-mono);font-size:11px">${fmtC(d.net)} Cr</span>
+      return `<div style="min-width:23rem;padding:0.2rem 0">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border)">
+          <span style="color:var(--text-faint);font-size:1rem;letter-spacing:0.08em;text-transform:uppercase">${span}</span>
+          <span style="color:${d.net >= 0 ? '#19e6c8' : '#ef5350'};font-family:var(--font-mono);font-size:1.1rem">${fmtC(d.net)} Cr</span>
         </div>` +
         shown.map(r => `
-          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:1px 0">
-            <span style="font-size:10px;letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;color:${r.colour}">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;padding:1px 0">
+            <span style="font-size:1rem;letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:13rem;color:${r.colour}">
               <span style="color:${r.dir === 'sell' ? '#19e6c8' : '#ef5350'}">${r.dir === 'sell' ? '▲' : '▼'}</span> ${r.ware}
             </span>
-            <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);flex-shrink:0;white-space:nowrap">
+            <span style="font-family:var(--font-mono);font-size:1rem;color:var(--text-dim);flex-shrink:0;white-space:nowrap">
               ${fmtU(r.units)}u · <span style="color:${r.cr >= 0 ? '#19e6c8' : '#ef5350'}">${fmtC(r.cr)}</span>
             </span>
           </div>`).join('') +
-        (more > 0 ? `<div style="margin-top:4px;font-size:10px;color:var(--text-faint)">+${more} more ware${more > 1 ? 's' : ''}</div>` : '') +
+        (more > 0 ? `<div style="margin-top:0.4rem;font-size:1rem;color:var(--text-faint)">+${more} more ware${more > 1 ? 's' : ''}</div>` : '') +
       `</div>`;
     }
 
@@ -332,13 +332,13 @@
       const shipResolved = d.ship && !isRawId(d.ship);
       const partyLabel   = d.dir === 'sell' ? 'Buyer' : 'Seller';
       const row = (label, value, colour) => `
-        <div style="display:flex;justify-content:space-between;gap:12px;padding:1px 0">
-          <span style="color:var(--text-faint);font-size:10px">${label}</span>
-          <span style="color:${colour || 'var(--text-dim)'};font-family:var(--font-mono);font-size:10px;text-align:right">${value}</span>
+        <div style="display:flex;justify-content:space-between;gap:1.2rem;padding:1px 0">
+          <span style="color:var(--text-faint);font-size:1rem">${label}</span>
+          <span style="color:${colour || 'var(--text-dim)'};font-family:var(--font-mono);font-size:1rem;text-align:right">${value}</span>
         </div>`;
-      return `<div style="min-width:220px;padding:2px 0">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid var(--border)">
-          <span style="color:${d.colour};font-size:11px;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">
+      return `<div style="min-width:22rem;padding:0.2rem 0">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border)">
+          <span style="color:${d.colour};font-size:1.1rem;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:16rem">
             <span style="color:${d.dir === 'sell' ? '#19e6c8' : '#ef5350'}">${d.dir === 'sell' ? '▲ SOLD' : '▼ BOUGHT'}</span> ${d.ware}
           </span>
         </div>` +
@@ -347,7 +347,7 @@
         (d.counterparty ? row(partyLabel, d.counterparty) : '') +
         (shipResolved   ? row('Ship', d.ship) : '') +
         (!d.counterparty && !shipResolved ? row(partyLabel, 'Unknown') : '') +
-        `<div style="margin-top:5px;padding-top:4px;border-top:1px solid var(--border);text-align:right;font-size:10px;color:var(--text-faint)">${ago}</div>
+        `<div style="margin-top:0.5rem;padding-top:0.4rem;border-top:1px solid var(--border);text-align:right;font-size:1rem;color:var(--text-faint)">${ago}</div>
       </div>`;
     }
 
@@ -372,16 +372,16 @@
       const shipResolved = d.ship && !isRawId(d.ship);
 
       const row = (label, value, colour) => `
-        <div style="display:flex;justify-content:space-between;gap:12px;padding:1px 0">
-          <span style="color:var(--text-faint);font-size:10px">${label}</span>
-          <span style="color:${colour || 'var(--text-dim)'};font-family:var(--font-mono);font-size:10px;text-align:right">${value}</span>
+        <div style="display:flex;justify-content:space-between;gap:1.2rem;padding:1px 0">
+          <span style="color:var(--text-faint);font-size:1rem">${label}</span>
+          <span style="color:${colour || 'var(--text-dim)'};font-family:var(--font-mono);font-size:1rem;text-align:right">${value}</span>
         </div>`;
 
-      return `<div style="min-width:220px;padding:2px 0">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;
-                    margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid var(--border)">
-          <span style="color:${d.colour};font-size:11px;letter-spacing:0.05em;text-transform:uppercase;
-                       white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px">
+      return `<div style="min-width:22rem;padding:0.2rem 0">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;
+                    margin-bottom:0.5rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border)">
+          <span style="color:${d.colour};font-size:1.1rem;letter-spacing:0.05em;text-transform:uppercase;
+                       white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:18rem">
             <span style="color:${d.dir === 'buy' ? '#ef5350' : '#19e6c8'}">${d.dir === 'buy' ? '▼ BOUGHT' : '▲ SOLD'}</span> ${d.ware}
           </span>
         </div>` +
@@ -391,8 +391,8 @@
         row('Amount',     `${fmtU(d.amount)} units`) +
         (d.counterparty ? row(d.dir === 'buy' ? 'Seller' : 'Buyer', d.counterparty) : '') +
         (shipResolved   ? row('Ship',  d.ship)         : '') +
-        `<div style="margin-top:5px;padding-top:4px;border-top:1px solid var(--border);
-                     text-align:right;font-size:10px;color:var(--text-faint)">${ago}</div>
+        `<div style="margin-top:0.5rem;padding-top:0.4rem;border-top:1px solid var(--border);
+                     text-align:right;font-size:1rem;color:var(--text-faint)">${ago}</div>
       </div>`;
     }
 
@@ -406,44 +406,44 @@
       const dirCol   = d.dir === 'sell' ? '#19e6c8' : '#ef5350';
 
       // Delta vs the previous populated hour.
-      let deltaHtml = `<span style="color:var(--text-faint);font-size:10px">first hour</span>`;
+      let deltaHtml = `<span style="color:var(--text-faint);font-size:1rem">first hour</span>`;
       if (d.prevAvg != null && d.prevAvg > 0) {
         const diff = d.avg - d.prevAvg;
         const pct  = Math.abs(diff / d.prevAvg * 100);
         const flat = Math.abs(diff) < 0.005 * d.prevAvg;
         const c    = flat ? 'var(--text-faint)' : diff > 0 ? '#19e6c8' : '#ef5350';
         const ch   = flat ? '▬' : diff > 0 ? '▲' : '▼';
-        deltaHtml  = `<span style="color:${c};font-family:var(--font-mono);font-size:11px">${ch} ${pct.toFixed(1)}%</span>`;
+        deltaHtml  = `<span style="color:${c};font-family:var(--font-mono);font-size:1.1rem">${ch} ${pct.toFixed(1)}%</span>`;
       }
 
       // Marker position within the hour's min–max range (clamped).
       const range   = (d.max - d.min) || 1;
       const avgFrac = Math.max(0, Math.min(1, (d.avg - d.min) / range)) * 100;
       const spread  = d.max > d.min
-        ? `<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-faint);font-family:var(--font-mono);margin-bottom:2px">
+        ? `<div style="display:flex;justify-content:space-between;font-size:0.9rem;color:var(--text-faint);font-family:var(--font-mono);margin-bottom:0.2rem">
              <span>${fmtU(d.min)}</span><span style="letter-spacing:0.12em">SPREAD</span><span>${fmtU(d.max)}</span>
            </div>
-           <div style="position:relative;height:5px;background:${d.colour}22;border-radius:3px;margin-bottom:6px;overflow:visible">
-             <div style="position:absolute;inset:0;background:linear-gradient(90deg,${d.colour}33,${d.colour}66);border-radius:3px"></div>
-             <div style="position:absolute;left:${avgFrac.toFixed(1)}%;top:50%;width:7px;height:7px;border-radius:50%;background:${d.colour};transform:translate(-50%,-50%);box-shadow:0 0 5px ${d.colour}"></div>
+           <div style="position:relative;height:0.5rem;background:${d.colour}22;border-radius:0.3rem;margin-bottom:0.6rem;overflow:visible">
+             <div style="position:absolute;inset:0;background:linear-gradient(90deg,${d.colour}33,${d.colour}66);border-radius:0.3rem"></div>
+             <div style="position:absolute;left:${avgFrac.toFixed(1)}%;top:50%;width:0.7rem;height:0.7rem;border-radius:50%;background:${d.colour};transform:translate(-50%,-50%);box-shadow:0 0 0.5rem ${d.colour}"></div>
            </div>`
-        : `<div style="font-size:9px;color:var(--text-faint);font-family:var(--font-mono);margin-bottom:6px">single trade · no spread</div>`;
+        : `<div style="font-size:0.9rem;color:var(--text-faint);font-family:var(--font-mono);margin-bottom:0.6rem">single trade · no spread</div>`;
 
-      return `<div style="min-width:210px;padding:2px 0">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border)">
-          <span style="color:${d.colour};font-size:11px;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">
+      return `<div style="min-width:21rem;padding:0.2rem 0">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.6rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border)">
+          <span style="color:${d.colour};font-size:1.1rem;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:16rem">
             <span style="color:${dirCol}">${dirLabel}</span> ${d.ware}
           </span>
-          <span style="color:var(--text-faint);font-size:10px;letter-spacing:0.06em;white-space:nowrap">${span}</span>
+          <span style="color:var(--text-faint);font-size:1rem;letter-spacing:0.06em;white-space:nowrap">${span}</span>
         </div>
-        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:7px">
-          <span style="font-family:var(--font-mono);font-size:18px;color:${d.colour};line-height:1">${fmtU(d.avg)}<span style="font-size:10px;color:var(--text-faint)"> cr avg</span></span>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:1rem;margin-bottom:0.7rem">
+          <span style="font-family:var(--font-mono);font-size:1.8rem;color:${d.colour};line-height:1">${fmtU(d.avg)}<span style="font-size:1rem;color:var(--text-faint)"> cr avg</span></span>
           ${deltaHtml}
         </div>
         ${spread}
-        <div style="display:flex;justify-content:space-between;gap:12px">
-          <span style="color:var(--text-faint);font-size:10px">Trades this hour</span>
-          <span style="color:var(--text-dim);font-family:var(--font-mono);font-size:10px">${d.count}</span>
+        <div style="display:flex;justify-content:space-between;gap:1.2rem">
+          <span style="color:var(--text-faint);font-size:1rem">Trades this hour</span>
+          <span style="color:var(--text-dim);font-family:var(--font-mono);font-size:1rem">${d.count}</span>
         </div>
       </div>`;
     }
@@ -453,23 +453,23 @@
       // Label, percentage, and m³ text all use the category's fixed accent colour.
       // The Total row is preceded by a thin separator line.
       const fmtM3 = v => v >= 1e6 ? (v/1e6).toFixed(2)+'M' : v >= 1e3 ? (v/1e3).toFixed(1)+'K' : v;
-      return `<div style="min-width:220px;padding:2px 0">` +
+      return `<div style="min-width:22rem;padding:0.2rem 0">` +
         types.map(t => {
           const barW = t.pct != null ? Math.min(t.pct, 100) : 0;
           const pctLabel = t.pct != null ? `${t.pct}%` : '—';
           const sub = (t.m3 != null && t.max != null)
-            ? `<div style="margin-top:2px;text-align:right;font-size:10px;color:${t.color};opacity:0.75">${fmtM3(t.m3)} / ${fmtM3(t.max)} m³</div>`
+            ? `<div style="margin-top:0.2rem;text-align:right;font-size:1rem;color:${t.color};opacity:0.75">${fmtM3(t.m3)} / ${fmtM3(t.max)} m³</div>`
             : '';
           const sep = t.isTotal
-            ? `<div style="border-top:1px solid var(--border);margin:5px 0 8px"></div>`
+            ? `<div style="border-top:1px solid var(--border);margin:0.5rem 0 0.8rem"></div>`
             : '';
-          return `${sep}<div style="margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
-              <span style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:${t.color}">${t.label}</span>
-              <span style="color:${t.color};font-family:var(--font-mono);margin-left:12px">${pctLabel}</span>
+          return `${sep}<div style="margin-bottom:0.8rem">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.3rem">
+              <span style="font-size:1rem;letter-spacing:0.1em;text-transform:uppercase;color:${t.color}">${t.label}</span>
+              <span style="color:${t.color};font-family:var(--font-mono);margin-left:1.2rem">${pctLabel}</span>
             </div>
-            <div style="height:6px;background:var(--border);border-radius:2px;overflow:hidden">
-              <div style="height:100%;width:${barW}%;background:${t.color};border-radius:2px"></div>
+            <div style="height:0.6rem;background:var(--border);border-radius:0.2rem;overflow:hidden">
+              <div style="height:100%;width:${barW}%;background:${t.color};border-radius:0.2rem"></div>
             </div>
             ${sub}
           </div>`;
@@ -609,13 +609,8 @@
       }
 
       tip.style.display = 'block';
-      // e.clientX/Y are in physical pixels; tip.style positions are in zoomed
-      // CSS pixels. Divide by zoom to convert into the correct coordinate space.
-      // window.innerWidth is also physical in QtWebEngine, so divide it too
-      // before subtracting tip.offsetWidth (which IS in CSS pixels).
-      const _z = parseFloat(document.documentElement.style.zoom) || 1;
-      const x = Math.min(e.clientX / _z + 14, window.innerWidth / _z - tip.offsetWidth - 8);
-      const y = Math.max(e.clientY / _z - 32, 8);
+      const x = Math.min(e.clientX + 14, window.innerWidth - tip.offsetWidth - 8);
+      const y = Math.max(e.clientY - 32, 8);
       tip.style.left = x + 'px';
       tip.style.top  = y + 'px';
     });

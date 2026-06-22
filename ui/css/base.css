@@ -26,7 +26,15 @@
       --font-cond:    'Barlow Condensed', sans-serif;
     }
 
-    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: 14px; overflow: hidden; }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-ui); overflow: hidden; }
+    /* html's font-size is the rem anchor for the whole document — it must stay
+       a fixed px value, NOT rem (rem on the root element resolves against the
+       browser's UA default, not itself, so "1.4rem" here would silently
+       compute to ~22px instead of 14px). js/init.js's updateScale() multiplies
+       this 10px by the responsive scale factor instead of using CSS zoom, so
+       every rem-based size in the rest of the UI scales with it. */
+    html { font-size: 10px; }
+    body { font-size: 1.4rem; }
 
     /* #app-root is shell-loader.js's injection target (see body.html) — it sits
        between body and #shell in the DOM, so the height:100% chain below needs
@@ -35,11 +43,9 @@
        viewport. */
     #app-root { height: 100%; }
 
-    /* height:100% (not 100vh): with the CSS zoom updateZoom() puts on <html>,
-       Chromium computes 100vh larger than the real viewport, so the shell
-       overflowed <body> and scrollIntoView (crew/station/ship jump links)
-       could scroll the overflow:hidden body — pushing the top bars off-screen
-       with no way to scroll back. 100% chains through html/body, which are
-       zoom-aware, so the shell always exactly fits and body never scrolls. */
+    /* height:100% (not 100vh): chains through html/body's own height:100%
+       rather than re-measuring the viewport, so the shell always exactly
+       fits and scrollIntoView (crew/station/ship jump links) can't push the
+       top bars off-screen via the overflow:hidden body. */
     #shell { display: flex; flex-direction: column; height: 100%; }
 

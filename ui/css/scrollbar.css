@@ -1,7 +1,7 @@
     /* Core role: Custom thin scrollbar styling (webkit only). */
-    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar { width: 0.4rem; height: 0.4rem; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 0.2rem; }
 
-    #loading { display: flex; align-items: center; justify-content: center; height: 100%; font-family: var(--font-mono); color: var(--text-faint); font-size: 12px; gap: 10px; }
-    #loading i { font-size: 20px; color: var(--teal); }
+    #loading { display: flex; align-items: center; justify-content: center; height: 100%; font-family: var(--font-mono); color: var(--text-faint); font-size: 1.2rem; gap: 1rem; }
+    #loading i { font-size: 2rem; color: var(--teal); }
