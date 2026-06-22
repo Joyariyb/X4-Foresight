@@ -1,47 +1,47 @@
     /* Core role: Styles for sectors master-detail view (cluster list + sector detail card). */
     /* SECTORS TAB — master-detail layout */
-    #tab-sectors { flex: 1; min-height: 0; margin: -14px; gap: 0; flex-direction: row; }
+    #tab-sectors { flex: 1; min-height: 0; margin: -1.4rem; gap: 0; flex-direction: row; }
     /* Left column = sort bar (fixed) above a scrolling list. */
     #sectors-left {
-      width: 260px; flex-shrink: 0; min-height: 0; display: flex; flex-direction: column;
+      width: 26rem; flex-shrink: 0; min-height: 0; display: flex; flex-direction: column;
       background: var(--bg-panel); border-right: 1px solid var(--border);
     }
-    #sectors-sortbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-    .ssb-label { font-family: var(--font-cond); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); flex-shrink: 0; }
-    #sectors-sort { flex: 1; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 3px; padding: 4px 6px; font-family: var(--font-cond); font-size: 12px; cursor: pointer; }
-    #sectors-list { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 0; }
+    #sectors-sortbar { display: flex; align-items: center; gap: 0.8rem; padding: 0.8rem 1.2rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .ssb-label { font-family: var(--font-cond); font-size: 1.1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); flex-shrink: 0; }
+    #sectors-sort { flex: 1; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 0.3rem; padding: 0.4rem 0.6rem; font-family: var(--font-cond); font-size: 1.2rem; cursor: pointer; }
+    #sectors-list { flex: 1; min-height: 0; overflow-y: auto; padding: 0.8rem 0; }
     .sectors-cluster-head {
-      display: flex; align-items: center; gap: 7px; padding: 8px 12px 4px;
-      font-family: var(--font-cond); font-size: 11px; font-weight: 600;
+      display: flex; align-items: center; gap: 0.7rem; padding: 0.8rem 1.2rem 0.4rem;
+      font-family: var(--font-cond); font-size: 1.1rem; font-weight: 600;
       letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint);
     }
-    .sectors-cluster-head .scl-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+    .sectors-cluster-head .scl-dot { width: 0.8rem; height: 0.8rem; border-radius: 0.2rem; flex-shrink: 0; }
     .sector-row {
-      display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 22px;
-      font-family: var(--font-cond); font-size: 13px; color: var(--text); cursor: pointer;
-      border-left: 2px solid transparent; transition: background 0.12s;
+      display: flex; align-items: center; gap: 0.8rem; padding: 0.6rem 1.2rem 0.6rem 2.2rem;
+      font-family: var(--font-cond); font-size: 1.3rem; color: var(--text); cursor: pointer;
+      border-left: 0.2rem solid transparent; transition: background 0.12s;
     }
     .sector-row:hover { background: var(--bg); }
     .sector-row.active { background: var(--bg); border-left-color: var(--teal); color: var(--teal); }
-    .sector-row .sr-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .sector-row .sr-dot { width: 0.9rem; height: 0.9rem; border-radius: 50%; flex-shrink: 0; }
     .sector-row .sr-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     /* Count of the player's own stations in the sector. */
-    .sr-sta-badge { flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px; font-family: var(--font-mono); font-size: 10px; color: var(--teal); background: var(--teal-dim); padding: 1px 5px; border-radius: 3px; }
-    .sr-sta-badge i { font-size: 11px; }
+    .sr-sta-badge { flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.3rem; font-family: var(--font-mono); font-size: 1rem; color: var(--teal); background: var(--teal-dim); padding: 1px 0.5rem; border-radius: 0.3rem; }
+    .sr-sta-badge i { font-size: 1.1rem; }
     /* Right-aligned value for the active sort. Coloured per metric: resource
        amounts take the yield-tier colour, sunlight is sun-amber. */
-    .sector-row .sr-metric { flex-shrink: 0; font-family: var(--font-mono); font-size: 11px; color: var(--text); }
+    .sector-row .sr-metric { flex-shrink: 0; font-family: var(--font-mono); font-size: 1.1rem; color: var(--text); }
     .sr-metric-sun { color: var(--amber); }
 
-    #sectors-detail { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 24px; }
-    .sectors-empty { color: var(--text-dim); font-family: var(--font-cond); font-size: 14px; margin-top: 40px; text-align: center; }
-    .sd-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 2px; }
-    .sd-name { font-family: var(--font-cond); font-size: 22px; font-weight: 600; color: var(--text); letter-spacing: 0.02em; }
-    .sd-cluster { font-family: var(--font-cond); font-size: 12px; color: var(--text-faint); letter-spacing: 0.06em; text-transform: uppercase; }
-    .sd-owner { font-family: var(--font-cond); font-size: 14px; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+    #sectors-detail { flex: 1; min-height: 0; overflow-y: auto; padding: 2rem 2.4rem; }
+    .sectors-empty { color: var(--text-dim); font-family: var(--font-cond); font-size: 1.4rem; margin-top: 4rem; text-align: center; }
+    .sd-head { display: flex; align-items: baseline; gap: 1.2rem; margin-bottom: 0.2rem; }
+    .sd-name { font-family: var(--font-cond); font-size: 2.2rem; font-weight: 600; color: var(--text); letter-spacing: 0.02em; }
+    .sd-cluster { font-family: var(--font-cond); font-size: 1.2rem; color: var(--text-faint); letter-spacing: 0.06em; text-transform: uppercase; }
+    .sd-owner { font-family: var(--font-cond); font-size: 1.4rem; margin-bottom: 1.8rem; display: flex; align-items: center; gap: 0.8rem; }
     /* Summary character tags — thin chip row near the top of the pane. */
-    .sd-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 14px; }
-    .sd-tag { font-family: var(--font-cond); font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 9px; border-radius: 10px; border: 1px solid; white-space: nowrap; }
+    .sd-tags { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0.6rem 0 1.4rem; }
+    .sd-tag { font-family: var(--font-cond); font-size: 1rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.2rem 0.9rem; border-radius: 1rem; border: 1px solid; white-space: nowrap; }
     .sd-tag.tag-you     { color: var(--teal);   border-color: rgba(45,212,191,0.4);  background: var(--teal-dim); }
     .sd-tag.tag-bad     { color: var(--red);    border-color: rgba(248,81,73,0.4);   background: var(--red-dim); }
     .sd-tag.tag-neutral { color: var(--text);   border-color: var(--border);         background: var(--bg-card); }
@@ -51,32 +51,32 @@
     .sd-tag.tag-core     { color: var(--yellow); border-color: rgba(227,179,65,0.4);  background: rgba(227,179,65,0.1); }
     .sd-tag.tag-frontier { color: #f0883e;       border-color: rgba(240,136,62,0.4);  background: rgba(240,136,62,0.1); }
     .sd-tag.tag-remote   { color: var(--purple); border-color: rgba(163,113,247,0.4); background: rgba(163,113,247,0.1); }
-    .sd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 22px; }
-    .sd-stat { background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; padding: 9px 12px; }
-    .sd-stat-label { font-family: var(--font-cond); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 3px; }
-    .sd-stat-value { font-family: var(--font-mono); font-size: 16px; color: var(--text); }
-    .sd-section-title { font-family: var(--font-cond); font-weight: 600; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); margin: 0 0 8px; }
-    .sd-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 22px; }
-    .sd-conn-row, .sd-fac-row { display: flex; align-items: center; gap: 8px; font-family: var(--font-cond); font-size: 13px; color: var(--text); }
-    .sd-conn-row { cursor: pointer; padding: 3px 0; }
+    .sd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 1rem; margin-bottom: 2.2rem; }
+    .sd-stat { background: var(--bg-card); border: 1px solid var(--border); border-radius: 0.3rem; padding: 0.9rem 1.2rem; }
+    .sd-stat-label { font-family: var(--font-cond); font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 0.3rem; }
+    .sd-stat-value { font-family: var(--font-mono); font-size: 1.6rem; color: var(--text); }
+    .sd-section-title { font-family: var(--font-cond); font-weight: 600; font-size: 1.1rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); margin: 0 0 0.8rem; }
+    .sd-list { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 2.2rem; }
+    .sd-conn-row, .sd-fac-row { display: flex; align-items: center; gap: 0.8rem; font-family: var(--font-cond); font-size: 1.3rem; color: var(--text); }
+    .sd-conn-row { cursor: pointer; padding: 0.3rem 0; }
     .sd-conn-row:hover .sd-conn-name { color: var(--teal); }
-    .sd-conn-row .sr-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .sd-conn-row .sr-dot { width: 0.8rem; height: 0.8rem; border-radius: 50%; flex-shrink: 0; }
     .sd-conn-name { flex: 1; }
-    .sd-conn-cost { font-family: var(--font-mono); font-size: 11px; color: var(--teal); }
-    .sd-fac-row { padding: 2px 0; }
-    .sd-fac-row .sr-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .sd-conn-cost { font-family: var(--font-mono); font-size: 1.1rem; color: var(--teal); }
+    .sd-fac-row { padding: 0.2rem 0; }
+    .sd-fac-row .sr-dot { width: 0.8rem; height: 0.8rem; border-radius: 50%; flex-shrink: 0; }
     .sd-fac-name { flex: 1; }
-    .sd-fac-count { font-family: var(--font-mono); font-size: 12px; color: var(--text); }
+    .sd-fac-count { font-family: var(--font-mono); font-size: 1.2rem; color: var(--text); }
 
     /* Resources as a 3-column grid: name | yield | amount. display:contents on
        the rows lets every cell line up in the shared columns, so the right-hand
        Yield and Amount values align neatly down the list. */
-    .sd-res-table { display: grid; grid-template-columns: 1fr auto auto; column-gap: 20px; row-gap: 6px; align-items: baseline; margin-bottom: 22px; }
+    .sd-res-table { display: grid; grid-template-columns: 1fr auto auto; column-gap: 2rem; row-gap: 0.6rem; align-items: baseline; margin-bottom: 2.2rem; }
     .sd-res-head, .sd-res-row { display: contents; }
-    .sd-res-h { font-family: var(--font-cond); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); text-align: right; }
-    .sd-res-name { font-family: var(--font-cond); font-size: 14px; color: var(--text); }
-    .sd-res-yield { font-family: var(--font-cond); font-size: 13px; font-weight: 600; text-align: right; white-space: nowrap; }
-    .sd-res-amt { font-family: var(--font-mono); font-size: 13px; color: var(--text); text-align: right; white-space: nowrap; }
+    .sd-res-h { font-family: var(--font-cond); font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); text-align: right; }
+    .sd-res-name { font-family: var(--font-cond); font-size: 1.4rem; color: var(--text); }
+    .sd-res-yield { font-family: var(--font-cond); font-size: 1.3rem; font-weight: 600; text-align: right; white-space: nowrap; }
+    .sd-res-amt { font-family: var(--font-mono); font-size: 1.3rem; color: var(--text); text-align: right; white-space: nowrap; }
     /* Abundance heat-ramp using brand colours — red (poor) → orange → yellow →
        green (rich). Prefix match covers the whole X4 yield ladder; verylow and
        veryhigh are pinned to the extremes. Applies to both the detail table
@@ -88,23 +88,23 @@
     .sd-res-yield[data-yield="veryhigh"], .sr-metric-yield[data-yield="veryhigh"] { color: #56d364; }
 
     /* The player's own stations in a sector — clickable to the station card. */
-    .sd-sta-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-family: var(--font-cond); font-size: 13px; color: var(--text); cursor: pointer; }
-    .sd-sta-row i { font-size: 14px; color: var(--teal); flex-shrink: 0; }
+    .sd-sta-row { display: flex; align-items: center; gap: 0.8rem; padding: 0.4rem 0; font-family: var(--font-cond); font-size: 1.3rem; color: var(--text); cursor: pointer; }
+    .sd-sta-row i { font-size: 1.4rem; color: var(--teal); flex-shrink: 0; }
     .sd-sta-row:hover .sd-sta-name { color: var(--teal); }
     .sd-sta-name { flex: 1; }
-    .sd-sta-code { font-family: var(--font-mono); font-size: 11px; color: var(--teal); }
+    .sd-sta-code { font-family: var(--font-mono); font-size: 1.1rem; color: var(--teal); }
 
     /* Collapsible "Your Ships" set. Native <details> — default collapsed. */
-    .sd-ships { margin-bottom: 22px; }
-    .sd-ships-sum { display: flex; align-items: center; gap: 8px; cursor: pointer; list-style: none; user-select: none; }
+    .sd-ships { margin-bottom: 2.2rem; }
+    .sd-ships-sum { display: flex; align-items: center; gap: 0.8rem; cursor: pointer; list-style: none; user-select: none; }
     .sd-ships-sum::-webkit-details-marker { display: none; }
-    .sd-ships-chev { font-size: 14px; color: var(--text-faint); transition: transform 0.15s; }
+    .sd-ships-chev { font-size: 1.4rem; color: var(--text-faint); transition: transform 0.15s; }
     .sd-ships[open] .sd-ships-chev { transform: rotate(90deg); }
-    .sd-ships-title { font-family: var(--font-cond); font-weight: 600; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); }
-    .sd-ships-break { font-family: var(--font-cond); font-size: 12px; color: var(--text); }
-    .sd-ships-list { display: grid; grid-template-columns: 1fr auto auto; column-gap: 16px; row-gap: 4px; align-items: baseline; margin: 8px 0 0 22px; }
+    .sd-ships-title { font-family: var(--font-cond); font-weight: 600; font-size: 1.1rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); }
+    .sd-ships-break { font-family: var(--font-cond); font-size: 1.2rem; color: var(--text); }
+    .sd-ships-list { display: grid; grid-template-columns: 1fr auto auto; column-gap: 1.6rem; row-gap: 0.4rem; align-items: baseline; margin: 0.8rem 0 0 2.2rem; }
     .sd-ship-row { display: contents; }
-    .sd-ship-name { font-family: var(--font-cond); font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .sd-ship-role { font-family: var(--font-cond); font-size: 12px; color: var(--text); text-align: right; white-space: nowrap; }
-    .sd-ship-code { font-family: var(--font-mono); font-size: 11px; color: var(--teal); text-align: right; white-space: nowrap; }
+    .sd-ship-name { font-family: var(--font-cond); font-size: 1.3rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sd-ship-role { font-family: var(--font-cond); font-size: 1.2rem; color: var(--text); text-align: right; white-space: nowrap; }
+    .sd-ship-code { font-family: var(--font-mono); font-size: 1.1rem; color: var(--teal); text-align: right; white-space: nowrap; }
 

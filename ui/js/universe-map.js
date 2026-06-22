@@ -463,7 +463,7 @@
         // off-screen at deep zoom) — park those out of sight instead of letting
         // the mirrored coordinates land somewhere visible.
         if (p.w <= 0.05 || p.x < -200 || p.x > W + 200 || p.y < -200 || p.y > H + 200) {
-          el.style.transform = 'translate3d(-9999px,0,0)';
+          el.style.transform = 'translate3d(-999.9rem,0,0)';
           return;
         }
         // scale(w) shrinks far labels and grows near ones — the depth cue that
@@ -698,7 +698,7 @@
 
       const g = el('g', { class: 'u-cluster', 'data-macro': macro });
 
-      // Cluster hex body (inset by 1.5px for a visible gap between adjacent hexes)
+      // Cluster hex body (inset by 1.5 SVG units for a visible gap between adjacent hexes)
       g.appendChild(el('polygon', {
         points:        hexPoints(cx, cy, BASE_HEX - 1.5),
         fill:          hexToRgba(colour, 0.06),
@@ -844,13 +844,11 @@
       const tiltEl = document.getElementById('universe-tilt');
       if (tiltEl) tiltEl.style.transform = U_TILT_DEG ? `rotateX(${U_TILT_DEG}deg)` : 'none';
 
-      // Cursor → flat map space: undo the page zoom (clientX is visual px but
-      // the map transform works in layout px), then undo the tilt projection.
-      // Gives exact zoom-to-cursor and drag-follows-grab on the tilted plane.
+      // Cursor → flat map space: undo the tilt projection. Gives exact
+      // zoom-to-cursor and drag-follows-grab on the tilted plane.
       function cursorToMap(e) {
         const rect = wrap.getBoundingClientRect();
-        const z = parseFloat(document.documentElement.style.zoom) || 1;
-        return _uTiltUnproject((e.clientX - rect.left) / z, (e.clientY - rect.top) / z,
+        return _uTiltUnproject(e.clientX - rect.left, e.clientY - rect.top,
                                wrap.clientWidth, wrap.clientHeight);
       }
 
@@ -898,15 +896,11 @@
       });
 
       // Sector hover panel — delegated to the map so we only attach one listener.
-      // e.clientX/Y from SVG element events can return SVG user-space coordinates
-      // e.clientX/Y are physical pixels in QtWebEngine; style.left/top are in
-      // zoomed CSS pixels. Divide by zoom to put the panel in the right space.
       wrap.addEventListener('mousemove', function(e) {
         if (_dragging) { _hideUHoverPanel(); return; }
         const hex = e.target.closest('[data-sector]');
         if (hex) {
-          const _z = parseFloat(document.documentElement.style.zoom) || 1;
-          _showUHoverPanel(hex.dataset.sector, e.clientX / _z + 14, e.clientY / _z + 14);
+          _showUHoverPanel(hex.dataset.sector, e.clientX + 14, e.clientY + 14);
         } else {
           _hideUHoverPanel();
         }

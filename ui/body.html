@@ -29,7 +29,7 @@
     </div>
     <div class="nav-tab" onclick="switchTab('alerts',this)"><i class="ti ti-alert-triangle"></i> Alerts <span class="nav-badge warn" id="nav-alerts">0</span></div>
     <div class="tb-field tb-scan" id="tb-scan-field" style="display:none">
-      <div class="lbl"><i class="ti ti-history" style="font-size:10px;vertical-align:-1px"></i> Scan</div>
+      <div class="lbl"><i class="ti ti-history" style="font-size:1rem;vertical-align:-1px"></i> Scan</div>
       <div class="scan-picker" id="scan-picker">
         <button class="scan-picker-btn" id="scan-picker-btn" type="button" onclick="toggleScanPicker(event)">#<span id="scan-picker-label">—</span><span class="scan-picker-caret">▾</span></button>
         <div class="scan-picker-menu" id="scan-picker-menu" style="display:none"></div>
@@ -39,7 +39,7 @@
 
   <div id="main">
     <div id="sidebar">
-      <div class="sb-heading" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <div class="sb-heading" style="display:flex;align-items:center;justify-content:space-between;gap:0.8rem">
         <span>Files</span>
         <button id="nav-back-btn" class="nav-back-btn" onclick="goBack()" style="display:none">‹ Back</button>
       </div>
@@ -57,7 +57,7 @@
       <div class="reslib-wrap" id="reslib-wrap">
         <div class="sb-item">
           <span class="sb-item-label"><i class="ti ti-books"></i> Resource Library</span>
-          <i class="ti ti-chevron-right" style="font-size:11px;opacity:0.6"></i>
+          <i class="ti ti-chevron-right" style="font-size:1.1rem;opacity:0.6"></i>
         </div>
         <div class="reslib-menu" id="reslib-menu">
           <div class="reslib-menu-item" onclick="openResLib('hull')"><i class="ti ti-ufo"></i> Hulls</div>
@@ -133,9 +133,9 @@
           </div>
         </div>
 
-        <div style="display:flex; align-items:baseline; gap:10px; padding-bottom:2px">
-          <div style="font-family:var(--font-cond); font-weight:600; font-size:18px; color:var(--teal)" id="ov-pilot">—</div>
-          <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-dim)">PILOT</div>
+        <div style="display:flex; align-items:baseline; gap:1rem; padding-bottom:0.2rem">
+          <div style="font-family:var(--font-cond); font-weight:600; font-size:1.8rem; color:var(--teal)" id="ov-pilot">—</div>
+          <div style="font-family:var(--font-mono); font-size:1.1rem; color:var(--text-dim)">PILOT</div>
         </div>
 
         <div>
@@ -184,7 +184,7 @@
             <div class="sec-title">Player Fleet</div>
             <div class="sec-line"></div>
           </div>
-          <div class="panel" style="overflow:auto; max-height: calc(100vh - 200px);">
+          <div class="panel" style="overflow:auto; max-height: calc(100vh - 20rem);">
             <table class="data-table" id="fleet-table">
               <thead>
                 <tr>
@@ -234,7 +234,7 @@
           <div class="dfb-group">
             <span class="dfb-label">Faction</span>
             <div class="bhull">
-              <i class="ti ti-flag" style="color:var(--teal);font-size:13px"></i>
+              <i class="ti ti-flag" style="color:var(--teal);font-size:1.3rem"></i>
               <select id="designs-faction-select" onchange="designsSetFactionFilter(this.value)">
                 <option value="all">All</option>
               </select>
@@ -243,7 +243,7 @@
           <div class="dfb-group">
             <span class="dfb-label">Sort</span>
             <div class="bhull">
-              <i class="ti ti-sort-descending" style="color:var(--teal);font-size:13px"></i>
+              <i class="ti ti-sort-descending" style="color:var(--teal);font-size:1.3rem"></i>
               <select id="designs-sort-select" onchange="designsSetSort(this.value)">
                 <option value="used">Used By</option>
                 <option value="size">Size</option>
@@ -261,10 +261,10 @@
 
         <div id="designs-grid"></div>
         <!-- Shown when there's no loadout data yet, or the current filters match nothing. -->
-        <div id="designs-empty" style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:80px 20px;color:var(--text-dim)">
-          <i class="ti ti-vector-triangle" style="font-size:40px;color:var(--teal);opacity:0.5"></i>
-          <div class="cond" id="designs-empty-title" style="font-size:18px;font-weight:600;color:var(--text)">No ship designs found</div>
-          <div id="designs-empty-body" style="font-size:13px;max-width:420px;text-align:center;line-height:1.6">
+        <div id="designs-empty" style="display:flex;flex-direction:column;align-items:center;gap:1rem;padding:8rem 2rem;color:var(--text-dim)">
+          <i class="ti ti-vector-triangle" style="font-size:4rem;color:var(--teal);opacity:0.5"></i>
+          <div class="cond" id="designs-empty-title" style="font-size:1.8rem;font-weight:600;color:var(--text)">No ship designs found</div>
+          <div id="designs-empty-body" style="font-size:1.3rem;max-width:42rem;text-align:center;line-height:1.6">
             This tab lists your fleet's unique ship configurations, deduplicated by
             hull and fitted equipment. Run a scan with a fleet in it to populate it.
           </div>
@@ -287,7 +287,7 @@
       <div class="tab-panel" id="tab-reslib">
         <div id="reslib-header"></div>
 
-        <div class="panel" id="reslib-panel" style="overflow:auto; max-height: calc(100vh - 230px);">
+        <div class="panel" id="reslib-panel" style="overflow:auto; max-height: calc(100vh - 23rem);">
           <table class="data-table" id="reslib-table">
             <thead id="reslib-thead"></thead>
             <tbody id="reslib-tbody"></tbody>
@@ -296,25 +296,25 @@
 
         <!-- Hull Inspector — per-hull detail view, shown in place of
              reslib-panel once a hull is clicked in the Hull List. -->
-        <div class="panel" id="reslib-inspector" style="display:none; overflow:auto; max-height: calc(100vh - 230px); padding:14px;"></div>
+        <div class="panel" id="reslib-inspector" style="display:none; overflow:auto; max-height: calc(100vh - 23rem); padding:1.4rem;"></div>
 
         <!-- Hull Comparison — two-hull side-by-side view. Filled by
              renderResLibHullCompare() in hull-comparison.js. -->
-        <div class="panel" id="reslib-compare" style="display:none; overflow:auto; max-height: calc(100vh - 230px); padding:14px;"></div>
+        <div class="panel" id="reslib-compare" style="display:none; overflow:auto; max-height: calc(100vh - 23rem); padding:1.4rem;"></div>
 
         <!-- Shown for categories with no data pipeline yet (Software/Items), or
              before any scan has loaded the static equipment/hull catalogs. -->
-        <div id="reslib-empty" style="display:none;flex-direction:column;align-items:center;gap:10px;padding:80px 20px;color:var(--text-dim)">
-          <i class="ti ti-books" id="reslib-empty-icon" style="font-size:40px;color:var(--teal);opacity:0.5"></i>
-          <div class="cond" id="reslib-empty-title" style="font-size:18px;font-weight:600;color:var(--text)"></div>
-          <div id="reslib-empty-body" style="font-size:13px;max-width:420px;text-align:center;line-height:1.6"></div>
+        <div id="reslib-empty" style="display:none;flex-direction:column;align-items:center;gap:1rem;padding:8rem 2rem;color:var(--text-dim)">
+          <i class="ti ti-books" id="reslib-empty-icon" style="font-size:4rem;color:var(--teal);opacity:0.5"></i>
+          <div class="cond" id="reslib-empty-title" style="font-size:1.8rem;font-weight:600;color:var(--text)"></div>
+          <div id="reslib-empty-body" style="font-size:1.3rem;max-width:42rem;text-align:center;line-height:1.6"></div>
         </div>
       </div>
 
       <!-- STATIONS TAB -->
       <div class="tab-panel" id="tab-stations">
         <div class="sec-header"><div class="sec-title">Stations</div><div class="sec-line"></div></div>
-        <div id="stations-grid" style="display:flex;flex-direction:column;gap:10px;padding-bottom:100vh;"></div>
+        <div id="stations-grid" style="display:flex;flex-direction:column;gap:1rem;padding-bottom:100vh;"></div>
       </div>
 
       <!-- CREW TAB -->
@@ -323,27 +323,27 @@
           <div class="fleet-subtab active" data-role="all"
                style="--tab-color:#2dd4bf;--tab-bg:rgba(45,212,191,0.12);--tab-border:rgba(45,212,191,0.3)"
                onclick="switchCrewRole('all',this)">
-            <i class="ti ti-users" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>All <span class="ft-count" id="crew-count-all">—</span>
+            <i class="ti ti-users" style="font-size:1.3rem;vertical-align:-0.2rem;margin-right:0.4rem"></i>All <span class="ft-count" id="crew-count-all">—</span>
           </div>
           <div class="fleet-subtab" data-role="manager"
                style="--tab-color:#a371f7;--tab-bg:rgba(163,113,247,0.12);--tab-border:rgba(163,113,247,0.3)"
                onclick="switchCrewRole('manager',this)">
-            <i class="ti ti-crown" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>Managers <span class="ft-count" id="crew-count-manager">0</span>
+            <i class="ti ti-crown" style="font-size:1.3rem;vertical-align:-0.2rem;margin-right:0.4rem"></i>Managers <span class="ft-count" id="crew-count-manager">0</span>
           </div>
           <div class="fleet-subtab" data-role="pilot"
                style="--tab-color:#d29922;--tab-bg:rgba(210,153,34,0.12);--tab-border:rgba(210,153,34,0.3)"
                onclick="switchCrewRole('pilot',this)">
-            <i class="ti ti-steering-wheel" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>Pilots <span class="ft-count" id="crew-count-pilot">0</span>
+            <i class="ti ti-steering-wheel" style="font-size:1.3rem;vertical-align:-0.2rem;margin-right:0.4rem"></i>Pilots <span class="ft-count" id="crew-count-pilot">0</span>
           </div>
           <div class="fleet-subtab" data-role="service"
                style="--tab-color:#3fb950;--tab-bg:rgba(63,185,80,0.12);--tab-border:rgba(63,185,80,0.3)"
                onclick="switchCrewRole('service',this)">
-            <i class="ti ti-tool" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>Service <span class="ft-count" id="crew-count-service">0</span>
+            <i class="ti ti-tool" style="font-size:1.3rem;vertical-align:-0.2rem;margin-right:0.4rem"></i>Service <span class="ft-count" id="crew-count-service">0</span>
           </div>
           <div class="fleet-subtab" data-role="marine"
                style="--tab-color:#f85149;--tab-bg:rgba(248,81,73,0.10);--tab-border:rgba(248,81,73,0.3)"
                onclick="switchCrewRole('marine',this)">
-            <i class="ti ti-sword" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>Marines <span class="ft-count" id="crew-count-marine">0</span>
+            <i class="ti ti-sword" style="font-size:1.3rem;vertical-align:-0.2rem;margin-right:0.4rem"></i>Marines <span class="ft-count" id="crew-count-marine">0</span>
           </div>
         </div>
         <div class="crew-layout">
@@ -381,7 +381,7 @@
                  style="--tab-color:#2dd4bf;--tab-bg:rgba(45,212,191,0.12);--tab-border:rgba(45,212,191,0.3)"
                  onclick="toggleDiploDropdown(event)">
               <span id="diplo-dd-label">Player</span>
-              <i class="ti ti-chevron-down" style="font-size:13px"></i>
+              <i class="ti ti-chevron-down" style="font-size:1.3rem"></i>
             </div>
             <div class="diplo-dd-menu" id="diplo-dd-menu"></div>
           </div>
@@ -391,7 +391,7 @@
         <!-- Player standings panel (the original Diplomacy table, unchanged) -->
         <div class="diplo-panel active" id="diplo-panel-player">
           <div class="sec-header"><div class="sec-title">Faction Standings</div><div class="sec-line"></div></div>
-          <div class="panel" style="overflow:auto; max-height: calc(100vh - 200px);">
+          <div class="panel" style="overflow:auto; max-height: calc(100vh - 20rem);">
             <table class="data-table" id="rep-table">
               <thead>
                 <tr><th>Faction</th><th>Tier</th><th>Score</th><th>Bar</th><th>Base</th><th>Booster</th></tr>
@@ -409,10 +409,10 @@
       <!-- UNIVERSE TAB -->
       <div class="tab-panel" id="tab-universe">
         <div class="universe-filter-bar">
-          <i class="ti ti-filter" style="font-size:14px"></i>
+          <i class="ti ti-filter" style="font-size:1.4rem"></i>
           <span>Overlays</span>
-          <span style="color:var(--border);margin:0 4px">·</span>
-          <span style="font-size:10px;color:var(--text-faint);text-transform:none;letter-spacing:0">coming soon</span>
+          <span style="color:var(--border);margin:0 0.4rem">·</span>
+          <span style="font-size:1rem;color:var(--text-faint);text-transform:none;letter-spacing:0">coming soon</span>
         </div>
         <div id="universe-map-wrap">
           <!-- zoom-layer is an HTML div on purpose: browsers GPU-composite CSS

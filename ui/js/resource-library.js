@@ -61,24 +61,13 @@
   // position:fixed can't use the usual left:100% trick (see layout.css).
   // Recomputed on every mouseenter rather than cached, so it stays correct
   // even if the sidebar scrolled or the window resized since last time.
-  //
-  // getBoundingClientRect() is in physical/visual pixels, but a position:fixed
-  // descendant's style.left/top are interpreted as CSS pixels in <html>'s own
-  // (zoomed) coordinate space and get scaled by the zoom AGAIN on top of that
-  // — same double-zoom trap tooltips.js's mousemove handler already works
-  // around. init.js sets document.documentElement.style.zoom responsively
-  // (1.0 at 1536px wide, 1.25 once the window is maximized to ~1920px, etc.),
-  // so without dividing by it here the menu drifted further from the sidebar
-  // the more the window's width differed from 1536px — barely visible at
-  // small windows, obviously detached once maximized.
   function positionReslibMenu() {
     const wrap = document.getElementById('reslib-wrap');
     const menu = document.getElementById('reslib-menu');
     if (!wrap || !menu) return;
     const r = wrap.getBoundingClientRect();
-    const z = parseFloat(document.documentElement.style.zoom) || 1;
-    menu.style.left = (r.right / z) + 'px';
-    menu.style.top  = (r.top / z) + 'px';
+    menu.style.left = r.right + 'px';
+    menu.style.top  = r.top + 'px';
   }
   document.getElementById('reslib-wrap')?.addEventListener('mouseenter', positionReslibMenu);
 
@@ -325,7 +314,7 @@
 
     if (!rows.length) {
       document.getElementById('reslib-tbody').innerHTML =
-        `<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:30px">No hulls match the selected filters.</td></tr>`;
+        `<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:3rem">No hulls match the selected filters.</td></tr>`;
       return;
     }
 
@@ -337,7 +326,7 @@
         const total = Object.values(cap).reduce((a, b) => a + b, 0);
         if (!total) return '';
         const m = SLOT_META[slot];
-        return `<span style="margin-right:10px;white-space:nowrap"><i class="ti ${m.icon}" style="color:${m.color};font-size:12px;vertical-align:-1px;margin-right:2px"></i>${total}</span>`;
+        return `<span style="margin-right:1rem;white-space:nowrap"><i class="ti ${m.icon}" style="color:${m.color};font-size:1.2rem;vertical-align:-1px;margin-right:0.2rem"></i>${total}</span>`;
       }).join('');
       return `<tr style="cursor:pointer" onclick="reslibShowHullInspector('${r.macro}')">
         <td style="color:var(--text)">${r.name}</td>
@@ -414,7 +403,7 @@
     // Hull Comparison uses slot='a' or slot='b' to show Hull A/Hull B labels instead of plain Hull
     const hullLabel = slot ? `Hull ${slot.toUpperCase()}` : 'Hull';
 
-    return `<div class="dhull" style="--dhull-border:${hexA(facColour,0.35)};--dhull-glow:${hexA(facColour,0.1)};max-width:300px">
+    return `<div class="dhull" style="--dhull-border:${hexA(facColour,0.35)};--dhull-glow:${hexA(facColour,0.1)};max-width:30rem">
       <div class="dhull-hd"><i class="ti ti-ufo" style="color:${facColour}"></i><span class="lbl">${hullLabel}</span></div>
       <div class="dhull-wire">${wireSvgFor(size)}</div>
       <div class="dhull-id">${designBadge(faction)}<span class="dhull-nm">${h.name}</span></div>
@@ -430,7 +419,7 @@
         <div class="dhull-stat"><span class="dhs-lbl">Missiles</span><span class="dhs-val">${h.missile_storage != null ? designCr(h.missile_storage) : '—'}</span></div>
         <div class="dhull-stat"><span class="dhs-lbl">Units</span><span class="dhs-val">${h.unit_storage != null ? designCr(h.unit_storage) : '—'}</span></div>
       </div>
-      ${cargoTagsLabel ? `<div style="width:100%;text-align:center;font-size:10px;color:var(--text-faint);margin-top:-4px">Cargo: ${cargoTagsLabel}</div>` : ''}
+      ${cargoTagsLabel ? `<div style="width:100%;text-align:center;font-size:1rem;color:var(--text-faint);margin-top:-0.4rem">Cargo: ${cargoTagsLabel}</div>` : ''}
     </div>`;
   }
 
@@ -451,7 +440,7 @@
     panel.style.display = '';
 
     if (!h) {
-      panel.innerHTML = `<div style="padding:60px;text-align:center;color:var(--text-dim)">Hull not found — it may have dropped out of the loaded catalog.</div>`;
+      panel.innerHTML = `<div style="padding:6rem;text-align:center;color:var(--text-dim)">Hull not found — it may have dropped out of the loaded catalog.</div>`;
       return;
     }
 
@@ -466,7 +455,7 @@
     ].filter(Boolean).join(' ');
 
     const description = h.description
-      ? `<div style="font-size:12px;color:var(--text-dim);line-height:1.6;font-style:italic;margin-bottom:14px;max-width:820px">${h.description}</div>`
+      ? `<div style="font-size:1.2rem;color:var(--text-dim);line-height:1.6;font-style:italic;margin-bottom:1.4rem;max-width:82rem">${h.description}</div>`
       : '';
 
     // Same padded-to-4-columns convention as designCardHtml()'s statCells/
@@ -517,7 +506,7 @@
                 <span class="dcost">${e.price != null ? designCr(e.price) : '—'}</span>
               </div>`;
             }).join('')
-          : `<div style="padding:6px 2px;color:var(--text-faint);font-size:11px">No catalogued ${label.toLowerCase()} fit this size yet.</div>`;
+          : `<div style="padding:0.6rem 0.2rem;color:var(--text-faint);font-size:1.1rem">No catalogued ${label.toLowerCase()} fit this size yet.</div>`;
         return `<details class="dsub-box reslib-hpcard" style="border-color:${hexA(box.hex,0.3)};background:${box.bg}">
           <summary class="dsub-hd">
             <span class="dsub-badge" style="color:${box.hex};background:${box.bg};border-color:${box.hex}">${sz.toUpperCase()}</span>
@@ -536,13 +525,13 @@
         <div class="dsect-body">${body}</div>
       </div>`;
     }
-    if (!sections) sections = `<div style="padding:30px 10px;text-align:center;color:var(--text-dim);font-size:12px">This hull has no equipment hardpoints.</div>`;
+    if (!sections) sections = `<div style="padding:3rem 1rem;text-align:center;color:var(--text-dim);font-size:1.2rem">This hull has no equipment hardpoints.</div>`;
 
     panel.innerHTML = `
-      ${badges ? `<div style="margin-bottom:10px">${badges}</div>` : ''}
+      ${badges ? `<div style="margin-bottom:1rem">${badges}</div>` : ''}
       ${description}
-      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
+      <div style="display:flex;gap:1.6rem;flex-wrap:wrap;align-items:flex-start">
         ${hullCard}
-        <div style="flex:1;min-width:280px">${sections}</div>
+        <div style="flex:1;min-width:28rem">${sections}</div>
       </div>`;
   }

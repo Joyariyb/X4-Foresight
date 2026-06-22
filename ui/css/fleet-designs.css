@@ -11,23 +11,23 @@
 
     /* ── FLEET SUB-TABS ── */
     /* Badge style — matches the hull-type chips in the ship tables */
-    .fleet-subtabs { display: flex; gap: 5px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 8px; border-bottom: 1px solid var(--border); margin-bottom: 4px; flex-shrink: 0; scrollbar-width: none; }
+    .fleet-subtabs { display: flex; gap: 0.5rem; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 0.8rem; border-bottom: 1px solid var(--border); margin-bottom: 0.4rem; flex-shrink: 0; scrollbar-width: none; }
     .fleet-subtabs::-webkit-scrollbar { display: none; }
-    .fleet-subtab { padding: 3px 10px; display: flex; align-items: center; gap: 5px; font-family: var(--font-cond); font-weight: 600; font-size: 14px; letter-spacing: 0.06em; color: var(--tab-color, var(--text-dim)); background: var(--tab-bg, var(--bg-card)); border: 1px solid var(--tab-border, var(--border)); border-radius: 2px; cursor: pointer; user-select: none; white-space: nowrap; flex-shrink: 0; transition: border-color 0.12s; }
+    .fleet-subtab { padding: 0.3rem 1rem; display: flex; align-items: center; gap: 0.5rem; font-family: var(--font-cond); font-weight: 600; font-size: 1.4rem; letter-spacing: 0.06em; color: var(--tab-color, var(--text-dim)); background: var(--tab-bg, var(--bg-card)); border: 1px solid var(--tab-border, var(--border)); border-radius: 0.2rem; cursor: pointer; user-select: none; white-space: nowrap; flex-shrink: 0; transition: border-color 0.12s; }
     .fleet-subtab:hover { border-color: var(--tab-color, var(--text-faint)); }
     .fleet-subtab.active { border-color: var(--tab-color, var(--teal)); box-shadow: 0 0 0 1px var(--tab-color, var(--teal)); }
-    .ft-count { font-family: var(--font-mono); font-size: 10px; opacity: 0.6; }
-    .fleet-panel { display: none; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
+    .ft-count { font-family: var(--font-mono); font-size: 1rem; opacity: 0.6; }
+    .fleet-panel { display: none; flex-direction: column; gap: 1.2rem; flex: 1; min-height: 0; }
     .fleet-panel.active { display: flex; }
 
     /* ── DESIGNS FILTER BAR ──
        Size chips reuse .fleet-subtab so they read as the same control as every
        other chip strip in the app; the faction picker reuses .bhull (icon +
        native select) from the blueprint builder below for the same reason. */
-    .designs-filter-bar { display: flex; align-items: center; gap: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-    .dfb-group { display: flex; align-items: center; gap: 6px; }
-    .dfb-label { font-family: var(--font-cond); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); flex-shrink: 0; }
-    .dfb-count { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
+    .designs-filter-bar { display: flex; align-items: center; gap: 1.6rem; padding-bottom: 0.8rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .dfb-group { display: flex; align-items: center; gap: 0.6rem; }
+    .dfb-label { font-family: var(--font-cond); font-size: 1.1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); flex-shrink: 0; }
+    .dfb-count { font-family: var(--font-mono); font-size: 1.1rem; color: var(--text-dim); }
 
     /* ── SHIP DESIGN CARDS ──
        Each card splits into a left equipment column (one bounded .dsect panel
@@ -36,77 +36,77 @@
        alongside it later without reshaping the equipment side. */
     /* <details>/<summary> — same collapse idiom as .sd-ships in the Sectors
        tab. Open by default; collapsing hides everything but the title bar. */
-    .dcard { padding: 14px; margin-bottom: 12px; }
-    .dcard-hd { display: flex; align-items: center; gap: 10px; padding-bottom: 8px; margin-bottom: 10px; cursor: pointer; list-style: none; user-select: none; }
+    .dcard { padding: 1.4rem; margin-bottom: 1.2rem; }
+    .dcard-hd { display: flex; align-items: center; gap: 1rem; padding-bottom: 0.8rem; margin-bottom: 1rem; cursor: pointer; list-style: none; user-select: none; }
     .dcard-hd::-webkit-details-marker { display: none; }
     .dcard[open] > .dcard-hd { border-bottom: 1px solid var(--border); }
-    .dcard-title { font-family: var(--font-cond); font-weight: 600; font-size: 16px; color: var(--text); white-space: nowrap; }
+    .dcard-title { font-family: var(--font-cond); font-weight: 600; font-size: 1.6rem; color: var(--text); white-space: nowrap; }
     /* Summary strip (size + faction + ship count) — only useful while the card
        is collapsed, since the same info is already visible in the expanded
        body (hull panel + footer), so it hides once the card is open. */
-    .dcard-meta { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-dim); white-space: nowrap; overflow: hidden; }
+    .dcard-meta { margin-left: auto; display: flex; align-items: center; gap: 1rem; font-size: 1.2rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; }
     .dcard[open] .dcard-meta { display: none; }
-    .dcard-size-badge { flex-shrink: 0; display: inline-block; font-family: var(--font-mono); font-weight: 600; font-size: 10px; letter-spacing: 0.04em; padding: 1px 7px; border-radius: 2px; border: 1px solid; }
+    .dcard-size-badge { flex-shrink: 0; display: inline-block; font-family: var(--font-mono); font-weight: 600; font-size: 1rem; letter-spacing: 0.04em; padding: 1px 0.7rem; border-radius: 0.2rem; border: 1px solid; }
     .dcard-meta-used { flex-shrink: 0; }
-    .dcard-chev { flex-shrink: 0; font-size: 15px; color: var(--text-faint); transition: transform 0.15s; transform: rotate(-90deg); }
+    .dcard-chev { flex-shrink: 0; font-size: 1.5rem; color: var(--text-faint); transition: transform 0.15s; transform: rotate(-90deg); }
     .dcard[open] .dcard-chev { transform: rotate(0deg); }
-    .dcard-body { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 14px; align-items: start; }
+    .dcard-body { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 1.4rem; align-items: start; }
     .dcard-equip { display: flex; flex-direction: column; min-width: 0; }
     /* Footer: "used by" sits bottom-left, Design total starts at the column
        boundary (the card's horizontal centre) so it reads as right-of-centre
        while staying baseline-aligned with "used by", not pinned to the edge. */
-    .dcard-footer { display: grid; grid-template-columns: 1fr 1fr; align-items: baseline; border-top: 1px solid var(--border); margin-top: 10px; padding-top: 9px; }
-    .dcard-used { cursor: pointer; color: var(--text-dim); font-size: 12px; white-space: nowrap; }
-    .dcard-used i { margin-left: 2px; font-size: 11px; transition: transform 0.15s; display: inline-block; }
+    .dcard-footer { display: grid; grid-template-columns: 1fr 1fr; align-items: baseline; border-top: 1px solid var(--border); margin-top: 1rem; padding-top: 0.9rem; }
+    .dcard-used { cursor: pointer; color: var(--text-dim); font-size: 1.2rem; white-space: nowrap; }
+    .dcard-used i { margin-left: 0.2rem; font-size: 1.1rem; transition: transform 0.15s; display: inline-block; }
     .dcard-used.open i { transform: rotate(180deg); }
-    .dcard-total-val { font-family: var(--font-cond); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-dim); }
-    .dcard-total-val b { font-family: var(--font-mono); font-weight: 400; font-size: 15px; letter-spacing: 0; text-transform: none; color: var(--amber); }
+    .dcard-total-val { font-family: var(--font-cond); font-size: 1.2rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-dim); }
+    .dcard-total-val b { font-family: var(--font-mono); font-weight: 400; font-size: 1.5rem; letter-spacing: 0; text-transform: none; color: var(--amber); }
     /* The "stylized green box" ship list — same lime border/glow/tint as the
        blueprint builder's .bfit / .bopts panels. */
-    .dcard-ships { display: none; gap: 6px; flex-wrap: wrap; margin-top: 9px; padding: 9px; border: 1px solid rgba(57,255,20,0.35); border-radius: 4px; background: rgba(57,255,20,0.06); box-shadow: 0 0 10px rgba(57,255,20,0.12); }
+    .dcard-ships { display: none; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.9rem; padding: 0.9rem; border: 1px solid rgba(57,255,20,0.35); border-radius: 0.4rem; background: rgba(57,255,20,0.06); box-shadow: 0 0 1rem rgba(57,255,20,0.12); }
 
-    .dsect { border: 1px solid var(--border); border-radius: 4px; background: var(--bg-panel); margin-bottom: 8px; overflow: hidden; }
-    .dsect-hd { display: flex; align-items: center; gap: 8px; padding: 5px 10px; border-bottom: 1px solid var(--border); }
-    .dsect-hd i { font-size: 15px; }
-    .dsect-hd .lbl { font-family: var(--font-cond); font-weight: 600; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; }
-    .dsect-hd .slots { margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); }
-    .dsect-body { padding: 5px 10px 7px; }
+    .dsect { border: 1px solid var(--border); border-radius: 0.4rem; background: var(--bg-panel); margin-bottom: 0.8rem; overflow: hidden; }
+    .dsect-hd { display: flex; align-items: center; gap: 0.8rem; padding: 0.5rem 1rem; border-bottom: 1px solid var(--border); }
+    .dsect-hd i { font-size: 1.5rem; }
+    .dsect-hd .lbl { font-family: var(--font-cond); font-weight: 600; font-size: 1.3rem; letter-spacing: 0.06em; text-transform: uppercase; }
+    .dsect-hd .slots { margin-left: auto; font-family: var(--font-mono); font-size: 1rem; color: var(--text-dim); }
+    .dsect-body { padding: 0.5rem 1rem 0.7rem; }
     /* Per-size sub-group inside a category body — each mount size (L, M, ...)
        gets its own outlined, mostly-transparent "inner box" (border/bg tinted
        per SIZE_BOX in JS) so items fitted under different sizes read as
        physically separate compartments rather than one flat list. */
-    .dsub-box { border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px 6px; margin-top: 6px; }
+    .dsub-box { border: 1px solid var(--border); border-radius: 0.4rem; padding: 0.3rem 0.8rem 0.6rem; margin-top: 0.6rem; }
     .dsub-box:first-child { margin-top: 0; }
-    .dsub-hd { display: flex; align-items: center; gap: 8px; padding: 3px 0 3px; }
-    .dsub-badge { font-family: var(--font-mono); font-weight: 700; font-size: 10px; letter-spacing: 0.04em; padding: 1px 7px; border-radius: 2px; border: 1px solid; }
-    .dsub-cnt { margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); }
+    .dsub-hd { display: flex; align-items: center; gap: 0.8rem; padding: 0.3rem 0 0.3rem; }
+    .dsub-badge { font-family: var(--font-mono); font-weight: 700; font-size: 1rem; letter-spacing: 0.04em; padding: 1px 0.7rem; border-radius: 0.2rem; border: 1px solid; }
+    .dsub-cnt { margin-left: auto; font-family: var(--font-mono); font-size: 1rem; color: var(--text-faint); }
     /* Narrower than the old full-width card row — this now lives in a half-card
        column, so every fixed column lost a few px versus the original layout. */
-    .drow { display: grid; grid-template-columns: 28px 38px minmax(70px,1fr) 44px 44px 44px 44px 64px; align-items: center; gap: 4px 6px; padding: 2px 0; }
-    .dhd   { font-size: 9px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-faint); text-align: right; }
-    .dst   { font-family: var(--font-mono); font-size: 11px; color: var(--text); text-align: right; }
-    .dcost { font-family: var(--font-mono); font-size: 11px; color: var(--amber); text-align: right; }
-    .dcnt  { font-family: var(--font-mono); color: var(--lime); font-size: 12px; text-align: right; }
-    .dnm   { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .drow { display: grid; grid-template-columns: 2.8rem 3.8rem minmax(7rem,1fr) 4.4rem 4.4rem 4.4rem 4.4rem 6.4rem; align-items: center; gap: 0.4rem 0.6rem; padding: 0.2rem 0; }
+    .dhd   { font-size: 0.9rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-faint); text-align: right; }
+    .dst   { font-family: var(--font-mono); font-size: 1.1rem; color: var(--text); text-align: right; }
+    .dcost { font-family: var(--font-mono); font-size: 1.1rem; color: var(--amber); text-align: right; }
+    .dcnt  { font-family: var(--font-mono); color: var(--lime); font-size: 1.2rem; text-align: right; }
+    .dnm   { font-size: 1.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     /* ── HULL PREVIEW PANEL (right half of a design card) ──
        Border/glow colour comes from --dhull-border / --dhull-glow, set inline
        per-card (faction colour at low alpha) — color-mix() isn't used here
        since QtWebEngine's bundled Chromium version isn't guaranteed to support it. */
-    .dhull { border: 1px solid var(--dhull-border, rgba(45,212,191,0.35)); border-radius: 4px; background: radial-gradient(ellipse at 50% 0%, var(--dhull-glow, rgba(45,212,191,0.08)), var(--bg-panel) 70%); padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-    .dhull-hd { align-self: flex-start; display: flex; align-items: center; gap: 7px; }
-    .dhull-hd i { font-size: 14px; }
-    .dhull-hd .lbl { font-family: var(--font-cond); font-weight: 600; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); }
-    .dhull-wire { width: 100%; max-width: 260px; padding: 10px 0; }
+    .dhull { border: 1px solid var(--dhull-border, rgba(45,212,191,0.35)); border-radius: 0.4rem; background: radial-gradient(ellipse at 50% 0%, var(--dhull-glow, rgba(45,212,191,0.08)), var(--bg-panel) 70%); padding: 1.2rem; display: flex; flex-direction: column; align-items: center; gap: 0.8rem; }
+    .dhull-hd { align-self: flex-start; display: flex; align-items: center; gap: 0.7rem; }
+    .dhull-hd i { font-size: 1.4rem; }
+    .dhull-hd .lbl { font-family: var(--font-cond); font-weight: 600; font-size: 1.2rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); }
+    .dhull-wire { width: 100%; max-width: 26rem; padding: 1rem 0; }
     .dhull-wire svg { width: 100%; height: auto; display: block; }
-    .dhull-id { display: flex; align-items: center; gap: 8px; }
-    .dhull-nm { font-family: var(--font-cond); font-weight: 600; font-size: 15px; color: var(--text); }
-    .dhull-stats { width: 100%; display: flex; gap: 8px; border-top: 1px solid var(--border); padding-top: 8px; }
-    .dhull-stat { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-    .dhs-lbl { font-size: 9px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-faint); }
+    .dhull-id { display: flex; align-items: center; gap: 0.8rem; }
+    .dhull-nm { font-family: var(--font-cond); font-weight: 600; font-size: 1.5rem; color: var(--text); }
+    .dhull-stats { width: 100%; display: flex; gap: 0.8rem; border-top: 1px solid var(--border); padding-top: 0.8rem; }
+    .dhull-stat { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
+    .dhs-lbl { font-size: 0.9rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-faint); }
     /* min-width:0 above lets this wrap instead of overflowing for longer
        values like role names ("Miner (Solid)") now that there are 4 columns. */
-    .dhs-val { font-family: var(--font-mono); font-size: 13px; color: var(--text); text-align: center; }
+    .dhs-val { font-family: var(--font-mono); font-size: 1.3rem; color: var(--text); text-align: center; }
 
     /* ── HULL COMPARISON (Resource Library) ──
        Two .dhull cards (reused as-is) + a third summary card of head-to-head
@@ -114,111 +114,111 @@
        always the bottom — fixed position, not faction-tinted, so the eye
        only has to track "top vs bottom" rather than re-learn a colour key
        per pair of hulls compared. */
-    .hcmp-wrap    { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
-    .hcmp-col     { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 260px; max-width: 320px; }
-    .hcmp-summary { flex: 1; min-width: 280px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-panel); padding: 12px; }
-    .hcmp-summary-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 200px; color: var(--text-dim); text-align: center; }
-    .hcmp-summary-empty i { font-size: 28px; color: var(--teal); opacity: 0.5; }
-    .hcmp-row     { display: flex; flex-direction: column; gap: 3px; padding: 7px 0; border-bottom: 1px solid var(--border); }
+    .hcmp-wrap    { display: flex; gap: 1.6rem; flex-wrap: wrap; align-items: flex-start; }
+    .hcmp-col     { display: flex; flex-direction: column; gap: 0.8rem; flex: 1; min-width: 26rem; max-width: 32rem; }
+    .hcmp-summary { flex: 1; min-width: 28rem; border: 1px solid var(--border); border-radius: 0.4rem; background: var(--bg-panel); padding: 1.2rem; }
+    .hcmp-summary-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.8rem; min-height: 20rem; color: var(--text-dim); text-align: center; }
+    .hcmp-summary-empty i { font-size: 2.8rem; color: var(--teal); opacity: 0.5; }
+    .hcmp-row     { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.7rem 0; border-bottom: 1px solid var(--border); }
     .hcmp-row:last-child { border-bottom: none; }
-    .hcmp-lbl     { font-family: var(--font-cond); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); }
-    .hcmp-label   { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--text-faint); color: var(--bg-panel); font-family: var(--font-mono); font-weight: 700; font-size: 10px; flex-shrink: 0; }
-    .hcmp-bar-line  { display: flex; align-items: center; gap: 8px; }
-    .hcmp-bar-track { flex: 1; height: 10px; background: rgba(255,255,255,0.04); border-radius: 2px; overflow: hidden; }
-    .hcmp-bar-fill  { height: 100%; border-radius: 2px; transition: width 0.15s; }
-    .hcmp-val       { font-family: var(--font-mono); font-size: 11px; min-width: 70px; text-align: right; flex-shrink: 0; }
+    .hcmp-lbl     { font-family: var(--font-cond); font-size: 1.1rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); }
+    .hcmp-label   { width: 1.8rem; height: 1.8rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--text-faint); color: var(--bg-panel); font-family: var(--font-mono); font-weight: 700; font-size: 1rem; flex-shrink: 0; }
+    .hcmp-bar-line  { display: flex; align-items: center; gap: 0.8rem; }
+    .hcmp-bar-track { flex: 1; height: 1rem; background: rgba(255,255,255,0.04); border-radius: 0.2rem; overflow: hidden; }
+    .hcmp-bar-fill  { height: 100%; border-radius: 0.2rem; transition: width 0.15s; }
+    .hcmp-val       { font-family: var(--font-mono); font-size: 1.1rem; min-width: 7rem; text-align: right; flex-shrink: 0; }
     /* Placeholder card shown in a column before a hull's picked — dashed
        border distinguishes it from a real .dhull (solid, faction-tinted)
        at a glance, same footprint so picking a hull doesn't reflow the row. */
-    .hcmp-empty-card { border-style: dashed; min-height: 220px; justify-content: center; }
-    .hcmp-empty-msg  { color: var(--text-faint); font-size: 12px; text-align: center; }
+    .hcmp-empty-card { border-style: dashed; min-height: 22rem; justify-content: center; }
+    .hcmp-empty-msg  { color: var(--text-faint); font-size: 1.2rem; text-align: center; }
 
     /* ── BLUEPRINT BUILDER — two-pane master/detail ── */
-    .bhdr   { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 12px; }
-    .bfield { display: flex; flex-direction: column; gap: 3px; }
-    .blbl   { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--lime); font-family: var(--font-mono); }
-    .binput { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 3px; color: var(--text); font-family: var(--font-cond); font-weight: 600; font-size: 16px; padding: 6px 10px; }
+    .bhdr   { display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; margin-bottom: 1.2rem; }
+    .bfield { display: flex; flex-direction: column; gap: 0.3rem; }
+    .blbl   { font-size: 0.9rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--lime); font-family: var(--font-mono); }
+    .binput { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 0.3rem; color: var(--text); font-family: var(--font-cond); font-weight: 600; font-size: 1.6rem; padding: 0.6rem 1rem; }
     .binput:focus { outline: none; border-color: var(--teal); }
-    .bhull  { display: flex; align-items: center; gap: 8px; border: 1px solid rgba(45,212,191,0.4); border-radius: 3px; background: var(--bg-panel); padding: 5px 8px 5px 10px; }
-    .bhull select { background: var(--bg-panel); border: none; color: var(--text); font-family: var(--font-cond); font-size: 14px; max-width: 220px; cursor: pointer; }
+    .bhull  { display: flex; align-items: center; gap: 0.8rem; border: 1px solid rgba(45,212,191,0.4); border-radius: 0.3rem; background: var(--bg-panel); padding: 0.5rem 0.8rem 0.5rem 1rem; }
+    .bhull select { background: var(--bg-panel); border: none; color: var(--text); font-family: var(--font-cond); font-size: 1.4rem; max-width: 22rem; cursor: pointer; }
     .bhull select:focus { outline: none; }
-    .bsave  { background: rgba(57,255,20,0.1); border: 1px solid var(--lime); color: var(--lime); border-radius: 3px; padding: 8px 16px; font-family: var(--font-cond); font-weight: 600; font-size: 14px; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; }
-    .bsave:hover { filter: drop-shadow(0 0 6px rgba(57,255,20,0.45)); }
-    .btwo   { display: grid; grid-template-columns: 300px minmax(0,1fr); gap: 12px; align-items: start; }
-    .bcat   { border: 1px solid var(--border); border-radius: 4px; background: var(--bg-panel); margin-bottom: 7px; padding-bottom: 7px; }
-    .bcat-h { display: flex; align-items: center; gap: 8px; padding: 5px 9px; }
-    .bcat-h i { font-size: 15px; }
-    .bcat-h .lbl { font-family: var(--font-cond); font-weight: 600; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; }
-    .bcat-h .cap { margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); }
+    .bsave  { background: rgba(57,255,20,0.1); border: 1px solid var(--lime); color: var(--lime); border-radius: 0.3rem; padding: 0.8rem 1.6rem; font-family: var(--font-cond); font-weight: 600; font-size: 1.4rem; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; }
+    .bsave:hover { filter: drop-shadow(0 0 0.6rem rgba(57,255,20,0.45)); }
+    .btwo   { display: grid; grid-template-columns: 30rem minmax(0,1fr); gap: 1.2rem; align-items: start; }
+    .bcat   { border: 1px solid var(--border); border-radius: 0.4rem; background: var(--bg-panel); margin-bottom: 0.7rem; padding-bottom: 0.7rem; }
+    .bcat-h { display: flex; align-items: center; gap: 0.8rem; padding: 0.5rem 0.9rem; }
+    .bcat-h i { font-size: 1.5rem; }
+    .bcat-h .lbl { font-family: var(--font-cond); font-weight: 600; font-size: 1.3rem; letter-spacing: 0.06em; text-transform: uppercase; }
+    .bcat-h .cap { margin-left: auto; font-family: var(--font-mono); font-size: 1rem; color: var(--text-dim); }
     /* Same per-size "inner box" idiom as .dsub-box on the design cards — each
        mount size is its own outlined, mostly-transparent compartment (tinted
        per SIZE_BOX in JS), with its own Fit button scoped to that size only. */
-    .bsub-box { border: 1px solid var(--border); border-radius: 4px; margin: 0 9px 6px; padding: 3px 7px 6px; }
-    .bsub-box.sel { border-color: var(--lime) !important; box-shadow: 0 0 9px rgba(57,255,20,0.2); }
-    .bsub-hd { display: flex; align-items: center; gap: 8px; padding: 3px 2px 3px; }
-    .bsub-badge { font-family: var(--font-mono); font-weight: 700; font-size: 9px; letter-spacing: 0.04em; padding: 1px 6px; border-radius: 2px; border: 1px solid; }
-    .bsub-cnt { margin-left: auto; font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); }
-    .bfr    { display: flex; align-items: center; gap: 9px; padding: 3px 2px; }
-    .bstep  { display: flex; align-items: center; gap: 5px; }
-    .bsb    { width: 17px; height: 17px; display: flex; align-items: center; justify-content: center; border: 1px solid #30363d; border-radius: 2px; color: var(--text-dim); font-family: var(--font-mono); font-size: 12px; cursor: pointer; user-select: none; }
+    .bsub-box { border: 1px solid var(--border); border-radius: 0.4rem; margin: 0 0.9rem 0.6rem; padding: 0.3rem 0.7rem 0.6rem; }
+    .bsub-box.sel { border-color: var(--lime) !important; box-shadow: 0 0 0.9rem rgba(57,255,20,0.2); }
+    .bsub-hd { display: flex; align-items: center; gap: 0.8rem; padding: 0.3rem 0.2rem 0.3rem; }
+    .bsub-badge { font-family: var(--font-mono); font-weight: 700; font-size: 0.9rem; letter-spacing: 0.04em; padding: 1px 0.6rem; border-radius: 0.2rem; border: 1px solid; }
+    .bsub-cnt { margin-left: auto; font-family: var(--font-mono); font-size: 0.9rem; color: var(--text-faint); }
+    .bfr    { display: flex; align-items: center; gap: 0.9rem; padding: 0.3rem 0.2rem; }
+    .bstep  { display: flex; align-items: center; gap: 0.5rem; }
+    .bsb    { width: 1.7rem; height: 1.7rem; display: flex; align-items: center; justify-content: center; border: 1px solid #30363d; border-radius: 0.2rem; color: var(--text-dim); font-family: var(--font-mono); font-size: 1.2rem; cursor: pointer; user-select: none; }
     .bsb:hover { border-color: var(--teal); color: var(--teal); }
-    .bcbox  { min-width: 24px; text-align: center; font-family: var(--font-mono); font-size: 12px; color: var(--lime); border: 1px solid rgba(45,212,191,0.4); border-radius: 3px; padding: 1px 4px; background: rgba(45,212,191,0.06); }
-    .bfit   { display: block; margin: 5px 0 0; text-align: center; padding: 5px; border: 1px solid var(--lime); border-radius: 3px; color: var(--lime); font-family: var(--font-cond); font-weight: 600; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; background: rgba(57,255,20,0.06); }
-    .bfit:hover { box-shadow: 0 0 9px rgba(57,255,20,0.3); }
-    .bopts  { border: 1px solid rgba(57,255,20,0.35); border-radius: 4px; background: var(--bg-panel); box-shadow: 0 0 10px rgba(57,255,20,0.12); }
-    .bopts-h { display: flex; align-items: center; gap: 8px; padding: 5px 9px; border-bottom: 1px solid var(--border); background: rgba(57,255,20,0.05); }
-    .bopts-h .lbl { font-family: var(--font-cond); font-weight: 600; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--lime); }
-    .bopts-h .mt { margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); }
+    .bcbox  { min-width: 2.4rem; text-align: center; font-family: var(--font-mono); font-size: 1.2rem; color: var(--lime); border: 1px solid rgba(45,212,191,0.4); border-radius: 0.3rem; padding: 1px 0.4rem; background: rgba(45,212,191,0.06); }
+    .bfit   { display: block; margin: 0.5rem 0 0; text-align: center; padding: 0.5rem; border: 1px solid var(--lime); border-radius: 0.3rem; color: var(--lime); font-family: var(--font-cond); font-weight: 600; font-size: 1.2rem; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; background: rgba(57,255,20,0.06); }
+    .bfit:hover { box-shadow: 0 0 0.9rem rgba(57,255,20,0.3); }
+    .bopts  { border: 1px solid rgba(57,255,20,0.35); border-radius: 0.4rem; background: var(--bg-panel); box-shadow: 0 0 1rem rgba(57,255,20,0.12); }
+    .bopts-h { display: flex; align-items: center; gap: 0.8rem; padding: 0.5rem 0.9rem; border-bottom: 1px solid var(--border); background: rgba(57,255,20,0.05); }
+    .bopts-h .lbl { font-family: var(--font-cond); font-weight: 600; font-size: 1.3rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--lime); }
+    .bopts-h .mt { margin-left: auto; font-family: var(--font-mono); font-size: 1rem; color: var(--text-dim); }
     /* True Stats toggle (weapon/turret hover stats: truncated in-game value vs
        raw 3dp) -- red when off (in-game), green when on (true), so the state
        reads at a glance without needing to read the label. */
-    .bstats-toggle { display: flex; align-items: center; gap: 4px; padding: 2px 8px; font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; user-select: none; border-radius: 2px; transition: color 0.12s, border-color 0.12s, background 0.12s;
+    .bstats-toggle { display: flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0.8rem; font-family: var(--font-mono); font-size: 0.9rem; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; user-select: none; border-radius: 0.2rem; transition: color 0.12s, border-color 0.12s, background 0.12s;
       color: var(--red); border: 1px solid rgba(248,81,73,0.4); background: rgba(248,81,73,0.06); }
-    .bstats-toggle:hover { box-shadow: 0 0 6px rgba(248,81,73,0.25); }
+    .bstats-toggle:hover { box-shadow: 0 0 0.6rem rgba(248,81,73,0.25); }
     .bstats-toggle.on { color: var(--lime); border-color: rgba(57,255,20,0.5); background: rgba(57,255,20,0.08); }
-    .bstats-toggle.on:hover { box-shadow: 0 0 6px rgba(57,255,20,0.3); }
+    .bstats-toggle.on:hover { box-shadow: 0 0 0.6rem rgba(57,255,20,0.3); }
     /* Equipment-card faction filter — a multi-select checkbox dropdown sitting
        right after the card title (e.g. "Available · Medium Turrets"). Other
        card filters (besides faction) will land here too, so keep the .beqf-
        prefix generic. */
     .beqf-dd { position: relative; }
-    .beqf-trigger { display: flex; align-items: center; gap: 6px; padding: 2px 8px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; color: var(--text-dim); background: var(--bg-card); border: 1px solid var(--border); border-radius: 2px; cursor: pointer; user-select: none; }
+    .beqf-trigger { display: flex; align-items: center; gap: 0.6rem; padding: 0.2rem 0.8rem; font-family: var(--font-mono); font-size: 1rem; letter-spacing: 0.04em; color: var(--text-dim); background: var(--bg-card); border: 1px solid var(--border); border-radius: 0.2rem; cursor: pointer; user-select: none; }
     .beqf-trigger:hover { border-color: var(--lime); color: var(--lime); }
-    .beqf-trigger .ti-chevron-down { font-size: 11px; }
-    .beqf-menu { display: none; position: absolute; top: calc(100% + 4px); left: 0; z-index: 50; flex-direction: column; gap: 2px; min-width: 140px; max-height: 50vh; overflow-y: auto; padding: 5px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 3px; box-shadow: 0 4px 14px rgba(0,0,0,0.45); scrollbar-width: thin; }
+    .beqf-trigger .ti-chevron-down { font-size: 1.1rem; }
+    .beqf-menu { display: none; position: absolute; top: calc(100% + 0.4rem); left: 0; z-index: 50; flex-direction: column; gap: 0.2rem; min-width: 14rem; max-height: 50vh; overflow-y: auto; padding: 0.5rem; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 0.3rem; box-shadow: 0 0.4rem 1.4rem rgba(0,0,0,0.45); scrollbar-width: thin; }
     .beqf-menu.open { display: flex; }
-    .beqf-item { display: flex; align-items: center; gap: 7px; padding: 5px 8px; border-radius: 3px; cursor: pointer; font-family: var(--font-cond); font-size: 12px; letter-spacing: 0.04em; white-space: nowrap; }
+    .beqf-item { display: flex; align-items: center; gap: 0.7rem; padding: 0.5rem 0.8rem; border-radius: 0.3rem; cursor: pointer; font-family: var(--font-cond); font-size: 1.2rem; letter-spacing: 0.04em; white-space: nowrap; }
     .beqf-item:hover { background: rgba(255,255,255,0.05); }
     .beqf-item.sel { background: rgba(57,255,20,0.08); }
-    .beqf-check { width: 13px; height: 13px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 1.5px solid var(--lime); border-radius: 3px; }
-    .beqf-check.sel::after { content: ''; width: 7px; height: 7px; background: var(--lime); border-radius: 1px; }
-    .borow  { display: grid; grid-template-columns: 42px minmax(0,1fr) 50px 50px 50px 50px 62px 22px; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 3px; cursor: pointer; }
-    .borow:hover { background: rgba(45,212,191,0.38); box-shadow: inset 3px 0 0 var(--teal); }
+    .beqf-check { width: 1.3rem; height: 1.3rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 0.15rem solid var(--lime); border-radius: 0.3rem; }
+    .beqf-check.sel::after { content: ''; width: 0.7rem; height: 0.7rem; background: var(--lime); border-radius: 1px; }
+    .borow  { display: grid; grid-template-columns: 4.2rem minmax(0,1fr) 5rem 5rem 5rem 5rem 6.2rem 2.2rem; align-items: center; gap: 0.8rem; padding: 0.4rem 0.8rem; border-radius: 0.3rem; cursor: pointer; }
+    .borow:hover { background: rgba(45,212,191,0.38); box-shadow: inset 0.3rem 0 0 var(--teal); }
     .borow.on { background: rgba(57,255,20,0.08); box-shadow: inset 0 0 0 1px rgba(57,255,20,0.35); }
-    .boh    { font-size: 9px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-faint); text-align: right; }
+    .boh    { font-size: 0.9rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-faint); text-align: right; }
     /* Diplomacy panels — own class so the fleet switcher can't toggle them. */
-    .diplo-panel { display: none; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
+    .diplo-panel { display: none; flex-direction: column; gap: 1.2rem; flex: 1; min-height: 0; }
     .diplo-panel.active { display: flex; }
     /* Relations matrix grid. Sticky headers keep faction labels visible while
        the ~21-column grid scrolls in both directions inside its .panel. */
-    .diplo-matrix { border-collapse: separate; border-spacing: 2px; font-family: var(--font-mono); font-size: 11px; }
-    .diplo-matrix th { font-family: var(--font-cond); font-weight: 600; font-size: 12px; letter-spacing: 0.04em; color: var(--text-dim); padding: 2px 5px; text-align: center; white-space: nowrap; }
+    .diplo-matrix { border-collapse: separate; border-spacing: 0.2rem; font-family: var(--font-mono); font-size: 1.1rem; }
+    .diplo-matrix th { font-family: var(--font-cond); font-weight: 600; font-size: 1.2rem; letter-spacing: 0.04em; color: var(--text-dim); padding: 0.2rem 0.5rem; text-align: center; white-space: nowrap; }
     .diplo-matrix thead th { position: sticky; top: 0; background: var(--bg-panel); z-index: 2; }
-    .diplo-matrix th.dm-row { position: sticky; left: 0; background: var(--bg-panel); text-align: right; padding-right: 9px; cursor: pointer; z-index: 1; }
+    .diplo-matrix th.dm-row { position: sticky; left: 0; background: var(--bg-panel); text-align: right; padding-right: 0.9rem; cursor: pointer; z-index: 1; }
     .diplo-matrix thead th.dm-row { z-index: 3; cursor: default; } /* corner cell sits above both axes */
     .diplo-matrix th.dm-row:hover { color: var(--teal); }
-    .diplo-matrix td { min-width: 40px; height: 24px; text-align: center; border-radius: 2px; }
+    .diplo-matrix td { min-width: 4rem; height: 2.4rem; text-align: center; border-radius: 0.2rem; }
     .diplo-matrix td.dm-empty { background: rgba(255,255,255,0.02); color: var(--text-faint); }
     /* Faction selector: a dropdown built from the same .fleet-subtab button, with
        the Matrix toggle sitting beside it as a peer (not inside the list). */
-    .diplo-controls { display: flex; gap: 5px; align-items: center; padding-bottom: 8px; border-bottom: 1px solid var(--border); margin-bottom: 4px; flex-shrink: 0; }
+    .diplo-controls { display: flex; gap: 0.5rem; align-items: center; padding-bottom: 0.8rem; border-bottom: 1px solid var(--border); margin-bottom: 0.4rem; flex-shrink: 0; }
     .diplo-dd { position: relative; }
-    .diplo-dd-trigger { min-width: 150px; justify-content: space-between; }
-    .diplo-dd-menu { display: none; position: absolute; top: calc(100% + 5px); left: 0; z-index: 50; flex-direction: column; gap: 3px; min-width: 100%; max-height: 60vh; overflow-y: auto; padding: 5px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 3px; box-shadow: 0 4px 14px rgba(0,0,0,0.45); scrollbar-width: thin; }
+    .diplo-dd-trigger { min-width: 15rem; justify-content: space-between; }
+    .diplo-dd-menu { display: none; position: absolute; top: calc(100% + 0.5rem); left: 0; z-index: 50; flex-direction: column; gap: 0.3rem; min-width: 100%; max-height: 60vh; overflow-y: auto; padding: 0.5rem; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 0.3rem; box-shadow: 0 0.4rem 1.4rem rgba(0,0,0,0.45); scrollbar-width: thin; }
     .diplo-dd-menu.open { display: flex; }
     .diplo-dd-menu .fleet-subtab { width: 100%; }
 
     /* ── SHIP NAME SUBLINE ── */
     /* Displayed below the code in the fleet table Code cell */
-    .ship-name { font-size: 13px; color: var(--teal); font-family: var(--font-mono); font-weight: 700; white-space: nowrap; }
+    .ship-name { font-size: 1.3rem; color: var(--teal); font-family: var(--font-mono); font-weight: 700; white-space: nowrap; }
 
