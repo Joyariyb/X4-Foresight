@@ -523,6 +523,18 @@ def _hull_catalog() -> dict:
 
 # ── Top-level assembly ─────────────────────────────────────────────────────────
 
+def resource_library_export() -> dict:
+    """Equipment/hull catalog (macro -> stats), independent of any scan or DB —
+    both come straight from the static, pre-generated SHIP_STATS/EQUIPMENT_STATS
+    data files. Used by the bridge's standalone get_resource_library() call so
+    the Resource Library tab works before any scan has ever been run.
+    """
+    return {
+        'equipment_catalog': dict(EQUIPMENT_STATS),
+        'hull_catalog': _hull_catalog(),
+    }
+
+
 def to_export(conn: sqlite3.Connection, scan_id: int | None = None) -> dict:
     """Build the export dict for one scan (default: the latest)."""
     if scan_id is None:
@@ -583,22 +595,21 @@ def to_export(conn: sqlite3.Connection, scan_id: int | None = None) -> dict:
             }
             for r in conn.execute("SELECT * FROM ware_prices ORDER BY ware_id")
         },
-        # Full equipment catalog (macro → name/stats/price), invariant across
-        # scans. Embedded here so both the bridge and the dev-browser fetch path
-        # get it; the blueprint builder's fit panel reads it to list compatible
-        # gear per slot/size.
-        'equipment_catalog': dict(EQUIPMENT_STATS),
-        # All buildable hulls (name + slot layout + price) for the builder's
-        # hull selector.
-        'hull_catalog': _hull_catalog(),
     }
 
 
 def write_export(conn: sqlite3.Connection,
                  out_path: str | Path,
                  scan_id: int | None = None) -> Path:
-    """Build the export and write it to out_path as pretty JSON. Returns the path."""
+    """Build the export and write it to out_path as pretty JSON. Returns the path.
+
+    Merges in resource_library_export() (equipment_catalog/hull_catalog) so
+    the written file stays self-contained — it's the only thing the no-bridge
+    plain-browser dev fallback can load, since that mode has no Python runtime
+    to call the bridge's standalone get_resource_library() with.
+    """
     data = to_export(conn, scan_id)
+    data.update(resource_library_export())
     out = Path(out_path)
     out.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding='utf-8')
     return out

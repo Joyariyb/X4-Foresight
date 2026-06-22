@@ -258,12 +258,29 @@
     });
   }
 
+  // Equipment/hull catalog is static (shipped with the program, not derived
+  // from any save) — fetched once via its own scan-independent bridge call so
+  // Resource Library works even before a scan has ever been run. Scan
+  // payloads no longer carry this data (see populate.js), so this is the
+  // sole writer of EQUIPMENT_CATALOG/HULL_CATALOG.
+  function loadResourceLibrary() {
+    if (!_bridge) return;
+    _bridge.get_resource_library(function(jsonStr) {
+      try {
+        const data = JSON.parse(jsonStr);
+        EQUIPMENT_CATALOG = data.equipment_catalog || {};
+        HULL_CATALOG = data.hull_catalog || {};
+      } catch(e) { /* Resource Library stays empty */ }
+    });
+  }
+
   if (window._bridge) {
     // Web build (Pyodide + Web Worker): pyodide-bridge.js already set this
-    // up before this script ran, with the same four-method shape a
-    // QWebChannel bridge has — no handshake needed since both sides are
-    // already JS. Same startup sequence as the QWebChannel branch below.
+    // up before this script ran, with the same method shape a QWebChannel
+    // bridge has — no handshake needed since both sides are already JS. Same
+    // startup sequence as the QWebChannel branch below.
     _bridge = window._bridge;
+    loadResourceLibrary();
     _bridge.list_scans(function(jsonStr) {
       try { populateScanPicker(JSON.parse(jsonStr)); } catch(e) { /* picker stays hidden */ }
     });
@@ -271,6 +288,7 @@
   } else if (typeof qt !== 'undefined' && qt.webChannelTransport) {
     new QWebChannel(qt.webChannelTransport, function(channel) {
       _bridge = channel.objects.bridge;
+      loadResourceLibrary();
       // Build the history picker, then render the latest scan.
       _bridge.list_scans(function(jsonStr) {
         try { populateScanPicker(JSON.parse(jsonStr)); } catch(e) { /* picker stays hidden */ }
@@ -278,6 +296,8 @@
       loadScan(-1);
     });
   } else {
-    // Plain-browser dev mode: no bridge, no history — fall back to the JSON file.
+    // Plain-browser dev mode: no bridge, no history — fall back to the JSON
+    // file, which write_export() embeds the catalog into directly since
+    // there's no bridge here to call get_resource_library() on.
     loadFromJsonFile();
   }

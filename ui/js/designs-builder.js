@@ -3,8 +3,8 @@
   // A "design" is a unique ship configuration: same hull macro + same installed equipment (same macros, same counts).
   // Built entirely from export loadout data; no backend computation. Deployables have no loadout and don't appear.
 
-  let EQUIPMENT_CATALOG = {}; // Set by populate(): macro → {name, stats, price}
-  let HULL_CATALOG = {}; // Set by populate(): macro → {name, class, hardpoints, price}
+  let EQUIPMENT_CATALOG = {}; // Set by scan-loader.js's loadResourceLibrary(): macro → {name, stats, price}
+  let HULL_CATALOG = {}; // Set by scan-loader.js's loadResourceLibrary(): macro → {name, class, hardpoints, price}
 
   // 'ingame' truncates stats like in-game tooltips; 'true' shows raw computed values.
   // Persisted across sessions (verification preference, not per-design state).

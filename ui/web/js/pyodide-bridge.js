@@ -1,6 +1,6 @@
 // Main-thread RPC proxy to scan-worker.js, which owns the one persistent
 // Pyodide instance (and its SQLite DB) for the whole page session. Sets
-// window._bridge to the same four-method shape the desktop's QWebChannel
+// window._bridge to the same method shape the desktop's QWebChannel
 // EmpireBridge has, so ui/js/scan-loader.js needs zero changes beyond the
 // window._bridge branch already added there.
 
@@ -84,6 +84,12 @@ window._bridge = {
 
   get_empire_data(scanId, cb) {
     callWorker("get_empire_data", { scanId })
+      .then(cb)
+      .catch(e => cb(JSON.stringify({ error: String(e) })));
+  },
+
+  get_resource_library(cb) {
+    callWorker("get_resource_library", {})
       .then(cb)
       .catch(e => cb(JSON.stringify({ error: String(e) })));
   },

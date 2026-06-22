@@ -62,7 +62,7 @@ from x4_save_scanner import DB_PATH, JSON_PATH, ROOT_SAVE, _find_game_saves_dir
 # export shape the page consumes, so the file is no longer in the UI's read path.
 # (scanner.run() still writes the JSON for the AI consumer + dev browser fallback.)
 from db.connection import get_connection
-from export.jsonexport import to_export
+from export.jsonexport import to_export, resource_library_export
 
 
 # ── Save discovery + selector ─────────────────────────────────────────────────
@@ -219,6 +219,15 @@ class EmpireBridge(QObject):
             return json.dumps({"ok": success, "cancelled": not success})
         except Exception as e:
             return json.dumps({"ok": False, "error": str(e)})
+
+    @pyqtSlot(result=str)
+    def get_resource_library(self) -> str:
+        """Static equipment/hull catalog — no DB or scan required, so the
+        Resource Library tab works before any scan has ever been run."""
+        try:
+            return json.dumps(resource_library_export(), ensure_ascii=False)
+        except Exception as e:
+            return json.dumps({"error": f"Could not build resource library: {e}"})
 
     @pyqtSlot(int, result=str)
     def get_empire_data(self, scan_id: int = -1) -> str:

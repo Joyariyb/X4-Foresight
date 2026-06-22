@@ -5,9 +5,9 @@
     // Rather than rename every read site, we augment each record IN PLACE with the alias fields the rendering code expects.
     // Originals are left intact.
 
-    // Static catalogs (invariant across scans) for Designs tab
-    EQUIPMENT_CATALOG = data.equipment_catalog || {};
-    HULL_CATALOG = data.hull_catalog || {};
+    // Equipment/hull catalog (Designs tab + Resource Library) is loaded
+    // independently by scan-loader.js's loadResourceLibrary() — it's static,
+    // not derived from the save, so scan payloads no longer carry it.
 
     // Keep the picker button label in sync whenever a scan loads.
     if (data.meta && data.meta.scan_id != null) {

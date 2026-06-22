@@ -16,7 +16,7 @@ from scanner.trade_postprocess import TradePostProcessor
 from x4_save_scanner import resolve_ship_homebases
 from db.connection import get_connection
 from db.write import write_scan
-from export.jsonexport import to_export
+from export.jsonexport import to_export, resource_library_export
 
 # MEMFS path inside Pyodide - this is a fresh, in-memory-per-session database
 # (not the desktop app's on-disk file), so cross-reload history isn't
@@ -69,6 +69,15 @@ def run_scan_from_staged(save_path: str, lang_path: str, progress=None) -> str:
             "error": str(e),
             "traceback": traceback.format_exc(),
         })
+
+
+def get_resource_library() -> str:
+    """Static equipment/hull catalog — no DB or scan required, so the
+    Resource Library tab works before any scan has ever been run."""
+    try:
+        return json.dumps(resource_library_export(), ensure_ascii=False)
+    except Exception as e:
+        return json.dumps({"error": f"Could not build resource library: {e}"})
 
 
 def get_empire_data(scan_id: int = -1) -> str:

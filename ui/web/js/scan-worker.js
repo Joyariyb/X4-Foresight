@@ -101,6 +101,12 @@ import pyweb.web_entry as web_entry
 web_entry.get_empire_data(_scan_id)
 `);
         break;
+      case "get_resource_library":
+        result = pyodide.runPython(`
+import pyweb.web_entry as web_entry
+web_entry.get_resource_library()
+`);
+        break;
       case "list_scans":
         result = pyodide.runPython(`
 import pyweb.web_entry as web_entry
