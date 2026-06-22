@@ -668,15 +668,21 @@
       }).join('');
       const headerCells = [0,1,2,3].map(i => `<span class="boh">${defs[i] ? defs[i][1] : ''}</span>`).join('');
 
-      // Weapon/turret rows carry data-weapon-tip for the full stat hover
-      // (sectors.js's shared tooltip dispatcher) — shields/engines/thrusters
-      // don't have the damage/heat fields it shows, so skip them for now.
+      // Weapon/turret/shield rows carry data-weapon-tip for the full stat
+      // hover (sectors.js's shared tooltip dispatcher routes shield payloads
+      // to shieldTipHtml by e.slot) — engines/thrusters still don't have a
+      // stat hover, so skip them for now.
       // shipHeatFactor rides along in the payload: Time to Overheat is
       // genuinely ship-dependent (the selected hull's <modifiers><weapon
       // heat=>, confirmed against real tooltips this session — Sustained
       // Damage and Cooldown Duration are NOT affected by it), so the tooltip
       // needs to know which hull is currently selected to show it correctly.
-      const wantsTip = sel === 'weapon' || sel === 'turret';
+      const wantsTip = sel === 'weapon' || sel === 'turret' || sel === 'shield';
+      // The True/In-Game Stats toggle only affects weapon/turret's derived,
+      // truncated combat stats (damage rates, overheat/cooldown) -- shields
+      // have no such derived/truncated fields, so the button stays
+      // weapon/turret-only even though the hover itself now covers shields too.
+      const wantsStatsToggle = sel === 'weapon' || sel === 'turret';
       const shipHeatFactor = (HULL_CATALOG[builderState.hull] || {}).weapon_heat_factor || 1;
       const factionFilter = builderState.factionFilter;
       const opts = Object.entries(EQUIPMENT_CATALOG)
@@ -698,7 +704,7 @@
       // carry data-weapon-tip at all. One button: red = off (in-game,
       // truncated like the real tooltip), green = on (raw 3dp, no truncation).
       const trueOn = weaponStatsMode === 'true';
-      const statsToggle = wantsTip ? `<button class="bstats-toggle ${trueOn ? 'on' : ''}"
+      const statsToggle = wantsStatsToggle ? `<button class="bstats-toggle ${trueOn ? 'on' : ''}"
           onclick="setWeaponStatsMode('${trueOn ? 'ingame' : 'true'}')"
           title="${trueOn ? 'Showing True Stats (raw, 3dp, no truncation) — click for In-Game' : 'Showing In-Game stats (truncated to match the real tooltip) — click for True Stats'}">
           <i class="ti ti-flask" style="font-size:11px"></i> True Stats</button>` : '';

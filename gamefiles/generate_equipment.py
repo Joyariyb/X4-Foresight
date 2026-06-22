@@ -57,7 +57,7 @@ _FIELD_ORDER = [
     "damage_rate_burst", "damage_rate_sustained",
     "time_to_overheat", "cooldown_duration",
     # shield
-    "capacity", "recharge_rate", "recharge_delay",
+    "capacity", "recharge_rate", "recharge_delay", "disruption_stability",
     # engine
     "thrust_forward", "thrust_reverse", "travel_thrust", "boost_thrust",
     # thruster
@@ -500,9 +500,22 @@ def load_equipment(idx: CatalogIndex, bullets: dict[str, dict], prices: dict[str
 
         elif slot == "shield":
             recharge = root.find(".//recharge")
-            if (v := _int(recharge, "max"))   is not None: rec["capacity"]       = v
-            if (v := _int(recharge, "rate"))  is not None: rec["recharge_rate"]  = v
-            if (v := _int(recharge, "delay")) is not None: rec["recharge_delay"] = v
+            if (v := _int(recharge, "max"))    is not None: rec["capacity"]       = v
+            if (v := _int(recharge, "rate"))   is not None: rec["recharge_rate"]  = v
+            # delay is genuinely fractional for several races (e.g. Argon M
+            # 12.5s, Xenon L 17.25s) -- _int() was truncating it (12.5 -> 12),
+            # silently wrong for ~25 macros; _round() (1dp) matches how the
+            # file already handles every other non-integer stat.
+            if (v := _round(recharge, "delay")) is not None: rec["recharge_delay"] = v
+            # disruptionstability only appears on M/L/XL shields with their own
+            # separate hull (not on "integrated" shields, which have no
+            # standalone HP to disrupt) -- absence is meaningful, not missing data.
+            if (v := _int(recharge, "disruptionstability")) is not None: rec["disruption_stability"] = v
+            # The shield generator's own hit points -- same concept as
+            # weapon/turret's hull_max above, just read from a different slot's
+            # branch (shields use <hull integrated="1"/> instead when they
+            # have no separate HP, so this is absent for those).
+            if (v := _int(root.find(".//hull"), "max")) is not None: rec["hull_max"] = v
 
         elif slot == "engine":
             thrust = root.find(".//thrust")
@@ -585,7 +598,11 @@ def gen_equipment_py(records: list[dict], aliases: dict[str, str]) -> str:
         "#                    applies at display time once a hull is selected (see\n"
         "#                    ui/js/sectors.js's weaponTipHtml). damage_rate_sustained and\n"
         "#                    cooldown_duration are NOT affected by that factor.\n"
-        "#   shield         — capacity, recharge_rate, recharge_delay\n"
+        "#   shield         — capacity, recharge_rate, recharge_delay, disruption_stability\n"
+        "#                    (resistance to disruptor/ion shutdown — absent on \"integrated\"\n"
+        "#                    shields, which have no separate hull to disrupt), hull_max\n"
+        "#                    (the shield generator's own hit points — also absent when\n"
+        "#                    integrated)\n"
         "#   engine         — thrust_forward, thrust_reverse, travel_thrust, boost_thrust\n"
         "#   thruster       — strafe, pitch, yaw, roll\n"
         "EQUIPMENT_STATS: dict[str, dict] = {\n" +

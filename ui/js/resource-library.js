@@ -366,7 +366,7 @@
     rows = reslibSortRows(rows, reslibSortKey, reslibSortDir, r => r.name || r.macro);
 
     const isMissile = e => e.class === 'missilelauncher' || e.class === 'missileturret';
-    const wantsTip = slot === 'weapon' || slot === 'turret';
+    const wantsTip = slot === 'weapon' || slot === 'turret' || slot === 'shield';
 
     document.getElementById('reslib-thead').innerHTML = `<tr>
       ${reslibSortHeader('name','Name', reslibSortKey==='name')}
@@ -491,7 +491,7 @@
 
       const m = SLOT_META[slot];
       const defs = RESLIB_EQUIP_COLUMNS[slot] || [];
-      const wantsTip = slot === 'weapon' || slot === 'turret';
+      const wantsTip = slot === 'weapon' || slot === 'turret' || slot === 'shield';
       const capText = sizesPresent.map(sz => `${cap[sz]} ${sz.toUpperCase()}`).join(' · ');
 
       // One collapsed "N Size Slot Hardpoints" sub-card per mount size —

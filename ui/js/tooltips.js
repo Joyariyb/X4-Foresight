@@ -161,6 +161,55 @@
       </div>`;
     }
 
+    function shieldTipHtml(e) {
+      // Shield stats hover — same Compatibility/Price-up-top, sectioned-rows
+      // layout as weaponTipHtml, but for shield fields (see generate_equipment.py's
+      // shield branch). hull_max and disruption_stability are both absent on
+      // "integrated" shields (no separate hitpoints to disrupt), so a missing
+      // disruption_stability genuinely means "not resistant", not "no data".
+      const fmt = n => Math.round(n).toLocaleString();
+      const compat = e.race ? 'Standard' : 'Advanced';
+
+      const row = (label, value, color) => value == null ? '' :
+        `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:1px 0">
+           <span style="color:var(--text-dim);font-size:11px">${label}</span>
+           <span style="font-family:var(--font-mono);font-size:11px;white-space:nowrap${color ? `;color:${color}` : ''}">${value}</span>
+         </div>`;
+
+      const section = (icon, color, title, rows) => !rows ? '' :
+        `<div style="margin:8px 0 2px">
+           <div style="display:flex;align-items:center;gap:5px;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:${color};margin-bottom:4px;padding-bottom:3px;border-bottom:1px solid var(--border)">
+             <i class="ti ${icon}" style="font-size:11px"></i>${title}
+           </div>
+           ${rows}
+         </div>`;
+
+      let chargeRows = '';
+      chargeRows += row('Shield Capacity', e.capacity != null ? `${fmt(e.capacity)} MJ` : null);
+      chargeRows += row('Recharge Rate', e.recharge_rate != null ? `${fmt(e.recharge_rate)} MJ/s` : null);
+      chargeRows += row('Recharge Delay', e.recharge_delay != null ? `${e.recharge_delay.toFixed(1)} s` : null);
+      if (e.capacity != null && e.recharge_rate) {
+        chargeRows += row('Time to Full Recharge', `${(e.capacity / e.recharge_rate).toFixed(1)} s`);
+      }
+
+      // Reuses the same .badge.allied/.badge.atwar pill the rest of the app
+      // already uses for green/red status (e.g. faction relations) instead of
+      // inventing a new colour pairing.
+      const resistant = e.disruption_stability != null;
+      const integRows = row('Hull Integrity', e.hull_max != null ? `${fmt(e.hull_max)} MJ` : null) +
+        `<div style="margin-top:5px"><span class="badge ${resistant ? 'allied' : 'atwar'}">
+           ${resistant ? `Disruptor Resistant (${e.disruption_stability})` : 'Not Disruptor Resistant'}
+         </span></div>`;
+
+      return `<div style="min-width:215px;max-width:280px;padding:2px 0">
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">${e.name}${e.mk ? ` Mk${e.mk}` : ''}</div>
+        ${row('Compatibility', compat)}
+        ${row('Price', e.price_min != null ? `${fmt(e.price_min)}–${fmt(e.price_max)} Cr` : (e.price != null ? `${fmt(e.price)} Cr` : null))}
+        ${section('ti-shield', 'var(--teal)', 'Shield Output', chargeRows)}
+        ${section('ti-lock', 'var(--amber)', 'Integrity', integRows)}
+      </div>`;
+    }
+
     function budgetTipHtml(d) {
       // Per-slice economy tooltip: ware name in its colour, share of budget, the
       // amount × price = value figures, and which rule set the value (basis).
@@ -487,8 +536,11 @@
         tip.style.color      = '';
         tip.style.whiteSpace = 'normal';
       } else if (el.dataset.weaponTip) {
-        // Ship Builder weapon/turret row: full combat stats
-        tip.innerHTML = weaponTipHtml(JSON.parse(decodeURIComponent(el.dataset.weaponTip)));
+        // Ship Builder weapon/turret/shield row: full stat hover. Shield
+        // payloads route to shieldTipHtml — same data-weapon-tip attribute,
+        // just a different field set per e.slot.
+        const payload = JSON.parse(decodeURIComponent(el.dataset.weaponTip));
+        tip.innerHTML = payload.slot === 'shield' ? shieldTipHtml(payload) : weaponTipHtml(payload);
         tip.style.color      = '';
         tip.style.whiteSpace = 'normal';
       } else if (el.dataset.fleetTip) {
