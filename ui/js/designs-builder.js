@@ -668,20 +668,20 @@
       }).join('');
       const headerCells = [0,1,2,3].map(i => `<span class="boh">${defs[i] ? defs[i][1] : ''}</span>`).join('');
 
-      // Weapon/turret/shield rows carry data-weapon-tip for the full stat
-      // hover (sectors.js's shared tooltip dispatcher routes shield payloads
-      // to shieldTipHtml by e.slot) — engines/thrusters still don't have a
-      // stat hover, so skip them for now.
+      // Weapon/turret/shield/engine rows carry data-weapon-tip for the full
+      // stat hover (sectors.js's shared tooltip dispatcher routes shield/
+      // engine payloads to their own *TipHtml by e.slot) — thrusters still
+      // don't have a stat hover, so skip them for now.
       // shipHeatFactor rides along in the payload: Time to Overheat is
       // genuinely ship-dependent (the selected hull's <modifiers><weapon
       // heat=>, confirmed against real tooltips this session — Sustained
       // Damage and Cooldown Duration are NOT affected by it), so the tooltip
       // needs to know which hull is currently selected to show it correctly.
-      const wantsTip = sel === 'weapon' || sel === 'turret' || sel === 'shield';
+      const wantsTip = sel === 'weapon' || sel === 'turret' || sel === 'shield' || sel === 'engine';
       // The True/In-Game Stats toggle only affects weapon/turret's derived,
-      // truncated combat stats (damage rates, overheat/cooldown) -- shields
-      // have no such derived/truncated fields, so the button stays
-      // weapon/turret-only even though the hover itself now covers shields too.
+      // truncated combat stats (damage rates, overheat/cooldown) -- shields/
+      // engines have no such derived/truncated fields, so the button stays
+      // weapon/turret-only even though the hover itself now covers them too.
       const wantsStatsToggle = sel === 'weapon' || sel === 'turret';
       const shipHeatFactor = (HULL_CATALOG[builderState.hull] || {}).weapon_heat_factor || 1;
       const factionFilter = builderState.factionFilter;

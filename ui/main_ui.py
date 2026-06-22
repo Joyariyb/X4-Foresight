@@ -331,16 +331,6 @@ def run_scan(parent=None) -> bool:
 
 
 def main() -> int:
-    # Qt's default HiDPI policy rounds the OS scale factor to the nearest
-    # integer (e.g. 125%/150% -> 100%/200%) before QtWebEngine ever sees the
-    # window size. A real browser uses the exact OS scale, so the same
-    # innerWidth-based zoom math in js/init.js produced visibly different
-    # sizing between this app and the web build. PassThrough uses the exact
-    # scale factor, matching browser behavior. Must be set before QApplication
-    # is constructed.
-    QApplication.setHighDpiScaleFactorRoundingPolicy(
-        Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
-    )
     app = QApplication(sys.argv)
     app.setApplicationName("X4 Empire Intelligence")
 

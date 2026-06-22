@@ -59,7 +59,9 @@ _FIELD_ORDER = [
     # shield
     "capacity", "recharge_rate", "recharge_delay", "disruption_stability",
     # engine
-    "thrust_forward", "thrust_reverse", "travel_thrust", "boost_thrust",
+    "thrust_forward", "thrust_reverse",
+    "travel_thrust", "travel_charge",
+    "boost_thrust", "boost_duration", "boost_recharge",
     # thruster
     "strafe", "pitch", "yaw", "roll",
 ]
@@ -521,10 +523,18 @@ def load_equipment(idx: CatalogIndex, bullets: dict[str, dict], prices: dict[str
             thrust = root.find(".//thrust")
             travel = root.find(".//travel")
             boost  = root.find(".//boost")
-            if (v := _int(thrust, "forward"))  is not None: rec["thrust_forward"] = v
-            if (v := _int(thrust, "reverse"))  is not None: rec["thrust_reverse"] = v
-            if (v := _round(travel, "thrust")) is not None: rec["travel_thrust"]  = v
-            if (v := _round(boost,  "thrust")) is not None: rec["boost_thrust"]   = v
+            if (v := _int(thrust, "forward"))    is not None: rec["thrust_forward"]  = v
+            if (v := _int(thrust, "reverse"))    is not None: rec["thrust_reverse"]  = v
+            if (v := _round(travel, "thrust"))   is not None: rec["travel_thrust"]   = v
+            if (v := _round(travel, "charge"))   is not None: rec["travel_charge"]   = v
+            if (v := _round(boost,  "thrust"))   is not None: rec["boost_thrust"]    = v
+            if (v := _round(boost,  "duration")) is not None: rec["boost_duration"]  = v
+            if (v := _round(boost,  "recharge")) is not None: rec["boost_recharge"]  = v
+            # The engine's own hit points -- same concept as weapon/turret's and
+            # shield's hull_max above, just read from this slot's branch. Absent
+            # on "integrated" engines (S/M/XS sizes use <hull integrated="1"/>
+            # instead -- no separate HP to damage; only L/XL have their own hull).
+            if (v := _int(root.find(".//hull"), "max")) is not None: rec["hull_max"] = v
 
         elif slot == "thruster":
             thrust = root.find(".//thrust")
@@ -603,7 +613,12 @@ def gen_equipment_py(records: list[dict], aliases: dict[str, str]) -> str:
         "#                    shields, which have no separate hull to disrupt), hull_max\n"
         "#                    (the shield generator's own hit points — also absent when\n"
         "#                    integrated)\n"
-        "#   engine         — thrust_forward, thrust_reverse, travel_thrust, boost_thrust\n"
+        "#   engine         — thrust_forward, thrust_reverse (kN), travel_thrust, boost_thrust\n"
+        "#                    (multipliers on forward thrust, not absolute kN), travel_charge\n"
+        "#                    (s to spool up travel drive), boost_duration/boost_recharge (s\n"
+        "#                    boost lasts / s before it's available again), hull_max (the\n"
+        "#                    engine's own hit points — absent on \"integrated\" engines, i.e.\n"
+        "#                    S/M/XS sizes with no separate hull to damage; only L/XL have one)\n"
         "#   thruster       — strafe, pitch, yaw, roll\n"
         "EQUIPMENT_STATS: dict[str, dict] = {\n" +
         "\n".join(stat_lines) + "\n}\n\n" +

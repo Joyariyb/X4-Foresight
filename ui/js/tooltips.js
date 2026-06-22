@@ -210,6 +210,57 @@
       </div>`;
     }
 
+    function engineTipHtml(e) {
+      // Engine stats hover — same layout family as weaponTipHtml/shieldTipHtml.
+      // boost_thrust/travel_thrust are MULTIPLIERS on thrust_forward (X4's own
+      // convention, e.g. "x6.9"), not absolute kN, so they're shown distinctly
+      // from the raw kN thrust figures rather than re-using fmt()+unit.
+      // hull_max is absent on "integrated" engines (S/M/XS — no separate hull
+      // to damage; see generate_equipment.py's engine branch), same convention
+      // as shieldTipHtml's Integrity section.
+      const fmt = n => Math.round(n).toLocaleString();
+      const compat = e.race ? 'Standard' : 'Advanced';
+
+      const row = (label, value, color) => value == null ? '' :
+        `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:1px 0">
+           <span style="color:var(--text-dim);font-size:11px">${label}</span>
+           <span style="font-family:var(--font-mono);font-size:11px;white-space:nowrap${color ? `;color:${color}` : ''}">${value}</span>
+         </div>`;
+
+      const section = (icon, color, title, rows) => !rows ? '' :
+        `<div style="margin:8px 0 2px">
+           <div style="display:flex;align-items:center;gap:5px;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:${color};margin-bottom:4px;padding-bottom:3px;border-bottom:1px solid var(--border)">
+             <i class="ti ${icon}" style="font-size:11px"></i>${title}
+           </div>
+           ${rows}
+         </div>`;
+
+      let thrustRows = '';
+      thrustRows += row('Forward Thrust', e.thrust_forward != null ? `${fmt(e.thrust_forward)} kN` : null);
+      thrustRows += row('Reverse Thrust', e.thrust_reverse != null ? `${fmt(e.thrust_reverse)} kN` : null);
+
+      let boostRows = '';
+      boostRows += row('Boost Thrust', e.boost_thrust != null ? `×${e.boost_thrust.toFixed(1)}` : null);
+      boostRows += row('Duration', e.boost_duration != null ? `${e.boost_duration.toFixed(1)} s` : null);
+      boostRows += row('Recharge', e.boost_recharge != null ? `${e.boost_recharge.toFixed(1)} s` : null);
+
+      let travelRows = '';
+      travelRows += row('Travel Thrust', e.travel_thrust != null ? `×${e.travel_thrust.toFixed(1)}` : null);
+      travelRows += row('Charge Time', e.travel_charge != null ? `${e.travel_charge.toFixed(1)} s` : null);
+
+      const integRows = row('Hull Integrity', e.hull_max != null ? `${fmt(e.hull_max)} MJ` : null);
+
+      return `<div style="min-width:215px;max-width:280px;padding:2px 0">
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">${e.name}${e.mk ? ` Mk${e.mk}` : ''}</div>
+        ${row('Compatibility', compat)}
+        ${row('Price', e.price_min != null ? `${fmt(e.price_min)}–${fmt(e.price_max)} Cr` : (e.price != null ? `${fmt(e.price)} Cr` : null))}
+        ${section('ti-engine', 'var(--teal)', 'Thrust', thrustRows)}
+        ${section('ti-rocket', 'var(--red)', 'Boost', boostRows)}
+        ${section('ti-clock', 'var(--amber)', 'Travel', travelRows)}
+        ${section('ti-lock', 'var(--green)', 'Integrity', integRows)}
+      </div>`;
+    }
+
     function budgetTipHtml(d) {
       // Per-slice economy tooltip: ware name in its colour, share of budget, the
       // amount × price = value figures, and which rule set the value (basis).
@@ -536,11 +587,13 @@
         tip.style.color      = '';
         tip.style.whiteSpace = 'normal';
       } else if (el.dataset.weaponTip) {
-        // Ship Builder weapon/turret/shield row: full stat hover. Shield
-        // payloads route to shieldTipHtml — same data-weapon-tip attribute,
-        // just a different field set per e.slot.
+        // Ship Builder weapon/turret/shield/engine row: full stat hover.
+        // Shield/engine payloads route to their own *TipHtml — same
+        // data-weapon-tip attribute, just a different field set per e.slot.
         const payload = JSON.parse(decodeURIComponent(el.dataset.weaponTip));
-        tip.innerHTML = payload.slot === 'shield' ? shieldTipHtml(payload) : weaponTipHtml(payload);
+        tip.innerHTML = payload.slot === 'shield' ? shieldTipHtml(payload)
+          : payload.slot === 'engine' ? engineTipHtml(payload)
+          : weaponTipHtml(payload);
         tip.style.color      = '';
         tip.style.whiteSpace = 'normal';
       } else if (el.dataset.fleetTip) {
