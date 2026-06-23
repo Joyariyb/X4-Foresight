@@ -5,7 +5,12 @@
     .sec-line { flex: 1; height: 1px; background: var(--border); }
 
     /* ── SUMMARY CARDS ── */
-    .cards-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.8rem; }
+    /* auto-fit + minmax lets the row decide how many cards fit: they sit
+       side-by-side while there's room (1fr each, so they share the width
+       evenly) and wrap to new lines on narrow screens instead of being
+       crushed into a fixed 5 columns. The 16rem floor keeps a card readable
+       before it's allowed to wrap. */
+    .cards-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 0.8rem; }
     .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 0.3rem; padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: 0.2rem; }
     .card .card-top { display: flex; align-items: center; gap: 0.6rem; }
     .card .card-top i { font-size: 1.4rem; color: var(--text-faint); }

@@ -1,8 +1,18 @@
     /* Core role: Styles for crew roster and detail file (biography, assignments). */
     /* CREW TAB */
+    /* Make the crew tab fill the content area's real height (the same flex
+       chain #tab-sectors uses), so the roster and file panes get their height
+       from the layout rather than guessing it with calc(100vh - 20rem). That
+       old guess baked in the topbar height (4.8rem) by hand and broke whenever
+       anything above shifted; flex:1 + min-height:0 just inherits whatever room
+       #content actually leaves, at any window size. */
+    #tab-crew { flex: 1; min-height: 0; }
     .crew-layout { display: flex; gap: 1.2rem; flex: 1; min-height: 0; }
-    .crew-roster { flex: 0 0 56%; overflow: auto; max-height: calc(100vh - 20rem); }
-    .crew-file   { flex: 1; overflow-y: auto; max-height: calc(100vh - 20rem); }
+    /* min-height:0 lets these scroll internally instead of growing the page:
+       a flex item defaults to min-height:auto (won't shrink below its content),
+       which would otherwise push the whole layout taller than its parent. */
+    .crew-roster { flex: 0 0 56%; overflow: auto; min-height: 0; }
+    .crew-file   { flex: 1; overflow-y: auto; min-height: 0; }
 
     /* File card — the dossier panel on the right */
     .file-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 0.3rem; }

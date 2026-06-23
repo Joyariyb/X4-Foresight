@@ -184,3 +184,59 @@
     .scan-progress-seg.active .scan-progress-label,
     .scan-progress-seg.done .scan-progress-label { color: var(--green); }
 
+    /* ──────────────────────────────────────────────────────────────────────
+       RESPONSIVE BREAKPOINTS
+
+       The UI no longer zooms with window width (see js/init.js) — 1rem is a
+       fixed 10px everywhere, so the design holds its intended density and the
+       extra room on big monitors is handled by #shell's max-width cap
+       (base.css). What's left is making the layout *reflow* on smaller windows
+       (small laptops, half-screen splits, tablets). We keep this deliberately
+       simple — one narrow breakpoint, all the overrides in one place — rather
+       than scattering @media rules across every feature stylesheet.
+
+       Note for later: a media query reacts to the whole viewport, so a rule
+       here can't tell that #content is already ~190px narrower than the window
+       because of the sidebar. Container queries (which react to #content's own
+       width) would be the more precise tool for the content-grid reflows below
+       and are worth adopting if these thresholds ever feel off — media queries
+       are just the simpler first pass.
+
+       Breakpoints are width-based:
+         • > 1000px  → base / wide. Side-by-side master-detail, multi-column
+                       grids. Wide screens get more columns for free from the
+                       auto-fit grids (.cards-row in shared-ui.css, .sd-grid in
+                       sectors.css) up to the #shell cap.
+         • ≤ 1000px  → narrow. Stack master-detail panes, collapse the fixed
+                       two-column grids to one column, trim the sidebar, and let
+                       the (nowrap) topbar scroll instead of overflowing.
+       ────────────────────────────────────────────────────────────────────── */
+    @media (max-width: 1000px) {
+      /* Topbar has many nowrap items (logo, fields, every nav tab); let it
+         scroll sideways rather than spilling out of the shell. */
+      #topbar { overflow-x: auto; }
+
+      /* Reclaim a little width from the sidebar. We keep it visible (never
+         display:none) because Ship Builder and the Resource Library are only
+         reachable from it — hiding it would strand those views. */
+      #sidebar { width: 16rem; }
+
+      /* Crew master-detail: roster stacks above the dossier. Cap the roster so
+         it can't push the file pane off-screen; both scroll internally. */
+      .crew-layout { flex-direction: column; }
+      .crew-roster { flex: 0 0 auto; max-height: 45vh; }
+      .crew-file   { flex: 1 1 auto; min-height: 24rem; }
+
+      /* Sectors master-detail: cluster list stacks above the sector card. */
+      #tab-sectors  { flex-direction: column; }
+      #sectors-left { width: auto; max-height: 38vh; border-right: none; border-bottom: 1px solid var(--border); }
+
+      /* Fixed two-column grids collapse to a single column so their content
+         isn't crushed. Covers the blueprint builder's master-detail (.btwo),
+         the generic .two-col helper, and the ship-design card's body/footer. */
+      .btwo,
+      .two-col,
+      .dcard-body,
+      .dcard-footer { grid-template-columns: 1fr; }
+    }
+

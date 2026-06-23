@@ -47,5 +47,10 @@
        rather than re-measuring the viewport, so the shell always exactly
        fits and scrollIntoView (crew/station/ship jump links) can't push the
        top bars off-screen via the overflow:hidden body. */
-    #shell { display: flex; flex-direction: column; height: 100%; }
+    /* max-width caps the whole app on very wide monitors and margin-inline:auto
+       centres it, so ultrawide/4K screens get tidy gutters (filled by body's
+       --bg) instead of the UI stretching edge-to-edge. The cap is generous
+       (~2000px at the 10px root) so dense areas — wide tables, the galaxy map —
+       still get plenty of room to fill within it; this is the "hybrid" cap. */
+    #shell { display: flex; flex-direction: column; height: 100%; max-width: 200rem; margin-inline: auto; }
 

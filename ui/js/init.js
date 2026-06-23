@@ -1,39 +1,27 @@
-  // Core role: Initializes responsive scale, event routing, and tab persistence.
+  // Core role: Applies the user's manual HUD zoom on load.
 
-  // Responsive HUD scale keyed off the window's full outer width (1536px =
-  // scale 1.0). Uses outerWidth (whole window footprint, chrome included),
-  // not innerWidth (content viewport only): the standalone shell is a
-  // borderless window with nothing to subtract, so outerWidth == innerWidth
-  // there, but a real browser's own UI (tabs/borders/scrollbar gutter) eats
-  // into innerWidth without shrinking outerWidth. Scaling off outerWidth
-  // means a maximized browser window and the standalone's maximized window
-  // compute the same scale on the same monitor — measured live, no hardcoded
-  // per-browser/per-monitor fudge factor (verified: both report 1920 on a
-  // 1920px-wide screen, vs. innerWidth's 1878 in the browser).
-  //   At 1920px fullscreen → scale 1.25  (25% larger)
-  //   At 1280px             → scale 0.83 (17% smaller)
+  // We used to scale the root font-size by window width (outerWidth / 1536), so
+  // the whole rem-based UI grew with the monitor. That zoomed instead of
+  // adapting: a 4K screen just got a giant 2x copy of the 1536px design (19rem
+  // sidebar -> 38rem, cards stretched huge and sparse) rather than using the
+  // extra room. Responsive behaviour now lives in CSS instead — a max-width cap
+  // on #shell plus media-query breakpoints (see layout.css) — and the root font
+  // stays the fixed 10px set in base.css, so 1rem == 10px everywhere and the
+  // design renders at its intended density on every screen.
   //
-  // Drives the scale via the <html> root font-size (the whole UI is built in
-  // rem, see base.css) rather than CSS `zoom`. CSS zoom splits mouse-event
-  // coordinates (clientX/Y, always physical px) from CSS positions
-  // (style.left/top, zoomed px) in QtWebEngine specifically — that forced
-  // every tooltip/flyout/pan handler to manually divide by the zoom factor.
-  // Root font-size scaling doesn't touch the coordinate space at all, so none
-  // of that compensation is needed: clientX lines up with style.left for
-  // free, in both the desktop shell and the web build alike. It also means
-  // outerWidth is unaffected by our own scaling (font-size doesn't change the
-  // window), so there's no read-after-reset dance either.
-  const SCALE_BASE_PX = 10; // root font-size at scale 1.0; rem values assume 1rem = 10px
-  let _scaleRafPending = false;
-  function updateScale() {
-    if (_scaleRafPending) return;
-    _scaleRafPending = true;
-    requestAnimationFrame(() => {
-      _scaleRafPending = false;
-      const scale = Math.max(0.5, Math.min(2.0, window.outerWidth / 1536));
-      document.documentElement.style.fontSize = (SCALE_BASE_PX * scale) + 'px';
-    });
+  // The only thing left here is an *optional, user-driven* zoom: a single
+  // multiplier the user picks for accessibility ("make the HUD bigger"),
+  // decoupled from window width. It's applied once on load by overriding the
+  // root font-size. Because we touch font-size and not CSS `zoom`, mouse-event
+  // coordinates (clientX/Y) still line up 1:1 with CSS positions (style.left/
+  // top) — the QtWebEngine zoom coordinate-split that the old code worried about
+  // never applies. Default is 1.0 (the plain 10px base) when nothing is stored.
+  const SCALE_BASE_PX = 10; // root font-size at zoom 1.0; rem values assume 1rem = 10px
+  function applyUserZoom() {
+    const stored = parseFloat(localStorage.getItem('x4-ui-zoom'));
+    // Clamp to a sane range and ignore garbage/missing values.
+    const zoom = (Number.isFinite(stored)) ? Math.max(0.5, Math.min(2.0, stored)) : 1.0;
+    document.documentElement.style.fontSize = (SCALE_BASE_PX * zoom) + 'px';
   }
 
-  updateScale();
-  window.addEventListener('resize', updateScale);
+  applyUserZoom();
