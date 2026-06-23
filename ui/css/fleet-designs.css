@@ -122,11 +122,22 @@
     .hcmp-row     { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.7rem 0; border-bottom: 1px solid var(--border); }
     .hcmp-row:last-child { border-bottom: none; }
     .hcmp-lbl     { font-family: var(--font-cond); font-size: 1.1rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); }
-    .hcmp-label   { width: 1.8rem; height: 1.8rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--text-faint); color: var(--bg-panel); font-family: var(--font-mono); font-weight: 700; font-size: 1rem; flex-shrink: 0; }
-    .hcmp-bar-line  { display: flex; align-items: center; gap: 0.8rem; }
-    .hcmp-bar-track { flex: 1; height: 1rem; background: rgba(255,255,255,0.04); border-radius: 0.2rem; overflow: hidden; }
+    /* A/B identity colour — fixed per hull, deliberately NOT lime/red/teal
+       (those are already spoken for as the bar fill's win/lose/tie colour),
+       so a reader never has to ask "is purple winning or is that just who
+       it is". */
+    .hcmp-label   { width: 1.8rem; height: 1.8rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: var(--bg-panel); font-family: var(--font-mono); font-weight: 700; font-size: 1rem; flex-shrink: 0; }
+    .hcmp-label-a { background: var(--purple); }
+    .hcmp-label-b { background: var(--yellow); }
+    .hcmp-bar-line  { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
+    .hcmp-bar-track { flex: 1; height: 1rem; background: rgba(255,255,255,0.04); border-radius: 0.2rem; overflow: hidden; min-width: 6rem; }
     .hcmp-bar-fill  { height: 100%; border-radius: 0.2rem; transition: width 0.15s; }
     .hcmp-val       { font-family: var(--font-mono); font-size: 1.1rem; min-width: 7rem; text-align: right; flex-shrink: 0; }
+    /* Per-size slot-count badges (e.g. "2 S · 1 M") appended after a
+       hardpoint row's total, so equal totals on two hulls don't read as
+       equal loadouts when the mount sizes differ. */
+    .hcmp-breakdown   { display: flex; gap: 0.4rem; flex-shrink: 0; }
+    .hcmp-size-badge  { font-family: var(--font-mono); font-weight: 600; font-size: 0.95rem; letter-spacing: 0.02em; padding: 1px 0.6rem; border-radius: 0.2rem; border: 1px solid; }
     /* Placeholder card shown in a column before a hull's picked — dashed
        border distinguishes it from a real .dhull (solid, faction-tinted)
        at a glance, same footprint so picking a hull doesn't reflow the row. */

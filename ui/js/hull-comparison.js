@@ -55,19 +55,36 @@
     return `<i class="ti ${m.icon}" style="color:${m.color}"></i> ${text}`;
   };
 
-  // Stylized A/B indicator for comparison rows and hull cards
-  const hcmpLabel = (letter) => `<span class="hcmp-label">${letter}</span>`;
+  // Stylized A/B indicator for comparison rows and hull cards. Each letter
+  // gets its own fixed colour (hcmp-label-a/-b in fleet-designs.css) so a bar
+  // is identifiable as "Hull A" at a glance, independent of the win/lose/tie
+  // colour (lime/red/teal) painted onto the bar fill itself.
+  const hcmpLabel = (letter) => `<span class="hcmp-label hcmp-label-${letter.toLowerCase()}">${letter}</span>`;
+
+  // "2 S · 1 M" style breakdown so two equal slot *counts* don't read as
+  // identical loadouts when the mount sizes differ (4 medium weapon slots
+  // is not the same ship as 4 large ones). Largest size first, same order
+  // convention as the per-size hardpoint cards in the Hull Inspector.
+  const hcmpSizeBreakdown = (h, slot) => {
+    const cap = (h.hardpoints && h.hardpoints[slot]) || {};
+    return Object.keys(cap).filter(sz => cap[sz] > 0).sort(bySizeDesc).map(sz => {
+      const tint = SIZE_TINT[sz.toUpperCase()] || SIZE_TINT.S;
+      return `<span class="hcmp-size-badge" style="color:${tint.c};border-color:${tint.c}">${cap[sz]} ${sz.toUpperCase()}</span>`;
+    }).join('');
+  };
 
   // [label, getter, unit]. Mirrors the two stat rows on the .dhull card
   // (Hull HP/Price/Crew/Cargo/Missiles/Units) plus the three hardpoint
   // totals the Hull List table already surfaces — every number that's
   // shown anywhere else on a hull, now compared head-to-head.
+  // Optional 4th element is a per-hull size-breakdown getter — only the
+  // hardpoint rows need it, so it's left undefined everywhere else.
   const HCMP_STATS = [
     ['Hull HP', h => h.max_hull, ''],
     ['Price', h => h.price, ''],
-    [hcmpSlotLabel('weapon', 'Weapon Slots'), h => hcmpHpTotal(h, 'weapon'), ''],
-    [hcmpSlotLabel('turret', 'Turret Slots'), h => hcmpHpTotal(h, 'turret'), ''],
-    [hcmpSlotLabel('shield', 'Shield Slots'), h => hcmpHpTotal(h, 'shield'), ''],
+    [hcmpSlotLabel('weapon', 'Weapon Slots'), h => hcmpHpTotal(h, 'weapon'), '', h => hcmpSizeBreakdown(h, 'weapon')],
+    [hcmpSlotLabel('turret', 'Turret Slots'), h => hcmpHpTotal(h, 'turret'), '', h => hcmpSizeBreakdown(h, 'turret')],
+    [hcmpSlotLabel('shield', 'Shield Slots'), h => hcmpHpTotal(h, 'shield'), '', h => hcmpSizeBreakdown(h, 'shield')],
     ['Crew', h => h.crew_capacity, ''],
     ['Cargo', h => h.cargo_max, 'm³'],
     ['Missiles', h => h.missile_storage, ''],
@@ -80,7 +97,7 @@
   // head-to-head comparison, not a catalog-wide ranking), and the larger
   // value is lime/the smaller is red; a tie (or a stat missing on one side,
   // where "winning" wouldn't mean anything) stays neutral teal.
-  function hcmpStatRow(label, getter, hA, hB, unit) {
+  function hcmpStatRow(label, getter, hA, hB, unit, breakdownGetter) {
     const vA = getter(hA);
     const vB = getter(hB);
     if (vA == null && vB == null) {
@@ -98,15 +115,19 @@
       colorB = b > a ? 'var(--lime)' : 'var(--red)';
     }
     const fmt = v => v == null ? '—' : designCr(v) + (unit ? ' ' + unit : '');
-    const bar = (val, pct, color, letter) => `<div class="hcmp-bar-line">
-      ${hcmpLabel(letter)}
-      <div class="hcmp-bar-track"><div class="hcmp-bar-fill" style="width:${pct}%;background:${color}"></div></div>
-      <span class="hcmp-val" style="color:${color}">${fmt(val)}</span>
-    </div>`;
+    const bar = (val, pct, color, letter, h) => {
+      const breakdown = breakdownGetter ? breakdownGetter(h) : '';
+      return `<div class="hcmp-bar-line">
+        ${hcmpLabel(letter)}
+        <div class="hcmp-bar-track"><div class="hcmp-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+        <span class="hcmp-val" style="color:${color}">${fmt(val)}</span>
+        ${breakdown ? `<span class="hcmp-breakdown">${breakdown}</span>` : ''}
+      </div>`;
+    };
     return `<div class="hcmp-row">
       <div class="hcmp-lbl">${label}</div>
-      ${bar(vA, (a / max) * 100, colorA, 'A')}
-      ${bar(vB, (b / max) * 100, colorB, 'B')}
+      ${bar(vA, (a / max) * 100, colorA, 'A', hA)}
+      ${bar(vB, (b / max) * 100, colorB, 'B', hB)}
     </div>`;
   }
 
@@ -139,7 +160,7 @@
     const colB = `<div class="hcmp-col">${reslibHullCompareSelect('b', reslibCompareMacroB)}${hB ? hullStatCardHtml(reslibCompareMacroB, 'b') : placeholderB}</div>`;
 
     const summary = (hA && hB)
-      ? `<div class="hcmp-summary">${HCMP_STATS.map(([label, get, unit]) => hcmpStatRow(label, get, hA, hB, unit)).join('')}</div>`
+      ? `<div class="hcmp-summary">${HCMP_STATS.map(([label, get, unit, breakdown]) => hcmpStatRow(label, get, hA, hB, unit, breakdown)).join('')}</div>`
       : `<div class="hcmp-summary hcmp-summary-empty">
           <i class="ti ti-arrows-left-right"></i>
           <div>Select two hulls to compare.</div>
