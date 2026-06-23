@@ -15,12 +15,14 @@
   // root font-size. Because we touch font-size and not CSS `zoom`, mouse-event
   // coordinates (clientX/Y) still line up 1:1 with CSS positions (style.left/
   // top) — the QtWebEngine zoom coordinate-split that the old code worried about
-  // never applies. Default is 1.0 (the plain 10px base) when nothing is stored.
+  // never applies. Default is 1.25 (12.5px base) — the 10px/1.0 design reads
+  // too small on a typical 1080p monitor — when nothing is stored.
   const SCALE_BASE_PX = 10; // root font-size at zoom 1.0; rem values assume 1rem = 10px
+  const DEFAULT_ZOOM = 1.25;
   function applyUserZoom() {
     const stored = parseFloat(localStorage.getItem('x4-ui-zoom'));
     // Clamp to a sane range and ignore garbage/missing values.
-    const zoom = (Number.isFinite(stored)) ? Math.max(0.5, Math.min(2.0, stored)) : 1.0;
+    const zoom = (Number.isFinite(stored)) ? Math.max(0.5, Math.min(2.0, stored)) : DEFAULT_ZOOM;
     document.documentElement.style.fontSize = (SCALE_BASE_PX * zoom) + 'px';
   }
 
