@@ -78,10 +78,13 @@
   // totals the Hull List table already surfaces — every number that's
   // shown anywhere else on a hull, now compared head-to-head.
   // Optional 4th element is a per-hull size-breakdown getter — only the
-  // hardpoint rows need it, so it's left undefined everywhere else.
+  // hardpoint rows need it, so it's left undefined everywhere else. Optional
+  // 5th element (lowerBetter) flips the win colour for stats where smaller
+  // is the win — just Price (cheaper hull wins), same convention as
+  // ECMP_LOWER_BETTER in equipment-comparison.js.
   const HCMP_STATS = [
     ['Hull HP', h => h.max_hull, ''],
-    ['Price', h => h.price, ''],
+    ['Price', h => h.price, '', null, true],
     [hcmpSlotLabel('weapon', 'Weapon Slots'), h => hcmpHpTotal(h, 'weapon'), '', h => hcmpSizeBreakdown(h, 'weapon')],
     [hcmpSlotLabel('turret', 'Turret Slots'), h => hcmpHpTotal(h, 'turret'), '', h => hcmpSizeBreakdown(h, 'turret')],
     [hcmpSlotLabel('shield', 'Shield Slots'), h => hcmpHpTotal(h, 'shield'), '', h => hcmpSizeBreakdown(h, 'shield')],
@@ -94,10 +97,12 @@
   // One row: hull A's bar always on top, hull B's always on the bottom
   // (fixed position, not faction-tinted — confirmed with the maintainer).
   // Bars scale against the larger of the two values for THIS stat (a
-  // head-to-head comparison, not a catalog-wide ranking), and the larger
-  // value is lime/the smaller is red; a tie (or a stat missing on one side,
-  // where "winning" wouldn't mean anything) stays neutral teal.
-  function hcmpStatRow(label, getter, hA, hB, unit, breakdownGetter) {
+  // head-to-head comparison, not a catalog-wide ranking); the winning value
+  // is lime, the loser red — bigger wins for every stat except Price
+  // (lowerBetter: cheaper wins), same convention as ECMP_LOWER_BETTER in
+  // equipment-comparison.js. A tie (or a stat missing on one side, where
+  // "winning" wouldn't mean anything) stays neutral teal.
+  function hcmpStatRow(label, getter, hA, hB, unit, breakdownGetter, lowerBetter) {
     const vA = getter(hA);
     const vB = getter(hB);
     if (vA == null && vB == null) {
@@ -111,8 +116,9 @@
     const max = Math.max(a, b, 1);
     let colorA = 'var(--teal)', colorB = 'var(--teal)';
     if (haveBoth && a !== b) {
-      colorA = a > b ? 'var(--lime)' : 'var(--red)';
-      colorB = b > a ? 'var(--lime)' : 'var(--red)';
+      const aWins = lowerBetter ? a < b : a > b;
+      colorA = aWins ? 'var(--lime)' : 'var(--red)';
+      colorB = aWins ? 'var(--red)' : 'var(--lime)';
     }
     const fmt = v => v == null ? '—' : designCr(v) + (unit ? ' ' + unit : '');
     const bar = (val, pct, color, letter, h) => {
@@ -160,7 +166,7 @@
     const colB = `<div class="hcmp-col">${reslibHullCompareSelect('b', reslibCompareMacroB)}${hB ? hullStatCardHtml(reslibCompareMacroB, 'b') : placeholderB}</div>`;
 
     const summary = (hA && hB)
-      ? `<div class="hcmp-summary">${HCMP_STATS.map(([label, get, unit, breakdown]) => hcmpStatRow(label, get, hA, hB, unit, breakdown)).join('')}</div>`
+      ? `<div class="hcmp-summary">${HCMP_STATS.map(([label, get, unit, breakdown, lowerBetter]) => hcmpStatRow(label, get, hA, hB, unit, breakdown, lowerBetter)).join('')}</div>`
       : `<div class="hcmp-summary hcmp-summary-empty">
           <i class="ti ti-arrows-left-right"></i>
           <div>Select two hulls to compare.</div>

@@ -134,6 +134,20 @@
     });
   }
 
+  // Jump from a ship's Hull Type cell (Fleet tab) to that hull's page in the
+  // Resource Library's Hull Inspector — same cross-tab pattern as
+  // jumpToDesign(), but landing on the catalogued hull stats rather than the
+  // ship's fitted-loadout design card. Guarded on HULL_CATALOG actually
+  // having the macro (a few rare hulls like escape pods aren't catalogued).
+  function jumpToHull(macro) {
+    if (!macro || !HULL_CATALOG[macro]) return;
+    _navRecord();
+    switchTab('reslib', document.getElementById('nav-naval'));
+    _navAfterJump();
+    switchResLibCat('hull');
+    reslibShowHullInspector(macro);
+  }
+
   function stationTypeLabel(s) {
     const wares = s.production ? s.production.split(',').filter(w => w.trim()) : [];
     if (wares.length === 0) return 'Defence Platform';

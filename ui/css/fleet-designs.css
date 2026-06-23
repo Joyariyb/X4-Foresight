@@ -203,6 +203,21 @@
     .beqf-item.sel { background: rgba(57,255,20,0.08); }
     .beqf-check { width: 1.3rem; height: 1.3rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 0.15rem solid var(--lime); border-radius: 0.3rem; }
     .beqf-check.sel::after { content: ''; width: 0.7rem; height: 0.7rem; background: var(--lime); border-radius: 1px; }
+    /* Equipment Comparison picker — a full-width custom dropdown built on the
+       .beqf-dd shell. A native <select> can't right-justify a tinted size
+       badge inside an <option>, so each item is a .beqf-item with the name on
+       the left (flex:1, ellipsised) and an .hcmp-size-badge pushed to the
+       right. These rules just widen the shell to span the column and restyle
+       the trigger to read like the old .reslib-fbox <select> it replaces. */
+    .reslib-eqcmp-dd { width: 100%; max-width: 30rem; }
+    .ecmp-trigger { width: 100%; padding: 0.45rem 0.9rem; font-family: var(--font-cond); font-size: 1.3rem; color: var(--text); background: var(--bg-panel); }
+    .ecmp-trigger .ti-chevron-down { color: var(--text-faint); }
+    #reslib-eqcmp-menu-a, #reslib-eqcmp-menu-b { width: 100%; min-width: 0; max-width: 30rem; }
+    .ecmp-opt-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .ecmp-opt-size { flex-shrink: 0; }
+    .ecmp-dd-ph { color: var(--text-faint); }
+    .ecmp-dd-sec { font-family: var(--font-cond); font-size: 0.95rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); padding: 0.6rem 0.8rem 0.2rem; }
+    .ecmp-dd-sec:first-child { padding-top: 0.2rem; }
     .borow  { display: grid; grid-template-columns: 4.2rem minmax(0,1fr) 5rem 5rem 5rem 5rem 6.2rem 2.2rem; align-items: center; gap: 0.8rem; padding: 0.4rem 0.8rem; border-radius: 0.3rem; cursor: pointer; }
     .borow:hover { background: rgba(45,212,191,0.38); box-shadow: inset 0.3rem 0 0 var(--teal); }
     .borow.on { background: rgba(57,255,20,0.08); box-shadow: inset 0 0 0 1px rgba(57,255,20,0.35); }

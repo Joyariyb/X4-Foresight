@@ -46,6 +46,9 @@
       const sCol    = SIZE_COLOURS[s.size]   || "var(--text-dim)";
       const oIcon   = ORDER_ICONS[s.order]   || "ti-circle";
       const nameStr = s.display_name || s.name || "—";
+      // Gate the Hull Type cell's click-through on the hull actually being
+      // catalogued — a few rare hulls (escape pods, etc.) have no HULL_CATALOG entry.
+      const hasHullPage = s.macro && HULL_CATALOG[s.macro];
 
       // ── Pilot cell ────────────────────────────────────────────────────────
       // The pilot's name is no longer shown as text in the row — it lives in
@@ -106,7 +109,7 @@
           <span class="mono" style="color:var(--yellow);font-size:11px;margin-left:8px">${s.code}</span>
         </td>
         <td class="mono" style="color:${sCol}">${s.size}</td>
-        <td style="white-space:nowrap">${hullBadge(s.hull_origin)}<i class="ti ${ROLE_ICONS[s.role]||'ti-rocket'}" style="font-size:12px;vertical-align:-2px;margin-left:5px;margin-right:3px;color:var(--text-faint)"></i>${s.role}</td>
+        <td style="white-space:nowrap">${hasHullPage ? `<span class="hull-type-link" data-hull-macro="${s.macro}">` : ''}${hullBadge(s.hull_origin)}<i class="ti ${ROLE_ICONS[s.role]||'ti-rocket'}" style="font-size:12px;vertical-align:-2px;margin-left:5px;margin-right:3px;color:var(--text-faint)"></i>${s.role}${hasHullPage ? '</span>' : ''}</td>
         <td>
           <div style="display:flex;flex-direction:column;gap:3px">
             ${hullBar(s.hull_pct, s.hull_hp, s.max_hull)}
@@ -175,6 +178,14 @@
       e.stopPropagation();
       const code = stnLink.dataset.stnCode;
       if (code) goToStation(code);
+      return;
+    }
+    // Hull Inspector navigation (Hull Type cell)
+    const hullLink = e.target.closest('.hull-type-link');
+    if (hullLink) {
+      e.stopPropagation();
+      const macro = hullLink.dataset.hullMacro;
+      if (macro) jumpToHull(macro);
     }
   });
 

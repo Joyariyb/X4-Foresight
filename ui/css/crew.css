@@ -37,4 +37,7 @@
     /* Station code links — teal base, same amber hover as crew-link */
     .stn-link { cursor: pointer; color: var(--teal); font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; }
     .stn-link:hover { color: var(--amber) !important; text-decoration: underline; }
+    /* Hull Type cell (Fleet tab) — jumps to the Resource Library's Hull Inspector */
+    .hull-type-link { cursor: pointer; }
+    .hull-type-link:hover { color: var(--amber) !important; text-decoration: underline; }
 
