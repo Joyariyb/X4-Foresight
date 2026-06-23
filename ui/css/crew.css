@@ -40,4 +40,7 @@
     /* Hull Type cell (Fleet tab) — jumps to the Resource Library's Hull Inspector */
     .hull-type-link { cursor: pointer; }
     .hull-type-link:hover { color: var(--amber) !important; text-decoration: underline; }
+    /* Sector cell (Fleet tab) — jumps to the Universe tab's Sectors subtab */
+    .sector-link { cursor: pointer; }
+    .sector-link:hover { color: var(--amber) !important; text-decoration: underline; }
 

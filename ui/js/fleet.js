@@ -117,7 +117,7 @@
           </div>
         </td>
         <td><i class="ti ${oIcon}" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:${oCol}"></i><span style="color:${oCol}">${s.order}</span></td>
-        <td style="color:var(--text-dim)"><i class="ti ti-map-pin" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:var(--text-faint)"></i>${s.sector}</td>
+        <td style="color:var(--text-dim)">${s.sector_macro ? `<span class="sector-link" data-sector-macro="${s.sector_macro}">` : ''}<i class="ti ti-map-pin" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:var(--text-faint)"></i>${s.sector}${s.sector_macro ? '</span>' : ''}</td>
         <td style="white-space:nowrap">${stationEl}</td>
         <td style="color:var(--text-faint);white-space:nowrap"><i class="ti ti-user" style="font-size:12px;vertical-align:-2px;margin-right:4px"></i>${pilotEl}</td>
       </tr>`;
@@ -186,6 +186,14 @@
       e.stopPropagation();
       const macro = hullLink.dataset.hullMacro;
       if (macro) jumpToHull(macro);
+      return;
+    }
+    // Sectors-tab navigation (Sector cell)
+    const sectorLink = e.target.closest('.sector-link');
+    if (sectorLink) {
+      e.stopPropagation();
+      const macro = sectorLink.dataset.sectorMacro;
+      if (macro) goToSector(macro);
     }
   });
 
