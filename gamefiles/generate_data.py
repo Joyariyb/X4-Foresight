@@ -752,18 +752,26 @@ def gen_station_stats_py(idx: CatalogIndex) -> str:
       hull        → <hull max="N"/>
       cargo       → <cargo max="N"/>   (storage modules)
       produces    → <production><queue ware="..."/>  (production modules)
+      name        → <identification name="{page,id}"/>, resolved via the t-file
 
     Shield equipment  (assets/props/surfaceelements/macros/shield_*.xml, base + DLC):
       max_shield  → <recharge max="N"/>
+      name        → <identification name="{page,id}"/>, resolved via the t-file
       Alias macros (a <macro> with a ref/alias attribute and no <recharge> of
-      its own) inherit max_shield from the macro they reference.
+      its own) inherit max_shield (and name) from the macro they reference.
 
     Only entries with at least one meaningful value are emitted — decorative
     pieces and pure connection modules (no hull/shield/cargo/produces) are
     dropped. This matches the scanner behaviour: STATION_STATS is used as a
     filter; components missing from it are skipped during module parsing.
+
+    name_refs collects raw "{page,id}" strings keyed by macro_id and is
+    resolved in one pass at the end, once every referenced page is known —
+    the pages used (20104, 20106, ...) aren't hardcoded since DLCs are free
+    to add identifications on a new page.
     """
     stats: dict[str, dict] = {}
+    name_refs: dict[str, str] = {}
 
     # ── Structure modules ────────────────────────────────────────────────
     struct_paths = (
@@ -804,6 +812,10 @@ def gen_station_stats_py(idx: CatalogIndex) -> str:
 
         if entry:
             stats[macro_id] = entry
+            ident = root.find(".//identification")
+            name_ref = ident.get("name", "") if ident is not None else ""
+            if name_ref:
+                name_refs[macro_id] = name_ref
         else:
             # No stats of its own → inherit from the macro it points at.
             ref = (macro_el.get("ref") or macro_el.get("alias") or "").lower()
@@ -811,11 +823,14 @@ def gen_station_stats_py(idx: CatalogIndex) -> str:
                 struct_aliases[macro_id] = ref
 
     # Resolve structure aliases against the concrete macros gathered above. Copy
-    # the whole entry (hull/cargo/produces) so the alias behaves like its target.
+    # the whole entry (hull/cargo/produces) so the alias behaves like its target,
+    # including its name ref if it has one.
     for macro_id, ref in struct_aliases.items():
         target = stats.get(ref)
         if target:
             stats[macro_id] = dict(target)
+            if ref in name_refs:
+                name_refs[macro_id] = name_refs[ref]
 
     # ── Shield equipment ─────────────────────────────────────────────────
     # Shields live under assets/props/surfaceelements/, not equipment/.
@@ -843,6 +858,10 @@ def gen_station_stats_py(idx: CatalogIndex) -> str:
             v = int(recharge_el.get("max", 0) or 0)
             if v > 0:
                 stats[macro_id] = {"max_shield": v}
+                ident = root.find(".//identification")
+                name_ref = ident.get("name", "") if ident is not None else ""
+                if name_ref:
+                    name_refs[macro_id] = name_ref
         else:
             # No recharge of its own → inherit from the macro it points at.
             ref = (macro_el.get("ref") or macro_el.get("alias") or "").lower()
@@ -856,6 +875,19 @@ def gen_station_stats_py(idx: CatalogIndex) -> str:
         target = stats.get(ref)
         if target and "max_shield" in target:
             stats[macro_id] = {"max_shield": target["max_shield"]}
+            if ref in name_refs:
+                name_refs[macro_id] = name_refs[ref]
+
+    # ── Resolve display names ────────────────────────────────────────────
+    # Pull only the pages actually referenced by the {page,id} refs collected
+    # above, then resolve them all in one load_texts() call.
+    pages = {m.group(1) for ref in name_refs.values()
+              for m in [_REF_RE.search(ref)] if m}
+    texts = load_texts(idx, pages) if pages else {}
+    for macro_id, raw_ref in name_refs.items():
+        name = clean_text(raw_ref, texts)
+        if name:
+            stats[macro_id]["name"] = name
 
     # ── Format output ────────────────────────────────────────────────────
     def _entry_str(e: dict) -> str:
@@ -864,6 +896,7 @@ def gen_station_stats_py(idx: CatalogIndex) -> str:
         if "max_shield"     in e: lines.append(f"        'max_shield':     {e['max_shield']},")
         if "cargo_capacity" in e: lines.append(f"        'cargo_capacity': {e['cargo_capacity']},")
         if "produces"       in e: lines.append(f"        'produces':       {repr(e['produces'])},")
+        if "name"           in e: lines.append(f"        'name':           {e['name']!r},")
         return "\n".join(lines)
 
     blocks = [f"    '{k}': {{\n{_entry_str(v)}\n    }},"
@@ -876,6 +909,9 @@ def gen_station_stats_py(idx: CatalogIndex) -> str:
         "#   max_shield     — shield recharge capacity in HP (shield equipment)\n"
         "#   cargo_capacity — maximum cargo volume in m³ (storage modules)\n"
         "#   produces       — ware id produced by this module (production modules)\n"
+        "#   name           — display name from <identification name=\"{page,id}\"/>,\n"
+        "#                    resolved via the t-file. Absent for the handful of\n"
+        "#                    decorative/internal macros with no identification.\n"
         "# Used by StationHandler._parse_modules() and ShipHandler for shield HP.\n"
         "# Entries with no meaningful values (decorative, connection pieces) are omitted.\n"
         "STATION_STATS = {\n" +

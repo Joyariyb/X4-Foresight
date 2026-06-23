@@ -398,18 +398,18 @@
 
       // Shield cell inner HTML — null renders a "NO SHIELDS" label centred in the bar area
       const shieldDisplay = shieldPct == null
-        ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-             <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--red)">Shields</span>
+        ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+             <span style="font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--red)">Shields</span>
            </div>
-           <div style="height:22px;background:var(--border);border-radius:2px;display:flex;align-items:center;justify-content:center">
-             <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--red)">No Shields</span>
+           <div style="height:2.2rem;background:var(--border);border-radius:0.2rem;display:flex;align-items:center;justify-content:center">
+             <span style="font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--red)">No Shields</span>
            </div>`
-        : `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-             <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:${attnColor(shieldColor)}">Shields</span>
-             <span style="font-family:var(--font-mono);font-size:11px;color:${shieldColor}">${shieldPctStr}</span>
+        : `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+             <span style="font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;color:${attnColor(shieldColor)}">Shields</span>
+             <span style="font-family:var(--font-mono);font-size:1.1rem;color:${shieldColor}">${shieldPctStr}</span>
            </div>
-           <div style="height:22px;background:var(--border);border-radius:2px;overflow:hidden">
-             <div style="height:100%;width:${shieldBarW}%;background:${shieldColor};border-radius:2px"></div>
+           <div style="height:2.2rem;background:var(--border);border-radius:0.2rem;overflow:hidden">
+             <div style="height:100%;width:${shieldBarW}%;background:${shieldColor};border-radius:0.2rem"></div>
            </div>`;
 
       // Station status badge
@@ -446,14 +446,14 @@
       ];
       const afTipRows = afBuckets
         .filter(b => b.val > 0)
-        .map(b => `<div style="display:flex;justify-content:space-between;gap:16px;padding:2px 0">
+        .map(b => `<div style="display:flex;justify-content:space-between;gap:1.6rem;padding:0.2rem 0">
            <span style="color:${b.color}">${b.label}</span>
            <span style="font-weight:600;color:${b.color}">${b.val}</span>
          </div>`)
         .join('');
       const afTipHtml = afTipRows
-        ? `<div style="font-family:var(--font-mono);font-size:11px;min-width:110px">${afTipRows}</div>`
-        : `<div style="font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">None assigned</div>`;
+        ? `<div style="font-family:var(--font-mono);font-size:1.1rem;min-width:11rem">${afTipRows}</div>`
+        : `<div style="font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">None assigned</div>`;
       const afTipAttr = `data-fleet-tip="${encodeURIComponent(afTipHtml)}"`;
 
       const storageRaw   = s.cargo_adj_pct;
@@ -530,10 +530,10 @@
       // Label colour follows the two-state rule via attnColor().
       // tipAttr is an optional extra attribute string e.g. 'data-storage-tip="..."'
       const sc = (lbl, val, col = 'var(--text)', last = false, tipAttr = '', icon = '') =>
-        `<div style="padding:10px 12px;text-align:center;background:var(--bg-card);border-radius:3px${tipAttr ? ';cursor:default' : ''}" ${tipAttr}>
-           ${icon ? `<div style="font-size:15px;color:${attnColor(col)};margin-bottom:3px"><i class="ti ${icon}"></i></div>` : ''}
-           <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:${attnColor(col)};margin-bottom:5px">${lbl}</div>
-           <div style="font-family:var(--font-mono);font-size:20px;color:${col}">${val}</div>
+        `<div style="padding:1rem 1.2rem;text-align:center;background:var(--bg-card);border-radius:0.3rem${tipAttr ? ';cursor:default' : ''}" ${tipAttr}>
+           ${icon ? `<div style="font-size:1.5rem;color:${attnColor(col)};margin-bottom:0.3rem"><i class="ti ${icon}"></i></div>` : ''}
+           <div style="font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.1em;text-transform:uppercase;color:${attnColor(col)};margin-bottom:0.5rem">${lbl}</div>
+           <div style="font-family:var(--font-mono);font-size:2rem;color:${col}">${val}</div>
          </div>`;
 
       // ── PRODUCTION TAB ─────────────────────────────────────────────────────
@@ -572,7 +572,7 @@
       };
 
       const prodRows = wares.length === 0
-        ? `<div style="padding:12px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No production modules</div>`
+        ? `<div style="padding:1.2rem 1.4rem;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No production modules</div>`
         : wares.map(w => {
             const wareCol  = WARE_COLOURS[w] || 'var(--text-dim)';
             // ware_id key matches the inventory dict: "Energy Cells" → "energycells"
@@ -596,7 +596,7 @@
             const stockLabel = Math.round(inv.amount ?? 0).toLocaleString();
             const consLabel  = consHr > 0 ? Math.round(consHr).toLocaleString() + '/hr' : '';
             // Double shadow punches the text out of the bright fill behind it.
-            const barTextStyle = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:9px;color:var(--text);text-shadow:0 0 3px rgba(2,8,14,0.95),0 0 3px rgba(2,8,14,0.95);pointer-events:none';
+            const barTextStyle = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:0.9rem;color:var(--text);text-shadow:0 0 3px rgba(2,8,14,0.95),0 0 3px rgba(2,8,14,0.95);pointer-events:none';
 
             // Runtime label: time until this ware's production stops due to a depleted
             // input. null minutes = no inputs needed (e.g. energy cells) → show nothing.
@@ -619,23 +619,23 @@
               }
             }
             const rtSpan = rtLabel
-              ? `<span style="font-family:var(--font-mono);font-size:10px;color:${rtColor};min-width:52px;text-align:right" title="${rtTitle}">${rtLabel}</span>`
-              : `<span style="min-width:52px"></span>`;
+              ? `<span style="font-family:var(--font-mono);font-size:1rem;color:${rtColor};min-width:5.2rem;text-align:right" title="${rtTitle}">${rtLabel}</span>`
+              : `<span style="min-width:5.2rem"></span>`;
 
             return `<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border)">
-               <div style="display:flex;align-items:center;gap:8px;padding:5px 14px;border-right:1px solid var(--border)">
-                 <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:${wareCol};min-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${w.toUpperCase()}</span>
-                 <div style="flex:1;height:13px;background:${wareCol}30;border-radius:2px;overflow:hidden;position:relative" title="Stockpile: ${stockLabel} units · ${storagePct.toFixed(1)}% of ${cargType} bay">
-                   <div style="height:100%;width:${storagePct.toFixed(1)}%;background:${wareCol};border-radius:2px"></div>
+               <div style="display:flex;align-items:center;gap:0.8rem;padding:0.5rem 1.4rem;border-right:1px solid var(--border)">
+                 <span style="font-family:var(--font-mono);font-size:1.1rem;letter-spacing:0.06em;text-transform:uppercase;color:${wareCol};min-width:16rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${w.toUpperCase()}</span>
+                 <div style="flex:1;height:1.3rem;background:${wareCol}30;border-radius:0.2rem;overflow:hidden;position:relative" title="Stockpile: ${stockLabel} units · ${storagePct.toFixed(1)}% of ${cargType} bay">
+                   <div style="height:100%;width:${storagePct.toFixed(1)}%;background:${wareCol};border-radius:0.2rem"></div>
                    <span style="${barTextStyle}">${stockLabel}</span>
                  </div>
                </div>
-               <div style="display:flex;align-items:center;gap:8px;padding:5px 14px">
-                 <div style="flex:1;height:13px;background:${wareCol}30;border-radius:2px;overflow:hidden;position:relative" title="Internal use: ${usagePct.toFixed(1)}% of output consumed internally">
-                   <div style="height:100%;width:${usagePct.toFixed(1)}%;background:${wareCol};border-radius:2px"></div>
+               <div style="display:flex;align-items:center;gap:0.8rem;padding:0.5rem 1.4rem">
+                 <div style="flex:1;height:1.3rem;background:${wareCol}30;border-radius:0.2rem;overflow:hidden;position:relative" title="Internal use: ${usagePct.toFixed(1)}% of output consumed internally">
+                   <div style="height:100%;width:${usagePct.toFixed(1)}%;background:${wareCol};border-radius:0.2rem"></div>
                    <span style="${barTextStyle}">${consLabel}</span>
                  </div>
-                 <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);min-width:54px;text-align:right">${rateLabel}</span>
+                 <span style="font-family:var(--font-mono);font-size:1rem;color:var(--text-faint);min-width:5.4rem;text-align:right">${rateLabel}</span>
                  ${rtSpan}
                </div>
              </div>`;
@@ -644,23 +644,23 @@
       // Column titles for the production rows — built with the same grid and
       // flex slots as the rows themselves so each title sits exactly over its
       // column. Only shown when there are rows to label.
-      const prodHdrStyle = 'font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-faint)';
+      const prodHdrStyle = 'font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-faint)';
       const prodHeader = wares.length === 0 ? '' :
         `<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border);background:var(--bg-panel)">
-           <div style="display:flex;gap:8px;padding:4px 14px;border-right:1px solid var(--border)">
-             <span style="${prodHdrStyle};min-width:160px">Ware</span>
+           <div style="display:flex;gap:0.8rem;padding:0.4rem 1.4rem;border-right:1px solid var(--border)">
+             <span style="${prodHdrStyle};min-width:16rem">Ware</span>
              <span style="${prodHdrStyle};flex:1">Stockpile</span>
            </div>
-           <div style="display:flex;gap:8px;padding:4px 14px">
+           <div style="display:flex;gap:0.8rem;padding:0.4rem 1.4rem">
              <span style="${prodHdrStyle};flex:1">Internal Use</span>
-             <span style="${prodHdrStyle};min-width:54px;text-align:right">Rate</span>
-             <span style="${prodHdrStyle};min-width:52px;text-align:right">Runtime</span>
+             <span style="${prodHdrStyle};min-width:5.4rem;text-align:right">Rate</span>
+             <span style="${prodHdrStyle};min-width:5.2rem;text-align:right">Runtime</span>
            </div>
          </div>`;
 
       // ── DOCKED SHIPS TAB ───────────────────────────────────────────────────
       const dockedRows = dockedShips.length === 0
-        ? `<div style="padding:12px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No docked ships</div>`
+        ? `<div style="padding:1.2rem 1.4rem;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No docked ships</div>`
         : dockedShips.map(ds => {
             // Look up the ship first in the player fleet, then in the full NPC list.
             // This handles both directly-owned ships and civilian-faction ships that
@@ -674,14 +674,14 @@
             const shipFaction   = matchedNpc ? matchedNpc.owner : 'player';
             const clickable     = !!matched && !ds.under_construction;
             return `<div class="${clickable ? 'docked-ship-row' : ''}"
-                         style="display:flex;align-items:center;gap:10px;padding:6px 14px;border-bottom:1px solid var(--border);${clickable ? 'cursor:pointer' : ''}"
+                         style="display:flex;align-items:center;gap:1rem;padding:0.6rem 1.4rem;border-bottom:1px solid var(--border);${clickable ? 'cursor:pointer' : ''}"
                          ${clickable ? `onclick="jumpToShip('${ds.code}', '${shipFaction}')"` : ''}>
-              <span style="font-family:var(--font-mono);color:var(--yellow);font-size:11px;min-width:64px">${ds.code}</span>
-              <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);padding:1px 5px;border:1px solid var(--border);border-radius:2px">${cls}</span>
+              <span style="font-family:var(--font-mono);color:var(--yellow);font-size:1.1rem;min-width:6.4rem">${ds.code}</span>
+              <span style="font-family:var(--font-mono);font-size:1rem;color:var(--text-faint);padding:0.1rem 0.5rem;border:1px solid var(--border);border-radius:0.2rem">${cls}</span>
               <span class="ship-name" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${shipName}</span>
               ${ds.under_construction
-                ? '<span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.1em;color:var(--amber)">CONSTRUCTING</span>'
-                : clickable ? '<span style="font-family:var(--font-mono);font-size:9px;color:var(--text-faint)">→ Fleet</span>' : ''}
+                ? '<span style="font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.1em;color:var(--amber)">CONSTRUCTING</span>'
+                : clickable ? '<span style="font-family:var(--font-mono);font-size:0.9rem;color:var(--text-faint)">→ Fleet</span>' : ''}
             </div>`;
           }).join('');
 
@@ -692,7 +692,7 @@
       const TYPE_LABEL = { container:'Container',   solid:'Solid',        liquid:'Liquid'        };
 
       const hasStorage = ['container','solid','liquid'].some(t => s[`cargo_${t}_adj_pct`] != null) || s.cargo_adj_pct != null;
-      let storageRows  = `<div style="padding:12px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No storage data</div>`;
+      let storageRows  = `<div style="padding:1.2rem 1.4rem;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No storage data</div>`;
       if (hasStorage) {
         const typeRowsHtml = ['container','solid','liquid'].map(t => {
           const pct = s[`cargo_${t}_adj_pct`];
@@ -700,13 +700,13 @@
           const max = s[`cargo_${t}_max`];
           if (pct == null) return '';
           const col = pct > 90 ? 'var(--red)' : TYPE_COLOR[t];
-          return `<div style="display:flex;align-items:center;gap:8px;padding:5px 14px;border-bottom:1px solid var(--border)">
-            <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:${col};min-width:68px">${TYPE_LABEL[t]}</span>
-            <div style="flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden">
-              <div style="height:100%;width:${Math.min(pct,100).toFixed(1)}%;background:${col};border-radius:2px"></div>
+          return `<div style="display:flex;align-items:center;gap:0.8rem;padding:0.5rem 1.4rem;border-bottom:1px solid var(--border)">
+            <span style="font-family:var(--font-mono);font-size:1rem;letter-spacing:0.06em;text-transform:uppercase;color:${col};min-width:6.8rem">${TYPE_LABEL[t]}</span>
+            <div style="flex:1;height:0.3rem;background:var(--border);border-radius:0.2rem;overflow:hidden">
+              <div style="height:100%;width:${Math.min(pct,100).toFixed(1)}%;background:${col};border-radius:0.2rem"></div>
             </div>
-            <span style="font-family:var(--font-mono);font-size:11px;color:${col};min-width:34px;text-align:right">${pct.toFixed(0)}%</span>
-            <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);white-space:nowrap">${fmtM3(m3)}/${fmtM3(max)} m³</span>
+            <span style="font-family:var(--font-mono);font-size:1.1rem;color:${col};min-width:3.4rem;text-align:right">${pct.toFixed(0)}%</span>
+            <span style="font-family:var(--font-mono);font-size:1rem;color:var(--text-faint);white-space:nowrap">${fmtM3(m3)}/${fmtM3(max)} m³</span>
           </div>`;
         }).join('');
 
@@ -714,13 +714,13 @@
         if (s.cargo_adj_pct != null) {
           const pct = s.cargo_adj_pct;
           const col = pct > 90 ? 'var(--red)' : pct > 70 ? 'var(--amber)' : 'var(--green)';
-          totalRow = `<div style="display:flex;align-items:center;gap:8px;padding:6px 14px;background:var(--bg-panel)">
-            <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-faint);min-width:68px">Total</span>
-            <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden">
-              <div style="height:100%;width:${Math.min(pct,100).toFixed(1)}%;background:${col};border-radius:2px"></div>
+          totalRow = `<div style="display:flex;align-items:center;gap:0.8rem;padding:0.6rem 1.4rem;background:var(--bg-panel)">
+            <span style="font-family:var(--font-mono);font-size:1rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-faint);min-width:6.8rem">Total</span>
+            <div style="flex:1;height:0.4rem;background:var(--border);border-radius:0.2rem;overflow:hidden">
+              <div style="height:100%;width:${Math.min(pct,100).toFixed(1)}%;background:${col};border-radius:0.2rem"></div>
             </div>
-            <span style="font-family:var(--font-mono);font-size:11px;color:${col};min-width:34px;text-align:right">${pct.toFixed(0)}%</span>
-            <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);white-space:nowrap">${fmtM3(s.cargo_adj_m3)}/${fmtM3(s.cargo_max)} m³</span>
+            <span style="font-family:var(--font-mono);font-size:1.1rem;color:${col};min-width:3.4rem;text-align:right">${pct.toFixed(0)}%</span>
+            <span style="font-family:var(--font-mono);font-size:1rem;color:var(--text-faint);white-space:nowrap">${fmtM3(s.cargo_adj_m3)}/${fmtM3(s.cargo_max)} m³</span>
           </div>`;
         }
         storageRows = typeRowsHtml + totalRow;
@@ -744,27 +744,27 @@
       // Pie (interactive budget breakdown). The budget total lives in the donut
       // centre; per-ware figures appear on slice hover.
       const econRows = budLines.length === 0
-        ? `<div style="padding:12px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No economy data</div>`
+        ? `<div style="padding:1.2rem 1.4rem;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No economy data</div>`
         : `<!-- Pie (budget breakdown) and goods history chart side by side;
                 wraps to stacked on narrow windows. -->
-           <div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px;padding:8px 10px;background:#040e18">
+           <div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.8rem;padding:0.8rem 1rem;background:#040e18">
              <div style="flex:0 0 auto">${economyPieSvg(bud)}</div>
              ${goodsChartSvg(s, allTrades)}
            </div>`;
 
       return `<div class="panel" id="station-${s.code}">
         <!-- Header: vertical faction tag + name/location/status -->
-        <div style="display:flex;min-height:52px">
-          <div style="writing-mode:vertical-lr;transform:rotate(180deg);font-family:var(--font-mono);font-size:9px;letter-spacing:0.18em;color:var(--text-faint);background:var(--bg-panel);border-right:1px solid var(--border);padding:8px 6px;display:flex;align-items:center;justify-content:center;text-transform:uppercase;flex-shrink:0">
+        <div style="display:flex;min-height:5.2rem">
+          <div style="writing-mode:vertical-lr;transform:rotate(180deg);font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.18em;color:var(--text-faint);background:var(--bg-panel);border-right:1px solid var(--border);padding:0.8rem 0.6rem;display:flex;align-items:center;justify-content:center;text-transform:uppercase;flex-shrink:0">
             ${factionTag}
           </div>
-          <div style="flex:1;padding:8px 14px;background:var(--bg-panel)">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">
-              <div style="display:flex;align-items:baseline;gap:10px;min-width:0;overflow:hidden">
-                <span style="font-family:var(--font-mono);font-size:13px;color:var(--lime);letter-spacing:0.1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name.trim().toUpperCase()}</span>
-                <span style="font-family:var(--font-mono);color:var(--yellow);font-size:11px;white-space:nowrap">${s.code}</span>
+          <div style="flex:1;padding:0.8rem 1.4rem;background:var(--bg-panel)">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1rem">
+              <div style="display:flex;align-items:baseline;gap:1rem;min-width:0;overflow:hidden">
+                <span style="font-family:var(--font-mono);font-size:1.3rem;color:var(--lime);letter-spacing:0.1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name.trim().toUpperCase()}</span>
+                <span style="font-family:var(--font-mono);color:var(--yellow);font-size:1.1rem;white-space:nowrap">${s.code}</span>
               </div>
-              <span style="font-family:var(--font-mono);font-size:10px;color:${statusColor};letter-spacing:0.12em;white-space:nowrap;flex-shrink:0">${statusLabel}</span>
+              <span style="font-family:var(--font-mono);font-size:1rem;color:${statusColor};letter-spacing:0.12em;white-space:nowrap;flex-shrink:0">${statusLabel}</span>
             </div>
             <!-- Two ring planes at ±45° form a cross over the planet.
                  Technique: clip-path lives on a <g> with NO transform, so the
@@ -773,13 +773,13 @@
                  objectBoundingBox gradients (x1=0→x2=1) use the element's
                  screen-space bounding box, so tips fade to transparent for
                  both ring planes automatically with one gradient definition. -->
-            <!-- Container is 50px tall for layout. The SVG is 100px tall and
-                 centred vertically (top:50% + translateY(-50%)), so 25px of
+            <!-- Container is 5rem tall for layout. The SVG is 10rem tall and
+                 centred vertically (top:50% + translateY(-50%)), so 2.5rem of
                  the rings bleed above and below. A vertical mask-image fades
                  those bleed zones so the arms dissolve naturally into the card. -->
-            <div style="display:flex;justify-content:center;align-items:center;margin-top:7px;margin-bottom:1px;position:relative;height:50px">
-              <svg width="180" height="100" viewBox="0 0 180 100"
-                   style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;
+            <div style="display:flex;justify-content:center;align-items:center;margin-top:0.7rem;margin-bottom:0.1rem;position:relative;height:5rem">
+              <svg viewBox="0 0 180 100"
+                   style="width:18rem;height:10rem;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;
                           -webkit-mask-image:linear-gradient(to bottom,transparent 0%,black 30%,black 70%,transparent 100%);
                                   mask-image:linear-gradient(to bottom,transparent 0%,black 30%,black 70%,transparent 100%)"
                    xmlns="http://www.w3.org/2000/svg">
@@ -815,16 +815,16 @@
               </svg>
 
               <div class="tri-track" id="tri-${s.code}" data-pos="0"
-                   style="width:252px;position:relative;z-index:1">
+                   style="width:25.2rem;position:relative;z-index:1">
                 <div class="tri-thumb"></div>
                 <span class="tri-opt active" onclick="setStationSlider('${s.code}',0)">Overview</span>
                 <span class="tri-opt"        onclick="setStationSlider('${s.code}',1)">Economy</span>
                 <span class="tri-opt"        onclick="setStationSlider('${s.code}',2)">More</span>
               </div>
             </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px">
-              <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);letter-spacing:0.08em">${s.sector.toUpperCase()}</span>
-              <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:0.06em">${typeLabel}</span>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.5rem">
+              <span style="font-family:var(--font-mono);font-size:1rem;color:var(--text-faint);letter-spacing:0.08em">${s.sector.toUpperCase()}</span>
+              <span style="font-family:var(--font-mono);font-size:1rem;color:var(--text-dim);letter-spacing:0.06em">${typeLabel}</span>
             </div>
           </div>
         </div>
@@ -833,33 +833,33 @@
              region for the Economy panel (1) or the placeholder (2). -->
         <div class="station-slider-panel" data-slider="0" style="display:block">
         <!-- Sunlight strip — Overview only; one-liner below the sector name. -->
-        ${bud.sunlight != null ? `<div style="padding:4px 14px;border-bottom:1px solid var(--border);background:var(--bg-panel)"><span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-faint)">Sunlight </span><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">${Math.round(bud.sunlight*100)}%</span></div>` : ''}
+        ${bud.sunlight != null ? `<div style="padding:0.4rem 1.4rem;border-bottom:1px solid var(--border);background:var(--bg-panel)"><span style="font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-faint)">Sunlight </span><span style="font-family:var(--font-mono);font-size:1rem;color:var(--text-dim)">${Math.round(bud.sunlight*100)}%</span></div>` : ''}
         <!-- Hull + Shields health bars -->
         <div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
-          <div style="padding:7px 14px;border-right:1px solid var(--border)">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-              <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:${attnColor(hullColor)}">Hull</span>
-              <span style="font-family:var(--font-mono);font-size:11px;color:${hullColor}">${hullPctStr}</span>
+          <div style="padding:0.7rem 1.4rem;border-right:1px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+              <span style="font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;color:${attnColor(hullColor)}">Hull</span>
+              <span style="font-family:var(--font-mono);font-size:1.1rem;color:${hullColor}">${hullPctStr}</span>
             </div>
-            <div style="height:22px;background:var(--border);border-radius:2px;overflow:hidden">
-              <div style="height:100%;width:${hullBarW}%;background:${hullColor};border-radius:2px"></div>
+            <div style="height:2.2rem;background:var(--border);border-radius:0.2rem;overflow:hidden">
+              <div style="height:100%;width:${hullBarW}%;background:${hullColor};border-radius:0.2rem"></div>
             </div>
           </div>
-          <div style="padding:7px 14px">
+          <div style="padding:0.7rem 1.4rem">
             ${shieldDisplay}
           </div>
         </div>
         <!-- Stats row: Modules | Crew | Ships | Storage -->
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px;background:var(--bg-panel);border-bottom:1px solid var(--border)">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.4rem;padding:0.4rem;background:var(--bg-panel);border-bottom:1px solid var(--border)">
           ${sc('Modules', modCount, 'var(--text)',                                      false, moduleTipAttr, 'ti-building-community')}
           ${sc('Crew',    '—',      'var(--text-faint)',                               false, '',             'ti-users')}
           ${sc('Ships',   afTotal,   afColor,                                             false, afTipAttr,  'ti-ship')}
           ${sc('Storage', storageStr, storageColor,                                   true,  storageTipAttr, 'ti-box')}
         </div>
         <!-- Tab bar -->
-        <div style="display:flex;gap:4px;padding:6px 10px;border-bottom:1px solid var(--border);background:var(--bg-panel)">
-          <button class="station-tab-btn active" data-tab="production" onclick="switchStationTab('${s.code}','production')"><i class="ti ti-settings" style="font-size:11px;vertical-align:-1px;margin-right:4px"></i>Production</button>
-          <button class="station-tab-btn" data-tab="docked" onclick="switchStationTab('${s.code}','docked')"><i class="ti ti-ship" style="font-size:11px;vertical-align:-1px;margin-right:4px"></i>Docked${dockedShips.length > 0 ? ' · ' + dockedShips.length : ''}</button>
+        <div style="display:flex;gap:0.4rem;padding:0.6rem 1rem;border-bottom:1px solid var(--border);background:var(--bg-panel)">
+          <button class="station-tab-btn active" data-tab="production" onclick="switchStationTab('${s.code}','production')"><i class="ti ti-settings" style="font-size:1.1rem;vertical-align:-1px;margin-right:0.4rem"></i>Production</button>
+          <button class="station-tab-btn" data-tab="docked" onclick="switchStationTab('${s.code}','docked')"><i class="ti ti-ship" style="font-size:1.1rem;vertical-align:-1px;margin-right:0.4rem"></i>Docked${dockedShips.length > 0 ? ' · ' + dockedShips.length : ''}</button>
         </div>
         <!-- Tab panels -->
         <div class="station-tab-panel" data-tab="production" style="display:block">${prodHeader}${prodRows}</div>
@@ -869,7 +869,7 @@
         <div class="station-slider-panel" data-slider="1" style="display:none">${econRows}</div>
         <!-- Slider panel 2: placeholder for a future view -->
         <div class="station-slider-panel" data-slider="2" style="display:none">
-          <div style="padding:12px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">—</div>
+          <div style="padding:1.2rem 1.4rem;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">—</div>
         </div>
       </div>`;
     }).join("");

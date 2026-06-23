@@ -42,22 +42,22 @@
     const allStation = allTrades.filter(t =>
       t.station_code === station.code && t.time_ago_s / 3600 < CF_MAX_HOURS);
     if (!allStation.length) {
-      return `<div style="flex:1 1 360px;min-width:320px;padding:16px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No trade activity in the last 24h</div>`;
+      return `<div style="flex:1 1 36rem;min-width:32rem;padding:1.6rem 1.4rem;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No trade activity in the last 24h</div>`;
     }
     const net24 = allStation.reduce((s, t) =>
       s + (t.direction === 'Out' ? 1 : -1) * (t.total_cr || 0), 0);
 
     return `
-      <div id="cf-${safeCode}" style="flex:1 1 360px;min-width:320px;display:flex;flex-direction:column">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
-          <div style="display:flex;align-items:center;gap:6px;min-width:0">
-            <span style="font-family:var(--font-mono);font-size:8px;letter-spacing:0.18em;color:#5fe9d4;text-transform:uppercase;white-space:nowrap">Cash Flow</span>
+      <div id="cf-${safeCode}" style="flex:1 1 36rem;min-width:32rem;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:0.8rem;margin-bottom:0.4rem">
+          <div style="display:flex;align-items:center;gap:0.6rem;min-width:0">
+            <span style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.18em;color:#5fe9d4;text-transform:uppercase;white-space:nowrap">Cash Flow</span>
             <button class="cf-toggle-btn active" data-mode="hourly"   onclick="setCashflowMode('${safeCode}','hourly')">Hourly</button>
             <button class="cf-toggle-btn"        data-mode="trade"    onclick="setCashflowMode('${safeCode}','trade')">By Trade</button>
             <button class="cf-toggle-btn"        data-mode="ware"     onclick="setCashflowMode('${safeCode}','ware')">By Ware</button>
             <button class="cf-toggle-btn"        data-mode="avgprice" onclick="setCashflowMode('${safeCode}','avgprice')">Avg Price</button>
           </div>
-          <span style="font-family:var(--font-mono);font-size:10px;color:${net24 >= 0 ? '#19e6c8' : '#ef5350'};white-space:nowrap">${cfFmtCr(net24)}</span>
+          <span style="font-family:var(--font-mono);font-size:1rem;color:${net24 >= 0 ? '#19e6c8' : '#ef5350'};white-space:nowrap">${cfFmtCr(net24)}</span>
         </div>
         <!-- Bodies split in two:
              • cf-avg — the Avg Price chart, built ONCE then mutated in place so
@@ -115,7 +115,7 @@
           : `-${h % 1 !== 0 ? h.toFixed(1) : Math.round(h)}H`;
         out.push(`<line x1="${x}" y1="${mt}" x2="${x}" y2="${mt + ph}" stroke="#19e6c8" stroke-opacity="0.08" stroke-width="0.6"/>
           <text x="${x}" y="${mt + ph + 13}" text-anchor="middle" fill="#5fe9d4" fill-opacity="0.7"
-                style="font-family:var(--font-mono);font-size:8px;letter-spacing:0.06em">${label}</text>`);
+                style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.06em">${label}</text>`);
       }
       return out.join('');
     })();
@@ -132,7 +132,7 @@
       const labels = ticks.map(v => {
         const y = yOf(v).toFixed(1);
         return `<text x="${ml - 6}" y="${y}" text-anchor="end" dominant-baseline="middle"
-                      fill="#5fe9d4" fill-opacity="0.7" style="font-family:var(--font-mono);font-size:8px">${cfFmtY(v)}</text>`;
+                      fill="#5fe9d4" fill-opacity="0.7" style="font-family:var(--font-mono);font-size:0.8rem">${cfFmtY(v)}</text>`;
       }).join('');
       return grid + labels;
     };
@@ -154,7 +154,7 @@
     // If the zoom window contains no trades show a lightweight empty state for all
     // three modes so the scrubber remains visible and interactive.
     if (!trades.length) {
-      const empty = `<div style="padding:16px 14px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No trades in this window</div>`;
+      const empty = `<div style="padding:1.6rem 1.4rem;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No trades in this window</div>`;
       return `
         <div data-cfmode="hourly" style="display:block">${empty}</div>
         <div data-cfmode="trade"  style="display:none">${empty}</div>
@@ -212,7 +212,7 @@
       }
 
       return `
-        <div style="background:#030d14;border:1px solid rgba(25,230,200,0.18);border-radius:3px;box-shadow:inset 0 0 24px rgba(25,230,200,0.05);padding:4px">
+        <div style="background:#030d14;border:1px solid rgba(25,230,200,0.18);border-radius:0.3rem;box-shadow:inset 0 0 24px rgba(25,230,200,0.05);padding:0.4rem">
           <svg viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:auto">
             <defs>
               <filter id="${glowId}" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2"/></filter>
@@ -237,13 +237,13 @@
             </g>
             <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="#19e6c8" stroke-opacity="0.35" stroke-width="1"/>
             <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.6"
-                  style="font-family:var(--font-mono);font-size:8px;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">CREDITS/HR</text>
+                  style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">CREDITS/HR</text>
             ${hitCols.join('')}
           </svg>
         </div>
-        <div style="display:flex;gap:16px;padding:6px 2px 2px;font-family:var(--font-mono);font-size:9px;letter-spacing:0.04em">
-          <span style="display:inline-flex;align-items:center;gap:5px;color:#19e6c8"><span style="display:inline-block;width:11px;height:2px;background:#19e6c8;border-radius:1px;filter:drop-shadow(0 0 2px #19e6c8)"></span>INCOME (SELLS)</span>
-          <span style="display:inline-flex;align-items:center;gap:5px;color:#ef5350"><span style="display:inline-block;width:11px;height:2px;background:#ef5350;border-radius:1px;filter:drop-shadow(0 0 2px #ef5350)"></span>SPEND (BUYS)</span>
+        <div style="display:flex;gap:1.6rem;padding:0.6rem 0.2rem 0.2rem;font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.04em">
+          <span style="display:inline-flex;align-items:center;gap:0.5rem;color:#19e6c8"><span style="display:inline-block;width:1.1rem;height:0.2rem;background:#19e6c8;border-radius:0.1rem;filter:drop-shadow(0 0 2px #19e6c8)"></span>INCOME (SELLS)</span>
+          <span style="display:inline-flex;align-items:center;gap:0.5rem;color:#ef5350"><span style="display:inline-block;width:1.1rem;height:0.2rem;background:#ef5350;border-radius:0.1rem;filter:drop-shadow(0 0 2px #ef5350)"></span>SPEND (BUYS)</span>
         </div>`;
     })();
 
@@ -291,7 +291,7 @@
       cashflowDetailData[safeCode] = store;
 
       return `
-        <div style="background:#030d14;border:1px solid rgba(25,230,200,0.18);border-radius:3px;box-shadow:inset 0 0 24px rgba(25,230,200,0.05);padding:4px">
+        <div style="background:#030d14;border:1px solid rgba(25,230,200,0.18);border-radius:0.3rem;box-shadow:inset 0 0 24px rgba(25,230,200,0.05);padding:0.4rem">
           <svg viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:auto">
             <defs>
               <filter id="${glowId}" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>
@@ -315,14 +315,14 @@
             </g>
             <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="#19e6c8" stroke-opacity="0.35" stroke-width="1"/>
             <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.6"
-                  style="font-family:var(--font-mono);font-size:8px;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">TRADE SIZE · CR</text>
+                  style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">TRADE SIZE · CR</text>
             <!-- Highlight ring follows the nearest trade on hover -->
             <circle class="cf-detail-marker" r="3.8" fill="none" stroke="#ffffff" stroke-width="1.5" style="display:none;pointer-events:none"/>
             <!-- Transparent plot overlay drives nearest-point hover -->
             <rect data-cfdetail="${safeCode}" x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="transparent" style="cursor:crosshair"/>
           </svg>
         </div>
-        <div style="padding:6px 2px 2px;font-family:var(--font-mono);font-size:9px;letter-spacing:0.04em;color:var(--text-faint)">
+        <div style="padding:0.6rem 0.2rem 0.2rem;font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.04em;color:var(--text-faint)">
           ${pts.length.toLocaleString()} trades · individual trade size · hover a point for trade details
         </div>`;
     })();
@@ -382,12 +382,12 @@
       // Empty state: no data in this direction/window.
       // No SVG to host the foreignObject, so fall back to simple vertical HTML buttons.
       if (!filteredTrades.length) {
-        return `<div style="display:flex;align-items:flex-start;gap:8px;padding:2px 0 4px">
-          <div style="display:flex;flex-direction:column;gap:2px">
+        return `<div style="display:flex;align-items:flex-start;gap:0.8rem;padding:0.2rem 0 0.4rem">
+          <div style="display:flex;flex-direction:column;gap:0.2rem">
             <button class="cf-toggle-btn ${isSell ? 'active' : ''}" onclick="setWareMode('${safeCode}','sell')">Sell</button>
             <button class="cf-toggle-btn ${!isSell ? 'active' : ''}" onclick="setWareMode('${safeCode}','buy')">Buy</button>
           </div>
-          <div style="padding:6px 0;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No ${isSell ? 'sell' : 'buy'} activity in this window</div>
+          <div style="padding:0.6rem 0;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No ${isSell ? 'sell' : 'buy'} activity in this window</div>
         </div>`;
       }
 
@@ -477,9 +477,9 @@
         <line x1="${ml}" y1="${yMax.toFixed(1)}" x2="${(ml+pw).toFixed(1)}" y2="${yMax.toFixed(1)}" stroke="#19e6c8" stroke-opacity="0.10" stroke-width="0.6"/>
         <line x1="${ml}" y1="${yAvg.toFixed(1)}" x2="${(ml+pw).toFixed(1)}" y2="${yAvg.toFixed(1)}" stroke="#19e6c8" stroke-opacity="0.28" stroke-width="1" stroke-dasharray="4 3"/>
         <line x1="${ml}" y1="${yMin.toFixed(1)}" x2="${(ml+pw).toFixed(1)}" y2="${yMin.toFixed(1)}" stroke="#19e6c8" stroke-opacity="0.10" stroke-width="0.6"/>
-        <text x="${ml-6}" y="${yMax.toFixed(1)}" text-anchor="end" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.70" style="font-family:var(--font-mono);font-size:8px">MAX</text>
-        <text x="${ml-6}" y="${yAvg.toFixed(1)}" text-anchor="end" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.90" style="font-family:var(--font-mono);font-size:8px">AVG</text>
-        <text x="${ml-6}" y="${yMin.toFixed(1)}" text-anchor="end" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.70" style="font-family:var(--font-mono);font-size:8px">MIN</text>`;
+        <text x="${ml-6}" y="${yMax.toFixed(1)}" text-anchor="end" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.70" style="font-family:var(--font-mono);font-size:0.8rem">MAX</text>
+        <text x="${ml-6}" y="${yAvg.toFixed(1)}" text-anchor="end" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.90" style="font-family:var(--font-mono);font-size:0.8rem">AVG</text>
+        <text x="${ml-6}" y="${yMin.toFixed(1)}" text-anchor="end" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.70" style="font-family:var(--font-mono);font-size:0.8rem">MIN</text>`;
 
       // Legend chips — clicking toggles the ware line on/off.
       const chips = wareNames.map(wareName => {
@@ -490,15 +490,15 @@
                       onclick="toggleWare('${safeCode}','${wareName}')"
                       style="cursor:pointer;opacity:${on ? '1' : '0.35'};
                              display:inline-flex;align-items:center;
-                             padding:2px 7px;border-radius:2px;
+                             padding:0.2rem 0.7rem;border-radius:0.2rem;
                              border:1px solid ${col}44;background:${col}22;
                              color:${col};font-family:var(--font-mono);
-                             font-size:10px;white-space:nowrap;letter-spacing:0.04em;
+                             font-size:1rem;white-space:nowrap;letter-spacing:0.04em;
                              user-select:none">${wareName}</span>`;
       }).join('');
 
       return `
-        <div style="background:#030d14;border:1px solid rgba(25,230,200,0.18);border-radius:3px;box-shadow:inset 0 0 24px rgba(25,230,200,0.05);padding:4px">
+        <div style="background:#030d14;border:1px solid rgba(25,230,200,0.18);border-radius:0.3rem;box-shadow:inset 0 0 24px rgba(25,230,200,0.05);padding:0.4rem">
           <svg viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:auto">
             <defs>
               <clipPath id="cfclip-${safeCode}-w"><rect x="${ml}" y="${mt}" width="${pw}" height="${ph}"/></clipPath>
@@ -512,7 +512,7 @@
             </g>
             <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt+ph}" stroke="#19e6c8" stroke-opacity="0.35" stroke-width="1"/>
             <text x="9" y="${mt + ph/2}" text-anchor="middle" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.6"
-                  style="font-family:var(--font-mono);font-size:8px;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph/2})">PRICE · BAND</text>
+                  style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph/2})">PRICE · BAND</text>
             <!-- Highlight ring — stroke colour set dynamically to match the hovered ware -->
             <circle class="cf-ware-marker" r="4" fill="none" stroke="#ffffff" stroke-width="1.5" style="display:none;pointer-events:none"/>
             <!-- Transparent overlay that captures mouse events for nearest-point hover -->
@@ -522,7 +522,7 @@
             ${wareToggleFO}
           </svg>
         </div>
-        <div style="display:flex;flex-wrap:wrap;gap:5px;padding:6px 2px 2px;will-change:transform">
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem;padding:0.6rem 0.2rem 0.2rem;will-change:transform">
           ${chips}
         </div>`;
     })();
@@ -547,9 +547,9 @@
         <div class="cf-scrubber-resize" data-side="left"></div>
         <div class="cf-scrubber-resize" data-side="right"></div>
       </div>
-      <span class="cf-scrubber-label" style="left:3px">-24H</span>
+      <span class="cf-scrubber-label" style="left:0.3rem">-24H</span>
       <span class="cf-scrubber-label" style="left:50%;transform:translate(-50%,-50%)">DRAG &amp; RESIZE</span>
-      <span class="cf-scrubber-label" style="right:3px">NOW</span>
+      <span class="cf-scrubber-label" style="right:0.3rem">NOW</span>
     </div>`;
   }
 
@@ -609,7 +609,7 @@
     const svgW = 560, svgH = 320, ml = 56, mr = 14, mt = 12, mb = 30;
     const pw = svgW - ml - mr, ph = svgH - mt - mb;
     return `
-      <div style="background:#030d14;border:1px solid rgba(25,230,200,0.18);border-radius:3px;box-shadow:inset 0 0 24px rgba(25,230,200,0.05);padding:4px">
+      <div style="background:#030d14;border:1px solid rgba(25,230,200,0.18);border-radius:0.3rem;box-shadow:inset 0 0 24px rgba(25,230,200,0.05);padding:0.4rem">
         <svg viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:auto">
           <defs>
             <clipPath id="avgclip-${safeCode}"><rect x="${ml}" y="${mt}" width="${pw}" height="${ph}"/></clipPath>
@@ -620,7 +620,7 @@
           <g class="avg-bars" clip-path="url(#avgclip-${safeCode})"></g>
           <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="#19e6c8" stroke-opacity="0.35" stroke-width="1"/>
           <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.6"
-                style="font-family:var(--font-mono);font-size:8px;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">PRICE · CR</text>
+                style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">PRICE · CR</text>
           <!-- Readout line: on hover it projects the bar's top across to the
                price axis at that hour's average. Colour set per-hover in JS. -->
           <line class="avg-hot-line" stroke-dasharray="3 3" stroke-width="0.8" style="opacity:0;transition:opacity 0.15s;pointer-events:none"/>
@@ -630,7 +630,7 @@
           <g class="avg-toggle"></g>
         </svg>
       </div>
-      <div class="avg-chips" style="display:flex;flex-wrap:wrap;gap:5px;padding:6px 2px 2px"></div>`;
+      <div class="avg-chips" style="display:flex;flex-wrap:wrap;gap:0.5rem;padding:0.6rem 0.2rem 0.2rem"></div>`;
   }
 
   // Switch the chart's direction / selected ware (radio); both retarget the bars.
@@ -696,10 +696,10 @@
       const c = WARE_COLOURS[w] || '#5eead4', on = w === ware;
       return `<span onclick="setAvgWare('${safeCode}','${w}')"
         style="cursor:pointer;opacity:${on ? '1' : '0.4'};display:inline-flex;align-items:center;
-               padding:2px 7px;border-radius:2px;border:1px solid ${c}${on ? 'aa' : '44'};
+               padding:0.2rem 0.7rem;border-radius:0.2rem;border:1px solid ${c}${on ? 'aa' : '44'};
                background:${c}${on ? '33' : '14'};color:${c};font-family:var(--font-mono);
-               font-size:10px;white-space:nowrap;letter-spacing:0.04em;user-select:none">${w}</span>`;
-    }).join('') : `<span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint)">No ${dir} activity in the last 24h</span>`;
+               font-size:1rem;white-space:nowrap;letter-spacing:0.04em;user-select:none">${w}</span>`;
+    }).join('') : `<span style="font-family:var(--font-mono);font-size:1rem;color:var(--text-faint)">No ${dir} activity in the last 24h</span>`;
 
     // ── SOLD/BOUGHT toggle (vertical pill, mirrors By Ware) ──
     const isSell = dir === 'sell';
@@ -746,7 +746,7 @@
     gridEl.innerHTML = ticks.map(v => {
       const y = yOf(v).toFixed(1);
       return `<line x1="${ml}" y1="${y}" x2="${ml + pw}" y2="${y}" stroke="#19e6c8" stroke-opacity="0.10" stroke-width="0.6"/>
-        <text x="${ml - 6}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.7" style="font-family:var(--font-mono);font-size:8px">${cfFmtY(v)}</text>`;
+        <text x="${ml - 6}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.7" style="font-family:var(--font-mono);font-size:0.8rem">${cfFmtY(v)}</text>`;
     }).join('');
 
     // ── X ticks: same adaptive spacing as the other charts ──
@@ -756,7 +756,7 @@
       const x = xOf(h).toFixed(1);
       const label = h === 0 ? 'NOW' : h < 1 ? `-${Math.round(h * 60)}M` : `-${h % 1 !== 0 ? h.toFixed(1) : Math.round(h)}H`;
       xt += `<line x1="${x}" y1="${mt}" x2="${x}" y2="${mt + ph}" stroke="#19e6c8" stroke-opacity="0.08" stroke-width="0.6"/>
-        <text x="${x}" y="${mt + ph + 13}" text-anchor="middle" fill="#5fe9d4" fill-opacity="0.7" style="font-family:var(--font-mono);font-size:8px;letter-spacing:0.06em">${label}</text>`;
+        <text x="${x}" y="${mt + ph + 13}" text-anchor="middle" fill="#5fe9d4" fill-opacity="0.7" style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.06em">${label}</text>`;
     }
     xtEl.innerHTML = xt;
 

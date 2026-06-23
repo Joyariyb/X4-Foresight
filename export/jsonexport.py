@@ -12,6 +12,7 @@ from scanner import galaxy_map as gm
 from scanner.ship_names import ship_display_name, resolve_ship_type
 from data.equipment_stats import EQUIPMENT_STATS, EQUIPMENT_ALIASES
 from data.ship_stats import SHIP_STATS
+from data.station_stats import STATION_STATS
 
 # Stat fields copied onto loadout entries; price drives cost calculations
 _EQUIP_STAT_KEYS = (
@@ -131,6 +132,11 @@ def _stations(conn, scan_id) -> list[dict]:
             conn,
             "SELECT macro, category, produces FROM station_modules "
             "WHERE scan_id=? AND station_id=?", (scan_id, sid))
+        # display_name from the static game catalog, not stored in the DB —
+        # same approach as ship_display_name() below, keyed by macro only
+        # since modules (unlike ships) have no per-instance custom name.
+        for m in d['modules']:
+            m['display_name'] = STATION_STATS.get(m['macro'], {}).get('name', m['macro'])
 
         # Production analytics — computed during scanning and stored per-scan so
         # the export is a pure DB read with no Python-side recalculation.

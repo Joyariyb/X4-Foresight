@@ -5,7 +5,7 @@
                     .slice().sort((a, b) => b.value - a.value);
     const total = lines.reduce((sum, l) => sum + l.value, 0);
     if (!lines.length || total <= 0) {
-      return `<div style="padding:24px 14px;text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">No budget to chart</div>`;
+      return `<div style="padding:2.4rem 1.4rem;text-align:center;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No budget to chart</div>`;
     }
 
     const cx = 150, cy = 150, r = 92, labelR = r + 14;
@@ -83,8 +83,8 @@
     //  • pieHole  — a dark inner-edge gradient on the centre hole, making the
     //               donut look like it has real thickness (recessed centre)
     return `
-      <div style="display:flex;justify-content:center;padding:10px 6px 16px">
-        <svg viewBox="-55 -25 410 350" width="440" height="376">
+      <div style="display:flex;justify-content:center;padding:1rem 0.6rem 1.6rem">
+        <svg viewBox="-55 -25 410 350" style="width:44rem;height:37.6rem">
           <defs>
             <radialGradient id="pieSheen" cx="0.36" cy="0.30" r="0.75">
               <stop offset="0%"   stop-color="#fff" stop-opacity="0.42"/>
@@ -107,9 +107,9 @@
           <!-- Inner-edge shadow gives the centre hole apparent depth. -->
           <circle cx="${cx}" cy="${cy}" r="${hole}" fill="url(#pieHole)" style="pointer-events:none"></circle>
           <text x="${cx}" y="${cy - 6}" text-anchor="middle" fill="var(--text-faint)"
-                style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase">Budget</text>
+                style="font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase">Budget</text>
           <text x="${cx}" y="${cy + 12}" text-anchor="middle" fill="var(--lime)"
-                style="font-family:var(--font-mono);font-size:15px">${Math.round(bud.total).toLocaleString()}</text>
+                style="font-family:var(--font-mono);font-size:1.5rem">${Math.round(bud.total).toLocaleString()}</text>
           ${labels.join('')}
         </svg>
       </div>`;

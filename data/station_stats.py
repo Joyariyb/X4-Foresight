@@ -11,459 +11,610 @@
 #   max_shield     — shield recharge capacity in HP (shield equipment)
 #   cargo_capacity — maximum cargo volume in m³ (storage modules)
 #   produces       — ware id produced by this module (production modules)
+#   name           — display name from <identification name="{page,id}"/>,
+#                    resolved via the t-file. Absent for the handful of
+#                    decorative/internal macros with no identification.
 # Used by StationHandler._parse_modules() and ShipHandler for shield HP.
 # Entries with no meaningful values (decorative, connection pieces) are omitted.
 STATION_STATS = {
     'buildmodule_bor_equip_l_macro': {
         'max_hull':       370000,
+        'name':           'L Ship Maintenance Bay',
     },
     'buildmodule_bor_equip_m_dockarea_01_macro': {
         'max_hull':       225000,
+        'name':           'S/M Ship Maintenance Bay',
     },
     'buildmodule_bor_equip_xl_macro': {
         'max_hull':       715000,
+        'name':           'XL Ship Maintenance Bay',
     },
     'buildmodule_bor_ships_l_macro': {
         'max_hull':       450000,
+        'name':           'L Ship Fabrication Bay',
     },
     'buildmodule_bor_ships_m_dockarea_01_macro': {
         'max_hull':       245000,
+        'name':           'S/M Ship Fabrication Bay',
     },
     'buildmodule_bor_ships_xl_macro': {
         'max_hull':       780000,
+        'name':           'XL Ship Fabrication Bay',
     },
     'buildmodule_gen_equip_l_macro': {
         'max_hull':       324000,
+        'name':           'L Ship Maintenance Bay',
     },
     'buildmodule_gen_equip_m_dockarea_01_macro': {
         'max_hull':       1020000,
+        'name':           'S/M Ship Maintenance Bay',
     },
     'buildmodule_gen_equip_xl_macro': {
         'max_hull':       551000,
+        'name':           'XL Ship Maintenance Bay',
     },
     'buildmodule_gen_ships_l_macro': {
         'max_hull':       324000,
+        'name':           'L Ship Fabrication Bay',
     },
     'buildmodule_gen_ships_m_dockarea_01_macro': {
         'max_hull':       1020000,
+        'name':           'S/M Ship Fabrication Bay',
     },
     'buildmodule_gen_ships_m_macro': {
         'max_hull':       176000,
+        'name':           'M Ship Fabrication Bay',
     },
     'buildmodule_gen_ships_s_macro': {
         'max_hull':       176000,
+        'name':           'S Ship Fabrication Bay',
     },
     'buildmodule_gen_ships_xl_macro': {
         'max_hull':       551000,
+        'name':           'XL Ship Fabrication Bay',
     },
     'buildmodule_ter_equip_l_macro': {
         'max_hull':       324000,
+        'name':           'L Ship Maintenance Bay',
     },
     'buildmodule_ter_equip_m_dockarea_01_macro': {
         'max_hull':       1020000,
+        'name':           'S/M Ship Maintenance Bay',
     },
     'buildmodule_ter_equip_xl_macro': {
         'max_hull':       551000,
+        'name':           'XL Ship Maintenance Bay',
     },
     'buildmodule_ter_ships_l_macro': {
         'max_hull':       324000,
+        'name':           'L Ship Fabrication Bay',
     },
     'buildmodule_ter_ships_m_dockarea_01_macro': {
         'max_hull':       1020000,
+        'name':           'S/M Ship Fabrication Bay',
     },
     'buildmodule_ter_ships_xl_macro': {
         'max_hull':       551000,
+        'name':           'XL Ship Fabrication Bay',
     },
     'buildmodule_xen_ships_m_macro': {
         'max_hull':       176000,
+        'name':           'M Ship Assembly Matrix',
     },
     'buildmodule_xen_ships_s_macro': {
         'max_hull':       176000,
+        'name':           'S Ship Assembly Matrix',
     },
     'buildmodule_xen_ships_xl_macro': {
         'max_hull':       551000,
+        'name':           'XL Ship Assembly Matrix',
     },
     'cargo_gen_buildstorage_01_macro': {
         'max_hull':       2500,
     },
     'defence_arg_claim_01_macro': {
         'max_hull':       512000,
+        'name':           'Administrative Centre',
     },
     'defence_arg_disc_01_macro': {
         'max_hull':       197400,
+        'name':           'Disc Defence Platform',
     },
     'defence_arg_tube_01_macro': {
         'max_hull':       148800,
+        'name':           'Bridge Defence Platform',
     },
     'defence_bor_claim_01_macro': {
         'max_hull':       435000,
+        'name':           'Administrative Centre',
     },
     'defence_bor_disc_01_macro': {
         'max_hull':       387000,
+        'name':           'Disc Defence Platform',
     },
     'defence_bor_tube_01_macro': {
         'max_hull':       295000,
+        'name':           'Bridge Defence Platform',
     },
     'defence_kha_disc_01_macro': {
         'max_hull':       50000,
+        'name':           "Kha'ak Defence Platform",
     },
     'defence_par_claim_01_macro': {
         'max_hull':       532000,
+        'name':           'Administrative Centre',
     },
     'defence_par_claim_story_01_macro': {
         'max_hull':       1532000,
+        'name':           'Faction Capital',
     },
     'defence_par_disc_01_macro': {
         'max_hull':       197400,
+        'name':           'Disc Defence Platform',
     },
     'defence_par_tube_01_macro': {
         'max_hull':       148800,
+        'name':           'Bridge Defence Platform',
     },
     'defence_spl_claim_01_macro': {
         'max_hull':       520000,
+        'name':           'Administrative Centre',
     },
     'defence_spl_disc_01_macro': {
         'max_hull':       197400,
+        'name':           'Disc Defence Platform',
     },
     'defence_spl_tube_01_macro': {
         'max_hull':       148800,
+        'name':           'Bridge Defence Platform',
     },
     'defence_tel_claim_01_macro': {
         'max_hull':       516000,
+        'name':           'Administrative Centre',
     },
     'defence_tel_disc_01_macro': {
         'max_hull':       197400,
+        'name':           'Disc Defence Platform',
     },
     'defence_tel_tube_01_macro': {
         'max_hull':       148800,
+        'name':           'Bridge Defence Platform',
     },
     'defence_ter_claim_01_macro': {
         'max_hull':       600000,
+        'name':           'Administrative Centre',
     },
     'defence_ter_disc_01_macro': {
         'max_hull':       300000,
+        'name':           'Disc Defence Platform',
     },
     'defence_ter_tube_01_macro': {
         'max_hull':       150000,
+        'name':           'Bridge Defence Platform',
     },
     'dockarea_arg_m_02_tradestation_01_macro': {
         'max_hull':       1100000,
+        'name':           '8M  Dock Area',
     },
     'dockarea_arg_m_station_01_hightech_macro': {
         'max_hull':       275000,
+        'name':           '1M6S  Dock Area',
     },
     'dockarea_arg_m_station_01_lowtech_macro': {
         'max_hull':       210000,
+        'name':           '1M6S  Dock Area',
     },
     'dockarea_arg_m_station_01_macro': {
         'max_hull':       240000,
+        'name':           '1M6S  Dock Area',
     },
     'dockarea_arg_m_station_02_hightech_macro': {
         'max_hull':       530000,
+        'name':           '3M6S  Dock Area',
     },
     'dockarea_arg_m_station_02_lowtech_macro': {
         'max_hull':       460000,
+        'name':           '3M6S  Dock Area',
     },
     'dockarea_arg_m_station_02_macro': {
         'max_hull':       495000,
+        'name':           '3M6S  Dock Area',
     },
     'dockarea_bor_m_station_01_standard_macro': {
         'max_hull':       580000,
+        'name':           '4M14S  Dock Area',
     },
     'dockarea_gen_m_showroom_01_macro': {
         'max_hull':       260000,
+        'name':           'Small & Medium Ship Showroom',
     },
     'dockarea_gen_m_venturer_01_macro': {
         'max_hull':       920000,
+        'name':           '/ Venture Sendoff Dock',
     },
     'dockarea_gen_s_showroom_01_macro': {
         'max_hull':       260000,
+        'name':           'Small Ship Showroom 01',
     },
     'dockarea_gen_s_showroom_02_macro': {
         'max_hull':       260000,
+        'name':           'Small Ship Showroom 02',
     },
     'dockarea_gen_xl_venturer_01_macro': {
         'max_hull':       1610000,
+        'name':           '/ Venture Sendoff Dock',
     },
     'dockarea_par_m_station_01_macro': {
         'max_hull':       72523,
+        'name':           '1M6S  Dock Area',
     },
     'dockarea_tel_m_station_01_macro': {
         'max_hull':       72523,
+        'name':           '1M6S  Dock Area',
     },
     'dockarea_ter_m_station_01_hightech_macro': {
         'max_hull':       455000,
+        'name':           '4M10S  Dock Area',
     },
     'dockarea_ter_m_station_01_standard_macro': {
         'max_hull':       275000,
+        'name':           '1M6S  Dock Area',
     },
     'dockarea_xen_m_station_01_macro': {
         'max_hull':       2160000,
+        'name':           'Xenon Dock',
     },
     'hab_arg_l_01_macro': {
         'max_hull':       500000,
+        'name':           'Habitat',
     },
     'hab_arg_m_01_macro': {
         'max_hull':       250000,
+        'name':           'Habitat',
     },
     'hab_arg_s_01_macro': {
         'max_hull':       120000,
+        'name':           'Habitat',
     },
     'hab_bor_l_01_macro': {
         'max_hull':       480000,
+        'name':           'Oasis',
     },
     'hab_bor_m_01_macro': {
         'max_hull':       260000,
+        'name':           'Oasis',
     },
     'hab_bor_s_01_macro': {
         'max_hull':       140000,
+        'name':           'Oasis',
     },
     'hab_par_l_01_macro': {
         'max_hull':       600000,
+        'name':           'Dome',
     },
     'hab_par_m_01_macro': {
         'max_hull':       250000,
+        'name':           'Dome',
     },
     'hab_par_s_01_macro': {
         'max_hull':       120000,
+        'name':           'Dome',
     },
     'hab_pir_l_01_macro': {
         'max_hull':       500000,
+        'name':           'Dormitory',
     },
     'hab_pir_m_01_macro': {
         'max_hull':       250000,
+        'name':           'Dormitory',
     },
     'hab_pir_s_01_macro': {
         'max_hull':       120000,
+        'name':           'Dormitory',
     },
     'hab_spl_l_01_macro': {
         'max_hull':       500000,
+        'name':           'Parlour',
     },
     'hab_spl_m_01_macro': {
         'max_hull':       250000,
+        'name':           'Parlour',
     },
     'hab_spl_s_01_macro': {
         'max_hull':       120000,
+        'name':           'Parlour',
     },
     'hab_tel_l_01_macro': {
         'max_hull':       450000,
+        'name':           'Biome',
     },
     'hab_tel_m_01_macro': {
         'max_hull':       200000,
+        'name':           'Biome',
     },
     'hab_tel_s_01_macro': {
         'max_hull':       100000,
+        'name':           'Biome',
     },
     'hab_ter_l_01_macro': {
         'max_hull':       1200000,
+        'name':           'Living Quarters',
     },
     'hab_ter_m_01_macro': {
         'max_hull':       600000,
+        'name':           'Living Quarters',
     },
     'hab_ter_s_01_macro': {
         'max_hull':       300000,
+        'name':           'Living Quarters',
     },
     'landmark_gen_hqasteroiddebree_01_macro': {
         'max_hull':       4500,
+        'name':           'Asteroid',
     },
     'landmarks_arg_antigonearc_01_macro': {
         'max_hull':       178500,
+        'name':           'Arc Connection Structure',
     },
     'landmarks_arg_antigonepillar_01_macro': {
         'max_hull':       430000,
+        'name':           'Housing Spire',
     },
     'landmarks_arg_antigonescaffolding_01_macro': {
         'max_hull':       245500,
+        'name':           'Span Connection Structure',
     },
     'landmarks_arg_antigonespire_01_macro': {
         'max_hull':       680000,
+        'name':           'Housing Spire',
     },
     'landmarks_arg_antigonestraight_01_macro': {
         'max_hull':       223000,
+        'name':           'Span Connection Structure',
     },
     'landmarks_erlking_vault_01_macro': {
         'max_hull':       150000,
+        'name':           'Data Vault',
     },
     'landmarks_erlking_vault_02_macro': {
         'max_hull':       150000,
+        'name':           'Data Vault',
     },
     'landmarks_erlking_vault_03_macro': {
         'max_hull':       150000,
+        'name':           'Data Vault',
     },
     'landmarks_erlking_vault_04_macro': {
         'max_hull':       150000,
+        'name':           'Data Vault',
     },
     'landmarks_erlking_vault_05_macro': {
         'max_hull':       150000,
+        'name':           'Data Vault',
     },
     'landmarks_gen_asteroidmine_01_entrance_01_macro': {
         'max_hull':       100000,
+        'name':           "{0,0,#'landmarks_gen_asteroidmine_01_entrance_01'}",
     },
     'landmarks_gen_exploration_01_macro': {
         'max_hull':       1000000,
+        'name':           'Wreck',
     },
     'landmarks_gen_old_ringstation_macro': {
         'max_hull':       1500000,
+        'name':           'Derelict Station',
     },
     'landmarks_gen_piratestation_01_core_01_macro': {
         'max_hull':       1000000,
+        'name':           'Drill Support Structure',
     },
     'landmarks_gen_piratestation_01_exit_01_macro': {
         'max_hull':       1000000,
+        'name':           'Drill Access Module',
     },
     'landmarks_gen_piratestation_01_port_01_macro': {
         'max_hull':       1000000,
+        'name':           'Dormitory Module',
     },
     'landmarks_gen_piratestation_01_ring_01_macro': {
         'max_hull':       1000000,
         'cargo_capacity': 50000,
+        'name':           'Storage Ring',
     },
     'landmarks_gen_piratestation_02_port_01_macro': {
         'max_hull':       1000000,
+        'name':           'Dormitory Module',
     },
     'landmarks_gen_piratestation_02_ring_01_macro': {
         'max_hull':       1000000,
+        'name':           'Defence Array',
     },
     'landmarks_gen_piratestation_02_ring_02_macro': {
         'max_hull':       1000000,
+        'name':           'Half-Ring Dormitory',
     },
     'landmarks_gen_piratestation_02_storage_01_macro': {
         'max_hull':       1000000,
+        'name':           'Storage Arm',
     },
     'landmarks_gen_piratestation_02_storage_02_macro': {
         'max_hull':       1000000,
+        'name':           'Storage Arm',
     },
     'landmarks_gen_prison_01_macro': {
         'max_hull':       1000000,
+        'name':           'Prison Complex',
     },
     'landmarks_kha_hive_arm_01_macro': {
         'max_hull':       3500000,
+        'name':           "Kha'ak Sensilla",
     },
     'landmarks_kha_hive_cluster_01_macro': {
         'max_hull':       350000,
+        'name':           "Kha'ak Tarsi",
     },
     'landmarks_kha_tetrahedron_01_macro': {
         'max_hull':       60000,
+        'name':           "Kha'ak Sensilla",
     },
     'landmarks_kha_tetrahedron_02_macro': {
         'max_hull':       60000,
+        'name':           "Kha'ak Sensilla",
     },
     'landmarks_kha_tetrahedron_03_macro': {
         'max_hull':       60000,
+        'name':           "Kha'ak Sensilla",
     },
     'landmarks_kha_tetrahedron_04_macro': {
         'max_hull':       90000,
+        'name':           "Kha'ak Sensilla",
     },
     'landmarks_kha_tetrahedron_05_macro': {
         'max_hull':       90000,
+        'name':           "Kha'ak Sensilla",
     },
     'landmarks_par_monument_01_macro': {
         'max_hull':       10000,
+        'name':           'Apotheosis',
     },
     'landmarks_par_monument_center_01_macro': {
         'max_hull':       1000000,
+        'name':           'Dome',
     },
     'landmarks_par_monument_clamp_01_macro': {
         'max_hull':       3,
+        'name':           'Secure Clamp',
     },
     'landmarks_par_monument_core_01_macro': {
         'max_hull':       800,
+        'name':           'Apotheosis',
     },
     'landmarks_par_monument_core_02_macro': {
         'max_hull':       800,
+        'name':           'Apotheosis',
     },
     'landmarks_par_storage_01_macro': {
         'max_hull':       739000,
         'cargo_capacity': 1000000,
+        'name':           'Container Storage',
     },
     'landmarks_par_tradestation_01_macro': {
         'max_hull':       100000,
+        'name':           'Paranid Trading Station',
     },
     'landmarks_par_tradestation_living_01_macro': {
         'max_hull':       100000,
+        'name':           'Dome',
     },
     'landmarks_par_tradestation_stor_container_l_01_macro': {
         'max_hull':       100000,
+        'name':           'Container Storage',
     },
     'landmarks_player_hq_01_research_macro': {
         'max_hull':       1000000,
+        'name':           'Unknown Module',
     },
     'landmarks_research_vault_01_macro': {
         'max_hull':       150000,
+        'name':           'Data Vault',
     },
     'landmarks_tel_tradestation_01_bridge_01_macro': {
         'max_hull':       500000,
+        'name':           'Habitat Bridge',
     },
     'landmarks_tel_tradestation_01_center_01_macro': {
         'max_hull':       2000000,
+        'name':           'Habitat Centre Complex',
     },
     'landmarks_tel_tradestation_01_centercylinder_01_macro': {
         'max_hull':       200000,
+        'name':           'Sensor Array',
     },
     'landmarks_tel_tradestation_01_centerend_01_macro': {
         'max_hull':       2000000,
+        'name':           'Maintenance Area',
     },
     'landmarks_tel_tradestation_01_centerfill_01_macro': {
         'max_hull':       500000,
+        'name':           'Ventilation',
     },
     'landmarks_tel_tradestation_01_column_01_macro': {
         'max_hull':       500000,
+        'name':           'Habitat Ring Column',
     },
     'landmarks_tel_tradestation_01_column_02_macro': {
         'max_hull':       500000,
+        'name':           'Support Structure',
     },
     'landmarks_tel_tradestation_01_dockarea_m_01_macro': {
         'max_hull':       2000000,
+        'name':           'Habitat Dock Area',
     },
     'landmarks_tel_tradestation_01_extension_01_macro': {
         'max_hull':       3000000,
+        'name':           'Habitat Ring Extension',
     },
     'landmarks_tel_tradestation_01_radar_01_macro': {
         'max_hull':       500000,
+        'name':           'Command Relay',
     },
     'landmarks_tel_tradestation_01_ring_01_macro': {
         'max_hull':       10000000,
+        'name':           'Habitat Ring',
     },
     'landmarks_tel_tradestation_01_ring_inside_01_macro': {
         'max_hull':       1000000,
+        'name':           'Habitat City',
     },
     'landmarks_tel_tradestation_01_ring_inside_02_macro': {
         'max_hull':       1000000,
+        'name':           'Habitat City',
     },
     'landmarks_tel_tradestation_01_ring_inside_03_macro': {
         'max_hull':       1000000,
+        'name':           'Habitat Service Section',
     },
     'landmarks_tel_tradestation_01_ring_storage_01_macro': {
         'max_hull':       4000000,
         'cargo_capacity': 400000,
+        'name':           'Habitat Storage',
     },
     'landmarks_tel_tradestation_01_ringcenter_01_macro': {
         'max_hull':       500000,
+        'name':           'Habitat Centre Ring',
     },
     'landmarks_tel_tradestation_01_ringclamp_01_macro': {
         'max_hull':       1000000,
+        'name':           'Habitat Ring Clamp',
     },
     'landmarks_tel_tradestation_01_ringclamp_02_macro': {
         'max_hull':       1000000,
+        'name':           'Habitat Ring Clamp',
     },
     'landmarks_tel_tradestation_01_storage_01_macro': {
         'max_hull':       1000000,
         'cargo_capacity': 100000,
+        'name':           'Habitat Storage',
     },
     'landmarks_tel_tradestation_01_tradelocation_01_macro': {
         'max_hull':       200000,
+        'name':           'Habitat Trade Centre',
     },
     'landmarks_vault_01_macro': {
         'max_hull':       15000,
+        'name':           'Data Vault',
     },
     'landmarks_vault_02_macro': {
         'max_hull':       1500,
+        'name':           'Data Vault',
     },
     'landmarks_vault_03_macro': {
         'max_hull':       150000,
+        'name':           'Data Vault',
     },
     'landmarks_vault_04_macro': {
         'max_hull':       15000,
+        'name':           'Data Vault',
     },
     'masstraffic_station_01_center_01_macro': {
         'max_hull':       1000000,
@@ -476,767 +627,995 @@ STATION_STATS = {
     },
     'pier_arg_harbor_01_macro': {
         'max_hull':       750000,
+        'name':           '3-Dock T Pier',
     },
     'pier_arg_harbor_02_macro': {
         'max_hull':       250000,
+        'name':           '1-Dock Pier',
     },
     'pier_arg_harbor_03_macro': {
         'max_hull':       1000000,
+        'name':           '3-Dock E Pier',
     },
     'pier_arg_harbor_04_macro': {
         'max_hull':       180000,
+        'name':           '1-Dock Short Pier',
     },
     'pier_arg_single_01_tradestation_01_macro': {
         'max_hull':       100000,
+        'name':           'Argon Trading Station 1-Dock Pier',
     },
     'pier_bor_harbor_01_macro': {
         'max_hull':       850000,
+        'name':           '4-Dock T Pier',
     },
     'pier_bor_harbor_02_macro': {
         'max_hull':       325000,
+        'name':           '1-Dock Pier',
     },
     'pier_bor_harbor_03_macro': {
         'max_hull':       1250000,
+        'name':           '3-Dock E Pier',
     },
     'pier_bor_harbor_04_macro': {
         'max_hull':       575000,
+        'name':           'Boron Trading Station 4-Dock Pier',
     },
     'pier_bor_tradestation_01_macro': {
         'max_hull':       2000000,
+        'name':           'Boron Trading Station Hexa-Dock Pier',
     },
     'pier_par_harbor_01_macro': {
         'max_hull':       810000,
+        'name':           '3-Dock T Pier',
     },
     'pier_par_harbor_02_macro': {
         'max_hull':       270000,
+        'name':           '1-Dock Pier',
     },
     'pier_par_harbor_03_macro': {
         'max_hull':       1080000,
+        'name':           '3-Dock E Pier',
     },
     'pier_spl_harbor_01_macro': {
         'max_hull':       750000,
+        'name':           '4-Dock T Pier',
     },
     'pier_spl_harbor_02_macro': {
         'max_hull':       250000,
+        'name':           '1-Dock Pier',
     },
     'pier_spl_harbor_03_macro': {
         'max_hull':       1000000,
+        'name':           '3-Dock E Pier',
     },
     'pier_tel_harbor_01_macro': {
         'max_hull':       750000,
+        'name':           '3-Dock T Pier',
     },
     'pier_tel_harbor_02_macro': {
         'max_hull':       250000,
+        'name':           '1-Dock Pier',
     },
     'pier_tel_harbor_03_macro': {
         'max_hull':       1000000,
+        'name':           '3-Dock E Pier',
     },
     'pier_ter_harbor_01_macro': {
         'max_hull':       750000,
+        'name':           '3-Dock T Pier',
     },
     'pier_ter_harbor_02_macro': {
         'max_hull':       250000,
+        'name':           '1-Dock Pier',
     },
     'pier_ter_harbor_03_macro': {
         'max_hull':       1000000,
+        'name':           '3-Dock E Pier',
     },
     'pier_ter_harbor_04_macro': {
         'max_hull':       250000,
+        'name':           '4-Dock T Pier',
     },
     'pier_ter_harbor_05_macro': {
         'max_hull':       250000,
+        'name':           '1-Dock Pier',
     },
     'pier_ter_tradestation_01_macro': {
         'max_hull':       2000000,
+        'name':           'Terran Trading Station Hexa-Dock Pier',
     },
     'proc_gen_scrapworks_macro': {
         'max_hull':       150000,
+        'name':           'Scrap Processor',
     },
     'proc_gen_scrapworkskhaak_macro': {
         'max_hull':       150000,
+        'name':           'Scrap Processor',
     },
     'prod_arg_foodrations_macro': {
         'max_hull':       133000,
         'produces':       'foodrations',
+        'name':           'Food Ration Production',
     },
     'prod_arg_meat_macro': {
         'max_hull':       198000,
         'produces':       'meat',
+        'name':           'Meat Production',
     },
     'prod_arg_medicalsupplies_macro': {
         'max_hull':       197000,
         'produces':       'medicalsupplies',
+        'name':           'Medical Supply Production',
     },
     'prod_arg_spacefuel_macro': {
         'max_hull':       148000,
         'produces':       'spacefuel',
+        'name':           'Spacefuel Production',
     },
     'prod_arg_wheat_macro': {
         'max_hull':       262000,
         'produces':       'wheat',
+        'name':           'Wheat Production',
     },
     'prod_bor_bofu_macro': {
         'max_hull':       165000,
         'produces':       'bofu',
+        'name':           'BoFu Production',
     },
     'prod_bor_bogas_macro': {
         'max_hull':       185000,
         'produces':       'bogas',
+        'name':           'BoGas Production',
     },
     'prod_bor_medicalsupplies_macro': {
         'max_hull':       204000,
         'produces':       'medicalsupplies',
+        'name':           'Medical Supply Production',
     },
     'prod_bor_plankton_macro': {
         'max_hull':       135000,
         'produces':       'plankton',
+        'name':           'Plankton Production',
     },
     'prod_gen_advancedcomposites_macro': {
         'max_hull':       197000,
         'produces':       'advancedcomposites',
+        'name':           'Advanced Composite Production',
     },
     'prod_gen_advancedelectronics_macro': {
         'max_hull':       160000,
         'produces':       'advancedelectronics',
+        'name':           'Advanced Electronics Production',
     },
     'prod_gen_antimattercells_macro': {
         'max_hull':       251000,
         'produces':       'antimattercells',
+        'name':           'Antimatter Cell Production',
     },
     'prod_gen_antimatterconverters_macro': {
         'max_hull':       216000,
         'produces':       'antimatterconverters',
+        'name':           'Antimatter Converter Production',
     },
     'prod_gen_claytronics_macro': {
         'max_hull':       195000,
         'produces':       'claytronics',
+        'name':           'Claytronics Production',
     },
     'prod_gen_dronecomponents_macro': {
         'max_hull':       174000,
         'produces':       'dronecomponents',
+        'name':           'Drone Component Production',
     },
     'prod_gen_energycells_macro': {
         'max_hull':       217000,
         'produces':       'energycells',
+        'name':           'Energy Cell Production',
     },
     'prod_gen_engineparts_macro': {
         'max_hull':       120000,
         'produces':       'engineparts',
+        'name':           'Engine Part Production',
     },
     'prod_gen_fieldcoils_macro': {
         'max_hull':       149000,
         'produces':       'fieldcoils',
+        'name':           'Field Coil Production',
     },
     'prod_gen_graphene_macro': {
         'max_hull':       190000,
         'produces':       'graphene',
+        'name':           'Graphene Production',
     },
     'prod_gen_hullparts_macro': {
         'max_hull':       146000,
         'produces':       'hullparts',
+        'name':           'Hull Part Production',
     },
     'prod_gen_microchips_macro': {
         'max_hull':       199000,
         'produces':       'microchips',
+        'name':           'Microchip Production',
     },
     'prod_gen_missilecomponents_macro': {
         'max_hull':       159000,
         'produces':       'missilecomponents',
+        'name':           'Missile Component Production',
     },
     'prod_gen_plasmaconductors_macro': {
         'max_hull':       181000,
         'produces':       'plasmaconductors',
+        'name':           'Plasma Conductor Production',
     },
     'prod_gen_quantumtubes_macro': {
         'max_hull':       148000,
         'produces':       'quantumtubes',
+        'name':           'Quantum Tube Production',
     },
     'prod_gen_refinedmetals_macro': {
         'max_hull':       210000,
         'produces':       'refinedmetals',
+        'name':           'Refined Metal Production',
     },
     'prod_gen_scanningarrays_macro': {
         'max_hull':       169000,
         'produces':       'scanningarrays',
+        'name':           'Scanning Array Production',
     },
     'prod_gen_scrap_recycler_macro': {
         'max_hull':       200000,
+        'name':           'Scrap Recycler',
     },
     'prod_gen_scrap_recyclerkhaak_macro': {
         'max_hull':       200000,
         'produces':       'khaakalloy',
+        'name':           'Scrap Recycler',
     },
     'prod_gen_shieldcomponents_macro': {
         'max_hull':       191000,
         'produces':       'shieldcomponents',
+        'name':           'Shield Component Production',
     },
     'prod_gen_siliconwafers_macro': {
         'max_hull':       186000,
         'produces':       'siliconwafers',
+        'name':           'Silicon Wafer Production',
     },
     'prod_gen_smartchips_macro': {
         'max_hull':       104000,
         'produces':       'smartchips',
+        'name':           'Smart Chip Production',
     },
     'prod_gen_spices_macro': {
         'max_hull':       151000,
         'produces':       'spices',
+        'name':           'Spice Production',
     },
     'prod_gen_superfluidcoolant_macro': {
         'max_hull':       177000,
         'produces':       'superfluidcoolant',
+        'name':           'Superfluid Coolant Production',
     },
     'prod_gen_turretcomponents_macro': {
         'max_hull':       155000,
         'produces':       'turretcomponents',
+        'name':           'Turret Component Production',
     },
     'prod_gen_water_macro': {
         'max_hull':       203000,
         'produces':       'water',
+        'name':           'Water Production',
     },
     'prod_gen_weaponcomponents_macro': {
         'max_hull':       208000,
         'produces':       'weaponcomponents',
+        'name':           'Weapon Component Production',
     },
     'prod_par_majadust_macro': {
         'max_hull':       245000,
         'produces':       'majadust',
+        'name':           'Maja Dust Production',
     },
     'prod_par_majasnails_macro': {
         'max_hull':       236000,
         'produces':       'majasnails',
+        'name':           'Maja Snail Production',
     },
     'prod_par_medicalsupplies_macro': {
         'max_hull':       197000,
         'produces':       'medicalsupplies',
+        'name':           'Medical Supply Production',
     },
     'prod_par_sojabeans_macro': {
         'max_hull':       259000,
         'produces':       'sojabeans',
+        'name':           'Soja Bean Production',
     },
     'prod_par_sojahusk_macro': {
         'max_hull':       218000,
         'produces':       'sojahusk',
+        'name':           'Soja Husk Production',
     },
     'prod_spl_cheltmeat_macro': {
         'max_hull':       320000,
         'produces':       'cheltmeat',
+        'name':           'Chelt Production',
     },
     'prod_spl_medicalsupplies_macro': {
         'max_hull':       197000,
         'produces':       'medicalsupplies',
+        'name':           'Medical Supply Production',
     },
     'prod_spl_scruffinfruit_macro': {
         'max_hull':       280000,
         'produces':       'scruffinfruits',
+        'name':           'Scruffin Production',
     },
     'prod_tel_advancedcomposites_macro': {
         'max_hull':       197000,
         'produces':       'advancedcomposites',
+        'name':           'Advanced Composite Production',
     },
     'prod_tel_engineparts_macro': {
         'max_hull':       120000,
         'produces':       'engineparts',
+        'name':           'Engine Part Production',
     },
     'prod_tel_hullparts_macro': {
         'max_hull':       146000,
         'produces':       'hullparts',
+        'name':           'Hull Part Production',
     },
     'prod_tel_medicalsupplies_macro': {
         'max_hull':       197000,
         'produces':       'medicalsupplies',
+        'name':           'Medical Supply Production',
     },
     'prod_tel_nostropoil_macro': {
         'max_hull':       276000,
         'produces':       'nostropoil',
+        'name':           'Nostrop Oil Production',
     },
     'prod_tel_scanningarrays_macro': {
         'max_hull':       169000,
         'produces':       'scanningarrays',
+        'name':           'Scanning Array Production',
     },
     'prod_tel_spaceweed_macro': {
         'max_hull':       260000,
         'produces':       'spaceweed',
+        'name':           'Spaceweed Production',
     },
     'prod_tel_sunriseflowers_macro': {
         'max_hull':       235000,
         'produces':       'sunriseflowers',
+        'name':           'Sunrise Flower Production',
     },
     'prod_tel_swampplant_macro': {
         'max_hull':       287000,
         'produces':       'swampplant',
+        'name':           'Swamp Plant Production',
     },
     'prod_tel_teladianium_macro': {
         'max_hull':       226000,
         'produces':       'teladianium',
+        'name':           'Teladianium Production',
     },
     'prod_ter_computronicsubstrate_macro': {
         'max_hull':       400000,
         'produces':       'computronicsubstrate',
+        'name':           'Computronic Substrate Production',
     },
     'prod_ter_energycells_macro': {
         'max_hull':       200000,
         'produces':       'energycells',
+        'name':           'Energy Cell Production',
     },
     'prod_ter_medicalsupplies_macro': {
         'max_hull':       240000,
         'produces':       'medicalsupplies',
+        'name':           'Medical Supply Production',
     },
     'prod_ter_metallicmicrolattice_macro': {
         'max_hull':       280000,
         'produces':       'metallicmicrolattice',
+        'name':           'Metallic Microlattice Production',
     },
     'prod_ter_mre_macro': {
         'max_hull':       270000,
         'produces':       'terranmre',
+        'name':           'Terran MRE Production',
     },
     'prod_ter_proteinpaste_macro': {
         'max_hull':       260000,
         'produces':       'proteinpaste',
+        'name':           'Protein Paste Production',
     },
     'prod_ter_scrap_recycler_macro': {
         'max_hull':       200000,
+        'name':           'Scrap Recycler',
     },
     'prod_ter_siliconcarbide_macro': {
         'max_hull':       350000,
         'produces':       'siliconcarbide',
+        'name':           'Silicon Carbide Production',
     },
     'prod_ter_stimulants_macro': {
         'max_hull':       300000,
         'produces':       'stimulants',
+        'name':           'Stimulant Production',
     },
     'radar_arg_dish_01_macro': {
         'max_hull':       110000,
+        'name':           'Wide Area Sensor Array',
     },
     'scs_gen_destructible_generator_01_macro': {
         'max_hull':       20,
+        'name':           'Power Generator',
     },
     'scs_gen_destructible_hatch_16_01_macro': {
         'max_hull':       10,
+        'name':           'Access Hatch',
     },
     'scs_gen_destructible_hatch_32_01_macro': {
         'max_hull':       10,
+        'name':           'Access Hatch',
     },
     'scs_gen_destructible_hazard_fire_01_macro': {
         'max_hull':       20,
+        'name':           'Vent Control',
     },
     'scs_gen_destructible_hazard_fire_02_macro': {
         'max_hull':       20,
+        'name':           'Vent Control',
     },
     'scs_gen_destructible_shoottarget_01_macro': {
         'max_hull':       3,
+        'name':           'Target',
     },
     'scs_gen_prop_detector_01_macro': {
         'max_hull':       10,
+        'name':           'Camera',
     },
     'scs_gen_prop_oxygenrecharger_01_macro': {
         'max_hull':       10,
+        'name':           'Oxygen Recharging Unit',
     },
     'shield_arg_l_standard_01_mk1_macro': {
         'max_shield':     55200,
+        'name':           'Shield Generator',
     },
     'shield_arg_l_standard_01_mk2_macro': {
         'max_shield':     65688,
+        'name':           'Shield Generator',
     },
     'shield_arg_m_standard_01_mk1_macro': {
         'max_shield':     5750,
+        'name':           'Shield Generator',
     },
     'shield_arg_m_standard_01_mk2_macro': {
         'max_shield':     7475,
+        'name':           'Shield Generator',
     },
     'shield_arg_m_standard_02_mk1_macro': {
         'max_shield':     5750,
+        'name':           'Shield Generator',
     },
     'shield_arg_m_standard_02_mk2_macro': {
         'max_shield':     7475,
+        'name':           'Shield Generator',
     },
     'shield_arg_s_combattutorial_01_mk1_macro': {
         'max_shield':     1000,
+        'name':           'Shield Generator',
     },
     'shield_arg_s_racer_01_mk1_macro': {
         'max_shield':     1196,
+        'name':           'Shield Generator',
     },
     'shield_arg_s_standard_01_mk1_macro': {
         'max_shield':     1196,
+        'name':           'Shield Generator',
     },
     'shield_arg_s_standard_01_mk2_macro': {
         'max_shield':     1380,
+        'name':           'Shield Generator',
     },
     'shield_arg_s_standard_01_mk3_macro': {
         'max_shield':     1955,
+        'name':           'Shield Generator',
     },
     'shield_arg_xl_standard_01_mk1_macro': {
         'max_shield':     148900,
+        'name':           'Shield Generator',
     },
     'shield_bor_l_standard_01_mk1_macro': {
         'max_shield':     50400,
+        'name':           'Shield Generator',
     },
     'shield_bor_l_standard_01_mk2_macro': {
         'max_shield':     61690,
+        'name':           'Shield Generator',
     },
     'shield_bor_l_standard_01_mk3_macro': {
         'max_shield':     82656,
+        'name':           'Shield Generator',
     },
     'shield_bor_m_standard_01_mk1_macro': {
         'max_shield':     5250,
+        'name':           'Shield Generator',
     },
     'shield_bor_m_standard_01_mk2_macro': {
         'max_shield':     6825,
+        'name':           'Shield Generator',
     },
     'shield_bor_m_standard_01_mk3_macro': {
         'max_shield':     8400,
+        'name':           'Shield Generator',
     },
     'shield_bor_m_standard_02_mk1_macro': {
         'max_shield':     5250,
+        'name':           'Shield Generator',
     },
     'shield_bor_m_standard_02_mk2_macro': {
         'max_shield':     6825,
+        'name':           'Shield Generator',
     },
     'shield_bor_m_standard_02_mk3_macro': {
         'max_shield':     8400,
+        'name':           'Shield Generator',
     },
     'shield_bor_s_standard_01_mk1_macro': {
         'max_shield':     1050,
+        'name':           'Shield Generator',
     },
     'shield_bor_s_standard_01_mk2_macro': {
         'max_shield':     1260,
+        'name':           'Shield Generator',
     },
     'shield_bor_s_standard_01_mk3_macro': {
         'max_shield':     1738,
+        'name':           'Shield Generator',
     },
     'shield_bor_xl_standard_01_mk1_macro': {
         'max_shield':     135955,
+        'name':           'Shield Generator',
     },
     'shield_bor_xl_standard_01_mk2_macro': {
         'max_shield':     160427,
+        'name':           'Shield Generator',
     },
     'shield_gen_m_yacht_01_mk1_macro': {
         'max_shield':     38600,
+        'name':           'Shield Generator',
     },
     'shield_gen_s_racer_01_mk1_macro': {
         'max_shield':     1196,
+        'name':           'Racing Shield Generator',
     },
     'shield_kha_l_standard_01_mk1_macro': {
         'max_shield':     135000,
+        'name':           'Shield Generator',
     },
     'shield_kha_m_standard_01_mk1_macro': {
         'max_shield':     4800,
+        'name':           'Shield Generator',
     },
     'shield_kha_m_standard_02_mk1_macro': {
         'max_shield':     4800,
+        'name':           'Shield Generator',
     },
     'shield_kha_m_standard_03_mk1_macro': {
         'max_shield':     4800,
+        'name':           'Shield Generator',
     },
     'shield_kha_s_standard_01_mk1_macro': {
         'max_shield':     745,
+        'name':           'Shield Generator',
     },
     'shield_kha_xl_standard_01_mk1_macro': {
         'max_shield':     150000,
+        'name':           'Shield Generator',
     },
     'shield_par_l_standard_01_mk1_macro': {
         'max_shield':     40320,
+        'name':           'Shield Generator',
     },
     'shield_par_l_standard_01_mk2_macro': {
         'max_shield':     48000,
+        'name':           'Shield Generator',
     },
     'shield_par_m_standard_01_mk1_macro': {
         'max_shield':     4000,
+        'name':           'Shield Generator',
     },
     'shield_par_m_standard_01_mk2_macro': {
         'max_shield':     5400,
+        'name':           'Shield Generator',
     },
     'shield_par_m_standard_02_mk1_macro': {
         'max_shield':     4000,
+        'name':           'Shield Generator',
     },
     'shield_par_m_standard_02_mk2_macro': {
         'max_shield':     5200,
+        'name':           'Shield Generator',
     },
     'shield_par_s_racer_01_mk1_macro': {
         'max_shield':     1289,
+        'name':           'Shield Generator',
     },
     'shield_par_s_standard_01_mk1_macro': {
         'max_shield':     760,
+        'name':           'Shield Generator',
     },
     'shield_par_s_standard_01_mk2_macro': {
         'max_shield':     960,
+        'name':           'Shield Generator',
     },
     'shield_par_s_standard_01_mk3_macro': {
         'max_shield':     1360,
+        'name':           'Shield Generator',
     },
     'shield_par_xl_standard_01_mk1_macro': {
         'max_shield':     103585,
+        'name':           'Shield Generator',
     },
     'shield_pir_xl_battleship_01_standard_01_mk1_macro': {
         'max_shield':     158600,
+        'name':           'Shield Generator',
     },
     'shield_spl_l_standard_01_mk1_macro': {
         'max_shield':     38845,
+        'name':           'Shield Generator',
     },
     'shield_spl_l_standard_01_mk2_macro': {
         'max_shield':     46886,
+        'name':           'Shield Generator',
     },
     'shield_spl_m_standard_01_mk1_macro': {
         'max_shield':     3848,
+        'name':           'Shield Generator',
     },
     'shield_spl_m_standard_01_mk2_macro': {
         'max_shield':     4932,
+        'name':           'Shield Generator',
     },
     'shield_spl_m_standard_02_mk1_macro': {
         'max_shield':     3848,
+        'name':           'Shield Generator',
     },
     'shield_spl_m_standard_02_mk2_macro': {
         'max_shield':     4932,
+        'name':           'Shield Generator',
     },
     'shield_spl_s_standard_01_mk1_macro': {
         'max_shield':     740,
+        'name':           'Shield Generator',
     },
     'shield_spl_s_standard_01_mk2_macro': {
         'max_shield':     888,
+        'name':           'Shield Generator',
     },
     'shield_spl_s_standard_01_mk3_macro': {
         'max_shield':     1258,
+        'name':           'Shield Generator',
     },
     'shield_spl_xl_standard_01_mk1_macro': {
         'max_shield':     100800,
+        'name':           'Shield Generator',
     },
     'shield_tel_l_standard_01_mk1_macro': {
         'max_shield':     66082,
+        'name':           'Shield Generator',
     },
     'shield_tel_l_standard_01_mk2_macro': {
         'max_shield':     78000,
+        'name':           'Shield Generator',
     },
     'shield_tel_m_standard_01_mk1_macro': {
         'max_shield':     6500,
+        'name':           'Shield Generator',
     },
     'shield_tel_m_standard_01_mk2_macro': {
         'max_shield':     8840,
+        'name':           'Shield Generator',
     },
     'shield_tel_m_standard_02_mk1_macro': {
         'max_shield':     6500,
+        'name':           'Shield Generator',
     },
     'shield_tel_m_standard_02_mk2_macro': {
         'max_shield':     8840,
+        'name':           'Shield Generator',
     },
     'shield_tel_s_racer_01_mk1_macro': {
         'max_shield':     450,
+        'name':           'Shield Generator',
     },
     'shield_tel_s_standard_01_mk1_macro': {
         'max_shield':     1300,
+        'name':           'Shield Generator',
     },
     'shield_tel_s_standard_01_mk2_macro': {
         'max_shield':     1625,
+        'name':           'Shield Generator',
     },
     'shield_tel_s_standard_01_mk3_macro': {
         'max_shield':     2366,
+        'name':           'Shield Generator',
     },
     'shield_tel_xl_standard_01_mk1_macro': {
         'max_shield':     181791,
+        'name':           'Shield Generator',
     },
     'shield_ter_l_standard_01_mk1_macro': {
         'max_shield':     57600,
+        'name':           'Shield Generator',
     },
     'shield_ter_l_standard_01_mk2_macro': {
         'max_shield':     71424,
+        'name':           'Shield Generator',
     },
     'shield_ter_l_standard_01_mk3_macro': {
         'max_shield':     86400,
+        'name':           'Shield Generator',
     },
     'shield_ter_l_standard_02_mk1_macro': {
         'max_shield':     57600,
+        'name':           'Frontier Shield Generator',
     },
     'shield_ter_l_standard_02_mk2_macro': {
         'max_shield':     71424,
+        'name':           'Frontier Shield Generator',
     },
     'shield_ter_l_standard_02_mk3_macro': {
         'max_shield':     86400,
+        'name':           'Frontier Shield Generator',
     },
     'shield_ter_m_standard_01_mk1_macro': {
         'max_shield':     6000,
+        'name':           'Shield Generator',
     },
     'shield_ter_m_standard_01_mk2_macro': {
         'max_shield':     7800,
+        'name':           'Shield Generator',
     },
     'shield_ter_m_standard_01_mk3_macro': {
         'max_shield':     9720,
+        'name':           'Shield Generator',
     },
     'shield_ter_m_standard_02_mk1_macro': {
         'max_shield':     6000,
+        'name':           'Shield Generator',
     },
     'shield_ter_m_standard_02_mk2_macro': {
         'max_shield':     7800,
+        'name':           'Shield Generator',
     },
     'shield_ter_m_standard_02_mk3_macro': {
         'max_shield':     9720,
+        'name':           'Shield Generator',
     },
     'shield_ter_m_standard_04_mk1_macro': {
         'max_shield':     6000,
+        'name':           'Frontier Shield Generator',
     },
     'shield_ter_m_standard_04_mk2_macro': {
         'max_shield':     7800,
+        'name':           'Frontier Shield Generator',
     },
     'shield_ter_m_standard_04_mk3_macro': {
         'max_shield':     9720,
+        'name':           'Frontier Shield Generator',
     },
     'shield_ter_m_virtual_01_mk1_macro': {
         'max_shield':     6000,
+        'name':           'Frontier Shield Generator',
     },
     'shield_ter_m_virtual_01_mk2_macro': {
         'max_shield':     7800,
+        'name':           'Frontier Shield Generator',
     },
     'shield_ter_m_virtual_01_mk3_macro': {
         'max_shield':     9720,
+        'name':           'Frontier Shield Generator',
     },
     'shield_ter_s_standard_01_mk1_macro': {
         'max_shield':     1200,
+        'name':           'Shield Generator',
     },
     'shield_ter_s_standard_01_mk2_macro': {
         'max_shield':     1440,
+        'name':           'Shield Generator',
     },
     'shield_ter_s_standard_01_mk3_macro': {
         'max_shield':     2100,
+        'name':           'Shield Generator',
     },
     'shield_ter_s_virtual_01_mk1_macro': {
         'max_shield':     1440,
+        'name':           'Frontier Shield Generator',
     },
     'shield_ter_s_virtual_01_mk1_story_macro': {
         'max_shield':     7500,
+        'name':           'Frontier Shield Generator',
     },
     'shield_ter_s_xperimental_01_mk1_story_macro': {
         'max_shield':     7500,
+        'name':           'Frontier Shield Generator',
     },
     'shield_ter_s_xperimental_01_mk5_macro': {
         'max_shield':     4800,
+        'name':           'Frontier Shield Generator',
     },
     'shield_ter_xl_standard_01_mk1_macro': {
         'max_shield':     155377,
+        'name':           'Shield Generator',
     },
     'shield_ter_xl_standard_01_mk2_macro': {
         'max_shield':     195775,
+        'name':           'Shield Generator',
     },
     'shield_xen_l_standard_01_mk1_macro': {
         'max_shield':     45600,
+        'name':           'Shield Generator',
     },
     'shield_xen_l_standard_01_mk2_macro': {
         'max_shield':     54355,
+        'name':           'Shield Generator',
     },
     'shield_xen_l_standard_02_mk1_macro': {
         'max_shield':     48000,
+        'name':           'Shield Generator',
     },
     'shield_xen_l_standard_02_mk2_macro': {
         'max_shield':     54720,
+        'name':           'Shield Generator',
     },
     'shield_xen_m_standard_01_mk1_macro': {
         'max_shield':     4750,
+        'name':           'Shield Generator',
     },
     'shield_xen_m_standard_01_mk2_macro': {
         'max_shield':     5662,
+        'name':           'Shield Generator',
     },
     'shield_xen_m_standard_02_mk1_macro': {
         'max_shield':     4750,
+        'name':           'Shield Generator',
     },
     'shield_xen_m_standard_02_mk2_macro': {
         'max_shield':     5662,
+        'name':           'Shield Generator',
     },
     'shield_xen_m_standard_04_mk1_macro': {
         'max_shield':     4750,
+        'name':           'Shield Generator',
     },
     'shield_xen_m_virtual_01_mk1_macro': {
         'max_shield':     5662,
+        'name':           'Shield Generator',
     },
     'shield_xen_s_standard_01_mk1_macro': {
         'max_shield':     950,
+        'name':           'Shield Generator',
     },
     'shield_xen_s_standard_01_mk2_macro': {
         'max_shield':     1188,
+        'name':           'Shield Generator',
     },
     'shield_xen_s_virtual_01_mk1_macro': {
         'max_shield':     1188,
+        'name':           'Shield Generator',
     },
     'shield_xen_xl_mothership_01_mk1_macro': {
         'max_shield':     86060,
+        'name':           'Shield Generator',
     },
     'shield_xen_xl_standard_01_mk1_macro': {
         'max_shield':     135000,
+        'name':           'Shield Generator',
     },
     'shield_xen_xl_standard_02_mk1_macro': {
         'max_shield':     135000,
+        'name':           'Shield Generator',
     },
     'storage_arg_l_container_01_macro': {
         'max_hull':       565000,
         'cargo_capacity': 1000000,
+        'name':           'Container Storage',
     },
     'storage_arg_l_liquid_01_macro': {
         'max_hull':       565000,
         'cargo_capacity': 1000000,
+        'name':           'Liquid Storage',
     },
     'storage_arg_l_solid_01_macro': {
         'max_hull':       565000,
         'cargo_capacity': 1000000,
+        'name':           'Solid Storage',
     },
     'storage_arg_l_tradestation_01_macro': {
         'max_hull':       643000,
         'cargo_capacity': 300000,
+        'name':           'Universal Storage',
     },
     'storage_arg_m_container_01_macro': {
         'max_hull':       285000,
         'cargo_capacity': 250000,
+        'name':           'Container Storage',
     },
     'storage_arg_m_liquid_01_macro': {
         'max_hull':       285000,
         'cargo_capacity': 500000,
+        'name':           'Liquid Storage',
     },
     'storage_arg_m_solid_01_macro': {
         'max_hull':       285000,
         'cargo_capacity': 500000,
+        'name':           'Solid Storage',
     },
     'storage_arg_s_container_01_macro': {
         'max_hull':       114000,
         'cargo_capacity': 50000,
+        'name':           'Container Storage',
     },
     'storage_arg_s_liquid_01_macro': {
         'max_hull':       114000,
         'cargo_capacity': 100000,
+        'name':           'Liquid Storage',
     },
     'storage_arg_s_solid_01_macro': {
         'max_hull':       114000,
         'cargo_capacity': 100000,
+        'name':           'Solid Storage',
     },
     'storage_bor_l_container_01_macro': {
         'max_hull':       775000,
         'cargo_capacity': 1000000,
+        'name':           'Container Storage',
     },
     'storage_bor_l_liquid_01_macro': {
         'max_hull':       765000,
         'cargo_capacity': 1000000,
+        'name':           'Liquid Storage',
     },
     'storage_bor_l_solid_01_macro': {
         'max_hull':       769000,
         'cargo_capacity': 1000000,
+        'name':           'Solid Storage',
     },
     'storage_bor_m_container_01_macro': {
         'max_hull':       315000,
         'cargo_capacity': 250000,
+        'name':           'Container Storage',
     },
     'storage_bor_m_liquid_01_macro': {
         'max_hull':       307000,
         'cargo_capacity': 500000,
+        'name':           'Liquid Storage',
     },
     'storage_bor_m_solid_01_macro': {
         'max_hull':       311000,
         'cargo_capacity': 500000,
+        'name':           'Solid Storage',
     },
     'storage_bor_s_container_01_macro': {
         'max_hull':       135000,
         'cargo_capacity': 50000,
+        'name':           'Container Storage',
     },
     'storage_bor_s_liquid_01_macro': {
         'max_hull':       126000,
         'cargo_capacity': 100000,
+        'name':           'Liquid Storage',
     },
     'storage_bor_s_solid_01_macro': {
         'max_hull':       132000,
         'cargo_capacity': 100000,
+        'name':           'Solid Storage',
     },
     'storage_gen_buildstorage_01_macro': {
         'cargo_capacity': 2000000000,
@@ -1244,363 +1623,470 @@ STATION_STATS = {
     'storage_par_l_container_01_macro': {
         'max_hull':       653000,
         'cargo_capacity': 1000000,
+        'name':           'Container Storage',
     },
     'storage_par_l_liquid_01_macro': {
         'max_hull':       653000,
         'cargo_capacity': 1000000,
+        'name':           'Liquid Storage',
     },
     'storage_par_l_solid_01_macro': {
         'max_hull':       653000,
         'cargo_capacity': 1000000,
+        'name':           'Solid Storage',
     },
     'storage_par_m_container_01_macro': {
         'max_hull':       304000,
         'cargo_capacity': 250000,
+        'name':           'Container Storage',
     },
     'storage_par_m_liquid_01_macro': {
         'max_hull':       304000,
         'cargo_capacity': 500000,
+        'name':           'Liquid Storage',
     },
     'storage_par_m_solid_01_macro': {
         'max_hull':       304000,
         'cargo_capacity': 500000,
+        'name':           'Solid Storage',
     },
     'storage_par_s_container_01_macro': {
         'max_hull':       133000,
         'cargo_capacity': 50000,
+        'name':           'Container Storage',
     },
     'storage_par_s_liquid_01_macro': {
         'max_hull':       133000,
         'cargo_capacity': 100000,
+        'name':           'Liquid Storage',
     },
     'storage_par_s_solid_01_macro': {
         'max_hull':       133000,
         'cargo_capacity': 100000,
+        'name':           'Solid Storage',
     },
     'storage_pir_l_condensate_01_macro': {
         'max_hull':       1000000,
         'cargo_capacity': 50,
+        'name':           'Shield Generator',
     },
     'storage_pir_s_condensate_01_macro': {
         'max_hull':       100000,
         'cargo_capacity': 10000,
+        'name':           'Condensate Containment Facility',
     },
     'storage_spl_l_container_01_macro': {
         'max_hull':       778000,
         'cargo_capacity': 1000000,
+        'name':           'Container Storage',
     },
     'storage_spl_l_liquid_01_macro': {
         'max_hull':       778000,
         'cargo_capacity': 1000000,
+        'name':           'Liquid Storage',
     },
     'storage_spl_l_solid_01_macro': {
         'max_hull':       778000,
         'cargo_capacity': 1000000,
+        'name':           'Solid Storage',
     },
     'storage_spl_m_container_01_macro': {
         'max_hull':       345000,
         'cargo_capacity': 250000,
+        'name':           'Container Storage',
     },
     'storage_spl_m_liquid_01_macro': {
         'max_hull':       345000,
         'cargo_capacity': 500000,
+        'name':           'Liquid Storage',
     },
     'storage_spl_m_solid_01_macro': {
         'max_hull':       345000,
         'cargo_capacity': 500000,
+        'name':           'Solid Storage',
     },
     'storage_spl_s_container_01_macro': {
         'max_hull':       157000,
         'cargo_capacity': 50000,
+        'name':           'Container Storage',
     },
     'storage_spl_s_liquid_01_macro': {
         'max_hull':       157000,
         'cargo_capacity': 100000,
+        'name':           'Liquid Storage',
     },
     'storage_spl_s_solid_01_macro': {
         'max_hull':       157000,
         'cargo_capacity': 100000,
+        'name':           'Solid Storage',
     },
     'storage_tel_l_container_01_macro': {
         'max_hull':       531000,
         'cargo_capacity': 1000000,
+        'name':           'Container Storage',
     },
     'storage_tel_l_liquid_01_macro': {
         'max_hull':       531000,
         'cargo_capacity': 1000000,
+        'name':           'Liquid Storage',
     },
     'storage_tel_l_solid_01_macro': {
         'max_hull':       531000,
         'cargo_capacity': 1000000,
+        'name':           'Solid Storage',
     },
     'storage_tel_m_container_01_macro': {
         'max_hull':       259000,
         'cargo_capacity': 250000,
+        'name':           'Container Storage',
     },
     'storage_tel_m_liquid_01_macro': {
         'max_hull':       259000,
         'cargo_capacity': 500000,
+        'name':           'Liquid Storage',
     },
     'storage_tel_m_solid_01_macro': {
         'max_hull':       259000,
         'cargo_capacity': 500000,
+        'name':           'Solid Storage',
     },
     'storage_tel_s_container_01_macro': {
         'max_hull':       111000,
         'cargo_capacity': 50000,
+        'name':           'Container Storage',
     },
     'storage_tel_s_liquid_01_macro': {
         'max_hull':       111000,
         'cargo_capacity': 100000,
+        'name':           'Liquid Storage',
     },
     'storage_tel_s_solid_01_macro': {
         'max_hull':       111000,
         'cargo_capacity': 100000,
+        'name':           'Solid Storage',
     },
     'storage_ter_l_container_01_macro': {
         'max_hull':       1000000,
         'cargo_capacity': 1000000,
+        'name':           'Container Storage',
     },
     'storage_ter_l_liquid_01_macro': {
         'max_hull':       1000000,
         'cargo_capacity': 1000000,
+        'name':           'Liquid Storage',
     },
     'storage_ter_l_solid_01_macro': {
         'max_hull':       1000000,
         'cargo_capacity': 1000000,
+        'name':           'Solid Storage',
     },
     'storage_ter_m_container_01_macro': {
         'max_hull':       450000,
         'cargo_capacity': 500000,
+        'name':           'Container Storage',
     },
     'storage_ter_m_container_tradestation_01_macro': {
         'max_hull':       600000,
         'cargo_capacity': 300000,
+        'name':           'Trading Station Container Storage',
     },
     'storage_ter_m_liquid_01_macro': {
         'max_hull':       450000,
         'cargo_capacity': 500000,
+        'name':           'Liquid Storage',
     },
     'storage_ter_m_solid_01_macro': {
         'max_hull':       450000,
         'cargo_capacity': 500000,
+        'name':           'Solid Storage',
     },
     'storage_ter_s_container_01_macro': {
         'max_hull':       150000,
         'cargo_capacity': 100000,
+        'name':           'Container Storage',
     },
     'storage_ter_s_liquid_01_macro': {
         'max_hull':       150000,
         'cargo_capacity': 100000,
+        'name':           'Liquid Storage',
     },
     'storage_ter_s_liquid_tradestation_01_macro': {
         'max_hull':       300000,
         'cargo_capacity': 100000,
+        'name':           'Trading Station Liquid Storage',
     },
     'storage_ter_s_solid_01_macro': {
         'max_hull':       150000,
         'cargo_capacity': 100000,
+        'name':           'Solid Storage',
     },
     'struct_arg_arc_01_macro': {
         'max_hull':       290000,
+        'name':           'Arc Connection Structure',
     },
     'struct_arg_base_01_macro': {
         'max_hull':       150000,
+        'name':           'Base Connection Structure',
     },
     'struct_arg_base_02_macro': {
         'max_hull':       237000,
+        'name':           'Base Connection Structure',
     },
     'struct_arg_base_03_macro': {
         'max_hull':       280000,
+        'name':           'Base Connection Structure',
     },
     'struct_arg_cross_01_macro': {
         'max_hull':       120000,
+        'name':           'Cross Connection Structure',
     },
     'struct_arg_cross_02_macro': {
         'max_hull':       110000,
+        'name':           'Cross Connection Structure',
     },
     'struct_arg_cross_03_macro': {
         'max_hull':       100000,
+        'name':           'Cross Connection Structure',
     },
     'struct_arg_cross_04_macro': {
         'max_hull':       90000,
+        'name':           'T Connection Structure',
     },
     'struct_arg_cross_05_macro': {
         'max_hull':       80000,
+        'name':           'L Connection Structure',
     },
     'struct_arg_vertical_01_macro': {
         'max_hull':       79000,
+        'name':           'Vertical Connection Structure',
     },
     'struct_arg_vertical_02_macro': {
         'max_hull':       143000,
+        'name':           'Vertical Connection Structure',
     },
     'struct_at_xen_shell_macro': {
         'max_hull':       120000,
+        'name':           'Xenon Core Capacitor Module',
     },
     'struct_bor_base_01_macro': {
         'max_hull':       74000,
+        'name':           'Base Connection Structure',
     },
     'struct_bor_base_02_macro': {
         'max_hull':       140000,
+        'name':           'Base Connection Structure',
     },
     'struct_bor_base_03_macro': {
         'max_hull':       213000,
+        'name':           'Base Connection Structure',
     },
     'struct_bor_base_04_macro': {
         'max_hull':       225000,
+        'name':           'Base Connection Structure',
     },
     'struct_bor_base_05_macro': {
         'max_hull':       260000,
+        'name':           'Base Connection Structure',
     },
     'struct_bor_cross_01_macro': {
         'max_hull':       110000,
+        'name':           'Y Connection Structure',
     },
     'struct_bor_cross_02_macro': {
         'max_hull':       165000,
+        'name':           'Hex Connection Structure',
     },
     'struct_bor_vertical_01_macro': {
         'max_hull':       68000,
+        'name':           'Vertical Connection Structure',
     },
     'struct_bor_vertical_02_macro': {
         'max_hull':       132000,
+        'name':           'Vertical Connection Structure',
     },
     'struct_gen_observationdeck_01_macro': {
         'max_hull':       170000,
+        'name':           'Conservatory Observation Deck',
     },
     'struct_gen_observationdeck_02_macro': {
         'max_hull':       170000,
+        'name':           'Pavilion Observation Deck',
     },
     'struct_gen_observationdeck_03_macro': {
         'max_hull':       170000,
+        'name':           'Penthouse Observation Deck',
     },
     'struct_gen_venturerbase_01_macro': {
         'max_hull':       237000,
+        'name':           'Base Connection Structure',
     },
     'struct_gen_venturerbase_02_macro': {
         'max_hull':       150000,
+        'name':           'Base Connection Structure',
     },
     'struct_gen_venturerbase_03_macro': {
         'max_hull':       280000,
+        'name':           'Base Connection Structure',
     },
     'struct_gen_venturercross_01_macro': {
         'max_hull':       120000,
+        'name':           'Cross Connection Structure',
     },
     'struct_gen_venturervertical_01_macro': {
         'max_hull':       79000,
+        'name':           'Vertical Connection Structure',
     },
     'struct_gen_venturervertical_02_macro': {
         'max_hull':       143000,
+        'name':           'Vertical Connection Structure',
     },
     'struct_par_base_01_macro': {
         'max_hull':       110000,
+        'name':           'Base Connection Structure',
     },
     'struct_par_base_02_macro': {
         'max_hull':       230000,
+        'name':           'Base Connection Structure',
     },
     'struct_par_base_03_macro': {
         'max_hull':       370000,
+        'name':           'Base Connection Structure',
     },
     'struct_par_cross_01_macro': {
         'max_hull':       90000,
+        'name':           'Cross Connection Structure',
     },
     'struct_par_cross_02_macro': {
         'max_hull':       370000,
+        'name':           'Cross Connection Structure',
     },
     'struct_par_cross_03_macro': {
         'max_hull':       230000,
+        'name':           'Y Connection Structure',
     },
     'struct_par_vertical_01_macro': {
         'max_hull':       79000,
+        'name':           'Vertical Connection Structure',
     },
     'struct_par_vertical_02_macro': {
         'max_hull':       143000,
+        'name':           'Vertical Connection Structure',
     },
     'struct_spl_base_01_macro': {
         'max_hull':       150000,
+        'name':           'Base Connection Structure',
     },
     'struct_spl_base_02_macro': {
         'max_hull':       237000,
+        'name':           'Base Connection Structure',
     },
     'struct_spl_base_03_macro': {
         'max_hull':       280000,
+        'name':           'Base Connection Structure',
     },
     'struct_spl_cross_01_macro': {
         'max_hull':       120000,
+        'name':           'Y Connection Structure',
     },
     'struct_spl_vertical_01_macro': {
         'max_hull':       79000,
+        'name':           'Vertical Connection Structure',
     },
     'struct_spl_vertical_02_macro': {
         'max_hull':       143000,
+        'name':           'Vertical Connection Structure',
     },
     'struct_tel_base_01_macro': {
         'max_hull':       150000,
+        'name':           'Base Connection Structure',
     },
     'struct_tel_base_02_macro': {
         'max_hull':       238000,
+        'name':           'Base Connection Structure',
     },
     'struct_tel_base_03_macro': {
         'max_hull':       280000,
+        'name':           'Base Connection Structure',
     },
     'struct_tel_cross_01_macro': {
         'max_hull':       120000,
+        'name':           'Cross Connection Structure',
     },
     'struct_tel_vertical_01_macro': {
         'max_hull':       79000,
+        'name':           'Vertical Connection Structure',
     },
     'struct_tel_vertical_02_macro': {
         'max_hull':       143000,
+        'name':           'Vertical Connection Structure',
     },
     'struct_ter_base_01_macro': {
         'max_hull':       75000,
+        'name':           'Base Connection Structure',
     },
     'struct_ter_base_02_macro': {
         'max_hull':       150000,
+        'name':           'Base Connection Structure',
     },
     'struct_ter_base_03_macro': {
         'max_hull':       300000,
+        'name':           'Base Connection Structure',
     },
     'struct_ter_cross_01_macro': {
         'max_hull':       300000,
+        'name':           'Cross Connection Structure',
     },
     'struct_ter_vertical_01_macro': {
         'max_hull':       75000,
+        'name':           'Vertical Connection Structure',
     },
     'struct_ter_vertical_02_macro': {
         'max_hull':       150000,
+        'name':           'Vertical Connection Structure',
     },
     'torus_maze_macro': {
         'max_hull':       1000000,
+        'name':           'Torus Aeternal Segment #34',
     },
     'torus_turretbase_macro': {
         'max_hull':       1500,
+        'name':           'Defence Platform',
     },
     'torus_turretbase_v2_macro': {
         'max_hull':       1500,
+        'name':           'Defence Platform',
     },
     'ventureplatform_gen_cross_01_macro': {
         'max_hull':       430000,
+        'name':           'Venture Platform',
     },
     'welfare_bor_artacademy_01_macro': {
         'max_hull':       305000,
+        'name':           'Pheromone Art Gallery',
     },
     'welfare_gen_casino_01_macro': {
         'max_hull':       250000,
+        'name':           'Casino',
     },
     'welfare_gen_gamblinghall_01_macro': {
         'max_hull':       100000,
+        'name':           'Gambling Den',
     },
     'xenon_asteroid_01_part_01_macro': {
         'max_hull':       1000000,
+        'name':           'Xenon Base Module',
     },
     'xenon_asteroid_01_part_02_macro': {
         'max_hull':       1000000,
+        'name':           'Xenon Base Module',
     },
     'xenon_asteroid_01_part_03_macro': {
         'max_hull':       1000000,
+        'name':           'Xenon Base Module',
     },
     'xenon_asteroid_01_part_04_macro': {
         'max_hull':       1000000,
+        'name':           'Xenon Base Module',
     },
     'xenon_asteroid_02_part_01_macro': {
         'max_hull':       10000,
@@ -1613,19 +2099,23 @@ STATION_STATS = {
     },
     'xenon_asteroid_03_macro': {
         'max_hull':       1000000,
+        'name':           'Asteroid',
     },
     'xenon_asteroid_philae_01_macro': {
         'max_hull':       200,
     },
     'xenon_small_station_01_base_macro': {
         'max_hull':       2640000,
+        'name':           'Xenon Base Module',
     },
     'xenon_small_station_01_solarpanel_01_macro': {
         'max_hull':       800000,
         'produces':       'energycells',
+        'name':           'Matrix Solar Panel',
     },
     'xenon_small_station_01_storage_01_macro': {
         'max_hull':       250000,
         'cargo_capacity': 250000,
+        'name':           'Matrix Storage',
     },
 }
