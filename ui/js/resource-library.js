@@ -126,7 +126,7 @@
         // on the compare view; the List view's tabs stand on their own (no
         // filter row exists for equipment).
         const row2 = reslibEquipView === 'compare'
-          ? `<div class="sec-header"><div class="sec-title">${RESLIB_CAT_LABELS[reslibCat]} Comparison</div><div class="sec-line"></div></div>`
+          ? `<div class="sec-header"><div class="sec-title">${singular} Comparison</div><div class="sec-line"></div></div>`
           : '';
         header.innerHTML = tabs + row2;
         return;
