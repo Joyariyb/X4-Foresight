@@ -14,6 +14,12 @@
   let reslibInspectMacro = null;
   let reslibHullFilters  = { faction: '', size: '', type: '' };
 
+  // Equipment categories (weapon/turret/shield/engine/thruster) now mirror the
+  // hull List/Comparison split. The two-item picks themselves live in
+  // equipment-comparison.js (reslibEquipCmpA/B), this is just which sub-view is
+  // showing — reset to 'list' whenever the category changes (switchResLibCat).
+  let reslibEquipView    = 'list';   // 'list' | 'compare'
+
   const RESLIB_CAT_LABELS = {
     hull: 'Hulls', weapon: 'Weapons', turret: 'Turrets', shield: 'Shields',
     engine: 'Engines', thruster: 'Thrusters', software: 'Software', item: 'Items',
@@ -84,6 +90,11 @@
     reslibSortDir   = 1;
     reslibHullView  = 'list';
     reslibHullFilters = { faction: '', size: '', type: '' };
+    // Drop any comparison picks from the previous category — a weapon macro
+    // wouldn't resolve against, say, the shield catalog (see equipment-comparison.js).
+    reslibEquipView = 'list';
+    reslibEquipCmpA = null;
+    reslibEquipCmpB = null;
     renderResLibHeader();
     renderResLib();
   }
@@ -101,6 +112,25 @@
   function renderResLibHeader() {
     const header = document.getElementById('reslib-header');
     if (reslibCat !== 'hull') {
+      // Equipment categories with a stat-column definition (everything except
+      // the not-yet-catalogued Software/Items placeholders) get the same
+      // List/Comparison tab switch the hull header has, in place of a static
+      // title. Software/Items fall through to the plain title below.
+      if (RESLIB_EQUIP_COLUMNS[reslibCat]) {
+        const singular = SLOT_SINGULAR[reslibCat] || RESLIB_CAT_LABELS[reslibCat];
+        const tabs = `<div class="fleet-subtabs">
+          <div class="fleet-subtab ${reslibEquipView === 'list' ? 'active' : ''}" onclick="reslibShowEquipList()"><i class="ti ti-list"></i> ${singular} List</div>
+          <div class="fleet-subtab ${reslibEquipView === 'compare' ? 'active' : ''}" onclick="reslibShowEquipCompare()"><i class="ti ti-arrows-left-right"></i> ${singular} Comparison</div>
+        </div>`;
+        // Match the hull header: a "<Category> Comparison" title under the tabs
+        // on the compare view; the List view's tabs stand on their own (no
+        // filter row exists for equipment).
+        const row2 = reslibEquipView === 'compare'
+          ? `<div class="sec-header"><div class="sec-title">${RESLIB_CAT_LABELS[reslibCat]} Comparison</div><div class="sec-line"></div></div>`
+          : '';
+        header.innerHTML = tabs + row2;
+        return;
+      }
       header.innerHTML = `<div class="sec-header"><div class="sec-title">${RESLIB_CAT_LABELS[reslibCat]}</div><div class="sec-line"></div></div>`;
       return;
     }
@@ -261,6 +291,7 @@
       renderResLibHulls();
       return;
     }
+    if (reslibEquipView === 'compare') { renderResLibEquipCompare(); return; }
     renderResLibEquipment(cat);
   }
 
