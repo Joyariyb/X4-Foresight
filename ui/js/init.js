@@ -1,6 +1,15 @@
   // Core role: Initializes responsive scale, event routing, and tab persistence.
 
-  // Responsive HUD scale keyed off viewport width (1536px = scale 1.0).
+  // Responsive HUD scale keyed off the window's full outer width (1536px =
+  // scale 1.0). Uses outerWidth (whole window footprint, chrome included),
+  // not innerWidth (content viewport only): the standalone shell is a
+  // borderless window with nothing to subtract, so outerWidth == innerWidth
+  // there, but a real browser's own UI (tabs/borders/scrollbar gutter) eats
+  // into innerWidth without shrinking outerWidth. Scaling off outerWidth
+  // means a maximized browser window and the standalone's maximized window
+  // compute the same scale on the same monitor — measured live, no hardcoded
+  // per-browser/per-monitor fudge factor (verified: both report 1920 on a
+  // 1920px-wide screen, vs. innerWidth's 1878 in the browser).
   //   At 1920px fullscreen → scale 1.25  (25% larger)
   //   At 1280px             → scale 0.83 (17% smaller)
   //
@@ -12,8 +21,8 @@
   // Root font-size scaling doesn't touch the coordinate space at all, so none
   // of that compensation is needed: clientX lines up with style.left for
   // free, in both the desktop shell and the web build alike. It also means
-  // window.innerWidth is unaffected by our own scaling (font-size doesn't
-  // change the viewport), so there's no read-after-reset dance either.
+  // outerWidth is unaffected by our own scaling (font-size doesn't change the
+  // window), so there's no read-after-reset dance either.
   const SCALE_BASE_PX = 10; // root font-size at scale 1.0; rem values assume 1rem = 10px
   let _scaleRafPending = false;
   function updateScale() {
@@ -21,7 +30,7 @@
     _scaleRafPending = true;
     requestAnimationFrame(() => {
       _scaleRafPending = false;
-      const scale = Math.max(0.5, Math.min(2.0, window.innerWidth / 1536));
+      const scale = Math.max(0.5, Math.min(2.0, window.outerWidth / 1536));
       document.documentElement.style.fontSize = (SCALE_BASE_PX * scale) + 'px';
     });
   }
