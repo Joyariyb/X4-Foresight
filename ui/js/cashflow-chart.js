@@ -15,6 +15,9 @@
 
   const avgWare = {};
   const avgMode = {};
+  // Which visual style is active for each station's hourly and by-ware panels.
+  // Keys: { hourly: 'line'|'bar'|'scatter', ware: 'step'|'area'|'scatter' }
+  const cfChartType = {};
   const cfNiceStep = (range, target) => {
     const raw  = Math.max(range, 1) / target;
     const mag  = Math.pow(10, Math.floor(Math.log10(raw)));
@@ -171,6 +174,8 @@
       const yOf = v => mt + ph - (v - axBot) / (axTop - axBot) * ph;
       const zeroY = yOf(0), zeroFrac = ((zeroY - mt) / ph).toFixed(4);
       const glowId = `holo-glow-${safeCode}-h`, fillId = `cashfill-${safeCode}-h`;
+      // Which visual style to render — persists across scrubber drags and tab switches.
+      const hourlyType = (cfChartType[safeCode] || {}).hourly || 'line';
 
       // Bucket centres are arranged right→left (bucket 0 = rightmost = most recent).
       // The scrubber produces fractional windows (e.g. 4.37h → 5 buckets), so the
@@ -182,11 +187,9 @@
       for (let i = numHours - 1; i >= 0; i--) {
         ordered.push([xOf(bucketCentre(i)), net[i]]);
       }
-      const linePts = ordered.map(([x, v]) => `${x.toFixed(1)},${yOf(v).toFixed(1)}`).join(' ');
-      const areaPath = `M ${ordered[0][0].toFixed(1)} ${zeroY.toFixed(1)} ` +
-                       ordered.map(([x, v]) => `L ${x.toFixed(1)} ${yOf(v).toFixed(1)}`).join(' ') +
-                       ` L ${ordered[ordered.length - 1][0].toFixed(1)} ${zeroY.toFixed(1)} Z`;
 
+      // Markers (line-mode dots) are only shown in line mode; hitCols drive hover
+      // tooltips in every mode so they are always built.
       const markers = [], hitCols = [];
       for (let i = 0; i < numHours; i++) {
         const rows = [];
@@ -199,8 +202,10 @@
         rows.sort((a, b) => Math.abs(b.cr) - Math.abs(a.cr));
         const cx = xOf(bucketCentre(i)).toFixed(1), cy = yOf(net[i]).toFixed(1);
         const dotCol = net[i] >= 0 ? '#5eead4' : '#ef5350';
-        markers.push(`<circle cx="${cx}" cy="${cy}" r="2.6" fill="${dotCol}" filter="url(#${glowId})"/>
-                      <circle cx="${cx}" cy="${cy}" r="2.2" fill="${dotCol}"/>`);
+        if (hourlyType === 'line') {
+          markers.push(`<circle cx="${cx}" cy="${cy}" r="2.6" fill="${dotCol}" filter="url(#${glowId})"/>
+                        <circle cx="${cx}" cy="${cy}" r="2.2" fill="${dotCol}"/>`);
+        }
         // hAgo = absolute hours-ago for the bucket start (rounded to nearest hour).
         const tipHAgo = Math.round(offsetHours + i);
         const tip = encodeURIComponent(JSON.stringify({ hAgo: tipHAgo, net: net[i], rows }));
@@ -208,8 +213,57 @@
         // bucket is capped at the window edge so the rect never leaves the plot.
         const colX1 = xOf(offsetHours + Math.min(i + 1, windowHours));
         const colX2 = xOf(offsetHours + i);
-        hitCols.push(`<rect class="cf-col" x="${colX1.toFixed(1)}" y="${mt}" width="${(colX2 - colX1).toFixed(1)}" height="${ph}" data-cashflow-tip="${tip}"></rect>`);
+        hitCols.push(`<rect class="cf-col" x="${colX1.toFixed(1)}" y="${mt}" width="${(colX2 - colX1).toFixed(1)}" height="${ph}" data-cashflow-tip="${tip}" onclick="cycleChart('${safeCode}','hourly')"></rect>`);
       }
+
+      // Build the chart-type-specific data layer, clipped to the plot rect.
+      const zeroLineHtml = `<line x1="${ml}" y1="${zeroY.toFixed(1)}" x2="${(ml + pw).toFixed(1)}" y2="${zeroY.toFixed(1)}" stroke="#19e6c8" stroke-opacity="0.35" stroke-width="1"/>`;
+      let dataLayer;
+      if (hourlyType === 'bar') {
+        // One rect per bucket anchored at the zero line, coloured by profit/loss.
+        // Bar width = 80% of one bucket's pixel span so there is a visible gap between bars.
+        const barHalf = (pw / windowHours) * 0.40;
+        const bars = ordered.map(([x, v]) => {
+          const y0 = zeroY, y1 = yOf(v), h = Math.abs(y0 - y1);
+          if (h < 0.5) return ''; // skip near-zero bars that would just be slivers
+          const col = v >= 0 ? '#19e6c8' : '#ef5350';
+          return `<rect x="${(x - barHalf).toFixed(1)}" y="${Math.min(y0, y1).toFixed(1)}" width="${(barHalf * 2).toFixed(1)}" height="${h.toFixed(1)}" fill="${col}" fill-opacity="0.78"/>`;
+        }).join('');
+        dataLayer = zeroLineHtml + bars;
+      } else if (hourlyType === 'scatter') {
+        // Circles only — no connecting line, no area fill. Larger radius than the
+        // line-mode tick marks so individual hours are easy to spot and hover.
+        const dots = ordered.map(([x, v]) => {
+          const y = yOf(v).toFixed(1), col = v >= 0 ? '#5eead4' : '#ef5350';
+          return `<circle cx="${x.toFixed(1)}" cy="${y}" r="5.5" fill="${col}" filter="url(#${glowId})" opacity="0.45"/>
+                  <circle cx="${x.toFixed(1)}" cy="${y}" r="3.5" fill="${col}" opacity="0.90"/>`;
+        }).join('');
+        dataLayer = zeroLineHtml + dots;
+      } else {
+        // Line + area fill (default). Two overlapping polylines produce the glow halo.
+        const linePts = ordered.map(([x, v]) => `${x.toFixed(1)},${yOf(v).toFixed(1)}`).join(' ');
+        const areaPath = `M ${ordered[0][0].toFixed(1)} ${zeroY.toFixed(1)} ` +
+                         ordered.map(([x, v]) => `L ${x.toFixed(1)} ${yOf(v).toFixed(1)}`).join(' ') +
+                         ` L ${ordered[ordered.length - 1][0].toFixed(1)} ${zeroY.toFixed(1)} Z`;
+        dataLayer = `
+          <path d="${areaPath}" fill="url(#${fillId})" stroke="none"/>
+          <polyline points="${linePts}" fill="none" stroke="#2dd4bf" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" opacity="0.35" filter="url(#${glowId})"/>
+          <polyline points="${linePts}" fill="none" stroke="#5eead4" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+          ${markers.join('')}`;
+      }
+
+      // Small pill in the top-right corner of the plot that cycles the chart type.
+      // Rendered after the hit columns in document order so it sits above them in
+      // z-order and receives the click — tooltip hover still works everywhere else.
+      const typeLabel = hourlyType === 'bar' ? 'BAR' : hourlyType === 'scatter' ? 'DOT' : 'LINE';
+      const typeIndicator = `
+        <g onclick="cycleChart('${safeCode}','hourly')" style="cursor:pointer">
+          <rect x="${(ml + pw - 38).toFixed(1)}" y="${(mt + 3).toFixed(1)}" width="36" height="13" rx="2"
+                fill="#19e6c810" stroke="#19e6c830" stroke-width="0.5"/>
+          <text x="${(ml + pw - 4).toFixed(1)}" y="${(mt + 11).toFixed(1)}" text-anchor="end"
+                fill="#5fe9d4" fill-opacity="0.75"
+                style="font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.08em">${typeLabel} ›</text>
+        </g>`;
 
       return `
         <div style="background:#030d14;border:1px solid rgba(25,230,200,0.18);border-radius:0.3rem;box-shadow:inset 0 0 24px rgba(25,230,200,0.05);padding:0.4rem">
@@ -224,21 +278,19 @@
               </linearGradient>
               <clipPath id="cfclip-${safeCode}-h"><rect x="${ml}" y="${mt}" width="${pw}" height="${ph}"/></clipPath>
             </defs>
-            <rect x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="#020a10"/>
+            <rect x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="#020a10" onclick="cycleChart('${safeCode}','hourly')"/>
             ${yAxisHtml(yOf, axBot, axTop, step)}
             ${xTicksHtml}
             <!-- Data layer is clipped to the plot rect so strokes/glow can never
                  spill past the axes, whatever the zoom window does. -->
             <g clip-path="url(#cfclip-${safeCode}-h)">
-              <path d="${areaPath}" fill="url(#${fillId})" stroke="none"/>
-              <polyline points="${linePts}" fill="none" stroke="#2dd4bf" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" opacity="0.35" filter="url(#${glowId})"/>
-              <polyline points="${linePts}" fill="none" stroke="#5eead4" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
-              ${markers.join('')}
+              ${dataLayer}
             </g>
             <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="#19e6c8" stroke-opacity="0.35" stroke-width="1"/>
             <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.6"
                   style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">CREDITS/HR</text>
             ${hitCols.join('')}
+            ${typeIndicator}
           </svg>
         </div>
         <div style="display:flex;gap:1.6rem;padding:0.6rem 0.2rem 0.2rem;font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.04em">
@@ -267,15 +319,11 @@
       const zeroY = yOf(0), zeroFrac = ((zeroY - mt) / ph).toFixed(4);
       const glowId = `holo-glow-${safeCode}-d`, fillId = `cashfill-${safeCode}-d`;
 
-      // Spiky line through each trade's value, with the area filled to the zero
-      // baseline (teal above for sells, red below for buys).
-      const verts    = pts.map(p => [xOf(p.hAgo), yOf(p.value)]);
-      const linePts  = verts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
-      const areaPath = `M ${verts[0][0].toFixed(1)} ${zeroY.toFixed(1)} ` +
-                       verts.map(([x, y]) => `L ${x.toFixed(1)} ${y.toFixed(1)}`).join(' ') +
-                       ` L ${verts[verts.length - 1][0].toFixed(1)} ${zeroY.toFixed(1)} Z`;
+      const tradeType = (cfChartType[safeCode] || {}).trade || 'line';
+      const verts = pts.map(p => [xOf(p.hAgo), yOf(p.value)]);
 
-      // Per-trade dots + the hover lookup table (nearest-point by x fraction).
+      // Per-trade dots + hover lookup table. Dot radius is slightly larger in
+      // scatter mode where there is no line to connect points.
       const store = [];
       const dots = pts.map(p => {
         const x = xOf(p.hAgo), y = yOf(p.value);
@@ -286,9 +334,36 @@
           dir: isSell ? 'sell' : 'buy', units: p.t.amount, priceEa: p.t.price_cr,
           total: p.value, hAgo: p.hAgo, ship: p.t.ship_code || '', counterparty: p.t.counterparty || '',
         });
-        return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.6" fill="${isSell ? '#5eead4' : '#ef5350'}" opacity="0.85"/>`;
+        const r = tradeType === 'scatter' ? '2.5' : '1.6';
+        return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="${isSell ? '#5eead4' : '#ef5350'}" opacity="0.85"/>`;
       }).join('');
       cashflowDetailData[safeCode] = store;
+
+      // Spiky line through each trade's value (line mode only).
+      let dataLayer;
+      if (tradeType === 'scatter') {
+        dataLayer = dots;
+      } else {
+        const linePts  = verts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+        const areaPath = `M ${verts[0][0].toFixed(1)} ${zeroY.toFixed(1)} ` +
+                         verts.map(([x, y]) => `L ${x.toFixed(1)} ${y.toFixed(1)}`).join(' ') +
+                         ` L ${verts[verts.length - 1][0].toFixed(1)} ${zeroY.toFixed(1)} Z`;
+        dataLayer = `
+          <path d="${areaPath}" fill="url(#${fillId})" stroke="none"/>
+          <polyline points="${linePts}" fill="none" stroke="#2dd4bf" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" opacity="0.45" filter="url(#${glowId})"/>
+          <polyline points="${linePts}" fill="none" stroke="#7af5e4" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+          ${dots}`;
+      }
+
+      const tradeTypeLabel = tradeType === 'scatter' ? 'DOT' : 'LINE';
+      const tradeTypeIndicator = `
+        <g onclick="cycleChart('${safeCode}','trade')" style="cursor:pointer">
+          <rect x="${(ml + pw - 38).toFixed(1)}" y="${(mt + 3).toFixed(1)}" width="36" height="13" rx="2"
+                fill="#19e6c810" stroke="#19e6c830" stroke-width="0.5"/>
+          <text x="${(ml + pw - 4).toFixed(1)}" y="${(mt + 11).toFixed(1)}" text-anchor="end"
+                fill="#5fe9d4" fill-opacity="0.75"
+                style="font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.08em">${tradeTypeLabel} ›</text>
+        </g>`;
 
       return `
         <div style="background:#030d14;border:1px solid rgba(25,230,200,0.18);border-radius:0.3rem;box-shadow:inset 0 0 24px rgba(25,230,200,0.05);padding:0.4rem">
@@ -303,23 +378,21 @@
               </linearGradient>
               <clipPath id="cfclip-${safeCode}-d"><rect x="${ml}" y="${mt}" width="${pw}" height="${ph}"/></clipPath>
             </defs>
-            <rect x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="#020a10"/>
+            <rect x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="#020a10" onclick="cycleChart('${safeCode}','trade')"/>
             ${yAxisHtml(yOf, axBot, axTop, step)}
             ${xTicksHtml}
             <!-- Clipped like the hourly chart — see comment there. -->
             <g clip-path="url(#cfclip-${safeCode}-d)">
-              <path d="${areaPath}" fill="url(#${fillId})" stroke="none"/>
-              <polyline points="${linePts}" fill="none" stroke="#2dd4bf" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" opacity="0.45" filter="url(#${glowId})"/>
-              <polyline points="${linePts}" fill="none" stroke="#7af5e4" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
-              ${dots}
+              ${dataLayer}
             </g>
             <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="#19e6c8" stroke-opacity="0.35" stroke-width="1"/>
             <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.6"
                   style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">TRADE SIZE · CR</text>
             <!-- Highlight ring follows the nearest trade on hover -->
             <circle class="cf-detail-marker" r="3.8" fill="none" stroke="#ffffff" stroke-width="1.5" style="display:none;pointer-events:none"/>
-            <!-- Transparent plot overlay drives nearest-point hover -->
-            <rect data-cfdetail="${safeCode}" x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="transparent" style="cursor:crosshair"/>
+            <!-- Transparent plot overlay drives nearest-point hover; also cycles chart type on click -->
+            <rect data-cfdetail="${safeCode}" x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="transparent" style="cursor:crosshair" onclick="cycleChart('${safeCode}','trade')"/>
+            ${tradeTypeIndicator}
           </svg>
         </div>
         <div style="padding:0.6rem 0.2rem 0.2rem;font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.04em;color:var(--text-faint)">
@@ -402,6 +475,7 @@
         if (wareVisibility[safeCode][w] === undefined) wareVisibility[safeCode][w] = true;
       });
 
+      const wareType = (cfChartType[safeCode] || {}).ware || 'step';
       const storeWare = []; // hover lookup table — one entry per trade dot
       const wareGroupHtml = [];
 
@@ -457,14 +531,30 @@
         const bY    = (mt + ph).toFixed(1);
         const areaD = stepD + ` V ${bY} H ${pts[0].x.toFixed(1)} Z`;
 
+        // Build the elements for this ware based on the selected display style.
+        let wareElements;
+        if (wareType === 'area') {
+          // Filled silhouette only — step line and dots removed, opacity raised so
+          // the shape is readable without the line to define its edges.
+          wareElements = `<path d="${areaD}" fill="${col}" fill-opacity="0.35" stroke="none"/>`;
+        } else if (wareType === 'scatter') {
+          // Individual trade dots only — no step line, no area fill. Slightly
+          // larger than line-mode dots so the points are clearly distinct.
+          wareElements = pts.map(p =>
+            `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.8" fill="${col}" opacity="0.90"/>`
+          ).join('');
+        } else {
+          // Step (default): area fill + step path + dots (original render).
+          wareElements = `
+            <path d="${areaD}" fill="${col}" fill-opacity="0.10" stroke="none"/>
+            <path d="${stepD}" fill="none" stroke="${col}" stroke-width="3"   stroke-linejoin="round" opacity="0.18"/>
+            <path d="${stepD}" fill="none" stroke="${col}" stroke-width="1.5" stroke-linejoin="round"/>
+            ${pts.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2" fill="${col}" opacity="0.85"/>`).join('')}`;
+        }
+
         const groupId = `ware-group-${safeCode}-${wareKey}`;
         const visible = wareVisibility[safeCode][wareName];
-        wareGroupHtml.push(`<g id="${groupId}" style="display:${visible ? 'block' : 'none'}">
-          <path d="${areaD}" fill="${col}" fill-opacity="0.10" stroke="none"/>
-          <path d="${stepD}" fill="none" stroke="${col}" stroke-width="3"   stroke-linejoin="round" opacity="0.18"/>
-          <path d="${stepD}" fill="none" stroke="${col}" stroke-width="1.5" stroke-linejoin="round"/>
-          ${pts.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2" fill="${col}" opacity="0.85"/>`).join('')}
-        </g>`);
+        wareGroupHtml.push(`<g id="${groupId}" style="display:${visible ? 'block' : 'none'}">${wareElements}</g>`);
       });
 
       // Commit the lookup table so the mousemove handler can find it by safeCode.
@@ -516,7 +606,17 @@
             <!-- Highlight ring — stroke colour set dynamically to match the hovered ware -->
             <circle class="cf-ware-marker" r="4" fill="none" stroke="#ffffff" stroke-width="1.5" style="display:none;pointer-events:none"/>
             <!-- Transparent overlay that captures mouse events for nearest-point hover -->
-            <rect data-cfware="${safeCode}" x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="transparent" style="cursor:crosshair"/>
+            <rect data-cfware="${safeCode}" x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="transparent" style="cursor:crosshair" onclick="cycleChart('${safeCode}','ware')"/>
+            <!-- Chart-type pill — after the crosshair overlay so it sits above it in
+                 z-order and receives clicks first. Positioned top-right, clear of the
+                 SELL/BUY toggle (which is in the left margin). -->
+            <g onclick="cycleChart('${safeCode}','ware')" style="cursor:pointer">
+              <rect x="${(ml + pw - 44).toFixed(1)}" y="${(mt + 3).toFixed(1)}" width="42" height="13" rx="2"
+                    fill="#19e6c810" stroke="#19e6c830" stroke-width="0.5"/>
+              <text x="${(ml + pw - 4).toFixed(1)}" y="${(mt + 11).toFixed(1)}" text-anchor="end"
+                    fill="#5fe9d4" fill-opacity="0.75"
+                    style="font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.08em">${wareType === 'area' ? 'AREA' : wareType === 'scatter' ? 'DOT' : 'STEP'} ›</text>
+            </g>
             <!-- Sold/Bought toggle — must come after the hit rect in document order so
                  it paints and receives clicks on top of the crosshair overlay. -->
             ${wareToggleFO}
@@ -614,10 +714,12 @@
           <defs>
             <clipPath id="avgclip-${safeCode}"><rect x="${ml}" y="${mt}" width="${pw}" height="${ph}"/></clipPath>
           </defs>
-          <rect x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="#020a10"/>
+          <rect x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="#020a10" onclick="cycleChart('${safeCode}','avg')"/>
           <g class="avg-grid"></g>
           <g class="avg-xticks"></g>
           <g class="avg-bars" clip-path="url(#avgclip-${safeCode})"></g>
+          <!-- Overlay for line/scatter modes — populated by updateAvgPrice, empty in bar mode -->
+          <g class="avg-overlay" clip-path="url(#avgclip-${safeCode})"></g>
           <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="#19e6c8" stroke-opacity="0.35" stroke-width="1"/>
           <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.6"
                 style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">PRICE · CR</text>
@@ -628,6 +730,8 @@
                tooltip + bar highlight; rebuilt each update. -->
           <g class="avg-hits"></g>
           <g class="avg-toggle"></g>
+          <!-- Chart-type pill — updated in place by updateAvgPrice on every cycle -->
+          <g class="avg-type-pill"></g>
         </svg>
       </div>
       <div class="avg-chips" style="display:flex;flex-wrap:wrap;gap:0.5rem;padding:0.6rem 0.2rem 0.2rem"></div>`;
@@ -721,13 +825,16 @@
         </div>
       </foreignObject>`;
 
-    const gridEl = root.querySelector('.avg-grid');
-    const xtEl   = root.querySelector('.avg-xticks');
-    const barsEl = root.querySelector('.avg-bars');
+    const gridEl    = root.querySelector('.avg-grid');
+    const xtEl      = root.querySelector('.avg-xticks');
+    const barsEl    = root.querySelector('.avg-bars');
+    const overlayEl = root.querySelector('.avg-overlay');
+    const pillEl    = root.querySelector('.avg-type-pill');
+    const avgType   = (cfChartType[safeCode] || {}).avg || 'bar';
 
     // Empty window: clear axes, collapse any existing bars to the baseline.
     if (!vals.length) {
-      gridEl.innerHTML = ''; xtEl.innerHTML = '';
+      gridEl.innerHTML = ''; xtEl.innerHTML = ''; overlayEl.innerHTML = '';
       [...barsEl.children].forEach(r => { r.setAttribute('height', '0'); r.setAttribute('opacity', '0'); });
       return;
     }
@@ -781,7 +888,9 @@
       r.setAttribute('x', (x + gap / 2).toFixed(1));
       r.setAttribute('width', Math.max(0.5, w - gap).toFixed(1));
       r.setAttribute('fill', col);
-      if (avg[i] == null) {
+      if (avg[i] == null || avgType !== 'bar') {
+        // Collapse bars in non-bar modes so they animate out of sight rather than
+        // disappearing instantly — the CSS transition on height still fires.
         r.setAttribute('y', baseY.toFixed(1)); r.setAttribute('height', '0'); r.setAttribute('opacity', '0');
         r.removeAttribute('data-avg-tip');
       } else {
@@ -791,6 +900,59 @@
         r.setAttribute('opacity', '0.9');
       }
     }
+
+    // ── Line / scatter overlay (non-bar modes) ────────────────────────────────
+    // Collect points left-to-right (oldest first) so the polyline connects them
+    // in time order. Buckets with no data in this window are skipped.
+    if (avgType !== 'bar') {
+      const pts = [];
+      for (let i = numHours - 1; i >= 0; i--) {
+        if (avg[i] == null) continue;
+        // Bucket centre: midpoint of the hour slot's pixel span.
+        const cx = (xOf(offsetHours + Math.min(i + 1, windowHours)) + xOf(offsetHours + i)) / 2;
+        pts.push([cx, yOf(avg[i])]);
+      }
+      if (avgType === 'line' && pts.length > 1) {
+        const ptStr = pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+        overlayEl.innerHTML = `
+          <polyline points="${ptStr}" fill="none" stroke="${col}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" opacity="0.35" filter="url(#avg-glow-${safeCode})"/>
+          <polyline points="${ptStr}" fill="none" stroke="${col}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>
+          ${pts.map(([x, y]) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5" fill="${col}" opacity="0.9"/>`).join('')}`;
+      } else if (avgType === 'scatter') {
+        overlayEl.innerHTML = pts.map(([x, y]) =>
+          `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="${col}" opacity="0.40"/>
+           <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="${col}" opacity="0.92"/>`
+        ).join('');
+      } else {
+        overlayEl.innerHTML = ''; // single-point line or empty
+      }
+
+      // Ensure the glow filter exists in this SVG — bars don't use it so it isn't
+      // in the static scaffold. Add it to <defs> lazily on first non-bar render.
+      const svgEl = root.querySelector('svg');
+      if (svgEl && !svgEl.querySelector(`#avg-glow-${safeCode}`)) {
+        let defsEl = svgEl.querySelector('defs');
+        if (!defsEl) { defsEl = document.createElementNS('http://www.w3.org/2000/svg', 'defs'); svgEl.prepend(defsEl); }
+        const f = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+        f.setAttribute('id', `avg-glow-${safeCode}`);
+        f.setAttribute('x', '-20%'); f.setAttribute('y', '-20%');
+        f.setAttribute('width', '140%'); f.setAttribute('height', '140%');
+        const blur = document.createElementNS('http://www.w3.org/2000/svg', 'feGaussianBlur');
+        blur.setAttribute('stdDeviation', '2');
+        f.appendChild(blur);
+        defsEl.appendChild(f);
+      }
+    } else {
+      overlayEl.innerHTML = '';
+    }
+
+    // ── Type pill (top-right corner, updated every call) ─────────────────────
+    const avgTypeLabel = avgType === 'line' ? 'LINE' : avgType === 'scatter' ? 'DOT' : 'BAR';
+    pillEl.innerHTML = `
+      <rect x="${(ml + pw - 38).toFixed(1)}" y="${(mt + 3).toFixed(1)}" width="36" height="13" rx="2"
+            fill="#19e6c810" stroke="#19e6c830" stroke-width="0.5" onclick="cycleChart('${safeCode}','avg')" style="cursor:pointer"/>
+      <text x="${(ml + pw - 4).toFixed(1)}" y="${(mt + 11).toFixed(1)}" text-anchor="end"
+            fill="#5fe9d4" fill-opacity="0.75" onclick="cycleChart('${safeCode}','avg')" style="cursor:pointer;font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.08em">${avgTypeLabel} ›</text>`;
 
     // ── Hit columns + tooltip data (only for hours that have trades) ──
     // Full-height transparent rects so the cursor catches the whole column, not
@@ -808,7 +970,7 @@
         hAgo: Math.round(offsetHours + i),
         avg: avg[i], count: cnt[i], min: mn[i], max: mx[i], prevAvg,
       }));
-      hitsHtml += `<rect class="avg-hit" data-avgtip="${tipData}" data-avg-i="${i}" x="${x.toFixed(1)}" y="${mt}" width="${Math.max(0.5, w).toFixed(1)}" height="${ph}" fill="transparent" style="cursor:crosshair"/>`;
+      hitsHtml += `<rect class="avg-hit" data-avgtip="${tipData}" data-avg-i="${i}" x="${x.toFixed(1)}" y="${mt}" width="${Math.max(0.5, w).toFixed(1)}" height="${ph}" fill="transparent" style="cursor:crosshair" onclick="cycleChart('${safeCode}','avg')"/>`;
     }
     root.querySelector('.avg-hits').innerHTML = hitsHtml;
   }
@@ -847,6 +1009,26 @@
   function setWareMode(safeCode, mode) {
     wareMode[safeCode] = mode;
     rebuildCfChart(safeCode);
+  }
+
+  // Available display types per chart panel. Clicking cycles forward through the list.
+  const CHART_CYCLES = {
+    hourly: ['line', 'bar',  'scatter'],
+    trade:  ['line', 'scatter'],
+    ware:   ['step', 'area', 'scatter'],
+    avg:    ['bar',  'line', 'scatter'],
+  };
+
+  // Single entry point for chart-type cycling across all four panels.
+  // The avg panel mutates in place (no volatile rebuild), so it takes its own
+  // path; the other three trigger a full volatile rebuild which re-reads cfChartType.
+  function cycleChart(safeCode, panel) {
+    if (!cfChartType[safeCode]) cfChartType[safeCode] = {};
+    const types = CHART_CYCLES[panel];
+    const cur = cfChartType[safeCode][panel] || types[0];
+    cfChartType[safeCode][panel] = types[(types.indexOf(cur) + 1) % types.length];
+    if (panel === 'avg') updateAvgPrice(safeCode);
+    else rebuildCfChart(safeCode);
   }
 
   const ROLE_ICONS = {

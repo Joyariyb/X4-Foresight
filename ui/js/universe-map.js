@@ -959,9 +959,14 @@
     }
 
     panel.innerHTML = html;
-    panel.style.left = clientX + 'px';
-    panel.style.top  = clientY + 'px';
+    // Add visible before reading dimensions — offsetWidth/Height are 0 while
+    // display:none, so we need layout to happen first. Browsers batch paint with
+    // JS execution, so the position is set in the same frame as the class add.
     panel.classList.add('visible');
+    const pw = panel.offsetWidth;
+    const ph = panel.offsetHeight;
+    panel.style.left = Math.min(clientX, window.innerWidth  - pw - 8) + 'px';
+    panel.style.top  = Math.min(clientY, window.innerHeight - ph - 8) + 'px';
   }
 
   function _hideUHoverPanel() {

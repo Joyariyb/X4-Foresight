@@ -21,7 +21,7 @@
     switchTab('stations', stationsTab);
     _navAfterJump();
     const card = document.getElementById('station-' + code);
-    if (card) card.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    if (card) card.scrollIntoView({ block: 'center', behavior: 'smooth' });
   }
 
   // Jump from the universe Map to a sector's card on the Sectors tab. Records the

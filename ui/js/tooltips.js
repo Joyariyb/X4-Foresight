@@ -609,8 +609,10 @@
       }
 
       tip.style.display = 'block';
-      const x = Math.min(e.clientX + 14, window.innerWidth - tip.offsetWidth - 8);
-      const y = Math.max(e.clientY - 32, 8);
+      const x = Math.min(e.clientX + 14, window.innerWidth  - tip.offsetWidth  - 8);
+      // Clamp top (≥8) and bottom (≤innerHeight−height−8) so the tip never
+      // slides under the viewport edge when the cursor is near the bottom.
+      const y = Math.min(Math.max(e.clientY - 32, 8), window.innerHeight - tip.offsetHeight - 8);
       tip.style.left = x + 'px';
       tip.style.top  = y + 'px';
     });
