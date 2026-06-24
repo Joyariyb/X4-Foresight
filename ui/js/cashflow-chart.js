@@ -15,6 +15,25 @@
 
   const avgWare = {};
   const avgMode = {};
+
+  // Ship-earnings chart state (By Ship mode).
+  // Colours are auto-assigned alphabetically from this palette so the same
+  // ship always gets the same colour regardless of the scrubber window.
+  const SHIP_COLOURS_PALETTE = [
+    '#fbbf24', // amber
+    '#c084fc', // violet
+    '#38bdf8', // sky blue
+    '#f87171', // coral
+    '#a3e635', // lime
+    '#fb923c', // orange
+    '#f472b6', // pink
+    '#818cf8', // indigo
+    '#34d399', // emerald
+    '#facc15', // yellow
+  ];
+  const shipMode       = {}; // 'sell'|'buy' per station
+  const shipVisibility = {}; // { [safeCode]: { [ship_code]: bool } }
+  const shipColourMap  = {}; // { [safeCode]: { [ship_code]: colour } } — seeded once from full 24h
   // Which visual style is active for each station's hourly and by-ware panels.
   // Keys: { hourly: 'line'|'bar'|'scatter', ware: 'step'|'area'|'scatter' }
   const cfChartType = {};
@@ -59,6 +78,7 @@
             <button class="cf-toggle-btn"        data-mode="trade"    onclick="setCashflowMode('${safeCode}','trade')">By Trade</button>
             <button class="cf-toggle-btn"        data-mode="ware"     onclick="setCashflowMode('${safeCode}','ware')">By Ware</button>
             <button class="cf-toggle-btn"        data-mode="avgprice" onclick="setCashflowMode('${safeCode}','avgprice')">Avg Price</button>
+            <button class="cf-toggle-btn"        data-mode="byship"   onclick="setCashflowMode('${safeCode}','byship')">By Ship</button>
           </div>
           <span style="font-family:var(--font-mono);font-size:1rem;color:${net24 >= 0 ? '#19e6c8' : '#ef5350'};white-space:nowrap">${cfFmtCr(net24)}</span>
         </div>
@@ -159,9 +179,10 @@
     if (!trades.length) {
       const empty = `<div style="padding:1.6rem 1.4rem;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No trades in this window</div>`;
       return `
-        <div data-cfmode="hourly" style="display:block">${empty}</div>
-        <div data-cfmode="trade"  style="display:none">${empty}</div>
-        <div data-cfmode="ware"   style="display:none">${empty}</div>
+        <div data-cfmode="hourly"  style="display:block">${empty}</div>
+        <div data-cfmode="trade"   style="display:none">${empty}</div>
+        <div data-cfmode="ware"    style="display:none">${empty}</div>
+        <div data-cfmode="byship"  style="display:none">${empty}</div>
         ${buildScrubberHtml(safeCode)}`;
     }
 
@@ -627,10 +648,239 @@
         </div>`;
     })();
 
+    // ── By Ship body ───────────────────────────────────────────────────────────
+    // One line per player ship that traded at this station, showing hourly
+    // credits earned. A SELL/BUY toggle (like By Ware) splits the directions.
+    // Colours are assigned alphabetically from SHIP_COLOURS_PALETTE so they
+    // stay stable as the user drags the scrubber.
+    const byShipBody = (() => {
+      const isRawId = s => /^\[?0x[0-9a-f]+\]?$/i.test(String(s || '').trim());
+      const curMode = shipMode[safeCode] || 'sell';
+      const isSell  = curMode === 'sell';
+
+      // Seed the colour map once from all 24h data so colours don't shuffle
+      // as the scrubber window changes.
+      if (!shipColourMap[safeCode]) {
+        const allShips = [...new Set(
+          allTrades
+            .filter(t => t.station_code === station.code && t.ship_code && !isRawId(t.ship_code))
+            .map(t => t.ship_code)
+        )].sort();
+        shipColourMap[safeCode] = {};
+        allShips.forEach((c, i) => {
+          shipColourMap[safeCode][c] = SHIP_COLOURS_PALETTE[i % SHIP_COLOURS_PALETTE.length];
+        });
+      }
+
+      // Filter to selected direction, named ships, visible window.
+      const filteredTrades = trades.filter(t =>
+        t.direction === (isSell ? 'Out' : 'In') &&
+        t.ship_code && !isRawId(t.ship_code)
+      );
+
+      // Vertical SELL/BUY pill — same design as By Ware and Avg Price.
+      const shipToggleFO = `
+        <foreignObject x="2" y="${mt}" width="30" height="44">
+          <div xmlns="http://www.w3.org/1999/xhtml" style="
+              width:30px;height:44px;
+              display:grid;grid-template-rows:1fr 1fr;
+              position:relative;
+              background:rgba(4,12,20,0.88);
+              border:1px solid rgba(0,0,0,0.70);
+              border-radius:2px;overflow:hidden;user-select:none;
+              box-shadow:inset 0 2px 7px rgba(0,0,0,0.70),inset 0 1px 3px rgba(0,0,0,0.50),0 1px 0 rgba(255,255,255,0.07)">
+            <div style="
+                position:absolute;left:1px;right:1px;height:20px;
+                top:${isSell ? '1px' : '23px'};
+                background:linear-gradient(170deg,rgba(85,245,215,0.97) 0%,rgba(46,202,178,0.93) 42%,rgba(29,170,150,0.91) 100%);
+                border-radius:1px;pointer-events:none;
+                box-shadow:0 3px 9px rgba(0,0,0,0.70),0 1px 3px rgba(0,0,0,0.50),inset 0 1px 0 rgba(255,255,255,0.42),inset 0 -1px 0 rgba(0,0,0,0.24)">
+            </div>
+            <span onclick="setShipMode('${safeCode}','sell')" style="
+                position:relative;z-index:1;cursor:pointer;
+                display:flex;align-items:center;justify-content:center;
+                font-family:'Share Tech Mono',monospace;font-size:7px;letter-spacing:0.06em;text-transform:uppercase;
+                color:${isSell ? '#051210' : 'rgba(45,212,191,0.40)'};
+                font-weight:${isSell ? '700' : '400'}">SELL</span>
+            <span onclick="setShipMode('${safeCode}','buy')" style="
+                position:relative;z-index:1;cursor:pointer;
+                display:flex;align-items:center;justify-content:center;
+                font-family:'Share Tech Mono',monospace;font-size:7px;letter-spacing:0.06em;text-transform:uppercase;
+                color:${!isSell ? '#051210' : 'rgba(45,212,191,0.40)'};
+                font-weight:${!isSell ? '700' : '400'}">BUY</span>
+          </div>
+        </foreignObject>`;
+
+      if (!filteredTrades.length) {
+        return `<div style="display:flex;align-items:flex-start;gap:0.8rem;padding:0.2rem 0 0.4rem">
+          <div style="display:flex;flex-direction:column;gap:0.2rem">
+            <button class="cf-toggle-btn ${isSell ? 'active' : ''}" onclick="setShipMode('${safeCode}','sell')">Sell</button>
+            <button class="cf-toggle-btn ${!isSell ? 'active' : ''}" onclick="setShipMode('${safeCode}','buy')">Buy</button>
+          </div>
+          <div style="padding:0.6rem 0;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No ${isSell ? 'sell' : 'buy'} activity in this window</div>
+        </div>`;
+      }
+
+      // Group by ship code; sort alphabetically for a stable render order.
+      const byShip = {};
+      filteredTrades.forEach(t => { (byShip[t.ship_code] = byShip[t.ship_code] || []).push(t); });
+      const shipCodes = Object.keys(byShip).sort();
+
+      // Seed per-ship visibility defaults.
+      if (!shipVisibility[safeCode]) shipVisibility[safeCode] = {};
+      shipCodes.forEach(c => {
+        if (shipVisibility[safeCode][c] === undefined) shipVisibility[safeCode][c] = true;
+      });
+
+      // Hourly credit totals and trade counts per ship.
+      // Index 0 = most recent hour (same orientation as net[] in hourlyBody).
+      const shipHourly  = {};
+      const shipTradeCt = {};
+      shipCodes.forEach(code => {
+        shipHourly[code]  = new Array(numHours).fill(0);
+        shipTradeCt[code] = new Array(numHours).fill(0);
+        byShip[code].forEach(t => {
+          const i = Math.floor(t.time_ago_s / 3600 - offsetHours);
+          if (i < 0 || i >= numHours) return;
+          shipHourly[code][i]  += t.total_cr || 0;
+          shipTradeCt[code][i] += 1;
+        });
+      });
+
+      // Y-axis: zero-floored, scaled to the highest single-ship hourly value.
+      let yHi = 0;
+      shipCodes.forEach(code => shipHourly[code].forEach(v => { if (v > yHi) yHi = v; }));
+      const step  = cfNiceStep(yHi || 1, 6);
+      const axTop = Math.ceil(yHi / step) * step || step;
+      const axBot = 0;
+      // axBot = 0 simplifies: yOf(0) = mt+ph (baseline), yOf(axTop) = mt (top).
+      const yOf = v => mt + ph - v / axTop * ph;
+
+      const glowId   = `ship-glow-${safeCode}`;
+      const shipType = (cfChartType[safeCode] || {}).byship || 'line';
+
+      const shipGroupHtml = [];
+      const hitCols       = [];
+
+      // Per-hour hit columns carrying tooltip data for all ships that traded that hour.
+      for (let i = 0; i < numHours; i++) {
+        const rows = shipCodes
+          .map(code => ({
+            ship:   code,
+            colour: (shipColourMap[safeCode] || {})[code] || '#5eead4',
+            cr:     shipHourly[code][i],
+            trades: shipTradeCt[code][i],
+          }))
+          .filter(r => r.cr > 0)
+          .sort((a, b) => b.cr - a.cr);
+        if (!rows.length) continue;
+        const total   = rows.reduce((s, r) => s + r.cr, 0);
+        const tipHAgo = Math.round(offsetHours + i);
+        const tip     = encodeURIComponent(JSON.stringify({ hAgo: tipHAgo, total, isSell, rows }));
+        const colX1   = xOf(offsetHours + Math.min(i + 1, windowHours));
+        const colX2   = xOf(offsetHours + i);
+        hitCols.push(`<rect class="cf-col" x="${colX1.toFixed(1)}" y="${mt}" width="${(colX2 - colX1).toFixed(1)}" height="${ph}" data-shipflow-tip="${tip}" onclick="cycleChart('${safeCode}','byship')"/>`);
+      }
+
+      // Per-ship SVG line or scatter.
+      shipCodes.forEach(code => {
+        const col = (shipColourMap[safeCode] || {})[code] || '#5eead4';
+        // Plot bucket centres oldest-to-newest (left-to-right), same as hourlyBody.
+        const pts = [];
+        for (let i = numHours - 1; i >= 0; i--) {
+          const cx = xOf(offsetHours + (i + Math.min(i + 1, windowHours)) / 2);
+          pts.push([cx, yOf(shipHourly[code][i])]);
+        }
+        const baseY = mt + ph;
+
+        let elements;
+        if (shipType === 'scatter') {
+          elements = pts
+            .filter(([, y]) => y < baseY - 0.5) // skip zero-value points
+            .map(([x, y]) =>
+              `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.5" fill="${col}" filter="url(#${glowId})" opacity="0.40"/>
+               <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5" fill="${col}" opacity="0.90"/>`
+            ).join('');
+        } else {
+          // Line (default): faint glow copy + crisp line + dots at non-zero hours.
+          const linePts  = pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+          const areaPath = `M ${pts[0][0].toFixed(1)} ${baseY} ` +
+                           pts.map(([x, y]) => `L ${x.toFixed(1)} ${y.toFixed(1)}`).join(' ') +
+                           ` L ${pts[pts.length - 1][0].toFixed(1)} ${baseY} Z`;
+          const dots = pts
+            .filter(([, y]) => y < baseY - 0.5)
+            .map(([x, y]) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2" fill="${col}" opacity="0.85"/>`)
+            .join('');
+          elements = `
+            <path d="${areaPath}" fill="${col}" fill-opacity="0.08" stroke="none"/>
+            <polyline points="${linePts}" fill="none" stroke="${col}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" opacity="0.25" filter="url(#${glowId})"/>
+            <polyline points="${linePts}" fill="none" stroke="${col}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+            ${dots}`;
+        }
+
+        const safeShip = code.replace(/[^a-z0-9]/gi, '');
+        const visible  = shipVisibility[safeCode][code];
+        shipGroupHtml.push(`<g id="ship-group-${safeCode}-${safeShip}" style="display:${visible ? 'block' : 'none'}">${elements}</g>`);
+      });
+
+      // Legend chips — click toggles the ship's line on/off.
+      const chips = shipCodes.map(code => {
+        const col      = (shipColourMap[safeCode] || {})[code] || '#5eead4';
+        const safeShip = code.replace(/[^a-z0-9]/gi, '');
+        const on       = shipVisibility[safeCode][code];
+        return `<span id="ship-chip-${safeCode}-${safeShip}"
+                      onclick="toggleShip('${safeCode}','${code}')"
+                      style="cursor:pointer;opacity:${on ? '1' : '0.35'};
+                             display:inline-flex;align-items:center;
+                             padding:0.2rem 0.7rem;border-radius:0.2rem;
+                             border:1px solid ${col}44;background:${col}22;
+                             color:${col};font-family:var(--font-mono);
+                             font-size:1rem;white-space:nowrap;letter-spacing:0.04em;
+                             user-select:none">${code}</span>`;
+      }).join('');
+
+      const typeLabel = shipType === 'scatter' ? 'DOT' : 'LINE';
+      const typePill  = `
+        <g onclick="cycleChart('${safeCode}','byship')" style="cursor:pointer">
+          <rect x="${(ml + pw - 38).toFixed(1)}" y="${(mt + 3).toFixed(1)}" width="36" height="13" rx="2"
+                fill="#19e6c810" stroke="#19e6c830" stroke-width="0.5"/>
+          <text x="${(ml + pw - 4).toFixed(1)}" y="${(mt + 11).toFixed(1)}" text-anchor="end"
+                fill="#5fe9d4" fill-opacity="0.75"
+                style="font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.08em">${typeLabel} ›</text>
+        </g>`;
+
+      return `
+        <div style="background:#030d14;border:1px solid rgba(25,230,200,0.18);border-radius:0.3rem;box-shadow:inset 0 0 24px rgba(25,230,200,0.05);padding:0.4rem">
+          <svg viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:auto">
+            <defs>
+              <filter id="${glowId}" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2"/></filter>
+              <clipPath id="cfclip-${safeCode}-s"><rect x="${ml}" y="${mt}" width="${pw}" height="${ph}"/></clipPath>
+            </defs>
+            <rect x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="#020a10" onclick="cycleChart('${safeCode}','byship')"/>
+            ${yAxisHtml(yOf, axBot, axTop, step)}
+            ${xTicksHtml}
+            <g clip-path="url(#cfclip-${safeCode}-s)">
+              ${shipGroupHtml.join('')}
+            </g>
+            <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="#19e6c8" stroke-opacity="0.35" stroke-width="1"/>
+            <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.6"
+                  style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">CREDITS/HR</text>
+            ${hitCols.join('')}
+            ${typePill}
+            <!-- SELL/BUY toggle must render last so it sits above the hit rects. -->
+            ${shipToggleFO}
+          </svg>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem;padding:0.6rem 0.2rem 0.2rem">
+          ${chips}
+        </div>`;
+    })();
+
     return `
       <div data-cfmode="hourly" style="display:block">${hourlyBody}</div>
       <div data-cfmode="trade"  style="display:none">${detailBody}</div>
       <div data-cfmode="ware"   style="display:none">${byWareBody}</div>
+      <div data-cfmode="byship" style="display:none">${byShipBody}</div>
       ${buildScrubberHtml(safeCode)}`;
   }
 
@@ -1011,12 +1261,31 @@
     rebuildCfChart(safeCode);
   }
 
+  // Switch the By Ship chart between sell (Out) and buy (In) trades.
+  function setShipMode(safeCode, mode) {
+    shipMode[safeCode] = mode;
+    rebuildCfChart(safeCode);
+  }
+
+  // Toggle a single ship's line on/off in the By Ship chart.
+  function toggleShip(safeCode, shipCode) {
+    const vis = shipVisibility[safeCode];
+    if (!vis) return;
+    vis[shipCode]       = !vis[shipCode];
+    const safeShip      = shipCode.replace(/[^a-z0-9]/gi, '');
+    const group         = document.getElementById(`ship-group-${safeCode}-${safeShip}`);
+    const chip          = document.getElementById(`ship-chip-${safeCode}-${safeShip}`);
+    if (group) group.style.display = vis[shipCode] ? 'block' : 'none';
+    if (chip)  chip.style.opacity  = vis[shipCode] ? '1'     : '0.35';
+  }
+
   // Available display types per chart panel. Clicking cycles forward through the list.
   const CHART_CYCLES = {
     hourly: ['line', 'bar',  'scatter'],
     trade:  ['line', 'scatter'],
     ware:   ['step', 'area', 'scatter'],
     avg:    ['bar',  'line', 'scatter'],
+    byship: ['line', 'scatter'],
   };
 
   // Single entry point for chart-type cycling across all four panels.

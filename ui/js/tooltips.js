@@ -316,6 +316,30 @@
       `</div>`;
     }
 
+    function shipflowTipHtml(d) {
+      // Ship earnings hover: hour's total at top, then one row per ship showing
+      // trade count and credits earned that hour.
+      const fmtC  = n => '+' + Math.round(n).toLocaleString();
+      const span  = d.hAgo === 0 ? 'Past hour' : `${d.hAgo}–${d.hAgo + 1}h ago`;
+      const MAX   = 8;
+      const shown = d.rows.slice(0, MAX);
+      const more  = d.rows.length - shown.length;
+      return `<div style="min-width:23rem;padding:0.2rem 0">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border)">
+          <span style="color:var(--text-faint);font-size:1rem;letter-spacing:0.08em;text-transform:uppercase">${span}</span>
+          <span style="color:#19e6c8;font-family:var(--font-mono);font-size:1.1rem">${fmtC(d.total)} Cr</span>
+        </div>` +
+        shown.map(r => `
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;padding:1px 0">
+            <span style="font-size:1rem;letter-spacing:0.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:14rem;color:${r.colour}">${r.ship}</span>
+            <span style="font-family:var(--font-mono);font-size:1rem;color:var(--text-dim);flex-shrink:0;white-space:nowrap">
+              ${r.trades} trade${r.trades !== 1 ? 's' : ''} · <span style="color:#19e6c8">${fmtC(r.cr)}</span>
+            </span>
+          </div>`).join('') +
+        (more > 0 ? `<div style="margin-top:0.4rem;font-size:1rem;color:var(--text-faint)">+${more} more ship${more > 1 ? 's' : ''}</div>` : '') +
+      `</div>`;
+    }
+
     function cashflowTradeTipHtml(d) {
       // By-Trade hover: one individual trade's full details + the running total.
       const fmtU = n => Math.round(n).toLocaleString();
@@ -485,7 +509,7 @@
       document.querySelectorAll('.avg-bars rect.avg-hot').forEach(r => r.classList.remove('avg-hot'));
       document.querySelectorAll('.avg-hot-line').forEach(l => { l.style.opacity = '0'; });
 
-      const el = e.target.closest('[data-hull-tip],[data-pilot-skills],[data-storage-tip],[data-modules-tip],[data-loadout-tip],[data-weapon-tip],[data-fleet-tip],[data-budget-tip],[data-cashflow-tip],[data-cfdetail],[data-cfware],[data-avgtip]');
+      const el = e.target.closest('[data-hull-tip],[data-pilot-skills],[data-storage-tip],[data-modules-tip],[data-loadout-tip],[data-weapon-tip],[data-fleet-tip],[data-budget-tip],[data-cashflow-tip],[data-cfdetail],[data-cfware],[data-avgtip],[data-shipflow-tip]');
       if (!el) { tip.style.display = 'none'; return; }
 
       if (el.dataset.cfdetail) {
@@ -534,6 +558,11 @@
       } else if (el.dataset.cashflowTip) {
         // Cash-flow chart: one hour's per-ware trade breakdown
         tip.innerHTML = cashflowTipHtml(JSON.parse(decodeURIComponent(el.dataset.cashflowTip)));
+        tip.style.color      = '';
+        tip.style.whiteSpace = 'normal';
+      } else if (el.dataset.shipflowTip) {
+        // By Ship chart: one hour's per-ship earnings breakdown
+        tip.innerHTML = shipflowTipHtml(JSON.parse(decodeURIComponent(el.dataset.shipflowTip)));
         tip.style.color      = '';
         tip.style.whiteSpace = 'normal';
       } else if (el.dataset.avgtip) {
