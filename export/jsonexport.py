@@ -415,26 +415,40 @@ def _ago(game_time: float, trade_time: float) -> float:
 
 def _station_trades(conn, scan_id, game_time) -> list[dict]:
     # last_scan_id == scan_id → trades visible in THIS scan's log window.
+    # LEFT JOIN ships (player-owned only) and npc_ships (NPC ships in player
+    # sectors) to resolve each transport ship's owner faction. Ships that
+    # have been sold or despawned since the trade will yield NULL owner_id
+    # here — the UI treats those as unknown and excludes them from the
+    # By Ship faction filter rather than crashing.
     rows = conn.execute(
-        "SELECT * FROM trade_history WHERE last_scan_id=? ORDER BY game_time_s DESC",
+        """SELECT th.*,
+                  COALESCE(ps.owner_id,  ns.owner_id,  '') AS ship_owner_id,
+                  COALESCE(ps.owner_name, ns.owner_name, '') AS ship_owner_name
+           FROM trade_history th
+           LEFT JOIN ships     ps ON ps.object_id = th.ship_id AND ps.scan_id = th.last_scan_id
+           LEFT JOIN npc_ships ns ON ns.object_id = th.ship_id AND ns.scan_id = th.last_scan_id
+           WHERE th.last_scan_id = ?
+           ORDER BY th.game_time_s DESC""",
         (scan_id,)).fetchall()
     return [{
-        'station_code':  r['station_code'],
-        'station_name':  r['station_name'],
-        'direction':     r['direction'],
-        'ware':          r['ware_id'],
-        'ware_name':     r['ware_name'],
-        'amount':        r['amount'],
-        'price_cr':      r['price_cr'],
-        'total_cr':      r['total_cr'],
-        'time_ago_s':    _ago(game_time, r['game_time_s']),
-        'ship_code':     r['ship_code'],
-        'ship_name':     r['ship_name'],
-        'counterparty':  r['counterparty_name'],
+        'station_code':    r['station_code'],
+        'station_name':    r['station_name'],
+        'direction':       r['direction'],
+        'ware':            r['ware_id'],
+        'ware_name':       r['ware_name'],
+        'amount':          r['amount'],
+        'price_cr':        r['price_cr'],
+        'total_cr':        r['total_cr'],
+        'time_ago_s':      _ago(game_time, r['game_time_s']),
+        'ship_code':       r['ship_code'],
+        'ship_name':       r['ship_name'],
+        'ship_owner_id':   r['ship_owner_id'],
+        'ship_owner_name': r['ship_owner_name'],
+        'counterparty':    r['counterparty_name'],
         # How the counterparty was resolved, so consumers can weight
         # confidence. PROVEN: direct/courier. INFERRED: homebase/visit/sector/
         # delivery. '' = unresolved (counterparty is null).
-        'resolution':    r['resolution'],
+        'resolution':      r['resolution'],
     } for r in rows]
 
 

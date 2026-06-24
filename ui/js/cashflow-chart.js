@@ -31,9 +31,10 @@
     '#34d399', // emerald
     '#facc15', // yellow
   ];
-  const shipMode       = {}; // 'sell'|'buy' per station
-  const shipVisibility = {}; // { [safeCode]: { [ship_code]: bool } }
-  const shipColourMap  = {}; // { [safeCode]: { [ship_code]: colour } } — seeded once from full 24h
+  const shipMode          = {}; // 'sell'|'buy' per station
+  const shipVisibility    = {}; // { [safeCode]: { [ship_code]: bool } }
+  const shipColourMap     = {}; // { [safeCode]: { [ship_code]: colour } } — seeded once from full 24h
+  const shipFactionFilter = {}; // { [safeCode]: owner_id } — which faction's ships to show
   // Which visual style is active for each station's hourly and by-ware panels.
   // Keys: { hourly: 'line'|'bar'|'scatter', ware: 'step'|'area'|'scatter' }
   const cfChartType = {};
@@ -649,17 +650,49 @@
     })();
 
     // ── By Ship body ───────────────────────────────────────────────────────────
-    // One line per player ship that traded at this station, showing hourly
-    // credits earned. A SELL/BUY toggle (like By Ware) splits the directions.
+    // One line per ship of the selected faction that traded at this station,
+    // showing hourly credits earned. A faction chip row (Player + any NPC
+    // factions) filters which group is shown. A SELL/BUY pill splits directions.
     // Colours are assigned alphabetically from SHIP_COLOURS_PALETTE so they
     // stay stable as the user drags the scrubber.
     const byShipBody = (() => {
       const isRawId = s => /^\[?0x[0-9a-f]+\]?$/i.test(String(s || '').trim());
-      const curMode = shipMode[safeCode] || 'sell';
-      const isSell  = curMode === 'sell';
+      const curMode  = shipMode[safeCode] || 'sell';
+      const isSell   = curMode === 'sell';
 
-      // Seed the colour map once from all 24h data so colours don't shuffle
-      // as the scrubber window changes.
+      // Faction chip helpers. FACTION_LABELS / FACTION_COLOURS are globals
+      // defined in designs-builder.js and available on the shared page scope.
+      const factionLabel  = id => id === 'player' ? 'PLR'
+        : (typeof FACTION_LABELS  !== 'undefined' && FACTION_LABELS[id])  || id.slice(0, 3).toUpperCase();
+      const factionColour = id => id === 'player' ? '#5eead4'
+        : (typeof FACTION_COLOURS !== 'undefined' && FACTION_COLOURS[id]) || '#6e7681';
+
+      // Compute the unique factions from the FULL 24h window (not just the
+      // zoom slice) so the chips don't vanish when the user pans to a quiet
+      // period. Player always sorts first; remaining factions alphabetically.
+      const allFactions = new Map(); // owner_id → { label, colour }
+      allTrades.forEach(t => {
+        if (t.station_code !== station.code || !t.ship_owner_id || isRawId(t.ship_code)) return;
+        if (!allFactions.has(t.ship_owner_id)) {
+          allFactions.set(t.ship_owner_id, {
+            label:  factionLabel(t.ship_owner_id),
+            colour: factionColour(t.ship_owner_id),
+          });
+        }
+      });
+      const sortedFactions = [...allFactions.entries()]
+        .sort(([a], [b]) => a === 'player' ? -1 : b === 'player' ? 1 : a.localeCompare(b));
+
+      // Default the faction filter to 'player' on first view, falling back to
+      // the first available faction if player never traded here.
+      if (!shipFactionFilter[safeCode]) {
+        shipFactionFilter[safeCode] = allFactions.has('player')
+          ? 'player'
+          : (sortedFactions[0]?.[0] || 'player');
+      }
+      const activeFaction = shipFactionFilter[safeCode];
+
+      // Seed the colour map once from all 24h named ships so colours are stable.
       if (!shipColourMap[safeCode]) {
         const allShips = [...new Set(
           allTrades
@@ -672,10 +705,22 @@
         });
       }
 
-      // Filter to selected direction, named ships, visible window.
+      // Faction selector dropdown — shown above the chart, not inside the SVG.
+      // Styled to match cf-toggle-btn.active so it blends with the mode buttons.
+      const factionChipsHtml = `<select
+        class="cf-toggle-btn"
+        style="background:#030d14;color:#5eead4;border-color:#5eead4"
+        onchange="setShipFactionFilter('${safeCode}', this.value)">${
+        sortedFactions.map(([id, f]) =>
+          `<option value="${id}"${id === activeFaction ? ' selected' : ''} style="background:#030d14;color:${f.colour}">${f.label}</option>`
+        ).join('')
+      }</select>`;
+
+      // Filter to selected direction, active faction, named ships, visible window.
       const filteredTrades = trades.filter(t =>
         t.direction === (isSell ? 'Out' : 'In') &&
-        t.ship_code && !isRawId(t.ship_code)
+        t.ship_code && !isRawId(t.ship_code) &&
+        t.ship_owner_id === activeFaction
       );
 
       // Vertical SELL/BUY pill — same design as By Ware and Avg Price.
@@ -712,18 +757,26 @@
         </foreignObject>`;
 
       if (!filteredTrades.length) {
-        return `<div style="display:flex;align-items:flex-start;gap:0.8rem;padding:0.2rem 0 0.4rem">
-          <div style="display:flex;flex-direction:column;gap:0.2rem">
-            <button class="cf-toggle-btn ${isSell ? 'active' : ''}" onclick="setShipMode('${safeCode}','sell')">Sell</button>
-            <button class="cf-toggle-btn ${!isSell ? 'active' : ''}" onclick="setShipMode('${safeCode}','buy')">Buy</button>
-          </div>
-          <div style="padding:0.6rem 0;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No ${isSell ? 'sell' : 'buy'} activity in this window</div>
-        </div>`;
+        const factionLabel = (allFactions.get(activeFaction) || {}).label || activeFaction;
+        return `
+          <div style="padding:0.3rem 0.1rem 0.5rem">${factionChipsHtml}</div>
+          <div style="display:flex;align-items:flex-start;gap:0.8rem;padding:0.2rem 0 0.4rem">
+            <div style="display:flex;flex-direction:column;gap:0.2rem">
+              <button class="cf-toggle-btn ${isSell ? 'active' : ''}" onclick="setShipMode('${safeCode}','sell')">Sell</button>
+              <button class="cf-toggle-btn ${!isSell ? 'active' : ''}" onclick="setShipMode('${safeCode}','buy')">Buy</button>
+            </div>
+            <div style="padding:0.6rem 0;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No ${isSell ? 'sell' : 'buy'} activity for [${factionLabel}] in this window</div>
+          </div>`;
       }
 
       // Group by ship code; sort alphabetically for a stable render order.
-      const byShip = {};
-      filteredTrades.forEach(t => { (byShip[t.ship_code] = byShip[t.ship_code] || []).push(t); });
+      // Also capture ship_name so the chip labels show "Hull (CODE)" format.
+      const byShip    = {};
+      const shipNames = {}; // ship_code → hull name
+      filteredTrades.forEach(t => {
+        (byShip[t.ship_code] = byShip[t.ship_code] || []).push(t);
+        if (t.ship_name && !shipNames[t.ship_code]) shipNames[t.ship_code] = t.ship_name;
+      });
       const shipCodes = Object.keys(byShip).sort();
 
       // Seed per-ship visibility defaults.
@@ -828,6 +881,7 @@
         const col      = (shipColourMap[safeCode] || {})[code] || '#5eead4';
         const safeShip = code.replace(/[^a-z0-9]/gi, '');
         const on       = shipVisibility[safeCode][code];
+        const label = shipNames[code] ? `${shipNames[code]} (${code})` : code;
         return `<span id="ship-chip-${safeCode}-${safeShip}"
                       onclick="toggleShip('${safeCode}','${code}')"
                       style="cursor:pointer;opacity:${on ? '1' : '0.35'};
@@ -836,7 +890,7 @@
                              border:1px solid ${col}44;background:${col}22;
                              color:${col};font-family:var(--font-mono);
                              font-size:1rem;white-space:nowrap;letter-spacing:0.04em;
-                             user-select:none">${code}</span>`;
+                             user-select:none">${label}</span>`;
       }).join('');
 
       const typeLabel = shipType === 'scatter' ? 'DOT' : 'LINE';
@@ -850,6 +904,7 @@
         </g>`;
 
       return `
+        <div style="padding:0.3rem 0.1rem 0.5rem">${factionChipsHtml}</div>
         <div style="background:#030d14;border:1px solid rgba(25,230,200,0.18);border-radius:0.3rem;box-shadow:inset 0 0 24px rgba(25,230,200,0.05);padding:0.4rem">
           <svg viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:auto">
             <defs>
@@ -1264,6 +1319,15 @@
   // Switch the By Ship chart between sell (Out) and buy (In) trades.
   function setShipMode(safeCode, mode) {
     shipMode[safeCode] = mode;
+    rebuildCfChart(safeCode);
+  }
+
+  // Switch which faction's ships are shown in the By Ship chart.
+  // Clears the per-station ship visibility map so the new faction's ships all
+  // start visible (rather than inheriting toggle state from a different faction).
+  function setShipFactionFilter(safeCode, ownerId) {
+    shipFactionFilter[safeCode] = ownerId;
+    delete shipVisibility[safeCode]; // reset to "all visible" for new faction
     rebuildCfChart(safeCode);
   }
 
