@@ -84,7 +84,7 @@
     //               donut look like it has real thickness (recessed centre)
     return `
       <div style="display:flex;justify-content:center;padding:1rem 0.6rem 1.6rem">
-        <svg viewBox="-55 -25 410 350" style="width:44rem;height:37.6rem">
+        <svg viewBox="-55 -25 410 350" style="width:44rem;height:37.6rem" overflow="visible">
           <defs>
             <radialGradient id="pieSheen" cx="0.36" cy="0.30" r="0.75">
               <stop offset="0%"   stop-color="#fff" stop-opacity="0.42"/>
@@ -107,9 +107,9 @@
           <!-- Inner-edge shadow gives the centre hole apparent depth. -->
           <circle cx="${cx}" cy="${cy}" r="${hole}" fill="url(#pieHole)" style="pointer-events:none"></circle>
           <text x="${cx}" y="${cy - 6}" text-anchor="middle" fill="var(--text-faint)"
-                style="font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase">Budget</text>
+                font-size="9" style="font-family:var(--font-mono);letter-spacing:0.12em;text-transform:uppercase">Budget</text>
           <text x="${cx}" y="${cy + 12}" text-anchor="middle" fill="var(--lime)"
-                style="font-family:var(--font-mono);font-size:1.5rem">${Math.round(bud.total).toLocaleString()}</text>
+                font-size="15" style="font-family:var(--font-mono)">${Math.round(bud.total).toLocaleString()}</text>
           ${labels.join('')}
         </svg>
       </div>`;

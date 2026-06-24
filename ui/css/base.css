@@ -3,6 +3,7 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
+      /* ── PALETTE (raw values — source of truth, never used directly in new components) ── */
       --bg:           #0d1117;
       --bg-panel:     #161b22;
       --bg-card:      #1c2128;
@@ -24,6 +25,53 @@
       --font-ui:      'Barlow', sans-serif;
       --font-mono:    'Share Tech Mono', monospace;
       --font-cond:    'Barlow Condensed', sans-serif;
+
+      /* ── SURFACES (elevation tiers: 0 = deepest background, 2 = raised card) ── */
+      --surface-0:    var(--bg);
+      --surface-1:    var(--bg-panel);
+      --surface-2:    var(--bg-card);
+      --outline:      var(--border);
+
+      /* ── TEXT HIERARCHY ── */
+      --text-primary:   var(--text);
+      --text-secondary: var(--text-dim);
+      /* --text-faint is green (#3fb950), not a grey — use --text-brand for new code */
+      --text-brand:     var(--text-faint);
+
+      /* ── BRAND / PRIMARY ACCENT ── */
+      --color-primary:     var(--teal);
+      --color-primary-dim: var(--teal-dim);
+
+      /* ── SEMANTIC FEEDBACK ── */
+      --color-positive:     var(--green);
+      --color-positive-dim: var(--green-dim);
+      --color-warning:      var(--amber);
+      --color-warning-dim:  var(--amber-dim);
+      --color-negative:     var(--red);
+      --color-negative-dim: var(--red-dim);
+      --color-alert:        var(--lime);
+      --color-special:      var(--purple);
+      --color-highlight:    var(--yellow);
+
+      /* ── TYPE SCALE (intent-based names for new components) ── */
+      --font-body:  var(--font-ui);
+      --font-label: var(--font-cond);
+      --font-data:  var(--font-mono);
+
+      /* ── STATE LAYERS (use as background on hover/focus/active) ── */
+      --state-hover:  rgba(255,255,255,0.04);
+      --state-focus:  rgba(45,212,191,0.15);
+      --state-active: rgba(45,212,191,0.22);
+
+      /* ── SHAPE ── */
+      --radius-sm: 0.4rem;
+      --radius-md: 0.6rem;
+      --radius-lg: 1.2rem;
+
+      /* ── MOTION ── */
+      --ease-standard: cubic-bezier(0.2, 0, 0, 1.0);
+      --duration-short:  150ms;
+      --duration-medium: 250ms;
     }
 
     html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-ui); overflow: hidden; }
