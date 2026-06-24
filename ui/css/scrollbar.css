@@ -4,4 +4,14 @@
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 0.2rem; }
 
     #loading { display: flex; align-items: center; justify-content: center; height: 100%; font-family: var(--font-mono); color: var(--text-faint); font-size: 1.2rem; gap: 1rem; }
-    #loading i { font-size: 2rem; color: var(--teal); }
+    #loading .loading-icon { width: 2rem; height: 2rem; flex-shrink: 0; animation: radar-spin 2.4s linear infinite, scanner-glow 1.8s ease-in-out infinite; }
+
+    /* Slow radar-sweep spin — deliberate, not a generic spinner */
+    @keyframes radar-spin { to { transform: rotate(360deg); } }
+
+    /* Neon glow breathes between a tight core glow and a full corona:
+       three drop-shadow layers give the bright white-hot centre + wide teal bloom */
+    @keyframes scanner-glow {
+      0%, 100% { filter: drop-shadow(0 0 2px var(--teal)) drop-shadow(0 0 6px var(--teal)); }
+      50%       { filter: drop-shadow(0 0 3px #fff) drop-shadow(0 0 8px var(--teal)) drop-shadow(0 0 20px var(--teal)); }
+    }

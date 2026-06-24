@@ -5,7 +5,21 @@
      <script> files they load afterward. -->
 
 <div id="hull-tip"></div>
-<div id="loading"><i class="ti ti-loader"></i> Connecting to scanner...</div>
+<div id="loading">
+  <!-- Neon comet arc: a 270° circle split into 6 opacity bands (faint tail → bright
+       tip) plus a white hot-spot at the leading edge. The whole SVG rotates via CSS;
+       all bands rotate with it, so the bright tip always leads the sweep. -->
+  <svg class="loading-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="12" cy="12" r="10" style="stroke:var(--teal)" stroke-width="2" stroke-dasharray="7.85 54.98" stroke-dashoffset="15.71" stroke-opacity="0.07"/>
+    <circle cx="12" cy="12" r="10" style="stroke:var(--teal)" stroke-width="2" stroke-dasharray="7.85 54.98" stroke-dashoffset="7.85"  stroke-opacity="0.18"/>
+    <circle cx="12" cy="12" r="10" style="stroke:var(--teal)" stroke-width="2" stroke-dasharray="7.85 54.98" stroke-dashoffset="0"     stroke-opacity="0.35"/>
+    <circle cx="12" cy="12" r="10" style="stroke:var(--teal)" stroke-width="2" stroke-dasharray="7.85 54.98" stroke-dashoffset="54.98" stroke-opacity="0.58"/>
+    <circle cx="12" cy="12" r="10" style="stroke:var(--teal)" stroke-width="2" stroke-dasharray="7.85 54.98" stroke-dashoffset="47.12" stroke-opacity="0.80"/>
+    <circle cx="12" cy="12" r="10" style="stroke:var(--teal)" stroke-width="2" stroke-dasharray="7.85 54.98" stroke-dashoffset="39.27" stroke-opacity="1"/>
+    <circle cx="12" cy="12" r="10" stroke="white"              stroke-width="2" stroke-linecap="round" stroke-dasharray="3.93 58.90" stroke-dashoffset="35.34" stroke-opacity="1"/>
+  </svg>
+  Connecting to scanner...
+</div>
 
 <div id="shell" style="display:none">
 
