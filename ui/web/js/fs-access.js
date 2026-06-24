@@ -58,7 +58,38 @@ async function ensurePermission(handle, mode = "read") {
   return (await handle.requestPermission(opts)) === "granted";
 }
 
-// ── Saves directory ─────────────────────────────────────────────────────
+// ── Fallback for browsers without showDirectoryPicker() ─────────────────
+// Firefox doesn't support the File System Access API at all, and Brave
+// blocks showDirectoryPicker() by default (shields up). This opens a
+// plain <input webkitdirectory> folder picker instead. No persistent
+// handles - the folder must be re-selected on each scan.
+
+function grantSavesRootFallback() {
+  return new Promise((resolve, reject) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.webkitdirectory = true;
+    input.onchange = () => resolve(Array.from(input.files || []));
+    // The "cancel" event fires when the user closes the picker without
+    // choosing. Supported in Chrome 113+, Firefox 91+, Safari 16.4+.
+    input.addEventListener("cancel", () =>
+      reject(new DOMException("The user aborted a request.", "AbortError"))
+    );
+    input.click();
+  });
+}
+
+// Filters the flat FileList from grantSavesRootFallback() down to save
+// files only, returning the same shape as listSaveFiles() but with a
+// `file` property (a plain File) instead of `handle`.
+function listSaveFilesFallback(files) {
+  return files
+    .filter(f => SAVE_FILE_PATTERN.test(f.name))
+    .map(f => ({ name: f.name, file: f, size: f.size, lastModified: f.lastModified }))
+    .sort((a, b) => b.lastModified - a.lastModified);
+}
+
+// ── Saves directory (File System Access API path) ────────────────────────
 
 // Must be called from a real user gesture (e.g. a button's click handler).
 async function grantSavesRoot() {
@@ -141,4 +172,5 @@ async function listSaveFiles(savesDirHandle) {
 window.FSAccess = {
   persistHandle, restoreHandle, ensurePermission,
   grantSavesRoot, findSavesDir, listSaveFiles,
+  grantSavesRootFallback, listSaveFilesFallback,
 };

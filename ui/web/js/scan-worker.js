@@ -65,7 +65,9 @@ function getPyodide() {
 }
 
 async function handleTriggerScan(pyodide, payload) {
-  const file = await payload.fileHandle.getFile();
+  // payload.file is a plain File (fallback path via <input webkitdirectory>);
+  // payload.fileHandle is a FileSystemFileHandle (File System Access API path).
+  const file = payload.file || await payload.fileHandle.getFile();
   const buf = await file.arrayBuffer();
   pyodide.FS.writeFile(STAGED_SAVE_PATH, new Uint8Array(buf));
 

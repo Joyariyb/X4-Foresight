@@ -63,10 +63,28 @@ window._bridge = {
   trigger_scan(cb) {
     (async () => {
       try {
-        const savesDir = await ensureSavesDir();
-        const files = await FSAccess.listSaveFiles(savesDir);
+        let files;
+        if (typeof window.showDirectoryPicker !== "function") {
+          // Firefox / Brave (shields up): no File System Access API.
+          // Fall back to a plain <input webkitdirectory> picker. No handle
+          // persistence on this path - the folder is re-selected each time.
+          let rawFiles;
+          try {
+            rawFiles = await FSAccess.grantSavesRootFallback();
+          } catch (e) {
+            if (e.name === "AbortError") {
+              cb(JSON.stringify({ ok: false, cancelled: true }));
+              return;
+            }
+            throw e;
+          }
+          files = FSAccess.listSaveFilesFallback(rawFiles);
+        } else {
+          const savesDir = await ensureSavesDir();
+          files = await FSAccess.listSaveFiles(savesDir);
+        }
         if (files.length === 0) {
-          cb(JSON.stringify({ ok: false, error: "No save files found in the granted folder." }));
+          cb(JSON.stringify({ ok: false, error: "No save files found in the selected folder." }));
           return;
         }
         const chosen = await showSavePickerDialog(files);
@@ -74,7 +92,11 @@ window._bridge = {
           cb(JSON.stringify({ ok: false, cancelled: true }));
           return;
         }
-        const result = await callWorker("trigger_scan", { fileHandle: chosen.handle });
+        // chosen.handle is set on the FSAA path; chosen.file on the fallback.
+        const result = await callWorker("trigger_scan", {
+          fileHandle: chosen.handle || null,
+          file: chosen.file || null,
+        });
         cb(result);
       } catch (e) {
         cb(JSON.stringify({ ok: false, error: String(e) }));
