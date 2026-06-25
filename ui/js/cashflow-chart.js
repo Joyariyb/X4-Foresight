@@ -76,14 +76,14 @@
       <div id="cf-${safeCode}" class="econ-graph">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:1.25cqw;margin-bottom:0.625cqw">
           <div style="display:flex;align-items:center;gap:0.9375cqw;min-width:0">
-            <span style="font-family:var(--font-mono);font-size:1.25cqw;letter-spacing:0.18em;color:#5fe9d4;text-transform:uppercase;white-space:nowrap">Cash Flow</span>
+            <span style="font-family:var(--font-mono);font-size:1.25cqw;letter-spacing:0.18em;color:${CHART_LINE};text-transform:uppercase;white-space:nowrap">Cash Flow</span>
             <button class="cf-toggle-btn active" data-mode="hourly"   onclick="setCashflowMode('${safeCode}','hourly')">Hourly</button>
             <button class="cf-toggle-btn"        data-mode="trade"    onclick="setCashflowMode('${safeCode}','trade')">By Trade</button>
             <button class="cf-toggle-btn"        data-mode="ware"     onclick="setCashflowMode('${safeCode}','ware')">By Ware</button>
             <button class="cf-toggle-btn"        data-mode="avgprice" onclick="setCashflowMode('${safeCode}','avgprice')">Avg Price</button>
             <button class="cf-toggle-btn"        data-mode="byship"   onclick="setCashflowMode('${safeCode}','byship')">By Ship</button>
           </div>
-          <span style="font-family:var(--font-mono);font-size:1.5625cqw;color:${net24 >= 0 ? '#19e6c8' : '#ef5350'};white-space:nowrap">${cfFmtCr(net24)}</span>
+          <span style="font-family:var(--font-mono);font-size:1.5625cqw;color:${net24 >= 0 ? CHART_ACCENT : CHART_LOSS};white-space:nowrap">${cfFmtCr(net24)}</span>
         </div>
         <!-- Bodies split in two:
              • cf-avg — the Avg Price chart, built ONCE then mutated in place so
@@ -139,8 +139,8 @@
         const label = h === 0 ? 'NOW'
           : h < 1  ? `-${Math.round(h * 60)}M`
           : `-${h % 1 !== 0 ? h.toFixed(1) : Math.round(h)}H`;
-        out.push(`<line x1="${x}" y1="${mt}" x2="${x}" y2="${mt + ph}" stroke="#19e6c8" stroke-opacity="0.08" stroke-width="0.6"/>
-          <text x="${x}" y="${mt + ph + 13}" text-anchor="middle" fill="#5fe9d4" fill-opacity="0.7"
+        out.push(`<line x1="${x}" y1="${mt}" x2="${x}" y2="${mt + ph}" stroke="${CHART_ACCENT}" stroke-opacity="0.08" stroke-width="0.6"/>
+          <text x="${x}" y="${mt + ph + 13}" text-anchor="middle" fill="${CHART_LINE}" fill-opacity="0.7"
                 style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.06em">${label}</text>`);
       }
       return out.join('');
@@ -153,12 +153,12 @@
       const grid = ticks.map(v => {
         const y = yOf(v).toFixed(1), isZero = Math.abs(v) < step * 0.001;
         return `<line x1="${ml}" y1="${y}" x2="${ml + pw}" y2="${y}"
-                      stroke="#19e6c8" stroke-opacity="${isZero ? 0.35 : 0.10}" stroke-width="${isZero ? 1 : 0.6}"/>`;
+                      stroke="${CHART_ACCENT}" stroke-opacity="${isZero ? 0.35 : 0.10}" stroke-width="${isZero ? 1 : 0.6}"/>`;
       }).join('');
       const labels = ticks.map(v => {
         const y = yOf(v).toFixed(1);
         return `<text x="${ml - 6}" y="${y}" text-anchor="end" dominant-baseline="middle"
-                      fill="#5fe9d4" fill-opacity="0.7" style="font-family:var(--font-mono);font-size:0.8rem">${cfFmtY(v)}</text>`;
+                      fill="${CHART_LINE}" fill-opacity="0.7" style="font-family:var(--font-mono);font-size:0.8rem">${cfFmtY(v)}</text>`;
       }).join('');
       return grid + labels;
     };
@@ -218,14 +218,14 @@
       for (let i = 0; i < numHours; i++) {
         const rows = [];
         Object.keys(detail[i]).forEach(w => {
-          const d = detail[i][w], col = WARE_COLOURS[w] || '#5eead4';
+          const d = detail[i][w], col = WARE_COLOURS[w] || CHART_LINE;
           if (d.soldU   > 0) rows.push({ ware: w, colour: col, dir: 'sell', units: d.soldU,   cr:  d.soldCr });
           if (d.boughtU > 0) rows.push({ ware: w, colour: col, dir: 'buy',  units: d.boughtU, cr: -d.boughtCr });
         });
         if (!rows.length) continue;
         rows.sort((a, b) => Math.abs(b.cr) - Math.abs(a.cr));
         const cx = xOf(bucketCentre(i)).toFixed(1), cy = yOf(net[i]).toFixed(1);
-        const dotCol = net[i] >= 0 ? '#5eead4' : '#ef5350';
+        const dotCol = net[i] >= 0 ? CHART_LINE : CHART_LOSS;
         if (hourlyType === 'line') {
           markers.push(`<circle cx="${cx}" cy="${cy}" r="2.2" fill="${dotCol}" style="filter:drop-shadow(0 0 3px ${dotCol})"/>`);
         }
@@ -240,7 +240,7 @@
       }
 
       // Build the chart-type-specific data layer, clipped to the plot rect.
-      const zeroLineHtml = `<line x1="${ml}" y1="${zeroY.toFixed(1)}" x2="${(ml + pw).toFixed(1)}" y2="${zeroY.toFixed(1)}" stroke="#19e6c8" stroke-opacity="0.35" stroke-width="1"/>`;
+      const zeroLineHtml = `<line x1="${ml}" y1="${zeroY.toFixed(1)}" x2="${(ml + pw).toFixed(1)}" y2="${zeroY.toFixed(1)}" stroke="${CHART_ACCENT}" stroke-opacity="0.35" stroke-width="1"/>`;
       let dataLayer;
       if (hourlyType === 'bar') {
         // One rect per bucket anchored at the zero line, coloured by profit/loss.
@@ -249,7 +249,7 @@
         const bars = ordered.map(([x, v]) => {
           const y0 = zeroY, y1 = yOf(v), h = Math.abs(y0 - y1);
           if (h < 0.5) return ''; // skip near-zero bars that would just be slivers
-          const col = v >= 0 ? '#19e6c8' : '#ef5350';
+          const col = v >= 0 ? CHART_ACCENT : CHART_LOSS;
           return `<rect x="${(x - barHalf).toFixed(1)}" y="${Math.min(y0, y1).toFixed(1)}" width="${(barHalf * 2).toFixed(1)}" height="${h.toFixed(1)}" fill="${col}" fill-opacity="0.78"/>`;
         }).join('');
         dataLayer = zeroLineHtml + bars;
@@ -257,7 +257,7 @@
         // Circles only — no connecting line, no area fill. Larger radius than the
         // line-mode tick marks so individual hours are easy to spot and hover.
         const dots = ordered.map(([x, v]) => {
-          const y = yOf(v).toFixed(1), col = v >= 0 ? '#5eead4' : '#ef5350';
+          const y = yOf(v).toFixed(1), col = v >= 0 ? CHART_LINE : CHART_LOSS;
           return `<circle cx="${x.toFixed(1)}" cy="${y}" r="3.5" fill="${col}" style="filter:drop-shadow(0 0 5px ${col})" opacity="0.90"/>`;
         }).join('');
         dataLayer = zeroLineHtml + dots;
@@ -269,8 +269,8 @@
                          ` L ${ordered[ordered.length - 1][0].toFixed(1)} ${zeroY.toFixed(1)} Z`;
         dataLayer = `
           <path d="${areaPath}" fill="url(#${fillId})" stroke="none"/>
-          <polyline points="${linePts}" fill="none" stroke="#2dd4bf" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" opacity="0.35" filter="url(#${glowId})"/>
-          <polyline points="${linePts}" fill="none" stroke="#5eead4" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+          <polyline points="${linePts}" fill="none" stroke="${CHART_GLOW}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" opacity="0.35" filter="url(#${glowId})"/>
+          <polyline points="${linePts}" fill="none" stroke="${CHART_LINE}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
           ${markers.join('')}`;
       }
 
@@ -281,9 +281,9 @@
       const typeIndicator = `
         <g onclick="cycleChart('${safeCode}','hourly')" style="cursor:pointer">
           <rect x="${(ml + pw - 38).toFixed(1)}" y="${(mt + 3).toFixed(1)}" width="36" height="13" rx="2"
-                fill="#19e6c810" stroke="#19e6c830" stroke-width="0.5"/>
+                fill="${CHART_ACCENT}10" stroke="${CHART_ACCENT}30" stroke-width="0.5"/>
           <text x="${(ml + pw - 4).toFixed(1)}" y="${(mt + 11).toFixed(1)}" text-anchor="end"
-                fill="#5fe9d4" fill-opacity="0.75"
+                fill="${CHART_LINE}" fill-opacity="0.75"
                 style="font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.08em">${typeLabel} ›</text>
         </g>`;
 
@@ -293,10 +293,10 @@
             <defs>
               <filter id="${glowId}" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2"/></filter>
               <linearGradient id="${fillId}" x1="0" y1="${mt}" x2="0" y2="${mt + ph}" gradientUnits="userSpaceOnUse">
-                <stop offset="0"           stop-color="#19e6c8" stop-opacity="0.30"/>
-                <stop offset="${zeroFrac}" stop-color="#19e6c8" stop-opacity="0.05"/>
-                <stop offset="${zeroFrac}" stop-color="#ef5350" stop-opacity="0.05"/>
-                <stop offset="1"           stop-color="#ef5350" stop-opacity="0.30"/>
+                <stop offset="0"           stop-color="${CHART_ACCENT}" stop-opacity="0.30"/>
+                <stop offset="${zeroFrac}" stop-color="${CHART_ACCENT}" stop-opacity="0.05"/>
+                <stop offset="${zeroFrac}" stop-color="${CHART_LOSS}" stop-opacity="0.05"/>
+                <stop offset="1"           stop-color="${CHART_LOSS}" stop-opacity="0.30"/>
               </linearGradient>
               <clipPath id="cfclip-${safeCode}-h"><rect x="${ml}" y="${mt}" width="${pw}" height="${ph}"/></clipPath>
             </defs>
@@ -308,16 +308,16 @@
             <g clip-path="url(#cfclip-${safeCode}-h)">
               ${dataLayer}
             </g>
-            <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="#19e6c8" stroke-opacity="0.35" stroke-width="1"/>
-            <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.6"
+            <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="${CHART_ACCENT}" stroke-opacity="0.35" stroke-width="1"/>
+            <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.6"
                   style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">CREDITS/HR</text>
             ${hitCols.join('')}
             ${typeIndicator}
           </svg>
         </div>
         <div style="display:flex;gap:1.6rem;padding:0.6rem 0.2rem 0.2rem;font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.04em">
-          <span style="display:inline-flex;align-items:center;gap:0.5rem;color:#19e6c8"><span style="display:inline-block;width:1.1rem;height:0.2rem;background:#19e6c8;border-radius:0.1rem;filter:drop-shadow(0 0 2px #19e6c8)"></span>INCOME (SELLS)</span>
-          <span style="display:inline-flex;align-items:center;gap:0.5rem;color:#ef5350"><span style="display:inline-block;width:1.1rem;height:0.2rem;background:#ef5350;border-radius:0.1rem;filter:drop-shadow(0 0 2px #ef5350)"></span>SPEND (BUYS)</span>
+          <span style="display:inline-flex;align-items:center;gap:0.5rem;color:${CHART_ACCENT}"><span style="display:inline-block;width:1.1rem;height:0.2rem;background:${CHART_ACCENT};border-radius:0.1rem;filter:drop-shadow(0 0 2px ${CHART_ACCENT})"></span>INCOME (SELLS)</span>
+          <span style="display:inline-flex;align-items:center;gap:0.5rem;color:${CHART_LOSS}"><span style="display:inline-block;width:1.1rem;height:0.2rem;background:${CHART_LOSS};border-radius:0.1rem;filter:drop-shadow(0 0 2px ${CHART_LOSS})"></span>SPEND (BUYS)</span>
         </div>`;
     })();
 
@@ -352,12 +352,12 @@
         const isSell = p.t.direction === 'Out';
         store.push({
           fx: (x - ml) / pw, vbx: +x.toFixed(1), vby: +y.toFixed(1),
-          ware: p.t.ware_name || 'Unknown', colour: WARE_COLOURS[p.t.ware_name] || '#5eead4',
+          ware: p.t.ware_name || 'Unknown', colour: WARE_COLOURS[p.t.ware_name] || CHART_LINE,
           dir: isSell ? 'sell' : 'buy', units: p.t.amount, priceEa: p.t.price_cr,
           total: p.value, hAgo: p.hAgo, ship: p.t.ship_code || '', counterparty: p.t.counterparty || '',
         });
         const r = tradeType === 'scatter' ? '2.5' : '1.6';
-        return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="${isSell ? '#5eead4' : '#ef5350'}" opacity="0.85"/>`;
+        return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="${isSell ? CHART_LINE : CHART_LOSS}" opacity="0.85"/>`;
       }).join('');
       cashflowDetailData[safeCode] = store;
 
@@ -372,8 +372,8 @@
                          ` L ${verts[verts.length - 1][0].toFixed(1)} ${zeroY.toFixed(1)} Z`;
         dataLayer = `
           <path d="${areaPath}" fill="url(#${fillId})" stroke="none"/>
-          <polyline points="${linePts}" fill="none" stroke="#2dd4bf" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" opacity="0.45" filter="url(#${glowId})"/>
-          <polyline points="${linePts}" fill="none" stroke="#7af5e4" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+          <polyline points="${linePts}" fill="none" stroke="${CHART_GLOW}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" opacity="0.45" filter="url(#${glowId})"/>
+          <polyline points="${linePts}" fill="none" stroke="${CHART_LINE_ALT}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
           ${dots}`;
       }
 
@@ -381,9 +381,9 @@
       const tradeTypeIndicator = `
         <g onclick="cycleChart('${safeCode}','trade')" style="cursor:pointer">
           <rect x="${(ml + pw - 38).toFixed(1)}" y="${(mt + 3).toFixed(1)}" width="36" height="13" rx="2"
-                fill="#19e6c810" stroke="#19e6c830" stroke-width="0.5"/>
+                fill="${CHART_ACCENT}10" stroke="${CHART_ACCENT}30" stroke-width="0.5"/>
           <text x="${(ml + pw - 4).toFixed(1)}" y="${(mt + 11).toFixed(1)}" text-anchor="end"
-                fill="#5fe9d4" fill-opacity="0.75"
+                fill="${CHART_LINE}" fill-opacity="0.75"
                 style="font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.08em">${tradeTypeLabel} ›</text>
         </g>`;
 
@@ -393,10 +393,10 @@
             <defs>
               <filter id="${glowId}" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>
               <linearGradient id="${fillId}" x1="0" y1="${mt}" x2="0" y2="${mt + ph}" gradientUnits="userSpaceOnUse">
-                <stop offset="0"           stop-color="#2dd4bf" stop-opacity="0.45"/>
-                <stop offset="${zeroFrac}" stop-color="#2dd4bf" stop-opacity="0.04"/>
-                <stop offset="${zeroFrac}" stop-color="#ef5350" stop-opacity="0.04"/>
-                <stop offset="1"           stop-color="#ef5350" stop-opacity="0.45"/>
+                <stop offset="0"           stop-color="${CHART_GLOW}" stop-opacity="0.45"/>
+                <stop offset="${zeroFrac}" stop-color="${CHART_GLOW}" stop-opacity="0.04"/>
+                <stop offset="${zeroFrac}" stop-color="${CHART_LOSS}" stop-opacity="0.04"/>
+                <stop offset="1"           stop-color="${CHART_LOSS}" stop-opacity="0.45"/>
               </linearGradient>
               <clipPath id="cfclip-${safeCode}-d"><rect x="${ml}" y="${mt}" width="${pw}" height="${ph}"/></clipPath>
             </defs>
@@ -407,8 +407,8 @@
             <g clip-path="url(#cfclip-${safeCode}-d)">
               ${dataLayer}
             </g>
-            <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="#19e6c8" stroke-opacity="0.35" stroke-width="1"/>
-            <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.6"
+            <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="${CHART_ACCENT}" stroke-opacity="0.35" stroke-width="1"/>
+            <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.6"
                   style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">TRADE SIZE · CR</text>
             <!-- Highlight ring follows the nearest trade on hover -->
             <circle class="cf-detail-marker" r="3.8" fill="none" stroke="#ffffff" stroke-width="1.5" style="display:none;pointer-events:none"/>
@@ -503,7 +503,7 @@
 
       // Process each ware: compute price band, build SVG paths, populate hover store.
       wareNames.forEach(wareName => {
-        const col     = WARE_COLOURS[wareName] || '#5eead4';
+        const col     = WARE_COLOURS[wareName] || CHART_LINE;
         // Normalise ware display name to the key used in WARE_PRICES, e.g. "Energy Cells" → "energycells"
         const wareKey = wareName.toLowerCase().replace(/\s+/g, '');
         const band    = warePrices[wareKey];
@@ -586,16 +586,16 @@
       // wares since every line is normalised to its own band.
       const yMax = mt, yAvg = mt + ph / 2, yMin = mt + ph;
       const yAxisWare = `
-        <line x1="${ml}" y1="${yMax.toFixed(1)}" x2="${(ml+pw).toFixed(1)}" y2="${yMax.toFixed(1)}" stroke="#19e6c8" stroke-opacity="0.10" stroke-width="0.6"/>
-        <line x1="${ml}" y1="${yAvg.toFixed(1)}" x2="${(ml+pw).toFixed(1)}" y2="${yAvg.toFixed(1)}" stroke="#19e6c8" stroke-opacity="0.28" stroke-width="1" stroke-dasharray="4 3"/>
-        <line x1="${ml}" y1="${yMin.toFixed(1)}" x2="${(ml+pw).toFixed(1)}" y2="${yMin.toFixed(1)}" stroke="#19e6c8" stroke-opacity="0.10" stroke-width="0.6"/>
-        <text x="${ml-6}" y="${yMax.toFixed(1)}" text-anchor="end" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.70" style="font-family:var(--font-mono);font-size:0.8rem">MAX</text>
-        <text x="${ml-6}" y="${yAvg.toFixed(1)}" text-anchor="end" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.90" style="font-family:var(--font-mono);font-size:0.8rem">AVG</text>
-        <text x="${ml-6}" y="${yMin.toFixed(1)}" text-anchor="end" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.70" style="font-family:var(--font-mono);font-size:0.8rem">MIN</text>`;
+        <line x1="${ml}" y1="${yMax.toFixed(1)}" x2="${(ml+pw).toFixed(1)}" y2="${yMax.toFixed(1)}" stroke="${CHART_ACCENT}" stroke-opacity="0.10" stroke-width="0.6"/>
+        <line x1="${ml}" y1="${yAvg.toFixed(1)}" x2="${(ml+pw).toFixed(1)}" y2="${yAvg.toFixed(1)}" stroke="${CHART_ACCENT}" stroke-opacity="0.28" stroke-width="1" stroke-dasharray="4 3"/>
+        <line x1="${ml}" y1="${yMin.toFixed(1)}" x2="${(ml+pw).toFixed(1)}" y2="${yMin.toFixed(1)}" stroke="${CHART_ACCENT}" stroke-opacity="0.10" stroke-width="0.6"/>
+        <text x="${ml-6}" y="${yMax.toFixed(1)}" text-anchor="end" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.70" style="font-family:var(--font-mono);font-size:0.8rem">MAX</text>
+        <text x="${ml-6}" y="${yAvg.toFixed(1)}" text-anchor="end" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.90" style="font-family:var(--font-mono);font-size:0.8rem">AVG</text>
+        <text x="${ml-6}" y="${yMin.toFixed(1)}" text-anchor="end" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.70" style="font-family:var(--font-mono);font-size:0.8rem">MIN</text>`;
 
       // Legend chips — clicking toggles the ware line on/off.
       const chips = wareNames.map(wareName => {
-        const col     = WARE_COLOURS[wareName] || '#5eead4';
+        const col     = WARE_COLOURS[wareName] || CHART_LINE;
         const wareKey = wareName.toLowerCase().replace(/\s+/g, '');
         const on      = wareVisibility[safeCode][wareName];
         return `<span id="ware-chip-${safeCode}-${wareKey}"
@@ -622,8 +622,8 @@
             <g clip-path="url(#cfclip-${safeCode}-w)">
               ${wareGroupHtml.join('')}
             </g>
-            <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt+ph}" stroke="#19e6c8" stroke-opacity="0.35" stroke-width="1"/>
-            <text x="9" y="${mt + ph/2}" text-anchor="middle" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.6"
+            <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt+ph}" stroke="${CHART_ACCENT}" stroke-opacity="0.35" stroke-width="1"/>
+            <text x="9" y="${mt + ph/2}" text-anchor="middle" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.6"
                   style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph/2})">PRICE · BAND</text>
             <!-- Highlight ring — stroke colour set dynamically to match the hovered ware -->
             <circle class="cf-ware-marker" r="4" fill="none" stroke="#ffffff" stroke-width="1.5" style="display:none;pointer-events:none"/>
@@ -634,9 +634,9 @@
                  SELL/BUY toggle (which is in the left margin). -->
             <g onclick="cycleChart('${safeCode}','ware')" style="cursor:pointer">
               <rect x="${(ml + pw - 44).toFixed(1)}" y="${(mt + 3).toFixed(1)}" width="42" height="13" rx="2"
-                    fill="#19e6c810" stroke="#19e6c830" stroke-width="0.5"/>
+                    fill="${CHART_ACCENT}10" stroke="${CHART_ACCENT}30" stroke-width="0.5"/>
               <text x="${(ml + pw - 4).toFixed(1)}" y="${(mt + 11).toFixed(1)}" text-anchor="end"
-                    fill="#5fe9d4" fill-opacity="0.75"
+                    fill="${CHART_LINE}" fill-opacity="0.75"
                     style="font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.08em">${wareType === 'area' ? 'AREA' : wareType === 'scatter' ? 'DOT' : 'STEP'} ›</text>
             </g>
             <!-- Sold/Bought toggle — must come after the hit rect in document order so
@@ -664,7 +664,7 @@
       // defined in designs-builder.js and available on the shared page scope.
       const factionLabel  = id => id === 'player' ? 'PLR'
         : (typeof FACTION_LABELS  !== 'undefined' && FACTION_LABELS[id])  || id.slice(0, 3).toUpperCase();
-      const factionColour = id => id === 'player' ? '#5eead4'
+      const factionColour = id => id === 'player' ? CHART_LINE
         : (typeof FACTION_COLOURS !== 'undefined' && FACTION_COLOURS[id]) || '#6e7681';
 
       // Compute the unique factions from the FULL 24h window (not just the
@@ -709,7 +709,7 @@
       // Styled to match cf-toggle-btn.active so it blends with the mode buttons.
       const factionChipsHtml = `<select
         class="cf-toggle-btn"
-        style="background:#030d14;color:#5eead4;border-color:#5eead4"
+        style="background:#030d14;color:${CHART_LINE};border-color:${CHART_LINE}"
         onchange="setShipFactionFilter('${safeCode}', this.value)">${
         sortedFactions.map(([id, f]) =>
           `<option value="${id}"${id === activeFaction ? ' selected' : ''} style="background:#030d14;color:${f.colour}">${f.label}</option>`
@@ -820,7 +820,7 @@
 
       // Per-ship SVG line or scatter.
       shipCodes.forEach(code => {
-        const col = (shipColourMap[safeCode] || {})[code] || '#5eead4';
+        const col = (shipColourMap[safeCode] || {})[code] || CHART_LINE;
         // Plot bucket centres oldest-to-newest (left-to-right), same as hourlyBody.
         const pts = [];
         for (let i = numHours - 1; i >= 0; i--) {
@@ -876,7 +876,7 @@
               .sort((a, b) => (b.total_cr || 0) - (a.total_cr || 0))
               .map(t => ({
                 ware:         t.ware_name || 'Unknown',
-                wareColour:   WARE_COLOURS[t.ware_name] || '#5eead4',
+                wareColour:   WARE_COLOURS[t.ware_name] || CHART_LINE,
                 dir:          t.direction === 'Out' ? 'sell' : 'buy',
                 amount:       t.amount,
                 priceEa:      t.price_cr,
@@ -893,7 +893,7 @@
 
       // Legend chips — click toggles the ship's line on/off.
       const chips = shipCodes.map(code => {
-        const col      = (shipColourMap[safeCode] || {})[code] || '#5eead4';
+        const col      = (shipColourMap[safeCode] || {})[code] || CHART_LINE;
         const safeShip = code.replace(/[^a-z0-9]/gi, '');
         const on       = shipVisibility[safeCode][code];
         const label = shipNames[code] ? `${shipNames[code]} (${code})` : code;
@@ -912,9 +912,9 @@
       const typePill  = `
         <g onclick="cycleChart('${safeCode}','byship')" style="cursor:pointer">
           <rect x="${(ml + pw - 38).toFixed(1)}" y="${(mt + 3).toFixed(1)}" width="36" height="13" rx="2"
-                fill="#19e6c810" stroke="#19e6c830" stroke-width="0.5"/>
+                fill="${CHART_ACCENT}10" stroke="${CHART_ACCENT}30" stroke-width="0.5"/>
           <text x="${(ml + pw - 4).toFixed(1)}" y="${(mt + 11).toFixed(1)}" text-anchor="end"
-                fill="#5fe9d4" fill-opacity="0.75"
+                fill="${CHART_LINE}" fill-opacity="0.75"
                 style="font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.08em">${typeLabel} ›</text>
         </g>`;
 
@@ -935,11 +935,11 @@
             <g clip-path="url(#cfclip-${safeCode}-s)">
               ${shipGroupHtml.join('')}
             </g>
-            <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="#19e6c8" stroke-opacity="0.35" stroke-width="1"/>
-            <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.6"
+            <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="${CHART_ACCENT}" stroke-opacity="0.35" stroke-width="1"/>
+            <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.6"
                   style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">CREDITS/HR</text>
             <!-- Highlight ring for the nearest hovered datapoint; colour set dynamically -->
-            <circle class="cf-ship-marker" r="5" fill="none" stroke="#5eead4" stroke-width="1.5" style="display:none;pointer-events:none"/>
+            <circle class="cf-ship-marker" r="5" fill="none" stroke="${CHART_LINE}" stroke-width="1.5" style="display:none;pointer-events:none"/>
             <!-- Transparent overlay captures mouse events; nearest-point search in tooltips.js -->
             <rect x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="transparent" data-shipflow="${safeCode}" onclick="cycleChart('${safeCode}','byship')" style="cursor:crosshair"/>
             ${typePill}
@@ -1046,8 +1046,8 @@
           <g class="avg-bars" clip-path="url(#avgclip-${safeCode})"></g>
           <!-- Overlay for line/scatter modes — populated by updateAvgPrice, empty in bar mode -->
           <g class="avg-overlay" clip-path="url(#avgclip-${safeCode})"></g>
-          <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="#19e6c8" stroke-opacity="0.35" stroke-width="1"/>
-          <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.6"
+          <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="${CHART_ACCENT}" stroke-opacity="0.35" stroke-width="1"/>
+          <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.6"
                 style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">PRICE · CR</text>
           <!-- Readout line: on hover it projects the bar's top across to the
                price axis at that hour's average. Colour set per-hover in JS. -->
@@ -1097,7 +1097,7 @@
     const ware = avgWare[safeCode];
     const want = dir === 'sell' ? 'Out' : 'In';
     const numHours = Math.ceil(windowHours);
-    const col = ware ? (WARE_COLOURS[ware] || '#5eead4') : '#5eead4';
+    const col = ware ? (WARE_COLOURS[ware] || CHART_LINE) : CHART_LINE;
 
     const xOf = h => ml + (offsetHours + windowHours - h) / windowHours * pw;
 
@@ -1124,7 +1124,7 @@
     const chipsEl = root.querySelector('.avg-chips');
     const wares   = avgPriceWareList(safeCode, dir);
     chipsEl.innerHTML = wares.length ? wares.map(w => {
-      const c = WARE_COLOURS[w] || '#5eead4', on = w === ware;
+      const c = WARE_COLOURS[w] || CHART_LINE, on = w === ware;
       return `<span onclick="setAvgWare('${safeCode}','${w}')"
         style="cursor:pointer;opacity:${on ? '1' : '0.4'};display:inline-flex;align-items:center;
                padding:0.2rem 0.7rem;border-radius:0.2rem;border:1px solid ${c}${on ? 'aa' : '44'};
@@ -1179,8 +1179,8 @@
     for (let v = axBot; v <= axTop + 0.5; v += step) ticks.push(v);
     gridEl.innerHTML = ticks.map(v => {
       const y = yOf(v).toFixed(1);
-      return `<line x1="${ml}" y1="${y}" x2="${ml + pw}" y2="${y}" stroke="#19e6c8" stroke-opacity="0.10" stroke-width="0.6"/>
-        <text x="${ml - 6}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.7" style="font-family:var(--font-mono);font-size:0.8rem">${cfFmtY(v)}</text>`;
+      return `<line x1="${ml}" y1="${y}" x2="${ml + pw}" y2="${y}" stroke="${CHART_ACCENT}" stroke-opacity="0.10" stroke-width="0.6"/>
+        <text x="${ml - 6}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.7" style="font-family:var(--font-mono);font-size:0.8rem">${cfFmtY(v)}</text>`;
     }).join('');
 
     // ── X ticks: same adaptive spacing as the other charts ──
@@ -1189,8 +1189,8 @@
     for (let h = Math.ceil(offsetHours / tickStep) * tickStep; h <= offsetHours + windowHours + 0.001; h += tickStep) {
       const x = xOf(h).toFixed(1);
       const label = h === 0 ? 'NOW' : h < 1 ? `-${Math.round(h * 60)}M` : `-${h % 1 !== 0 ? h.toFixed(1) : Math.round(h)}H`;
-      xt += `<line x1="${x}" y1="${mt}" x2="${x}" y2="${mt + ph}" stroke="#19e6c8" stroke-opacity="0.08" stroke-width="0.6"/>
-        <text x="${x}" y="${mt + ph + 13}" text-anchor="middle" fill="#5fe9d4" fill-opacity="0.7" style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.06em">${label}</text>`;
+      xt += `<line x1="${x}" y1="${mt}" x2="${x}" y2="${mt + ph}" stroke="${CHART_ACCENT}" stroke-opacity="0.08" stroke-width="0.6"/>
+        <text x="${x}" y="${mt + ph + 13}" text-anchor="middle" fill="${CHART_LINE}" fill-opacity="0.7" style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.06em">${label}</text>`;
     }
     xtEl.innerHTML = xt;
 
@@ -1277,9 +1277,9 @@
     const avgTypeLabel = avgType === 'line' ? 'LINE' : avgType === 'scatter' ? 'DOT' : 'BAR';
     pillEl.innerHTML = `
       <rect x="${(ml + pw - 38).toFixed(1)}" y="${(mt + 3).toFixed(1)}" width="36" height="13" rx="2"
-            fill="#19e6c810" stroke="#19e6c830" stroke-width="0.5" onclick="cycleChart('${safeCode}','avg')" style="cursor:pointer"/>
+            fill="${CHART_ACCENT}10" stroke="${CHART_ACCENT}30" stroke-width="0.5" onclick="cycleChart('${safeCode}','avg')" style="cursor:pointer"/>
       <text x="${(ml + pw - 4).toFixed(1)}" y="${(mt + 11).toFixed(1)}" text-anchor="end"
-            fill="#5fe9d4" fill-opacity="0.75" onclick="cycleChart('${safeCode}','avg')" style="cursor:pointer;font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.08em">${avgTypeLabel} ›</text>`;
+            fill="${CHART_LINE}" fill-opacity="0.75" onclick="cycleChart('${safeCode}','avg')" style="cursor:pointer;font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.08em">${avgTypeLabel} ›</text>`;
 
     // ── Hit columns + tooltip data (only for hours that have trades) ──
     // Full-height transparent rects so the cursor catches the whole column, not

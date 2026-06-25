@@ -7,6 +7,22 @@
   const ORDER_COLOURS = { Trading:"var(--green)", Mining:"var(--amber)", Escorting:"var(--teal)", Waiting:"var(--text-faint)" };
   const SIZE_COLOURS  = { XL:"var(--purple)", L:"var(--amber)", M:"var(--teal)", S:"var(--text-dim)" };
 
+  // ── Chart series palette ──────────────────────────────────────────────────
+  // These are hex literals rather than var(--teal): the cash-flow and economy
+  // charts render as inline SVG, and CSS custom properties don't resolve inside
+  // SVG presentation attributes (fill="…", stroke="…"). Centralised here so the
+  // teal family stays in one place instead of drifting into the near-identical
+  // copies it had grown into (#5fe9d4 vs #5eead4 etc.).
+  //
+  // The data line is intentionally drawn twice — a dim, wide CHART_GLOW stroke
+  // under a thin, bright CHART_LINE stroke — and that layering IS the glow
+  // effect, so CHART_GLOW and CHART_LINE must stay different colours.
+  const CHART_ACCENT   = '#19e6c8'; // primary accent: bars, grid, gradient stops, positive figures
+  const CHART_GLOW     = '#2dd4bf'; // dim wide under-stroke behind the data line (matches --teal)
+  const CHART_LINE     = '#5eead4'; // bright data line (hourly), axis labels, ware fallback
+  const CHART_LINE_ALT = '#7af5e4'; // bright data line (cumulative-by-trade mode)
+  const CHART_LOSS     = '#ef5350'; // negative / loss values
+
   const WARE_COLOURS = {
     // Raw resources
     "Ore":                          "#cd7f32",

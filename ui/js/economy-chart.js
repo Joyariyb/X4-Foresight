@@ -97,8 +97,8 @@
           <!-- Pill stays clickable so the user can flip back to budget -->
           <g onclick="setPieMode('${safeCode}')" style="cursor:pointer">
             <rect x="${cx - 30}" y="${cy - 14}" width="60" height="12" rx="2"
-                  fill="#19e6c810" stroke="#19e6c830" stroke-width="0.5"/>
-            <text x="${cx}" y="${cy - 5}" text-anchor="middle" fill="#5fe9d4" fill-opacity="0.8"
+                  fill="${CHART_ACCENT}10" stroke="${CHART_ACCENT}30" stroke-width="0.5"/>
+            <text x="${cx}" y="${cy - 5}" text-anchor="middle" fill="${CHART_LINE}" fill-opacity="0.8"
                   font-size="9" style="font-family:var(--font-mono);letter-spacing:0.08em;text-transform:uppercase">GRAPH ›</text>
           </g>
           <text x="${cx}" y="${cy + 8}" text-anchor="middle" fill="var(--text-dim)"
@@ -267,8 +267,8 @@
                Clicking cycles BUDGET → GRAPH → BUDGET for this station only. -->
           <g onclick="setPieMode('${safeCode}')" style="cursor:pointer">
             <rect x="${cx - 30}" y="${cy - 14}" width="60" height="12" rx="2"
-                  fill="#19e6c810" stroke="#19e6c830" stroke-width="0.5"/>
-            <text x="${cx}" y="${cy - 5}" text-anchor="middle" fill="#5fe9d4" fill-opacity="0.8"
+                  fill="${CHART_ACCENT}10" stroke="${CHART_ACCENT}30" stroke-width="0.5"/>
+            <text x="${cx}" y="${cy - 5}" text-anchor="middle" fill="${CHART_LINE}" fill-opacity="0.8"
                   font-size="9" style="font-family:var(--font-mono);letter-spacing:0.08em;text-transform:uppercase">${pillLabel}</text>
           </g>
           <text x="${cx}" y="${cy + 12}" text-anchor="middle" fill="var(--lime)"

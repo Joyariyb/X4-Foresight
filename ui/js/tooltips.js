@@ -316,15 +316,15 @@
       return `<div style="min-width:23rem;padding:0.2rem 0">
         <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border)">
           <span style="color:var(--text-faint);font-size:1rem;letter-spacing:0.08em;text-transform:uppercase">${span}</span>
-          <span style="color:${d.net >= 0 ? '#19e6c8' : '#ef5350'};font-family:var(--font-mono);font-size:1.1rem">${fmtC(d.net)} Cr</span>
+          <span style="color:${d.net >= 0 ? CHART_ACCENT : CHART_LOSS};font-family:var(--font-mono);font-size:1.1rem">${fmtC(d.net)} Cr</span>
         </div>` +
         shown.map(r => `
           <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;padding:1px 0">
             <span style="font-size:1rem;letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:13rem;color:${r.colour}">
-              <span style="color:${r.dir === 'sell' ? '#19e6c8' : '#ef5350'}">${r.dir === 'sell' ? '▲' : '▼'}</span> ${r.ware}
+              <span style="color:${r.dir === 'sell' ? CHART_ACCENT : CHART_LOSS}">${r.dir === 'sell' ? '▲' : '▼'}</span> ${r.ware}
             </span>
             <span style="font-family:var(--font-mono);font-size:1rem;color:var(--text-dim);flex-shrink:0;white-space:nowrap">
-              ${fmtU(r.units)}u · <span style="color:${r.cr >= 0 ? '#19e6c8' : '#ef5350'}">${fmtC(r.cr)}</span>
+              ${fmtU(r.units)}u · <span style="color:${r.cr >= 0 ? CHART_ACCENT : CHART_LOSS}">${fmtC(r.cr)}</span>
             </span>
           </div>`).join('') +
         (more > 0 ? `<div style="margin-top:0.4rem;font-size:1rem;color:var(--text-faint)">+${more} more ware${more > 1 ? 's' : ''}</div>` : '') +
@@ -343,7 +343,7 @@
 
       const tradeRows = d.trades.map(t => {
         const isSell = t.dir === 'sell';
-        const dirCol = isSell ? '#19e6c8' : '#ef5350';
+        const dirCol = isSell ? CHART_ACCENT : CHART_LOSS;
         const cpRow  = t.counterparty
           ? `<div style="color:var(--text-faint);font-family:var(--font-mono);font-size:0.82rem;padding-left:1.3rem;margin-top:2px;letter-spacing:0.04em">${isSell ? '→' : '←'} ${t.counterparty}</div>`
           : '';
@@ -356,7 +356,7 @@
             <span style="font-family:var(--font-mono);font-size:0.88rem;color:var(--text-faint);white-space:nowrap">
               ${fmtU(t.amount)}<span style="color:var(--text-faint);opacity:0.5"> ×</span> ${fmtU(t.priceEa)} Cr
             </span>
-            <span style="font-family:var(--font-mono);font-size:1rem;color:#19e6c8;white-space:nowrap;flex-shrink:0">${fmtC(t.total)} Cr</span>
+            <span style="font-family:var(--font-mono);font-size:1rem;color:${CHART_ACCENT};white-space:nowrap;flex-shrink:0">${fmtC(t.total)} Cr</span>
           </div>
           ${cpRow}
         </div>`;
@@ -370,7 +370,7 @@
         ${tradeRows}
         <div style="margin-top:0.4rem;padding-top:0.4rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:baseline">
           <span style="font-size:0.9rem;color:var(--text-faint)">${d.trades.length} trade${d.trades.length !== 1 ? 's' : ''}</span>
-          <span style="font-family:var(--font-mono);font-size:1.1rem;color:#19e6c8">${fmtC(d.total)} Cr</span>
+          <span style="font-family:var(--font-mono);font-size:1.1rem;color:${CHART_ACCENT}">${fmtC(d.total)} Cr</span>
         </div>
       </div>`;
     }
@@ -398,11 +398,11 @@
       return `<div style="min-width:22rem;padding:0.2rem 0">
         <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border)">
           <span style="color:${d.colour};font-size:1.1rem;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:16rem">
-            <span style="color:${d.dir === 'sell' ? '#19e6c8' : '#ef5350'}">${d.dir === 'sell' ? '▲ SOLD' : '▼ BOUGHT'}</span> ${d.ware}
+            <span style="color:${d.dir === 'sell' ? CHART_ACCENT : CHART_LOSS}">${d.dir === 'sell' ? '▲ SOLD' : '▼ BOUGHT'}</span> ${d.ware}
           </span>
         </div>` +
         row('Amount × Price', `${fmtU(d.units)} × ${fmtU(d.priceEa)} Cr`) +
-        row('Trade value', `${fmtC(d.total)} Cr`, d.total >= 0 ? '#19e6c8' : '#ef5350') +
+        row('Trade value', `${fmtC(d.total)} Cr`, d.total >= 0 ? CHART_ACCENT : CHART_LOSS) +
         (d.counterparty ? row(partyLabel, d.counterparty) : '') +
         (shipResolved   ? row('Ship', d.ship) : '') +
         (!d.counterparty && !shipResolved ? row(partyLabel, 'Unknown') : '') +
@@ -422,7 +422,7 @@
       // Express the price relative to the ware's average: +12% above or −5% below.
       const diff    = d.price - d.pAvg;
       const diffPct = d.pAvg > 0 ? Math.round(Math.abs(diff) / d.pAvg * 100) : 0;
-      const diffCol = diff >= 0 ? '#19e6c8' : '#ef5350';
+      const diffCol = diff >= 0 ? CHART_ACCENT : CHART_LOSS;
       const diffStr = diff === 0
         ? 'at avg'
         : `${diff > 0 ? '+' : '−'}${diffPct}% vs avg`;
@@ -441,7 +441,7 @@
                     margin-bottom:0.5rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border)">
           <span style="color:${d.colour};font-size:1.1rem;letter-spacing:0.05em;text-transform:uppercase;
                        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:18rem">
-            <span style="color:${d.dir === 'buy' ? '#ef5350' : '#19e6c8'}">${d.dir === 'buy' ? '▼ BOUGHT' : '▲ SOLD'}</span> ${d.ware}
+            <span style="color:${d.dir === 'buy' ? CHART_LOSS : CHART_ACCENT}">${d.dir === 'buy' ? '▼ BOUGHT' : '▲ SOLD'}</span> ${d.ware}
           </span>
         </div>` +
         row('Price',      `${fmtU(d.price)} Cr`) +
@@ -462,7 +462,7 @@
       const fmtU = n => Math.round(n).toLocaleString();
       const span = d.hAgo === 0 ? 'Past hour' : `${d.hAgo}–${d.hAgo + 1}h ago`;
       const dirLabel = d.dir === 'sell' ? '▲ SOLD' : '▼ BOUGHT';
-      const dirCol   = d.dir === 'sell' ? '#19e6c8' : '#ef5350';
+      const dirCol   = d.dir === 'sell' ? CHART_ACCENT : CHART_LOSS;
 
       // Delta vs the previous populated hour.
       let deltaHtml = `<span style="color:var(--text-faint);font-size:1rem">first hour</span>`;
@@ -470,7 +470,7 @@
         const diff = d.avg - d.prevAvg;
         const pct  = Math.abs(diff / d.prevAvg * 100);
         const flat = Math.abs(diff) < 0.005 * d.prevAvg;
-        const c    = flat ? 'var(--text-faint)' : diff > 0 ? '#19e6c8' : '#ef5350';
+        const c    = flat ? 'var(--text-faint)' : diff > 0 ? CHART_ACCENT : CHART_LOSS;
         const ch   = flat ? '▬' : diff > 0 ? '▲' : '▼';
         deltaHtml  = `<span style="color:${c};font-family:var(--font-mono);font-size:1.1rem">${ch} ${pct.toFixed(1)}%</span>`;
       }
