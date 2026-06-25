@@ -67,23 +67,23 @@
     const allStation = allTrades.filter(t =>
       t.station_code === station.code && t.time_ago_s / 3600 < CF_MAX_HOURS);
     if (!allStation.length) {
-      return `<div style="flex:1 1 36rem;min-width:32rem;padding:1.6rem 1.4rem;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No trade activity in the last 24h</div>`;
+      return `<div class="econ-graph" style="padding:1.6rem 1.4rem;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No trade activity in the last 24h</div>`;
     }
     const net24 = allStation.reduce((s, t) =>
       s + (t.direction === 'Out' ? 1 : -1) * (t.total_cr || 0), 0);
 
     return `
-      <div id="cf-${safeCode}" style="flex:1 1 36rem;min-width:32rem;max-width:64.75rem;padding-right:0.8rem;display:flex;flex-direction:column">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:0.8rem;margin-bottom:0.4rem">
-          <div style="display:flex;align-items:center;gap:0.6rem;min-width:0">
-            <span style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.18em;color:#5fe9d4;text-transform:uppercase;white-space:nowrap">Cash Flow</span>
+      <div id="cf-${safeCode}" class="econ-graph">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:1.25cqw;margin-bottom:0.625cqw">
+          <div style="display:flex;align-items:center;gap:0.9375cqw;min-width:0">
+            <span style="font-family:var(--font-mono);font-size:1.25cqw;letter-spacing:0.18em;color:#5fe9d4;text-transform:uppercase;white-space:nowrap">Cash Flow</span>
             <button class="cf-toggle-btn active" data-mode="hourly"   onclick="setCashflowMode('${safeCode}','hourly')">Hourly</button>
             <button class="cf-toggle-btn"        data-mode="trade"    onclick="setCashflowMode('${safeCode}','trade')">By Trade</button>
             <button class="cf-toggle-btn"        data-mode="ware"     onclick="setCashflowMode('${safeCode}','ware')">By Ware</button>
             <button class="cf-toggle-btn"        data-mode="avgprice" onclick="setCashflowMode('${safeCode}','avgprice')">Avg Price</button>
             <button class="cf-toggle-btn"        data-mode="byship"   onclick="setCashflowMode('${safeCode}','byship')">By Ship</button>
           </div>
-          <span style="font-family:var(--font-mono);font-size:1rem;color:${net24 >= 0 ? '#19e6c8' : '#ef5350'};white-space:nowrap">${cfFmtCr(net24)}</span>
+          <span style="font-family:var(--font-mono);font-size:1.5625cqw;color:${net24 >= 0 ? '#19e6c8' : '#ef5350'};white-space:nowrap">${cfFmtCr(net24)}</span>
         </div>
         <!-- Bodies split in two:
              • cf-avg — the Avg Price chart, built ONCE then mutated in place so

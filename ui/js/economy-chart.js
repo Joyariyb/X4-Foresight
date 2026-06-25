@@ -87,8 +87,10 @@
     const ringMid = Math.round((r + hole) / 2); // 69
     const ringW   = r - hole;                   // 46 — fills the full slice band
     return `
-      <div style="padding:1rem 0.6rem 4rem">
-        <svg viewBox="-55 -25 410 350" style="width:100%;height:auto" overflow="visible">
+      <!-- padding:0 so the empty-state pie keeps the same rigid aspect ratio as the
+           live pie (height tracks width); see economyPieSvg for the rationale. -->
+      <div style="padding:0">
+        <svg viewBox="-55 -25 410 350" style="width:100%;height:auto;display:block" overflow="visible">
           <circle cx="${cx}" cy="${cy}" r="${ringMid}" fill="none"
                   stroke="var(--border)" stroke-width="${ringW}" stroke-dasharray="14 8" opacity="0.6"/>
           <circle cx="${cx}" cy="${cy}" r="${hole}" fill="var(--bg-card)"/>
@@ -234,8 +236,12 @@
     const pillLabel = mode === 'budget' ? 'BUDGET ›' : 'GRAPH ›';
 
     return `
-      <div style="padding:1rem 0.6rem 4rem">
-        <svg viewBox="-55 -25 410 350" style="width:100%;height:auto" overflow="visible">
+      <!-- No fixed padding here: the pie box height must track its width so the
+           pie keeps a rigid aspect ratio (matching the graph). Breathing room and
+           the drop-shadow bleed are already covered by the generous viewBox margins
+           + overflow:visible; the .econ-row padding insets it from the card edge. -->
+      <div style="padding:0">
+        <svg viewBox="-55 -25 410 350" style="width:100%;height:auto;display:block" overflow="visible">
           <defs>
             <radialGradient id="pieSheen" cx="0.36" cy="0.30" r="0.75">
               <stop offset="0%"   stop-color="#fff" stop-opacity="0.42"/>
