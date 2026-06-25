@@ -291,7 +291,7 @@
 
       return `
         <div style="background:#030d14;border:1px solid rgba(25,230,200,0.18);border-radius:0.3rem;box-shadow:inset 0 0 24px rgba(25,230,200,0.05);padding:0.4rem">
-          <svg viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="none" style="display:block;width:100%;height:auto;max-height:37rem">
+          <svg viewBox="0 0 ${svgW} ${svgH}" style="display:block;width:100%;height:auto">
             <defs>
               <filter id="${glowId}" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2"/></filter>
               <linearGradient id="${fillId}" x1="0" y1="${mt}" x2="0" y2="${mt + ph}" gradientUnits="userSpaceOnUse">
@@ -391,7 +391,7 @@
 
       return `
         <div style="background:#030d14;border:1px solid rgba(25,230,200,0.18);border-radius:0.3rem;box-shadow:inset 0 0 24px rgba(25,230,200,0.05);padding:0.4rem">
-          <svg viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="none" style="display:block;width:100%;height:auto;max-height:37rem">
+          <svg viewBox="0 0 ${svgW} ${svgH}" style="display:block;width:100%;height:auto">
             <defs>
               <filter id="${glowId}" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>
               <linearGradient id="${fillId}" x1="0" y1="${mt}" x2="0" y2="${mt + ph}" gradientUnits="userSpaceOnUse">
@@ -613,7 +613,7 @@
 
       return `
         <div style="background:#030d14;border:1px solid rgba(25,230,200,0.18);border-radius:0.3rem;box-shadow:inset 0 0 24px rgba(25,230,200,0.05);padding:0.4rem">
-          <svg viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="none" style="display:block;width:100%;height:auto;max-height:37rem">
+          <svg viewBox="0 0 ${svgW} ${svgH}" style="display:block;width:100%;height:auto">
             <defs>
               <clipPath id="cfclip-${safeCode}-w"><rect x="${ml}" y="${mt}" width="${pw}" height="${ph}"/></clipPath>
             </defs>
@@ -927,7 +927,7 @@
       return `
         <div style="padding:0.3rem 0.1rem 0.5rem">${factionChipsHtml}</div>
         <div style="background:#030d14;border:1px solid rgba(25,230,200,0.18);border-radius:0.3rem;box-shadow:inset 0 0 24px rgba(25,230,200,0.05);padding:0.4rem">
-          <svg viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="none" style="display:block;width:100%;height:auto;max-height:37rem">
+          <svg viewBox="0 0 ${svgW} ${svgH}" style="display:block;width:100%;height:auto">
             <defs>
               <filter id="${glowId}" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2"/></filter>
               <clipPath id="cfclip-${safeCode}-s"><rect x="${ml}" y="${mt}" width="${pw}" height="${ph}"/></clipPath>
@@ -1039,7 +1039,7 @@
     const pw = svgW - ml - mr, ph = svgH - mt - mb;
     return `
       <div style="background:#030d14;border:1px solid rgba(25,230,200,0.18);border-radius:0.3rem;box-shadow:inset 0 0 24px rgba(25,230,200,0.05);padding:0.4rem">
-        <svg viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="none" style="display:block;width:100%;height:auto;max-height:37rem">
+        <svg viewBox="0 0 ${svgW} ${svgH}" style="display:block;width:100%;height:auto">
           <defs>
             <clipPath id="avgclip-${safeCode}"><rect x="${ml}" y="${mt}" width="${pw}" height="${ph}"/></clipPath>
           </defs>
