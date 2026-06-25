@@ -73,7 +73,7 @@
       s + (t.direction === 'Out' ? 1 : -1) * (t.total_cr || 0), 0);
 
     return `
-      <div id="cf-${safeCode}" style="flex:1 1 36rem;min-width:32rem;display:flex;flex-direction:column">
+      <div id="cf-${safeCode}" style="flex:1 1 36rem;min-width:32rem;max-width:64.75rem;padding-right:0.8rem;display:flex;flex-direction:column">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:0.8rem;margin-bottom:0.4rem">
           <div style="display:flex;align-items:center;gap:0.6rem;min-width:0">
             <span style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.18em;color:#5fe9d4;text-transform:uppercase;white-space:nowrap">Cash Flow</span>

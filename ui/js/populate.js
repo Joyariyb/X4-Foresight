@@ -748,8 +748,8 @@
       const econRows = budLines.length === 0
         ? `<div style="padding:1.2rem 1.4rem;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No economy data</div>`
         : `<!-- Pie and cashflow chart side by side; wraps to stacked on narrow windows. -->
-           <div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.8rem;padding:0.8rem 0 0.8rem 1rem;background:#040e18">
-             <div id="pie-${safeCode}" style="flex:1 1 36rem;max-width:49.2rem;min-width:0">${economyPieSvg(bud, allTrades, safeCode, s.code)}</div>
+           <div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:0.8rem;padding:0.8rem 0;background:#040e18">
+             <div id="pie-${safeCode}" style="flex:1 1 36rem;max-width:49.2rem;min-width:0;padding-left:0.8rem">${economyPieSvg(bud, allTrades, safeCode, s.code)}</div>
              ${goodsChartSvg(s, allTrades)}
            </div>`;
 
