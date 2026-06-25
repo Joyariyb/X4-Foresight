@@ -976,9 +976,9 @@
         <div class="cf-scrubber-resize" data-side="left"></div>
         <div class="cf-scrubber-resize" data-side="right"></div>
       </div>
-      <span class="cf-scrubber-label" style="left:0.3rem">-24H</span>
-      <span class="cf-scrubber-label" style="left:50%;transform:translate(-50%,-50%)">DRAG &amp; RESIZE</span>
-      <span class="cf-scrubber-label" style="right:0.3rem">NOW</span>
+      <span class="cf-scrubber-label" style="left:1.5rem">-24H</span>
+      <span class="cf-scrubber-label" style="left:50%;transform:translate(-50%,-50%)">◄ DRAG · EDGES RESIZE ►</span>
+      <span class="cf-scrubber-label" style="right:1.5rem">NOW</span>
     </div>`;
   }
 

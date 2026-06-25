@@ -87,8 +87,8 @@
     const ringMid = Math.round((r + hole) / 2); // 69
     const ringW   = r - hole;                   // 46 — fills the full slice band
     return `
-      <div style="display:flex;justify-content:center;padding:1rem 0.6rem 1.6rem">
-        <svg viewBox="-55 -25 410 350" style="width:49.2rem;height:42rem" overflow="visible">
+      <div style="padding:1rem 0.6rem 1.6rem">
+        <svg viewBox="-55 -25 410 350" style="width:100%;height:auto" overflow="visible">
           <circle cx="${cx}" cy="${cy}" r="${ringMid}" fill="none"
                   stroke="var(--border)" stroke-width="${ringW}" stroke-dasharray="14 8" opacity="0.6"/>
           <circle cx="${cx}" cy="${cy}" r="${hole}" fill="var(--bg-card)"/>
@@ -234,8 +234,8 @@
     const pillLabel = mode === 'budget' ? 'BUDGET ›' : 'GRAPH ›';
 
     return `
-      <div style="display:flex;justify-content:center;padding:1rem 0.6rem 1.6rem">
-        <svg viewBox="-55 -25 410 350" style="width:49.2rem;height:42rem" overflow="visible">
+      <div style="padding:1rem 0.6rem 1.6rem">
+        <svg viewBox="-55 -25 410 350" style="width:100%;height:auto" overflow="visible">
           <defs>
             <radialGradient id="pieSheen" cx="0.36" cy="0.30" r="0.75">
               <stop offset="0%"   stop-color="#fff" stop-opacity="0.42"/>
