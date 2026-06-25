@@ -742,13 +742,14 @@
         'buy order (unverified)':'Buy order',
       };
       // Pie (interactive budget breakdown). The budget total lives in the donut
-      // centre; per-ware figures appear on slice hover.
+      // centre; per-ware figures appear on slice hover. safeCode is the same
+      // sanitised key used by the cashflow chart so both share a common ID space.
+      const safeCode = s.code.replace(/[^a-z0-9]/gi, '');
       const econRows = budLines.length === 0
         ? `<div style="padding:1.2rem 1.4rem;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No economy data</div>`
-        : `<!-- Pie (budget breakdown) and goods history chart side by side;
-                wraps to stacked on narrow windows. -->
+        : `<!-- Pie and cashflow chart side by side; wraps to stacked on narrow windows. -->
            <div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.8rem;padding:0.8rem 1rem;background:#040e18">
-             <div style="flex:0 0 auto">${economyPieSvg(bud)}</div>
+             <div id="pie-${safeCode}" style="flex:0 0 auto">${economyPieSvg(bud, allTrades, safeCode, s.code)}</div>
              ${goodsChartSvg(s, allTrades)}
            </div>`;
 

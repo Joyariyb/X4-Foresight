@@ -262,9 +262,24 @@
     }
 
     function budgetTipHtml(d) {
-      // Per-slice economy tooltip: ware name in its colour, share of budget, the
-      // amount × price = value figures, and which rule set the value (basis).
       const fmt = n => Math.round(n).toLocaleString();
+
+      // Graph mode: only trade credits and share are known — no per-unit breakdown.
+      if (d.mode === 'graph') {
+        return `<div style="min-width:20rem;padding:0.2rem 0">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem">
+            <span style="color:${d.colour};font-size:1.1rem;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap">${d.ware}</span>
+            <span style="color:${d.colour};font-family:var(--font-mono);font-size:1.2rem">${d.pct}%</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:1.2rem;padding:1px 0">
+            <span style="color:var(--text-faint);font-size:1rem">Trade value</span>
+            <span style="color:var(--lime);font-family:var(--font-mono);font-size:1.1rem">${fmt(d.value)} Cr</span>
+          </div>
+        </div>`;
+      }
+
+      // Budget mode: per-slice economy tooltip — ware name in its colour, share of
+      // budget, the amount × price = value figures, and which rule set the value.
       const BASIS = {
         'manual storage cap':    'Manual storage cap',
         'auto: 2h production':   'Automatic · 2h production',
@@ -317,27 +332,47 @@
     }
 
     function shipflowTipHtml(d) {
-      // Ship earnings hover: hour's total at top, then one row per ship showing
-      // trade count and credits earned that hour.
-      const fmtC  = n => '+' + Math.round(n).toLocaleString();
-      const span  = d.hAgo === 0 ? 'Past hour' : `${d.hAgo}–${d.hAgo + 1}h ago`;
-      const MAX   = 8;
-      const shown = d.rows.slice(0, MAX);
-      const more  = d.rows.length - shown.length;
-      return `<div style="min-width:23rem;padding:0.2rem 0">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border)">
-          <span style="color:var(--text-faint);font-size:1rem;letter-spacing:0.08em;text-transform:uppercase">${span}</span>
-          <span style="color:#19e6c8;font-family:var(--font-mono);font-size:1.1rem">${fmtC(d.total)} Cr</span>
-        </div>` +
-        shown.map(r => `
-          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;padding:1px 0">
-            <span style="font-size:1rem;letter-spacing:0.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:14rem;color:${r.colour}">${r.ship}</span>
-            <span style="font-family:var(--font-mono);font-size:1rem;color:var(--text-dim);flex-shrink:0;white-space:nowrap">
-              ${r.trades} trade${r.trades !== 1 ? 's' : ''} · <span style="color:#19e6c8">${fmtC(r.cr)}</span>
+      // By Ship hover: one ship's individual trades for the hovered hour bucket.
+      // Each row shows ware (in its defined colour), direction, amount × unit price,
+      // total credits, and the counterparty station where the goods moved.
+      const fmtU = n => Math.round(n).toLocaleString();
+      const fmtC = n => '+' + Math.round(n).toLocaleString();
+      const h0   = Math.round(d.hAgo);
+      const span = h0 === 0 ? 'Past hour' : `${h0}–${h0 + 1}h ago`;
+      const label = d.name ? `${d.name} (${d.ship})` : d.ship;
+
+      const tradeRows = d.trades.map(t => {
+        const isSell = t.dir === 'sell';
+        const dirCol = isSell ? '#19e6c8' : '#ef5350';
+        const cpRow  = t.counterparty
+          ? `<div style="color:var(--text-faint);font-family:var(--font-mono);font-size:0.82rem;padding-left:1.3rem;margin-top:2px;letter-spacing:0.04em">${isSell ? '→' : '←'} ${t.counterparty}</div>`
+          : '';
+        return `<div style="padding:5px 0 4px;border-bottom:1px solid rgba(255,255,255,0.05)">
+          <div style="display:flex;align-items:baseline;gap:0.45rem">
+            <span style="color:${dirCol};font-size:0.9rem;flex-shrink:0">${isSell ? '▲' : '▼'}</span>
+            <span style="color:${t.wareColour};font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.ware}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;padding-left:1.3rem;margin-top:3px">
+            <span style="font-family:var(--font-mono);font-size:0.88rem;color:var(--text-faint);white-space:nowrap">
+              ${fmtU(t.amount)}<span style="color:var(--text-faint);opacity:0.5"> ×</span> ${fmtU(t.priceEa)} Cr
             </span>
-          </div>`).join('') +
-        (more > 0 ? `<div style="margin-top:0.4rem;font-size:1rem;color:var(--text-faint)">+${more} more ship${more > 1 ? 's' : ''}</div>` : '') +
-      `</div>`;
+            <span style="font-family:var(--font-mono);font-size:1rem;color:#19e6c8;white-space:nowrap;flex-shrink:0">${fmtC(t.total)} Cr</span>
+          </div>
+          ${cpRow}
+        </div>`;
+      }).join('');
+
+      return `<div style="min-width:26rem;max-width:34rem;padding:0.2rem 0">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.4rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border)">
+          <span style="color:${d.colour};font-size:1rem;letter-spacing:0.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:20rem">${label}</span>
+          <span style="font-family:var(--font-mono);font-size:0.85rem;color:var(--text-faint);flex-shrink:0">${span}</span>
+        </div>
+        ${tradeRows}
+        <div style="margin-top:0.4rem;padding-top:0.4rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:baseline">
+          <span style="font-size:0.9rem;color:var(--text-faint)">${d.trades.length} trade${d.trades.length !== 1 ? 's' : ''}</span>
+          <span style="font-family:var(--font-mono);font-size:1.1rem;color:#19e6c8">${fmtC(d.total)} Cr</span>
+        </div>
+      </div>`;
     }
 
     function cashflowTradeTipHtml(d) {
@@ -504,12 +539,12 @@
     document.addEventListener('mousemove', function(e) {
       // Clear all chart highlight rings at the start of each move; whichever
       // chart the cursor is over will re-show its own ring below.
-      document.querySelectorAll('.cf-detail-marker,.cf-ware-marker').forEach(m => { m.style.display = 'none'; });
+      document.querySelectorAll('.cf-detail-marker,.cf-ware-marker,.cf-ship-marker').forEach(m => { m.style.display = 'none'; });
       // Clear Avg Price bar highlight + readout line (reapplied below if hovered).
       document.querySelectorAll('.avg-bars rect.avg-hot').forEach(r => r.classList.remove('avg-hot'));
       document.querySelectorAll('.avg-hot-line').forEach(l => { l.style.opacity = '0'; });
 
-      const el = e.target.closest('[data-hull-tip],[data-pilot-skills],[data-storage-tip],[data-modules-tip],[data-loadout-tip],[data-weapon-tip],[data-fleet-tip],[data-budget-tip],[data-cashflow-tip],[data-cfdetail],[data-cfware],[data-avgtip],[data-shipflow-tip]');
+      const el = e.target.closest('[data-hull-tip],[data-pilot-skills],[data-storage-tip],[data-modules-tip],[data-loadout-tip],[data-weapon-tip],[data-fleet-tip],[data-budget-tip],[data-cashflow-tip],[data-cfdetail],[data-cfware],[data-avgtip],[data-shipflow]');
       if (!el) { tip.style.display = 'none'; return; }
 
       if (el.dataset.cfdetail) {
@@ -560,11 +595,34 @@
         tip.innerHTML = cashflowTipHtml(JSON.parse(decodeURIComponent(el.dataset.cashflowTip)));
         tip.style.color      = '';
         tip.style.whiteSpace = 'normal';
-      } else if (el.dataset.shipflowTip) {
-        // By Ship chart: one hour's per-ship earnings breakdown
-        tip.innerHTML = shipflowTipHtml(JSON.parse(decodeURIComponent(el.dataset.shipflowTip)));
-        tip.style.color      = '';
+      } else if (el.dataset.shipflow) {
+        // By Ship chart: find the nearest ship-hour dot by Euclidean distance and
+        // show its individual trades (ware, amount × price, counterparty, total).
+        const sc  = el.dataset.shipflow;
+        const arr = shipChartData[sc];
+        if (!arr || !arr.length) { tip.style.display = 'none'; return; }
+        const r  = el.getBoundingClientRect();
+        const fx = (e.clientX - r.left) / r.width;
+        const fy = (e.clientY - r.top)  / r.height;
+        let best = null, bd = Infinity;
+        for (const p of arr) {
+          // Skip points for ships the user has toggled off.
+          if (shipVisibility[sc] && shipVisibility[sc][p.ship] === false) continue;
+          const dd = (p.fx - fx) ** 2 + (p.fy - fy) ** 2;
+          if (dd < bd) { bd = dd; best = p; }
+        }
+        if (!best) { tip.style.display = 'none'; return; }
+        tip.innerHTML = shipflowTipHtml(best);
+        tip.style.color = '';
         tip.style.whiteSpace = 'normal';
+        const svg = el.closest('svg');
+        const mk  = svg && svg.querySelector('.cf-ship-marker');
+        if (mk) {
+          mk.setAttribute('cx', best.vbx);
+          mk.setAttribute('cy', best.vby);
+          mk.setAttribute('stroke', best.colour);
+          mk.style.display = 'block';
+        }
       } else if (el.dataset.avgtip) {
         // Avg Price chart: hour stats + highlight the bar and project a dashed
         // readout line from its top across to the price axis.

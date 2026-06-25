@@ -6,6 +6,7 @@
   let warePrices = {};
   const wareVisibility = {};
   const wareChartData = {};
+  const shipChartData = {}; // { [safeCode]: [{fx,fy,vbx,vby,ship,name,colour,isSell,hAgo,total,trades}] }
 
   const CF_MIN_HOURS = 3, CF_MAX_HOURS = 24;
   const cfZoom = {}; // Persists across tab switches
@@ -35,6 +36,7 @@
   const shipVisibility    = {}; // { [safeCode]: { [ship_code]: bool } }
   const shipColourMap     = {}; // { [safeCode]: { [ship_code]: colour } } — seeded once from full 24h
   const shipFactionFilter = {}; // { [safeCode]: owner_id } — which faction's ships to show
+  const _shipPieTimers    = {}; // debounce handles so rapid toggles batch into one pie rebuild
   // Which visual style is active for each station's hourly and by-ware panels.
   // Keys: { hourly: 'line'|'bar'|'scatter', ware: 'step'|'area'|'scatter' }
   const cfChartType = {};
@@ -813,27 +815,10 @@
       const shipType = (cfChartType[safeCode] || {}).byship || 'line';
 
       const shipGroupHtml = [];
-      const hitCols       = [];
-
-      // Per-hour hit columns carrying tooltip data for all ships that traded that hour.
-      for (let i = 0; i < numHours; i++) {
-        const rows = shipCodes
-          .map(code => ({
-            ship:   code,
-            colour: (shipColourMap[safeCode] || {})[code] || '#5eead4',
-            cr:     shipHourly[code][i],
-            trades: shipTradeCt[code][i],
-          }))
-          .filter(r => r.cr > 0)
-          .sort((a, b) => b.cr - a.cr);
-        if (!rows.length) continue;
-        const total   = rows.reduce((s, r) => s + r.cr, 0);
-        const tipHAgo = Math.round(offsetHours + i);
-        const tip     = encodeURIComponent(JSON.stringify({ hAgo: tipHAgo, total, isSell, rows }));
-        const colX1   = xOf(offsetHours + Math.min(i + 1, windowHours));
-        const colX2   = xOf(offsetHours + i);
-        hitCols.push(`<rect class="cf-col" x="${colX1.toFixed(1)}" y="${mt}" width="${(colX2 - colX1).toFixed(1)}" height="${ph}" data-shipflow-tip="${tip}" onclick="cycleChart('${safeCode}','byship')"/>`);
-      }
+      // Per-dot hover store: one entry per ship per non-zero hour bucket.
+      // Committed to shipChartData[safeCode] after the loop so tooltips.js can
+      // find the nearest point by Euclidean distance (same pattern as By-Ware).
+      const storeShip = [];
 
       // Per-ship SVG line or scatter.
       shipCodes.forEach(code => {
@@ -871,6 +856,39 @@
             ${dots}`;
         }
 
+        // Populate hover store: one entry per non-zero hour bucket for this ship.
+        // Individual trades are pre-sorted largest first so the tooltip shows the
+        // most impactful ware at the top without needing to sort at display time.
+        for (let i = 0; i < numHours; i++) {
+          if (!shipHourly[code][i]) continue;
+          const cx = xOf(offsetHours + (i + Math.min(i + 1, windowHours)) / 2);
+          const cy = yOf(shipHourly[code][i]);
+          storeShip.push({
+            fx:     (cx - ml) / pw,
+            fy:     (cy - mt) / ph,
+            vbx:    +cx.toFixed(1),
+            vby:    +cy.toFixed(1),
+            ship:   code,
+            name:   shipNames[code] || '',
+            colour: col,
+            isSell,
+            hAgo:   offsetHours + i,
+            total:  shipHourly[code][i],
+            trades: byShip[code]
+              .filter(t => Math.floor(t.time_ago_s / 3600 - offsetHours) === i)
+              .sort((a, b) => (b.total_cr || 0) - (a.total_cr || 0))
+              .map(t => ({
+                ware:         t.ware_name || 'Unknown',
+                wareColour:   WARE_COLOURS[t.ware_name] || '#5eead4',
+                dir:          t.direction === 'Out' ? 'sell' : 'buy',
+                amount:       t.amount,
+                priceEa:      t.price_cr,
+                total:        t.total_cr,
+                counterparty: t.counterparty || '',
+              })),
+          });
+        }
+
         const safeShip = code.replace(/[^a-z0-9]/gi, '');
         const visible  = shipVisibility[safeCode][code];
         shipGroupHtml.push(`<g id="ship-group-${safeCode}-${safeShip}" style="display:${visible ? 'block' : 'none'}">${elements}</g>`);
@@ -903,6 +921,9 @@
                 style="font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.08em">${typeLabel} ›</text>
         </g>`;
 
+      // Commit hover store so tooltips.js can do nearest-point lookup.
+      shipChartData[safeCode] = storeShip;
+
       return `
         <div style="padding:0.3rem 0.1rem 0.5rem">${factionChipsHtml}</div>
         <div style="background:#030d14;border:1px solid rgba(25,230,200,0.18);border-radius:0.3rem;box-shadow:inset 0 0 24px rgba(25,230,200,0.05);padding:0.4rem">
@@ -920,9 +941,12 @@
             <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="#19e6c8" stroke-opacity="0.35" stroke-width="1"/>
             <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle" fill="#5fe9d4" fill-opacity="0.6"
                   style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">CREDITS/HR</text>
-            ${hitCols.join('')}
+            <!-- Highlight ring for the nearest hovered datapoint; colour set dynamically -->
+            <circle class="cf-ship-marker" r="5" fill="none" stroke="#5eead4" stroke-width="1.5" style="display:none;pointer-events:none"/>
+            <!-- Transparent overlay captures mouse events; nearest-point search in tooltips.js -->
+            <rect x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="transparent" data-shipflow="${safeCode}" onclick="cycleChart('${safeCode}','byship')" style="cursor:crosshair"/>
             ${typePill}
-            <!-- SELL/BUY toggle must render last so it sits above the hit rects. -->
+            <!-- SELL/BUY toggle must render last so it sits above the hit overlay. -->
             ${shipToggleFO}
           </svg>
         </div>
@@ -1050,6 +1074,7 @@
     const list = avgPriceWareList(safeCode, mode);
     if (!list.includes(avgWare[safeCode])) avgWare[safeCode] = list[0] || null;
     updateAvgPrice(safeCode);
+    rebuildPie(safeCode);
   }
   function setAvgWare(safeCode, ware) {
     avgWare[safeCode] = ware;
@@ -1293,6 +1318,8 @@
     // Avg Price is built empty and filled on first view (it isn't part of the
     // volatile rebuild, so nothing populates it until we ask here).
     if (mode === 'avgprice') updateAvgPrice(code);
+    // Graph-mode pie tracks which chart tab is active (determines sell/buy/both).
+    rebuildPie(code);
   }
 
   // Toggle a single ware's line on/off in the By-Ware chart.
@@ -1314,12 +1341,14 @@
   function setWareMode(safeCode, mode) {
     wareMode[safeCode] = mode;
     rebuildCfChart(safeCode);
+    rebuildPie(safeCode);
   }
 
   // Switch the By Ship chart between sell (Out) and buy (In) trades.
   function setShipMode(safeCode, mode) {
     shipMode[safeCode] = mode;
     rebuildCfChart(safeCode);
+    rebuildPie(safeCode);
   }
 
   // Switch which faction's ships are shown in the By Ship chart.
@@ -1341,6 +1370,10 @@
     const chip          = document.getElementById(`ship-chip-${safeCode}-${safeShip}`);
     if (group) group.style.display = vis[shipCode] ? 'block' : 'none';
     if (chip)  chip.style.opacity  = vis[shipCode] ? '1'     : '0.35';
+    // Debounce the pie rebuild so rapid clicks don't queue up multiple expensive
+    // innerHTML replacements — the same approach used for the universe-map transform.
+    clearTimeout(_shipPieTimers[safeCode]);
+    _shipPieTimers[safeCode] = setTimeout(() => rebuildPie(safeCode), 150);
   }
 
   // Available display types per chart panel. Clicking cycles forward through the list.
