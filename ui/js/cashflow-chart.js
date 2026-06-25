@@ -227,8 +227,7 @@
         const cx = xOf(bucketCentre(i)).toFixed(1), cy = yOf(net[i]).toFixed(1);
         const dotCol = net[i] >= 0 ? '#5eead4' : '#ef5350';
         if (hourlyType === 'line') {
-          markers.push(`<circle cx="${cx}" cy="${cy}" r="2.6" fill="${dotCol}" filter="url(#${glowId})"/>
-                        <circle cx="${cx}" cy="${cy}" r="2.2" fill="${dotCol}"/>`);
+          markers.push(`<circle cx="${cx}" cy="${cy}" r="2.2" fill="${dotCol}" style="filter:drop-shadow(0 0 3px ${dotCol})"/>`);
         }
         // hAgo = absolute hours-ago for the bucket start (rounded to nearest hour).
         const tipHAgo = Math.round(offsetHours + i);
@@ -259,8 +258,7 @@
         // line-mode tick marks so individual hours are easy to spot and hover.
         const dots = ordered.map(([x, v]) => {
           const y = yOf(v).toFixed(1), col = v >= 0 ? '#5eead4' : '#ef5350';
-          return `<circle cx="${x.toFixed(1)}" cy="${y}" r="5.5" fill="${col}" filter="url(#${glowId})" opacity="0.45"/>
-                  <circle cx="${x.toFixed(1)}" cy="${y}" r="3.5" fill="${col}" opacity="0.90"/>`;
+          return `<circle cx="${x.toFixed(1)}" cy="${y}" r="3.5" fill="${col}" style="filter:drop-shadow(0 0 5px ${col})" opacity="0.90"/>`;
         }).join('');
         dataLayer = zeroLineHtml + dots;
       } else {
@@ -836,8 +834,7 @@
           elements = pts
             .filter(([, y]) => y < baseY - 0.5) // skip zero-value points
             .map(([x, y]) =>
-              `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.5" fill="${col}" filter="url(#${glowId})" opacity="0.40"/>
-               <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5" fill="${col}" opacity="0.90"/>`
+              `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5" fill="${col}" style="filter:drop-shadow(0 0 4px ${col})" opacity="0.90"/>`
             ).join('');
         } else {
           // Line (default): faint glow copy + crisp line + dots at non-zero hours.
