@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="X4 Foresight — X4: Foundations save scanner">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="0%" r="80%">
+      <stop offset="0%" stop-color="#2dd4bf" stop-opacity="0.20"/>
+      <stop offset="60%" stop-color="#0d1117" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="#0d1117"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <!-- radar motif, right side -->
+  <g transform="translate(940 315)" opacity="0.9">
+    <circle r="190" fill="none" stroke="#21262d" stroke-width="3"/>
+    <circle r="130" fill="none" stroke="#21262d" stroke-width="2"/>
+    <circle r="70"  fill="none" stroke="#2dd4bf" stroke-width="2" opacity="0.5"/>
+    <path d="M0 0 L0 -190 A190 190 0 0 1 150 -116 Z" fill="#2dd4bf" opacity="0.16"/>
+    <line x1="-190" y1="0" x2="190" y2="0" stroke="#2dd4bf" stroke-width="1.5" opacity="0.35"/>
+    <line x1="0" y1="-190" x2="0" y2="190" stroke="#2dd4bf" stroke-width="1.5" opacity="0.35"/>
+    <circle r="9" fill="#2dd4bf"/>
+    <circle cx="95" cy="-70" r="7" fill="#f85149"/>
+    <circle cx="-60" cy="40" r="6" fill="#d29922"/>
+  </g>
+  <!-- text block -->
+  <text x="90" y="170" font-family="'Share Tech Mono', monospace" font-size="30" letter-spacing="8" fill="#2dd4bf">X4 · FORESIGHT</text>
+  <text x="88" y="290" font-family="Barlow, Arial, sans-serif" font-weight="600" font-size="76" fill="#c9d1d9">X4: Foundations</text>
+  <text x="88" y="372" font-family="Barlow, Arial, sans-serif" font-weight="600" font-size="76" fill="#2dd4bf">save scanner</text>
+  <text x="90" y="450" font-family="Barlow, Arial, sans-serif" font-size="34" fill="#8b949e">Fleet · Economy · Sectors · Crew · Threat alerts</text>
+  <text x="90" y="520" font-family="'Share Tech Mono', monospace" font-size="24" fill="#3fb950">Free · In-browser · Your save never leaves your machine</text>
+</svg>

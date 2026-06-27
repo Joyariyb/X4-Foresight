@@ -1,17 +1,224 @@
-<!-- Root redirect for GitHub Pages. Pages must serve from the repo root (not
-     a subdirectory) because ui/web/js/scan-worker.js fetches the Python
-     pipeline (scanner/, data/, db/, export/) by repo-root-relative paths -
-     those directories live outside ui/ entirely, so a narrower Pages root
-     (e.g. /docs) would break the fetches. This file just sends visitors
-     from the bare domain to the actual dashboard at ui/web/. -->
+<!-- Landing page for GitHub Pages. Pages must serve from the repo ROOT (not a
+     subdirectory) because ui/web/js/scan-worker.js fetches the Python pipeline
+     (scanner/, data/, db/, export/) by repo-root-relative paths - those dirs
+     live outside ui/ entirely, so a narrower Pages root (e.g. /docs) would
+     break the fetches. This page is the indexable front door; the actual
+     dashboard launches at ui/web/index.html via the "Launch dashboard" links. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0; url=ui/web/index.html">
-  <title>X4 · Empire Intelligence</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Primary SEO -->
+  <title>X4 Foresight — Free X4: Foundations Save Scanner &amp; Empire Intelligence Dashboard</title>
+  <meta name="description" content="X4 Foresight is a free, browser-based save-file scanner for X4: Foundations. Drop in a save and get an Empire Intelligence dashboard: fleet readiness, station economy, sector map, crew, and Xenon threat alerts. Your save never leaves your browser.">
+  <link rel="canonical" href="https://joyariyb.github.io/X4-Foresight/">
+  <meta name="robots" content="index, follow">
+  <meta name="keywords" content="X4 Foundations, X4 save scanner, X4 save editor, X4 save viewer, X4 tools, Empire Intelligence, X4 fleet manager, X4 economy, Egosoft">
+  <meta name="theme-color" content="#0d1117">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+
+  <!-- Open Graph (Reddit / Discord / Steam / Facebook link unfurls) -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="X4 Foresight">
+  <meta property="og:title" content="X4 Foresight — Free X4: Foundations Save Scanner & Empire Intelligence Dashboard">
+  <meta property="og:description" content="Drop in an X4: Foundations save and get a full Empire Intelligence dashboard — fleet, economy, sectors, crew, and threat alerts. 100% in-browser; your save never leaves your machine.">
+  <meta property="og:url" content="https://joyariyb.github.io/X4-Foresight/">
+  <meta property="og:image" content="https://joyariyb.github.io/X4-Foresight/assets/og-image.svg">
+
+  <!-- Twitter / X card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="X4 Foresight — Free X4: Foundations Save Scanner">
+  <meta name="twitter:description" content="A free, in-browser Empire Intelligence dashboard for X4: Foundations. Fleet, economy, sectors, crew & threat alerts from your save file.">
+  <meta name="twitter:image" content="https://joyariyb.github.io/X4-Foresight/assets/og-image.svg">
+
+  <!-- Structured data: helps Google show a rich result for a free web app -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "X4 Foresight",
+    "applicationCategory": "GameApplication",
+    "operatingSystem": "Any (web browser)",
+    "url": "https://joyariyb.github.io/X4-Foresight/",
+    "description": "A free, browser-based save-file scanner and Empire Intelligence dashboard for the game X4: Foundations. Your save file is processed entirely in your browser and never uploaded.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "about": { "@type": "VideoGame", "name": "X4: Foundations", "publisher": "Egosoft" }
+  }
+  </script>
+
+  <style>
+    :root {
+      --bg: #0d1117; --bg-panel: #161b22; --bg-card: #1c2128; --border: #21262d;
+      --teal: #2dd4bf; --amber: #d29922; --green: #3fb950; --red: #f85149;
+      --text: #c9d1d9; --text-dim: #8b949e;
+      --font-ui: "Barlow", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      --font-mono: "Share Tech Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      background: var(--bg); color: var(--text); font-family: var(--font-ui);
+      line-height: 1.6; -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--teal); }
+    .wrap { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+
+    header.hero {
+      text-align: center; padding: 80px 24px 56px;
+      background:
+        radial-gradient(900px 380px at 50% -10%, rgba(45,212,191,.14), transparent 70%),
+        var(--bg);
+      border-bottom: 1px solid var(--border);
+    }
+    .kicker { font-family: var(--font-mono); color: var(--teal); letter-spacing: .18em;
+      text-transform: uppercase; font-size: .8rem; margin: 0 0 14px; }
+    h1 { font-size: clamp(2rem, 5vw, 3.1rem); line-height: 1.1; margin: 0 0 18px;
+      font-weight: 600; }
+    h1 .accent { color: var(--teal); }
+    .sub { font-size: 1.15rem; color: var(--text-dim); max-width: 680px;
+      margin: 0 auto 32px; }
+    .cta-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-block; padding: 13px 26px; border-radius: 8px;
+      font-weight: 600; text-decoration: none; font-size: 1.02rem;
+      border: 1px solid transparent; transition: transform .08s ease, background .15s ease;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: var(--teal); color: #04201c; }
+    .btn-primary:hover { background: #45e0cc; }
+    .btn-ghost { border-color: var(--border); color: var(--text); background: var(--bg-card); }
+    .btn-ghost:hover { border-color: var(--teal); }
+    .privacy-note { margin-top: 22px; font-size: .9rem; color: var(--text-dim);
+      font-family: var(--font-mono); }
+    .privacy-note b { color: var(--green); }
+
+    section { padding: 56px 0; border-bottom: 1px solid var(--border); }
+    section h2 { font-size: 1.7rem; margin: 0 0 8px; font-weight: 600; }
+    section .lead { color: var(--text-dim); margin: 0 0 32px; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px; }
+    .card { background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 22px; }
+    .card h3 { margin: 0 0 8px; font-size: 1.1rem; }
+    .card h3 .ic { color: var(--teal); font-family: var(--font-mono); margin-right: 8px; }
+    .card p { margin: 0; color: var(--text-dim); font-size: .96rem; }
+
+    ol.steps { counter-reset: step; list-style: none; padding: 0; margin: 0;
+      display: grid; gap: 16px; }
+    ol.steps li { position: relative; padding-left: 52px; }
+    ol.steps li::before { counter-increment: step; content: counter(step);
+      position: absolute; left: 0; top: -2px; width: 34px; height: 34px;
+      display: grid; place-items: center; border-radius: 50%;
+      background: rgba(45,212,191,.12); color: var(--teal); border: 1px solid var(--teal);
+      font-family: var(--font-mono); font-weight: 700; }
+    ol.steps li b { color: var(--text); }
+    ol.steps li span { color: var(--text-dim); }
+
+    .faq dt { font-weight: 600; margin-top: 18px; }
+    .faq dd { margin: 6px 0 0; color: var(--text-dim); }
+
+    footer { text-align: center; padding: 40px 24px; color: var(--text-dim);
+      font-size: .9rem; }
+    footer .mono { font-family: var(--font-mono); }
+  </style>
 </head>
 <body>
-  <p>Redirecting to <a href="ui/web/index.html">the dashboard</a>…</p>
+
+  <header class="hero">
+    <div class="wrap">
+      <p class="kicker">X4 · Foresight</p>
+      <h1>Turn your <span class="accent">X4: Foundations</span> save into an empire intelligence dashboard</h1>
+      <p class="sub">
+        Drop in a save file and get an instant read on your whole empire — fleet
+        readiness, station economy, the sector map, crew, and incoming Xenon
+        threats. Free, no install, runs entirely in your browser.
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="ui/web/index.html">Launch the dashboard →</a>
+        <a class="btn btn-ghost" href="https://github.com/Joyariyb/X4-Foresight">View on GitHub</a>
+      </div>
+      <p class="privacy-note">🔒 <b>Private by design:</b> your save is scanned locally in your browser — it is never uploaded anywhere.</p>
+    </div>
+  </header>
+
+  <section>
+    <div class="wrap">
+      <h2>What it shows you</h2>
+      <p class="lead">One scan, the whole picture of your empire.</p>
+      <div class="grid">
+        <div class="card">
+          <h3><span class="ic">▣</span>Empire Snapshot</h3>
+          <p>A top-level overview of your holdings, pilot, and net worth the moment a save loads.</p>
+        </div>
+        <div class="card">
+          <h3><span class="ic">◆</span>Naval &amp; Fleet</h3>
+          <p>Every ship by class and role, hull designs, equipment and loadouts — see fleet readiness at a glance.</p>
+        </div>
+        <div class="card">
+          <h3><span class="ic">$</span>Station Economy</h3>
+          <p>Production, cashflow and trade — what your stations are making, moving, and earning.</p>
+        </div>
+        <div class="card">
+          <h3><span class="ic">◉</span>Universe &amp; Sectors</h3>
+          <p>An interactive sector map of where your assets sit and what's around them.</p>
+        </div>
+        <div class="card">
+          <h3><span class="ic">⚑</span>Threat Alerts</h3>
+          <p>Hostile NPC ships in your station sectors — including Xenon fleets — surfaced as actionable alerts.</p>
+        </div>
+        <div class="card">
+          <h3><span class="ic">⤓</span>JSON Exports</h3>
+          <p>Export the resolved data as JSON to plug into spreadsheets or your own tooling.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>How it works</h2>
+      <p class="lead">Three steps, about a minute.</p>
+      <ol class="steps">
+        <li><b>Find your save.</b> <span>X4: Foundations stores saves as <code>.xml.gz</code> files in your Egosoft documents folder.</span></li>
+        <li><b>Load it into the dashboard.</b> <span>Open the tool and pick the file — the scanner runs in your browser (Python via Pyodide in a Web Worker).</span></li>
+        <li><b>Read your empire.</b> <span>Browse the Overview, Naval, Universe and Alerts tabs, or export the data as JSON.</span></li>
+      </ol>
+      <p style="margin-top:28px"><a class="btn btn-primary" href="ui/web/index.html">Launch the dashboard →</a></p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap faq">
+      <h2>FAQ</h2>
+      <dl>
+        <dt>Is it free?</dt>
+        <dd>Yes — completely free and open source.</dd>
+
+        <dt>Do you upload my save file?</dt>
+        <dd>No. The save is read and processed entirely inside your browser; nothing is sent to any server.</dd>
+
+        <dt>Does this modify or edit my save?</dt>
+        <dd>No. X4 Foresight is read-only — it scans and visualizes your save, it never writes to it. Your game files are untouched.</dd>
+
+        <dt>What save files does it support?</dt>
+        <dd>Standard X4: Foundations save files (the <code>.xml.gz</code> saves the game produces).</dd>
+
+        <dt>Do I need to install anything?</dt>
+        <dd>No install — it runs in any modern desktop browser. There is also a desktop (Python) build in the repository if you prefer to run it locally.</dd>
+      </dl>
+    </div>
+  </section>
+
+  <footer>
+    <p class="mono">X4 Foresight · a community tool for X4: Foundations</p>
+    <p>Not affiliated with or endorsed by Egosoft. X4: Foundations is a trademark of Egosoft GmbH.</p>
+    <p><a href="ui/web/index.html">Launch dashboard</a> · <a href="https://github.com/Joyariyb/X4-Foresight">Source on GitHub</a></p>
+  </footer>
+
+  <!-- If JS is off or someone wants the old behavior, the links above still work.
+       No auto-redirect: this page is intentionally the indexable landing page. -->
 </body>
 </html>

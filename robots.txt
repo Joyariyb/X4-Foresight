@@ -1,0 +1,5 @@
+# X4 Foresight — https://joyariyb.github.io/X4-Foresight/
+User-agent: *
+Allow: /
+
+Sitemap: https://joyariyb.github.io/X4-Foresight/assets/sitemap.xml
