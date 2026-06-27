@@ -87,6 +87,44 @@ def _net_worth_by_scan(conn, scan_id) -> dict[int, float]:
             for sid in credits}
 
 
+def _reputation_series(conn, scan_id, scan_ids) -> list[dict]:
+    """Per-faction reputation value across every scan — the multi-line chart source.
+
+    Returns one entry per faction that appears in any scan up to ``scan_id``:
+    ``{faction_id, faction_name, tier, latest, values[]}``. Each ``values`` array is
+    index-aligned to the shared ``scans`` axis, with ``None`` for scans where that
+    faction has no row — so a gap stays a gap on the chart rather than reading as a
+    plunge to zero (reputation legitimately sits anywhere on -30..+30, so 0 is a real
+    value, not "missing").
+
+    Ordered by latest known value descending, the same strongest-standing-first order
+    the single-scan _reputation() builder uses, so the legend leads with the factions
+    that matter most. faction_name/tier are the most RECENT known labels (rows are read
+    oldest→newest, so the last write wins).
+    """
+    by_faction: dict[str, dict[int, float]] = {}
+    name: dict[str, str] = {}
+    tier: dict[str, str] = {}
+    for r in conn.execute(
+            "SELECT scan_id, faction_id, faction_name, value, tier "
+            "FROM reputation WHERE scan_id <= ? ORDER BY scan_id", (scan_id,)):
+        fid = r['faction_id']
+        by_faction.setdefault(fid, {})[r['scan_id']] = r['value']
+        name[fid] = r['faction_name']
+        tier[fid] = r['tier']
+
+    out: list[dict] = []
+    for fid, vals in by_faction.items():
+        series = [vals.get(sid) for sid in scan_ids]
+        # Latest non-null value drives both the ordering and the legend headline.
+        latest = next((v for v in reversed(series) if v is not None), None)
+        out.append({'faction_id': fid, 'faction_name': name[fid],
+                    'tier': tier[fid], 'latest': latest, 'values': series})
+    # Strongest standing first; factions with no known value sink to the bottom.
+    out.sort(key=lambda f: (f['latest'] is None, -(f['latest'] or 0)))
+    return out
+
+
 def _trade_windows(conn, game_time: float | None) -> dict:
     """All-time cumulative trade totals across the three ledger tables.
 
@@ -189,6 +227,7 @@ def compute_trends(conn: sqlite3.Connection, scan_id: int | None = None) -> dict
     # net_worth number is fully inspectable (and the UI can stack them).
     hull_val, equip_val = _ship_asset_value(conn, scan_id)
     fleet_roles = _fleet_by_role(conn, scan_id)
+    rep_series  = _reputation_series(conn, scan_id, scan_ids)
     # axis is ordered oldest→newest, so its last row is the scan being viewed; bound
     # the trade windows to that scan's in-game clock.
     sel_game_time = axis[-1]['game_time_s'] if axis else None
@@ -221,6 +260,9 @@ def compute_trends(conn: sqlite3.Connection, scan_id: int | None = None) -> dict
                 role: [fleet_roles.get(sid, {}).get(role, 0) for sid in scan_ids]
                 for role in ('traders', 'miners', 'combat', 'other')
             },
+            # Faction reputation over time — a list of per-faction entries, each with
+            # its own `values` array index-aligned to `scans` (see _reputation_series).
+            'reputation': rep_series,
         },
     }
 
