@@ -10,6 +10,7 @@ from pathlib import Path
 
 from scanner import galaxy_map as gm
 from scanner.ship_names import ship_display_name, resolve_ship_type
+from db.trends import compute_trends, compute_changes
 from data.equipment_stats import EQUIPMENT_STATS, EQUIPMENT_ALIASES
 from data.ship_stats import SHIP_STATS
 from data.station_stats import STATION_STATS
@@ -601,6 +602,11 @@ def to_export(conn: sqlite3.Connection, scan_id: int | None = None) -> dict:
         'station_trades':        _station_trades(conn, scan_id, game_time),
         'mining_deliveries':     _mining(conn, scan_id, game_time),
         'internal_transfers':    _internal(conn, scan_id, game_time),
+        # Cross-scan empire trajectory (this scan back to the first) and the
+        # event feed of notable changes between consecutive scans. Single-scan DBs
+        # get a 1-point series and an empty changes list.
+        'trends':                compute_trends(conn, scan_id),
+        'changes':               compute_changes(conn, scan_id),
         # TradeHandler not implemented yet — kept for shape stability.
         'active_trades':         [],
         'in_progress_deliveries': [],

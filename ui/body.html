@@ -26,6 +26,7 @@
   <div id="topbar">
     <div class="tb-logo"><i class="ti ti-radar-2"></i> X4 · EMPIRE INTELLIGENCE</div>
     <div class="nav-tab active" id="nav-overview" onclick="switchTab('overview',this)"><i class="ti ti-layout-dashboard"></i> Overview</div>
+    <div class="nav-tab" id="nav-trends" onclick="switchTab('trends',this)"><i class="ti ti-trending-up"></i> Trends <span class="nav-badge" id="nav-trends-count">—</span></div>
     <div class="nav-tab nav-dropdown" id="nav-naval"><i class="ti ti-rocket"></i> Naval <span class="nav-badge" id="nav-ships">—</span> <i class="ti ti-chevron-down nav-dd-caret"></i>
       <div class="nav-dd-menu">
         <div class="nav-dd-item" onclick="switchTab('fleet',document.getElementById('nav-naval'))"><i class="ti ti-list-details"></i> Ships</div>
@@ -178,6 +179,14 @@
           </div>
         </div>
 
+      </div>
+
+      <!-- TRENDS TAB — cross-scan empire trajectory, all-time trade totals, and
+           the changes[] event feed. Filled by renderTrends() in trends.js from
+           data.trends / data.changes; pre-rendered on every scan load like the
+           Overview tab (no per-tab init hook needed). -->
+      <div class="tab-panel" id="tab-trends">
+        <div id="trends-root"></div>
       </div>
 
       <!-- FLEET TAB -->

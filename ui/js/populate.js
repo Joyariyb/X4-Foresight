@@ -917,6 +917,11 @@
       ? `<div class="alert green"><i class="ti ti-circle-check"></i> No alerts detected.</div>`
       : alerts.map(a => `<div class="alert ${a.cls}"><i class="ti ${a.icon}"></i> ${a.msg}</div>`).join("");
 
+    // Trends tab — cross-scan trajectory + changes feed. Guarded so an older
+    // export without a `trends` section (or a shell that didn't load trends.js)
+    // degrades to an empty tab instead of throwing mid-populate.
+    if (typeof renderTrends === 'function') renderTrends(data);
+
     renderUniverseMap(data);
     // renderUniverseMap repopulates the shared sector maps; if the Sectors tab
     // is already open, rebuild it against the new scan (and refresh the detail).
