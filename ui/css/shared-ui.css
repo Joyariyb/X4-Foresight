@@ -1,8 +1,8 @@
     /* Core role: Shared UI elements (badges, sections, dialogs, modals). */
     /* SECTION HEADER */
     .sec-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.8rem; }
-    .sec-title { font-family: var(--font-cond); font-weight: 600; font-size: 1.2rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); white-space: nowrap; }
-    .sec-line { flex: 1; height: 1px; background: var(--border); }
+    .sec-title { font-family: var(--font-label); font-weight: 600; font-size: 1.2rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-label); white-space: nowrap; }
+    .sec-line { flex: 1; height: 1px; background: var(--outline); }
 
     /* ── SUMMARY CARDS ── */
     /* auto-fit + minmax lets the row decide how many cards fit: they sit
@@ -11,61 +11,61 @@
        crushed into a fixed 5 columns. The 16rem floor keeps a card readable
        before it's allowed to wrap. */
     .cards-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 0.8rem; }
-    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 0.3rem; padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: 0.2rem; }
+    .card { background: var(--surface-2); border: 1px solid var(--outline); border-radius: var(--radius-md); padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: 0.2rem; }
     .card .card-top { display: flex; align-items: center; gap: 0.6rem; }
-    .card .card-top i { font-size: 1.4rem; color: var(--text-faint); }
-    .card .lbl { font-size: 1rem; font-family: var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
-    .card .val { font-family: var(--font-mono); font-size: 2rem; color: var(--text); margin-top: 0.4rem; }
-    .card .val.amber { color: var(--amber); }
-    .card .val.red   { color: var(--red); }
-    .card .val.teal  { color: var(--teal); }
-    .card .val.green { color: var(--green); }
+    .card .card-top i { font-size: 1.4rem; color: var(--text-label); }
+    .card .lbl { font-size: 1rem; font-family: var(--font-label); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-label); }
+    .card .val { font-family: var(--font-data); font-size: 2rem; color: var(--text-primary); margin-top: 0.4rem; }
+    .card .val.amber { color: var(--color-warning); }
+    .card .val.red   { color: var(--color-negative); }
+    .card .val.teal  { color: var(--color-primary); }
+    .card .val.green { color: var(--color-positive); }
 
     /* ── ALERTS ── */
-    .alert { display: flex; align-items: flex-start; gap: 1rem; padding: 0.8rem 1.2rem; border-radius: 0.3rem; font-size: 1.2rem; font-family: var(--font-mono); margin-bottom: 0.6rem; }
+    .alert { display: flex; align-items: flex-start; gap: 1rem; padding: 0.8rem 1.2rem; border-radius: var(--radius-md); font-size: 1.2rem; font-family: var(--font-data); margin-bottom: 0.6rem; }
     .alert i { font-size: 1.6rem; flex-shrink: 0; margin-top: 1px; }
-    .alert.red    { background: var(--red-dim);   border: 1px solid rgba(248,81,73,0.3);  color: var(--red); }
-    .alert.amber  { background: var(--amber-dim); border: 1px solid rgba(210,153,34,0.3); color: var(--amber); }
-    .alert.green  { background: var(--green-dim); border: 1px solid rgba(63,185,80,0.3);  color: var(--green); }
+    .alert.red    { background: var(--color-negative-dim);   border: 1px solid var(--color-negative-line);  color: var(--color-negative); }
+    .alert.amber  { background: var(--color-warning-dim); border: 1px solid var(--color-warning-line); color: var(--color-warning); }
+    .alert.green  { background: var(--color-positive-dim); border: 1px solid var(--color-positive-line);  color: var(--color-positive); }
 
     /* ── PANELS ── */
-    .panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 0.3rem; overflow: hidden; }
-    .panel-head { background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 0.7rem 1.2rem; font-family: var(--font-cond); font-weight: 600; font-size: 1.1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); display: flex; align-items: center; justify-content: space-between; }
+    .panel { background: var(--surface-2); border: 1px solid var(--outline); border-radius: var(--radius-md); overflow: hidden; }
+    .panel-head { background: var(--surface-1); border-bottom: 1px solid var(--outline); padding: 0.7rem 1.2rem; font-family: var(--font-label); font-weight: 600; font-size: 1.1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-label); display: flex; align-items: center; justify-content: space-between; }
 
     /* ── TABLES ── */
     .data-table { width: 100%; border-collapse: collapse; font-size: 1.2rem; }
-    .data-table th { font-family: var(--font-mono); font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); padding: 0.6rem 1rem; text-align: left; border-bottom: 1px solid var(--border); font-weight: 400; white-space: nowrap; }
-    .data-table td { padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); color: var(--text-dim); white-space: nowrap; }
+    .data-table th { font-family: var(--font-data); font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-label); padding: 0.6rem 1rem; text-align: left; border-bottom: 1px solid var(--outline); font-weight: 400; white-space: nowrap; }
+    .data-table td { padding: 0.6rem 1rem; border-bottom: 1px solid var(--outline); color: var(--text-secondary); white-space: nowrap; }
     .data-table tr:last-child td { border-bottom: none; }
-    .data-table tr:hover td { background: var(--bg-panel); }
-    .data-table .mono { font-family: var(--font-mono); }
+    .data-table tr:hover td { background: var(--state-hover); }
+    .data-table .mono { font-family: var(--font-data); }
 
     /* ── BADGES ── */
-    .badge { display: inline-block; font-size: 1rem; font-family: var(--font-mono); padding: 1px 0.6rem; border-radius: 0.2rem; letter-spacing: 0.03em; white-space: nowrap; }
-    .badge.allied   { background: var(--green-dim); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
-    .badge.friendly { background: var(--teal-dim);  color: var(--teal);  border: 1px solid rgba(45,212,191,0.3); }
-    .badge.neutral  { background: var(--bg-card);   color: var(--text-dim); border: 1px solid var(--border); }
-    .badge.hostile  { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(210,153,34,0.3); }
-    .badge.atwar    { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(248,81,73,0.3); }
+    .badge { display: inline-block; font-size: 1rem; font-family: var(--font-data); padding: 1px 0.6rem; border-radius: var(--radius-sm); letter-spacing: 0.03em; white-space: nowrap; }
+    .badge.allied   { background: var(--color-positive-dim); color: var(--color-positive); border: 1px solid var(--color-positive-line); }
+    .badge.friendly { background: var(--color-primary-dim);  color: var(--color-primary);  border: 1px solid var(--color-primary-line); }
+    .badge.neutral  { background: var(--surface-2);   color: var(--text-secondary); border: 1px solid var(--outline); }
+    .badge.hostile  { background: var(--color-warning-dim); color: var(--color-warning); border: 1px solid var(--color-warning-line); }
+    .badge.atwar    { background: var(--color-negative-dim);   color: var(--color-negative);   border: 1px solid var(--color-negative-line); }
 
     /* ── REP BAR ── */
-    .rep-bar-wrap { width: 8rem; height: 0.3rem; background: var(--border); border-radius: 0.2rem; overflow: hidden; display: inline-block; vertical-align: middle; }
-    .rep-bar { height: 100%; border-radius: 0.2rem; }
+    .rep-bar-wrap { width: 8rem; height: 0.3rem; background: var(--outline); border-radius: var(--radius-sm); overflow: hidden; display: inline-block; vertical-align: middle; }
+    .rep-bar { height: 100%; border-radius: var(--radius-sm); }
 
     /* ── HULL HEALTH BAR ── */
-    .hull-bar-wrap { width: 8rem; height: 1.1rem; background: var(--border); border-radius: 0.3rem; overflow: hidden; margin-top: 0; }
-    .hull-bar { height: 100%; border-radius: 0.2rem; }
+    .hull-bar-wrap { width: 8rem; height: 1.1rem; background: var(--outline); border-radius: var(--radius-md); overflow: hidden; margin-top: 0; }
+    .hull-bar { height: 100%; border-radius: var(--radius-sm); }
 
     /* ── SHARED HOVER TOOLTIP ── (id is a legacy name from when it was hull-only;
        every hover popup in the app — pilot skills, budget, cashflow, loadout,
        weapon stats, etc. — reuses this one element via sectors.js's dispatcher)
-       Fixed background instead of var(--bg-panel) so it reads the same against
+       Fixed background instead of var(--surface-1) so it reads the same against
        every tab's differently-coloured backdrop, instead of blending in on some. */
     #hull-tip {
       position: fixed; display: none; padding: 0.3rem 0.8rem;
-      background: #0f1712; border: 1px solid var(--border);
-      font-family: var(--font-mono); font-size: 1.3rem; color: var(--lime);
-      white-space: nowrap; border-radius: 0.2rem; pointer-events: none; z-index: 1000;
+      background: #0f1712; border: 1px solid var(--outline);
+      font-family: var(--font-data); font-size: 1.3rem; color: var(--color-alert);
+      white-space: nowrap; border-radius: var(--radius-sm); pointer-events: none; z-index: 1000;
     }
 
     /* ── LAYOUT ── */
@@ -73,11 +73,11 @@
 
     /* ── WARE TAGS ── */
     .ware-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0.8rem 1rem; }
-    .ware-tag { font-size: 1rem; font-family: var(--font-mono); padding: 0.2rem 0.7rem; border-radius: 0.2rem; background: var(--bg-panel); border: 1px solid var(--border); color: var(--text-dim); }
+    .ware-tag { font-size: 1rem; font-family: var(--font-data); padding: 0.2rem 0.7rem; border-radius: var(--radius-sm); background: var(--surface-1); border: 1px solid var(--outline); color: var(--text-secondary); }
 
     /* ── STATION TAB BUTTONS ── */
-    .station-tab-btn { padding: 0.3rem 1rem; font-family: var(--font-mono); font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); background: transparent; border: 1px solid var(--border); border-radius: 0.2rem; cursor: pointer; user-select: none; white-space: nowrap; transition: color 0.12s, border-color 0.12s; }
-    .station-tab-btn:hover { color: var(--text-dim); border-color: var(--text-faint); }
-    .station-tab-btn.active { color: var(--teal); border-color: var(--teal); }
-    .docked-ship-row:hover { background: var(--bg-panel); }
+    .station-tab-btn { padding: 0.3rem 1rem; font-family: var(--font-label); font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-label); background: transparent; border: 1px solid var(--outline); border-radius: var(--radius-sm); cursor: pointer; user-select: none; white-space: nowrap; transition: color var(--duration-short), border-color var(--duration-short); }
+    .station-tab-btn:hover { color: var(--text-secondary); border-color: var(--text-label); }
+    .station-tab-btn.active { color: var(--color-primary); border-color: var(--color-primary); }
+    .docked-ship-row:hover { background: var(--state-hover); }
 

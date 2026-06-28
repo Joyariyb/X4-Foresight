@@ -4,107 +4,107 @@
     /* Left column = sort bar (fixed) above a scrolling list. */
     #sectors-left {
       width: 26rem; flex-shrink: 0; min-height: 0; display: flex; flex-direction: column;
-      background: var(--bg-panel); border-right: 1px solid var(--border);
+      background: var(--surface-1); border-right: 1px solid var(--outline);
     }
-    #sectors-sortbar { display: flex; align-items: center; gap: 0.8rem; padding: 0.8rem 1.2rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-    .ssb-label { font-family: var(--font-cond); font-size: 1.1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); flex-shrink: 0; }
-    #sectors-sort { flex: 1; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 0.3rem; padding: 0.4rem 0.6rem; font-family: var(--font-cond); font-size: 1.2rem; cursor: pointer; }
+    #sectors-sortbar { display: flex; align-items: center; gap: 0.8rem; padding: 0.8rem 1.2rem; border-bottom: 1px solid var(--outline); flex-shrink: 0; }
+    .ssb-label { font-family: var(--font-label); font-size: 1.1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-label); flex-shrink: 0; }
+    #sectors-sort { flex: 1; background: var(--surface-0); color: var(--text-primary); border: 1px solid var(--outline); border-radius: var(--radius-md); padding: 0.4rem 0.6rem; font-family: var(--font-label); font-size: 1.2rem; cursor: pointer; }
     #sectors-list { flex: 1; min-height: 0; overflow-y: auto; padding: 0.8rem 0; }
     .sectors-cluster-head {
       display: flex; align-items: center; gap: 0.7rem; padding: 0.8rem 1.2rem 0.4rem;
-      font-family: var(--font-cond); font-size: 1.1rem; font-weight: 600;
-      letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint);
+      font-family: var(--font-label); font-size: 1.1rem; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-label);
     }
-    .sectors-cluster-head .scl-dot { width: 0.8rem; height: 0.8rem; border-radius: 0.2rem; flex-shrink: 0; }
+    .sectors-cluster-head .scl-dot { width: 0.8rem; height: 0.8rem; border-radius: var(--radius-sm); flex-shrink: 0; }
     .sector-row {
       display: flex; align-items: center; gap: 0.8rem; padding: 0.6rem 1.2rem 0.6rem 2.2rem;
-      font-family: var(--font-cond); font-size: 1.3rem; color: var(--text); cursor: pointer;
-      border-left: 0.2rem solid transparent; transition: background 0.12s;
+      font-family: var(--font-label); font-size: 1.3rem; color: var(--text-primary); cursor: pointer;
+      border-left: 0.2rem solid transparent; transition: background var(--duration-short);
     }
-    .sector-row:hover { background: var(--bg); }
-    .sector-row.active { background: var(--bg); border-left-color: var(--teal); color: var(--teal); }
+    .sector-row:hover { background: var(--surface-0); }
+    .sector-row.active { background: var(--surface-0); border-left-color: var(--color-primary); color: var(--color-primary); }
     .sector-row .sr-dot { width: 0.9rem; height: 0.9rem; border-radius: 50%; flex-shrink: 0; }
     .sector-row .sr-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     /* Count of the player's own stations in the sector. */
-    .sr-sta-badge { flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.3rem; font-family: var(--font-mono); font-size: 1rem; color: var(--teal); background: var(--teal-dim); padding: 1px 0.5rem; border-radius: 0.3rem; }
+    .sr-sta-badge { flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.3rem; font-family: var(--font-data); font-size: 1rem; color: var(--color-primary); background: var(--color-primary-dim); padding: 1px 0.5rem; border-radius: var(--radius-md); }
     .sr-sta-badge i { font-size: 1.1rem; }
     /* Right-aligned value for the active sort. Coloured per metric: resource
        amounts take the yield-tier colour, sunlight is sun-amber. */
-    .sector-row .sr-metric { flex-shrink: 0; font-family: var(--font-mono); font-size: 1.1rem; color: var(--text); }
-    .sr-metric-sun { color: var(--amber); }
+    .sector-row .sr-metric { flex-shrink: 0; font-family: var(--font-data); font-size: 1.1rem; color: var(--text-primary); }
+    .sr-metric-sun { color: var(--color-warning); }
 
     #sectors-detail { flex: 1; min-height: 0; overflow-y: auto; padding: 2rem 2.4rem; }
-    .sectors-empty { color: var(--text-dim); font-family: var(--font-cond); font-size: 1.4rem; margin-top: 4rem; text-align: center; }
+    .sectors-empty { color: var(--text-secondary); font-family: var(--font-label); font-size: 1.4rem; margin-top: 4rem; text-align: center; }
     .sd-head { display: flex; align-items: baseline; gap: 1.2rem; margin-bottom: 0.2rem; }
-    .sd-name { font-family: var(--font-cond); font-size: 2.2rem; font-weight: 600; color: var(--text); letter-spacing: 0.02em; }
-    .sd-cluster { font-family: var(--font-cond); font-size: 1.2rem; color: var(--text-faint); letter-spacing: 0.06em; text-transform: uppercase; }
-    .sd-owner { font-family: var(--font-cond); font-size: 1.4rem; margin-bottom: 1.8rem; display: flex; align-items: center; gap: 0.8rem; }
+    .sd-name { font-family: var(--font-label); font-size: 2.2rem; font-weight: 600; color: var(--text-primary); letter-spacing: 0.02em; }
+    .sd-cluster { font-family: var(--font-label); font-size: 1.2rem; color: var(--text-label); letter-spacing: 0.06em; text-transform: uppercase; }
+    .sd-owner { font-family: var(--font-label); font-size: 1.4rem; margin-bottom: 1.8rem; display: flex; align-items: center; gap: 0.8rem; }
     /* Summary character tags — thin chip row near the top of the pane. */
     .sd-tags { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0.6rem 0 1.4rem; }
-    .sd-tag { font-family: var(--font-cond); font-size: 1rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.2rem 0.9rem; border-radius: 1rem; border: 1px solid; white-space: nowrap; }
-    .sd-tag.tag-you     { color: var(--teal);   border-color: rgba(45,212,191,0.4);  background: var(--teal-dim); }
-    .sd-tag.tag-bad     { color: var(--red);    border-color: rgba(248,81,73,0.4);   background: var(--red-dim); }
-    .sd-tag.tag-neutral { color: var(--text);   border-color: var(--border);         background: var(--bg-card); }
-    .sd-tag.tag-rich    { color: var(--green);  border-color: rgba(63,185,80,0.4);   background: var(--green-dim); }
-    .sd-tag.tag-sun     { color: var(--amber);  border-color: rgba(210,153,34,0.4);  background: var(--amber-dim); }
+    .sd-tag { font-family: var(--font-label); font-size: 1rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.2rem 0.9rem; border-radius: 1rem; border: 1px solid; white-space: nowrap; }
+    .sd-tag.tag-you     { color: var(--color-primary);   border-color: var(--color-primary-line);  background: var(--color-primary-dim); }
+    .sd-tag.tag-bad     { color: var(--color-negative);    border-color: var(--color-negative-line);   background: var(--color-negative-dim); }
+    .sd-tag.tag-neutral { color: var(--text-primary);   border-color: var(--outline);         background: var(--surface-2); }
+    .sd-tag.tag-rich    { color: var(--color-positive);  border-color: var(--color-positive-line);   background: var(--color-positive-dim); }
+    .sd-tag.tag-sun     { color: var(--color-warning);  border-color: var(--color-warning-line);  background: var(--color-warning-dim); }
     .sd-tag.tag-hub     { color: #388bfd;       border-color: rgba(56,139,253,0.4);  background: rgba(56,139,253,0.1); }
-    .sd-tag.tag-core     { color: var(--yellow); border-color: rgba(227,179,65,0.4);  background: rgba(227,179,65,0.1); }
+    .sd-tag.tag-core     { color: var(--color-highlight); border-color: rgba(227,179,65,0.4);  background: rgba(227,179,65,0.1); }
     .sd-tag.tag-frontier { color: #f0883e;       border-color: rgba(240,136,62,0.4);  background: rgba(240,136,62,0.1); }
-    .sd-tag.tag-remote   { color: var(--purple); border-color: rgba(163,113,247,0.4); background: rgba(163,113,247,0.1); }
+    .sd-tag.tag-remote   { color: var(--color-special); border-color: var(--color-special-line); background: rgba(163,113,247,0.1); }
     .sd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 1rem; margin-bottom: 2.2rem; }
-    .sd-stat { background: var(--bg-card); border: 1px solid var(--border); border-radius: 0.3rem; padding: 0.9rem 1.2rem; }
-    .sd-stat-label { font-family: var(--font-cond); font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 0.3rem; }
-    .sd-stat-value { font-family: var(--font-mono); font-size: 1.6rem; color: var(--text); }
-    .sd-section-title { font-family: var(--font-cond); font-weight: 600; font-size: 1.1rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); margin: 0 0 0.8rem; }
+    .sd-stat { background: var(--surface-2); border: 1px solid var(--outline); border-radius: var(--radius-md); padding: 0.9rem 1.2rem; }
+    .sd-stat-label { font-family: var(--font-label); font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-label); margin-bottom: 0.3rem; }
+    .sd-stat-value { font-family: var(--font-data); font-size: 1.6rem; color: var(--text-primary); }
+    .sd-section-title { font-family: var(--font-label); font-weight: 600; font-size: 1.1rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-label); margin: 0 0 0.8rem; }
     .sd-list { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 2.2rem; }
-    .sd-conn-row, .sd-fac-row { display: flex; align-items: center; gap: 0.8rem; font-family: var(--font-cond); font-size: 1.3rem; color: var(--text); }
+    .sd-conn-row, .sd-fac-row { display: flex; align-items: center; gap: 0.8rem; font-family: var(--font-label); font-size: 1.3rem; color: var(--text-primary); }
     .sd-conn-row { cursor: pointer; padding: 0.3rem 0; }
-    .sd-conn-row:hover .sd-conn-name { color: var(--teal); }
+    .sd-conn-row:hover .sd-conn-name { color: var(--color-primary); }
     .sd-conn-row .sr-dot { width: 0.8rem; height: 0.8rem; border-radius: 50%; flex-shrink: 0; }
     .sd-conn-name { flex: 1; }
-    .sd-conn-cost { font-family: var(--font-mono); font-size: 1.1rem; color: var(--teal); }
+    .sd-conn-cost { font-family: var(--font-data); font-size: 1.1rem; color: var(--color-primary); }
     .sd-fac-row { padding: 0.2rem 0; }
     .sd-fac-row .sr-dot { width: 0.8rem; height: 0.8rem; border-radius: 50%; flex-shrink: 0; }
     .sd-fac-name { flex: 1; }
-    .sd-fac-count { font-family: var(--font-mono); font-size: 1.2rem; color: var(--text); }
+    .sd-fac-count { font-family: var(--font-data); font-size: 1.2rem; color: var(--text-primary); }
 
     /* Resources as a 3-column grid: name | yield | amount. display:contents on
        the rows lets every cell line up in the shared columns, so the right-hand
        Yield and Amount values align neatly down the list. */
     .sd-res-table { display: grid; grid-template-columns: 1fr auto auto; column-gap: 2rem; row-gap: 0.6rem; align-items: baseline; margin-bottom: 2.2rem; }
     .sd-res-head, .sd-res-row { display: contents; }
-    .sd-res-h { font-family: var(--font-cond); font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); text-align: right; }
-    .sd-res-name { font-family: var(--font-cond); font-size: 1.4rem; color: var(--text); }
-    .sd-res-yield { font-family: var(--font-cond); font-size: 1.3rem; font-weight: 600; text-align: right; white-space: nowrap; }
-    .sd-res-amt { font-family: var(--font-mono); font-size: 1.3rem; color: var(--text); text-align: right; white-space: nowrap; }
+    .sd-res-h { font-family: var(--font-label); font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-label); text-align: right; }
+    .sd-res-name { font-family: var(--font-label); font-size: 1.4rem; color: var(--text-primary); }
+    .sd-res-yield { font-family: var(--font-label); font-size: 1.3rem; font-weight: 600; text-align: right; white-space: nowrap; }
+    .sd-res-amt { font-family: var(--font-data); font-size: 1.3rem; color: var(--text-primary); text-align: right; white-space: nowrap; }
     /* Abundance heat-ramp using brand colours — red (poor) → orange → yellow →
        green (rich). Prefix match covers the whole X4 yield ladder; verylow and
        veryhigh are pinned to the extremes. Applies to both the detail table
        (.sd-res-yield) and the list sort value (.sr-metric-yield). */
-    .sd-res-yield[data-yield="verylow"],  .sr-metric-yield[data-yield="verylow"]  { color: var(--red); }
+    .sd-res-yield[data-yield="verylow"],  .sr-metric-yield[data-yield="verylow"]  { color: var(--color-negative); }
     .sd-res-yield[data-yield^="low"],     .sr-metric-yield[data-yield^="low"]     { color: #f0883e; }
-    .sd-res-yield[data-yield^="med"],     .sr-metric-yield[data-yield^="med"]     { color: var(--yellow); }
-    .sd-res-yield[data-yield^="high"],    .sr-metric-yield[data-yield^="high"]    { color: var(--green); }
+    .sd-res-yield[data-yield^="med"],     .sr-metric-yield[data-yield^="med"]     { color: var(--color-highlight); }
+    .sd-res-yield[data-yield^="high"],    .sr-metric-yield[data-yield^="high"]    { color: var(--color-positive); }
     .sd-res-yield[data-yield="veryhigh"], .sr-metric-yield[data-yield="veryhigh"] { color: #56d364; }
 
     /* The player's own stations in a sector — clickable to the station card. */
-    .sd-sta-row { display: flex; align-items: center; gap: 0.8rem; padding: 0.4rem 0; font-family: var(--font-cond); font-size: 1.3rem; color: var(--text); cursor: pointer; }
-    .sd-sta-row i { font-size: 1.4rem; color: var(--teal); flex-shrink: 0; }
-    .sd-sta-row:hover .sd-sta-name { color: var(--teal); }
+    .sd-sta-row { display: flex; align-items: center; gap: 0.8rem; padding: 0.4rem 0; font-family: var(--font-label); font-size: 1.3rem; color: var(--text-primary); cursor: pointer; }
+    .sd-sta-row i { font-size: 1.4rem; color: var(--color-primary); flex-shrink: 0; }
+    .sd-sta-row:hover .sd-sta-name { color: var(--color-primary); }
     .sd-sta-name { flex: 1; }
-    .sd-sta-code { font-family: var(--font-mono); font-size: 1.1rem; color: var(--teal); }
+    .sd-sta-code { font-family: var(--font-data); font-size: 1.1rem; color: var(--color-primary); }
 
     /* Collapsible "Your Ships" set. Native <details> — default collapsed. */
     .sd-ships { margin-bottom: 2.2rem; }
     .sd-ships-sum { display: flex; align-items: center; gap: 0.8rem; cursor: pointer; list-style: none; user-select: none; }
     .sd-ships-sum::-webkit-details-marker { display: none; }
-    .sd-ships-chev { font-size: 1.4rem; color: var(--text-faint); transition: transform 0.15s; }
+    .sd-ships-chev { font-size: 1.4rem; color: var(--text-label); transition: transform var(--duration-short); }
     .sd-ships[open] .sd-ships-chev { transform: rotate(90deg); }
-    .sd-ships-title { font-family: var(--font-cond); font-weight: 600; font-size: 1.1rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); }
-    .sd-ships-break { font-family: var(--font-cond); font-size: 1.2rem; color: var(--text); }
+    .sd-ships-title { font-family: var(--font-label); font-weight: 600; font-size: 1.1rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-label); }
+    .sd-ships-break { font-family: var(--font-label); font-size: 1.2rem; color: var(--text-primary); }
     .sd-ships-list { display: grid; grid-template-columns: 1fr auto auto; column-gap: 1.6rem; row-gap: 0.4rem; align-items: baseline; margin: 0.8rem 0 0 2.2rem; }
     .sd-ship-row { display: contents; }
-    .sd-ship-name { font-family: var(--font-cond); font-size: 1.3rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .sd-ship-role { font-family: var(--font-cond); font-size: 1.2rem; color: var(--text); text-align: right; white-space: nowrap; }
-    .sd-ship-code { font-family: var(--font-mono); font-size: 1.1rem; color: var(--teal); text-align: right; white-space: nowrap; }
+    .sd-ship-name { font-family: var(--font-label); font-size: 1.3rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sd-ship-role { font-family: var(--font-label); font-size: 1.2rem; color: var(--text-primary); text-align: right; white-space: nowrap; }
+    .sd-ship-code { font-family: var(--font-data); font-size: 1.1rem; color: var(--color-primary); text-align: right; white-space: nowrap; }
 

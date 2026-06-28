@@ -10,12 +10,12 @@
        tip) plus a white hot-spot at the leading edge. The whole SVG rotates via CSS;
        all bands rotate with it, so the bright tip always leads the sweep. -->
   <svg class="loading-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="12" cy="12" r="10" style="stroke:var(--teal)" stroke-width="2" stroke-dasharray="7.85 54.98" stroke-dashoffset="15.71" stroke-opacity="0.07"/>
-    <circle cx="12" cy="12" r="10" style="stroke:var(--teal)" stroke-width="2" stroke-dasharray="7.85 54.98" stroke-dashoffset="7.85"  stroke-opacity="0.18"/>
-    <circle cx="12" cy="12" r="10" style="stroke:var(--teal)" stroke-width="2" stroke-dasharray="7.85 54.98" stroke-dashoffset="0"     stroke-opacity="0.35"/>
-    <circle cx="12" cy="12" r="10" style="stroke:var(--teal)" stroke-width="2" stroke-dasharray="7.85 54.98" stroke-dashoffset="54.98" stroke-opacity="0.58"/>
-    <circle cx="12" cy="12" r="10" style="stroke:var(--teal)" stroke-width="2" stroke-dasharray="7.85 54.98" stroke-dashoffset="47.12" stroke-opacity="0.80"/>
-    <circle cx="12" cy="12" r="10" style="stroke:var(--teal)" stroke-width="2" stroke-dasharray="7.85 54.98" stroke-dashoffset="39.27" stroke-opacity="1"/>
+    <circle cx="12" cy="12" r="10" style="stroke:var(--color-primary)" stroke-width="2" stroke-dasharray="7.85 54.98" stroke-dashoffset="15.71" stroke-opacity="0.07"/>
+    <circle cx="12" cy="12" r="10" style="stroke:var(--color-primary)" stroke-width="2" stroke-dasharray="7.85 54.98" stroke-dashoffset="7.85"  stroke-opacity="0.18"/>
+    <circle cx="12" cy="12" r="10" style="stroke:var(--color-primary)" stroke-width="2" stroke-dasharray="7.85 54.98" stroke-dashoffset="0"     stroke-opacity="0.35"/>
+    <circle cx="12" cy="12" r="10" style="stroke:var(--color-primary)" stroke-width="2" stroke-dasharray="7.85 54.98" stroke-dashoffset="54.98" stroke-opacity="0.58"/>
+    <circle cx="12" cy="12" r="10" style="stroke:var(--color-primary)" stroke-width="2" stroke-dasharray="7.85 54.98" stroke-dashoffset="47.12" stroke-opacity="0.80"/>
+    <circle cx="12" cy="12" r="10" style="stroke:var(--color-primary)" stroke-width="2" stroke-dasharray="7.85 54.98" stroke-dashoffset="39.27" stroke-opacity="1"/>
     <circle cx="12" cy="12" r="10" stroke="white"              stroke-width="2" stroke-linecap="round" stroke-dasharray="3.93 58.90" stroke-dashoffset="35.34" stroke-opacity="1"/>
   </svg>
   Connecting to scanner...
@@ -86,7 +86,7 @@
         </div>
       </div>
       <div class="sb-divider"></div>
-      <div class="sb-heading">Advisors <span style="color:#f85149">&mdash; WIP</span></div>
+      <div class="sb-heading">Advisors <span style="color:var(--color-negative)">&mdash; WIP</span></div>
       <div class="sb-item" id="sb-military">
         <span class="sb-item-label"><i class="ti ti-sword"></i> Military</span>
       </div>
@@ -100,7 +100,7 @@
         <span class="sb-item-label"><i class="ti ti-alert-triangle"></i> Economic</span>
       </div>
       <div class="sb-divider"></div>
-      <div class="sb-heading">JSON Exports <span style="color:#f85149">&mdash; WIP</span></div>
+      <div class="sb-heading">JSON Exports <span style="color:var(--color-negative)">&mdash; WIP</span></div>
       <div class="sb-item">
         <span class="sb-item-label"><i class="ti ti-database-export"></i> Economy</span>
       </div>
@@ -149,8 +149,8 @@
         </div>
 
         <div style="display:flex; align-items:baseline; gap:1rem; padding-bottom:0.2rem">
-          <div style="font-family:var(--font-cond); font-weight:600; font-size:1.8rem; color:var(--teal)" id="ov-pilot">—</div>
-          <div style="font-family:var(--font-mono); font-size:1.1rem; color:var(--text-dim)">PILOT</div>
+          <div style="font-family:var(--font-label); font-weight:600; font-size:1.8rem; color:var(--color-primary)" id="ov-pilot">—</div>
+          <div style="font-family:var(--font-data); font-size:1.1rem; color:var(--text-secondary)">PILOT</div>
         </div>
 
         <div>
@@ -195,7 +195,7 @@
         <!-- Sub-tab bar: Player tab is static; faction tabs are built by populate() -->
         <div class="fleet-subtabs" id="fleet-subtabs">
           <div class="fleet-subtab active" data-faction="player"
-               style="--tab-color:#2dd4bf;--tab-bg:rgba(45,212,191,0.12);--tab-border:rgba(45,212,191,0.3)"
+               style="--tab-color:var(--color-primary);--tab-bg:var(--color-primary-dim);--tab-border:var(--color-primary-line)"
                onclick="switchFleetTab('player',this)">
             Player <span class="ft-count" id="ft-count-player">—</span>
           </div>
@@ -218,7 +218,7 @@
                        but each stays independently sortable via its own label. -->
                   <th>
                     <span class="col-sort" data-sort-key="health" onclick="setSort('health')">Hull</span>
-                    <span style="color:var(--text-faint)"> / </span>
+                    <span style="color:var(--text-label)"> / </span>
                     <span class="col-sort" data-sort-key="shield" onclick="setSort('shield')">Shields</span>
                   </th>
                   <th data-sort-key="order"  onclick="setSort('order')">Order</th>
@@ -257,7 +257,7 @@
           <div class="dfb-group">
             <span class="dfb-label">Faction</span>
             <div class="bhull">
-              <i class="ti ti-flag" style="color:var(--teal);font-size:1.3rem"></i>
+              <i class="ti ti-flag" style="color:var(--color-primary);font-size:1.3rem"></i>
               <select id="designs-faction-select" onchange="designsSetFactionFilter(this.value)">
                 <option value="all">All</option>
               </select>
@@ -266,7 +266,7 @@
           <div class="dfb-group">
             <span class="dfb-label">Sort</span>
             <div class="bhull">
-              <i class="ti ti-sort-descending" style="color:var(--teal);font-size:1.3rem"></i>
+              <i class="ti ti-sort-descending" style="color:var(--color-primary);font-size:1.3rem"></i>
               <select id="designs-sort-select" onchange="designsSetSort(this.value)">
                 <option value="used">Used By</option>
                 <option value="size">Size</option>
@@ -284,9 +284,9 @@
 
         <div id="designs-grid"></div>
         <!-- Shown when there's no loadout data yet, or the current filters match nothing. -->
-        <div id="designs-empty" style="display:flex;flex-direction:column;align-items:center;gap:1rem;padding:8rem 2rem;color:var(--text-dim)">
-          <i class="ti ti-vector-triangle" style="font-size:4rem;color:var(--teal);opacity:0.5"></i>
-          <div class="cond" id="designs-empty-title" style="font-size:1.8rem;font-weight:600;color:var(--text)">No ship designs found</div>
+        <div id="designs-empty" style="display:flex;flex-direction:column;align-items:center;gap:1rem;padding:8rem 2rem;color:var(--text-secondary)">
+          <i class="ti ti-vector-triangle" style="font-size:4rem;color:var(--color-primary);opacity:0.5"></i>
+          <div class="cond" id="designs-empty-title" style="font-size:1.8rem;font-weight:600;color:var(--text-primary)">No ship designs found</div>
           <div id="designs-empty-body" style="font-size:1.3rem;max-width:42rem;text-align:center;line-height:1.6">
             This tab lists your fleet's unique ship configurations, deduplicated by
             hull and fitted equipment. Run a scan with a fleet in it to populate it.
@@ -327,9 +327,9 @@
 
         <!-- Shown for categories with no data pipeline yet (Software/Items), or
              before any scan has loaded the static equipment/hull catalogs. -->
-        <div id="reslib-empty" style="display:none;flex-direction:column;align-items:center;gap:1rem;padding:8rem 2rem;color:var(--text-dim)">
-          <i class="ti ti-books" id="reslib-empty-icon" style="font-size:4rem;color:var(--teal);opacity:0.5"></i>
-          <div class="cond" id="reslib-empty-title" style="font-size:1.8rem;font-weight:600;color:var(--text)"></div>
+        <div id="reslib-empty" style="display:none;flex-direction:column;align-items:center;gap:1rem;padding:8rem 2rem;color:var(--text-secondary)">
+          <i class="ti ti-books" id="reslib-empty-icon" style="font-size:4rem;color:var(--color-primary);opacity:0.5"></i>
+          <div class="cond" id="reslib-empty-title" style="font-size:1.8rem;font-weight:600;color:var(--text-primary)"></div>
           <div id="reslib-empty-body" style="font-size:1.3rem;max-width:42rem;text-align:center;line-height:1.6"></div>
         </div>
       </div>
@@ -344,27 +344,27 @@
       <div class="tab-panel" id="tab-crew">
         <div class="fleet-subtabs" id="crew-subtabs">
           <div class="fleet-subtab active" data-role="all"
-               style="--tab-color:#2dd4bf;--tab-bg:rgba(45,212,191,0.12);--tab-border:rgba(45,212,191,0.3)"
+               style="--tab-color:var(--color-primary);--tab-bg:var(--color-primary-dim);--tab-border:var(--color-primary-line)"
                onclick="switchCrewRole('all',this)">
             <i class="ti ti-users" style="font-size:1.3rem;vertical-align:-0.2rem;margin-right:0.4rem"></i>All <span class="ft-count" id="crew-count-all">—</span>
           </div>
           <div class="fleet-subtab" data-role="manager"
-               style="--tab-color:#a371f7;--tab-bg:rgba(163,113,247,0.12);--tab-border:rgba(163,113,247,0.3)"
+               style="--tab-color:var(--color-special);--tab-bg:var(--color-special-dim);--tab-border:var(--color-special-line)"
                onclick="switchCrewRole('manager',this)">
             <i class="ti ti-crown" style="font-size:1.3rem;vertical-align:-0.2rem;margin-right:0.4rem"></i>Managers <span class="ft-count" id="crew-count-manager">0</span>
           </div>
           <div class="fleet-subtab" data-role="pilot"
-               style="--tab-color:#d29922;--tab-bg:rgba(210,153,34,0.12);--tab-border:rgba(210,153,34,0.3)"
+               style="--tab-color:var(--color-warning);--tab-bg:var(--color-warning-dim);--tab-border:var(--color-warning-line)"
                onclick="switchCrewRole('pilot',this)">
             <i class="ti ti-steering-wheel" style="font-size:1.3rem;vertical-align:-0.2rem;margin-right:0.4rem"></i>Pilots <span class="ft-count" id="crew-count-pilot">0</span>
           </div>
           <div class="fleet-subtab" data-role="service"
-               style="--tab-color:#3fb950;--tab-bg:rgba(63,185,80,0.12);--tab-border:rgba(63,185,80,0.3)"
+               style="--tab-color:var(--color-positive);--tab-bg:var(--color-positive-dim);--tab-border:var(--color-positive-line)"
                onclick="switchCrewRole('service',this)">
             <i class="ti ti-tool" style="font-size:1.3rem;vertical-align:-0.2rem;margin-right:0.4rem"></i>Service <span class="ft-count" id="crew-count-service">0</span>
           </div>
           <div class="fleet-subtab" data-role="marine"
-               style="--tab-color:#f85149;--tab-bg:rgba(248,81,73,0.10);--tab-border:rgba(248,81,73,0.3)"
+               style="--tab-color:var(--color-negative);--tab-bg:var(--color-negative-dim);--tab-border:var(--color-negative-line)"
                onclick="switchCrewRole('marine',this)">
             <i class="ti ti-sword" style="font-size:1.3rem;vertical-align:-0.2rem;margin-right:0.4rem"></i>Marines <span class="ft-count" id="crew-count-marine">0</span>
           </div>
@@ -401,7 +401,7 @@
           <div class="diplo-dd" id="diplo-dd">
             <div class="fleet-subtab diplo-dd-trigger active" id="diplo-dd-trigger"
                  data-faction="player"
-                 style="--tab-color:#2dd4bf;--tab-bg:rgba(45,212,191,0.12);--tab-border:rgba(45,212,191,0.3)"
+                 style="--tab-color:var(--color-primary);--tab-bg:var(--color-primary-dim);--tab-border:var(--color-primary-line)"
                  onclick="toggleDiploDropdown(event)">
               <span id="diplo-dd-label">Player</span>
               <i class="ti ti-chevron-down" style="font-size:1.3rem"></i>
@@ -434,8 +434,8 @@
         <div class="universe-filter-bar">
           <i class="ti ti-filter" style="font-size:1.4rem"></i>
           <span>Overlays</span>
-          <span style="color:var(--border);margin:0 0.4rem">·</span>
-          <span style="font-size:1rem;color:var(--text-faint);text-transform:none;letter-spacing:0">coming soon</span>
+          <span style="color:var(--outline);margin:0 0.4rem">·</span>
+          <span style="font-size:1rem;color:var(--text-label);text-transform:none;letter-spacing:0">coming soon</span>
         </div>
         <div id="universe-map-wrap">
           <!-- zoom-layer is an HTML div on purpose: browsers GPU-composite CSS

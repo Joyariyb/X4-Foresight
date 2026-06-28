@@ -1,9 +1,9 @@
     /* Core role: Custom thin scrollbar styling (webkit only). */
     ::-webkit-scrollbar { width: 0.4rem; height: 0.4rem; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 0.2rem; }
+    ::-webkit-scrollbar-thumb { background: var(--outline); border-radius: var(--radius-sm); }
 
-    #loading { display: flex; align-items: center; justify-content: center; height: 100%; font-family: var(--font-mono); color: var(--text-faint); font-size: 1.2rem; gap: 1rem; }
+    #loading { display: flex; align-items: center; justify-content: center; height: 100%; font-family: var(--font-data); color: var(--text-label); font-size: 1.2rem; gap: 1rem; }
     #loading .loading-icon { width: 2rem; height: 2rem; flex-shrink: 0; animation: radar-spin 2.4s linear infinite, scanner-glow 1.8s ease-in-out infinite; }
 
     /* Slow radar-sweep spin — deliberate, not a generic spinner */
@@ -12,6 +12,6 @@
     /* Neon glow breathes between a tight core glow and a full corona:
        three drop-shadow layers give the bright white-hot centre + wide teal bloom */
     @keyframes scanner-glow {
-      0%, 100% { filter: drop-shadow(0 0 2px var(--teal)) drop-shadow(0 0 6px var(--teal)); }
-      50%       { filter: drop-shadow(0 0 3px #fff) drop-shadow(0 0 8px var(--teal)) drop-shadow(0 0 20px var(--teal)); }
+      0%, 100% { filter: drop-shadow(0 0 2px var(--color-primary)) drop-shadow(0 0 6px var(--color-primary)); }
+      50%       { filter: drop-shadow(0 0 3px #fff) drop-shadow(0 0 8px var(--color-primary)) drop-shadow(0 0 20px var(--color-primary)); }
     }

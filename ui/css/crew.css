@@ -15,32 +15,32 @@
     .crew-file   { flex: 1; overflow-y: auto; min-height: 0; }
 
     /* File card — the dossier panel on the right */
-    .file-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 0.3rem; }
-    .file-header { padding: 1.4rem; border-bottom: 1px solid var(--border); background: var(--bg-panel); }
-    .file-name { font-family: var(--font-cond); font-weight: 700; font-size: 2rem; color: var(--lime); letter-spacing: 0.05em; margin-bottom: 0.8rem; }
-    .file-section { padding: 1rem 1.4rem; border-bottom: 1px solid var(--border); }
+    .file-card { background: var(--surface-2); border: 1px solid var(--outline); border-radius: var(--radius-md); }
+    .file-header { padding: 1.4rem; border-bottom: 1px solid var(--outline); background: var(--surface-1); }
+    .file-name { font-family: var(--font-label); font-weight: 700; font-size: 2rem; color: var(--color-alert); letter-spacing: 0.05em; margin-bottom: 0.8rem; }
+    .file-section { padding: 1rem 1.4rem; border-bottom: 1px solid var(--outline); }
     .file-section:last-child { border-bottom: none; }
-    .file-sec-label { font-family: var(--font-mono); font-size: 1rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 0.6rem; }
+    .file-sec-label { font-family: var(--font-data); font-size: 1rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-label); margin-bottom: 0.6rem; }
     .file-skill-row { display: flex; align-items: center; gap: 0.8rem; padding: 0.2rem 0; }
-    .file-skill-name { min-width: 9rem; font-family: var(--font-mono); font-size: 1.1rem; color: var(--text-dim); text-transform: capitalize; }
-    .file-assign-name { font-size: 1.4rem; font-family: var(--font-cond); font-weight: 600; color: var(--text); }
-    .file-assign-code { font-family: var(--font-mono); font-size: 1.1rem; color: var(--yellow); margin-left: 0.6rem; }
-    .file-assign-sector { font-family: var(--font-mono); font-size: 1.1rem; color: var(--text-faint); margin-top: 0.4rem; }
-    .file-meta-val { font-family: var(--font-mono); font-size: 1.2rem; color: var(--text-dim); }
-    .file-seed { font-family: var(--font-mono); font-size: 0.9rem; color: var(--text-faint); margin-top: 0.6rem; word-break: break-all; }
-    .file-empty { display: flex; align-items: center; justify-content: center; height: 16rem; font-family: var(--font-mono); font-size: 1.1rem; color: var(--text-faint); background: var(--bg-card); border: 1px solid var(--border); border-radius: 0.3rem; }
+    .file-skill-name { min-width: 9rem; font-family: var(--font-data); font-size: 1.1rem; color: var(--text-secondary); text-transform: capitalize; }
+    .file-assign-name { font-size: 1.4rem; font-family: var(--font-label); font-weight: 600; color: var(--text-primary); }
+    .file-assign-code { font-family: var(--font-data); font-size: 1.1rem; color: var(--color-highlight); margin-left: 0.6rem; }
+    .file-assign-sector { font-family: var(--font-data); font-size: 1.1rem; color: var(--text-label); margin-top: 0.4rem; }
+    .file-meta-val { font-family: var(--font-data); font-size: 1.2rem; color: var(--text-secondary); }
+    .file-seed { font-family: var(--font-data); font-size: 0.9rem; color: var(--text-label); margin-top: 0.6rem; word-break: break-all; }
+    .file-empty { display: flex; align-items: center; justify-content: center; height: 16rem; font-family: var(--font-data); font-size: 1.1rem; color: var(--text-label); background: var(--surface-2); border: 1px solid var(--outline); border-radius: var(--radius-md); }
     /* Selected row highlight in the crew roster table */
-    .crew-row-active td { background: var(--teal-dim) !important; }
+    .crew-row-active td { background: var(--color-primary-dim) !important; }
     /* Clickable elements in the fleet table — hover turns amber + underlines */
     .crew-link { cursor: pointer; }
-    .crew-link:hover { color: var(--amber) !important; text-decoration: underline; }
+    .crew-link:hover { color: var(--color-warning) !important; text-decoration: underline; }
     /* Station code links — teal base, same amber hover as crew-link */
-    .stn-link { cursor: pointer; color: var(--teal); font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; }
-    .stn-link:hover { color: var(--amber) !important; text-decoration: underline; }
+    .stn-link { cursor: pointer; color: var(--color-primary); font-family: var(--font-data); font-size: 1.1rem; font-weight: 700; }
+    .stn-link:hover { color: var(--color-warning) !important; text-decoration: underline; }
     /* Hull Type cell (Fleet tab) — jumps to the Resource Library's Hull Inspector */
     .hull-type-link { cursor: pointer; }
-    .hull-type-link:hover { color: var(--amber) !important; text-decoration: underline; }
+    .hull-type-link:hover { color: var(--color-warning) !important; text-decoration: underline; }
     /* Sector cell (Fleet tab) — jumps to the Universe tab's Sectors subtab */
     .sector-link { cursor: pointer; }
-    .sector-link:hover { color: var(--amber) !important; text-decoration: underline; }
+    .sector-link:hover { color: var(--color-warning) !important; text-decoration: underline; }
 

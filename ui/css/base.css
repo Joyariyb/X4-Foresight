@@ -19,6 +19,18 @@
       --purple:       #a371f7;
       --yellow:       #e3b341;
       --lime:         #39ff14;
+      --purple-dim:   rgba(163,113,247,0.12);
+      --yellow-dim:   rgba(227,179,65,0.12);
+      --lime-dim:     rgba(57,255,20,0.10);
+      /* ── BORDER/LINE tints — standardised semantic outlines @ 0.3 alpha,
+         replacing the hand-typed rgba(...,0.3/0.35/0.4) borders ── */
+      --teal-line:    rgba(45,212,191,0.3);
+      --amber-line:   rgba(210,153,34,0.3);
+      --red-line:     rgba(248,81,73,0.3);
+      --green-line:   rgba(63,185,80,0.3);
+      --purple-line:  rgba(163,113,247,0.3);
+      --lime-line:    rgba(57,255,20,0.3);
+      --yellow-line:  rgba(227,179,65,0.3);
       --text:         #c9d1d9;
       --text-dim:     #8b949e;
       --text-faint:   #3fb950;
@@ -37,6 +49,9 @@
       --text-secondary: var(--text-dim);
       /* --text-faint is green (#3fb950), not a grey — use --text-brand for new code */
       --text-brand:     var(--text-faint);
+      /* Canonical structural-label colour (brand green, the original look).
+         Flip to var(--text-secondary) for neutral grey labels. */
+      --text-label:     var(--text-faint);
 
       /* ── BRAND / PRIMARY ACCENT ── */
       --color-primary:     var(--teal);
@@ -52,6 +67,16 @@
       --color-alert:        var(--lime);
       --color-special:      var(--purple);
       --color-highlight:    var(--yellow);
+      --color-primary-line:   var(--teal-line);
+      --color-positive-line:  var(--green-line);
+      --color-warning-line:   var(--amber-line);
+      --color-negative-line:  var(--red-line);
+      --color-special-dim:    var(--purple-dim);
+      --color-special-line:   var(--purple-line);
+      --color-alert-dim:      var(--lime-dim);
+      --color-alert-line:     var(--lime-line);
+      --color-highlight-dim:  var(--yellow-dim);
+      --color-highlight-line: var(--yellow-line);
 
       /* ── TYPE SCALE (intent-based names for new components) ── */
       --font-body:  var(--font-ui);
@@ -64,9 +89,9 @@
       --state-active: rgba(45,212,191,0.22);
 
       /* ── SHAPE ── */
-      --radius-sm: 0.4rem;
-      --radius-md: 0.6rem;
-      --radius-lg: 1.2rem;
+      --radius-sm: 0.2rem;   /* badges, bars, chips */
+      --radius-md: 0.3rem;   /* cards, panels, inputs, menus */
+      --radius-lg: 0.4rem;   /* builder boxes, dropdowns */
 
       /* ── MOTION ── */
       --ease-standard: cubic-bezier(0.2, 0, 0, 1.0);

@@ -4,7 +4,7 @@
        CSS drop-shadow is used instead of an SVG <filter> (feDropShadow renders
        inconsistently in this QtWebEngine build). */
     .pie-ring { filter: drop-shadow(0 0.4rem 0.5rem rgba(0,0,0,0.5)); }
-    .pie-slice { cursor: pointer; transition: opacity 0.12s, filter 0.12s, transform 0.12s;
+    .pie-slice { cursor: pointer; transition: opacity var(--duration-short), filter var(--duration-short), transform var(--duration-short);
                  opacity: 0.9; }
     /* Lift the hovered slice toward the viewer along its mid-angle (--dx/--dy set
        per slice) and brighten it, reinforcing the 3D feel on interaction. */
@@ -12,9 +12,9 @@
                        transform: translate(var(--dx,0), var(--dy,0)); }
     /* Radial ware labels splayed around the pie; pointer-events off so hover
        always targets the slice beneath, not the text. */
-    .pie-label { font-family: var(--font-mono); font-size: 1.2rem; font-weight: 600;
+    .pie-label { font-family: var(--font-data); font-size: 1.2rem; font-weight: 600;
                  letter-spacing: 0.04em; text-transform: uppercase; pointer-events: none;
-                 user-select: none; paint-order: stroke; stroke: var(--bg-card);
+                 user-select: none; paint-order: stroke; stroke: var(--surface-2);
                  stroke-width: 0.25rem; stroke-linejoin: round; }
     /* Cash-flow chart: transparent per-hour hit columns. Hovering a column
        shows that hour's trade breakdown and tints the band so it's clear which
@@ -29,26 +29,26 @@
        already transitioned above, so it glows in rather than flicking). */
     .avg-bars rect.avg-hot { opacity: 1 !important; stroke: rgba(255,255,255,0.85); stroke-width: 0.7; }
     /* Hourly / By-Trade toggle above the cash-flow chart. */
-    .cf-toggle-btn { padding: 0.3125cqw 1.25cqw; font-family: var(--font-mono); font-size: 1.406cqw; letter-spacing: 0.08em;
-                     text-transform: uppercase; color: var(--text-faint); background: transparent;
-                     border: 1px solid var(--border); border-radius: 0.2rem; cursor: pointer; user-select: none;
-                     white-space: nowrap; transition: color 0.12s, border-color 0.12s; }
-    .cf-toggle-btn:hover { color: var(--text-dim); border-color: var(--text-faint); }
+    .cf-toggle-btn { padding: 0.3125cqw 1.25cqw; font-family: var(--font-data); font-size: 1.406cqw; letter-spacing: 0.08em;
+                     text-transform: uppercase; color: var(--text-label); background: transparent;
+                     border: 1px solid var(--outline); border-radius: var(--radius-sm); cursor: pointer; user-select: none;
+                     white-space: nowrap; transition: color var(--duration-short), border-color var(--duration-short); }
+    .cf-toggle-btn:hover { color: var(--text-secondary); border-color: var(--text-label); }
     .cf-toggle-btn.active { color: #5eead4; border-color: #5eead4; }
     /* ── CASH FLOW SCRUBBER (X-axis zoom + pan) ── */
     /* A thin resizable track rendered below each station's chart.
        Drag the handle body to pan; drag either edge to zoom in/out.
        Burnt-orange accent (#d4540a) to visually separate it from the teal charts. */
     .cf-scrubber-track  { position:relative; height:3.125cqw; background:rgba(212,84,10,0.09);
-                          border:1px solid rgba(212,84,10,0.28); border-radius:0.2rem;
+                          border:1px solid rgba(212,84,10,0.28); border-radius: var(--radius-sm);
                           margin:0.781cqw 0 0.3125cqw; user-select:none; flex-shrink:0; }
     .cf-scrubber-handle { position:absolute; top:0; bottom:0;
                           background:rgba(212,84,10,0.22); border:1px solid rgba(212,84,10,0.55);
-                          border-radius:0.2rem; cursor:grab; min-width:0.625cqw; }
+                          border-radius: var(--radius-sm); cursor:grab; min-width:0.625cqw; }
     .cf-scrubber-handle:active { cursor:grabbing; }
     /* Edge grip strips — wider hit zone, hover brighten, arrow + grip marks */
     .cf-scrubber-resize { position:absolute; top:0; bottom:0; width:1.875cqw; cursor:ew-resize;
-                          background:rgba(212,84,10,0.38); transition:background 0.12s; }
+                          background:rgba(212,84,10,0.38); transition:background var(--duration-short); }
     .cf-scrubber-resize:hover { background:rgba(212,84,10,0.68); }
     /* ◄ / ► arrow in upper half tells the user these edges are draggable */
     .cf-scrubber-resize[data-side="left"]::before  { content:'◄'; }
@@ -56,21 +56,21 @@
     .cf-scrubber-resize::before { position:absolute; top:28%; left:50%;
                                    transform:translate(-50%,-50%);
                                    font-size:0.781cqw; line-height:1; pointer-events:none;
-                                   color:rgba(25,230,200,0.85); font-family:var(--font-mono); }
+                                   color:rgba(25,230,200,0.85); font-family:var(--font-data); }
     /* Three lime-green vertical grip lines in lower half reinforce the drag affordance */
     .cf-scrubber-resize::after { content:''; position:absolute; top:70%; left:50%;
                                   transform:translate(-50%,-50%);
                                   width:1.5px; height:35%; border-radius:1px; pointer-events:none;
                                   background:rgba(57,255,20,0.65);
                                   box-shadow:-3px 0 0 rgba(57,255,20,0.65), 3px 0 0 rgba(57,255,20,0.65); }
-    .cf-scrubber-resize[data-side="left"]  { left:0;  border-radius:0.2rem 0 0 0.2rem; }
+    .cf-scrubber-resize[data-side="left"]  { left:0;  border-radius: var(--radius-sm) 0 0 0.2rem; }
     .cf-scrubber-resize[data-side="right"] { right:0; border-radius:0 0.2rem 0.2rem 0; }
     /* Absolute labels at the track edges — purely decorative */
     /* Ware legend chips: transition opacity so changes run on the GPU compositor
        and don't trigger a repaint of the pie chart's drop-shadow filter layer. */
     [id^="ware-chip-"] { transition: opacity 0.06s ease-out; }
     .cf-scrubber-label  { position:absolute; top:50%; transform:translateY(-50%);
-                          font-family:var(--font-mono); font-size:1.094cqw;
+                          font-family:var(--font-data); font-size:1.094cqw;
                           color:rgba(94,234,212,0.50); pointer-events:none; }
 
     /* ── ECONOMY ROW: budget pie (left) + cash-flow graph (right) ──────────────

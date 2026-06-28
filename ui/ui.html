@@ -6,9 +6,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>X4 · Empire Intelligence</title>
+  <!-- Qt WebChannel client lib (qrc:// is served by QtWebEngine only). Defines the
+       QWebChannel constructor that scan-loader.js uses to reach the Python bridge.
+       Must load before the shell scripts run, so it stays a static <head> tag rather
+       than an entry in shell-loader's async script list. The web shell doesn't need it. -->
   <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/tabler-icons_min.css">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/layout.css">

@@ -1,8 +1,8 @@
     /* Core role: Styles for interactive galaxy hex map with zoom-driven label visibility. */
     /* UNIVERSE TAB — map fills edge-to-edge via negative margin */
     #tab-universe { flex: 1; min-height: 0; margin: -1.4rem; gap: 0; }
-    .universe-filter-bar { height: 3.8rem; padding: 0 1.4rem; display: flex; align-items: center; gap: 0.8rem; background: var(--bg-panel); border-bottom: 1px solid var(--border); flex-shrink: 0; font-family: var(--font-cond); font-size: 1.1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
-    #universe-map-wrap { flex: 1; min-height: 0; overflow: hidden; cursor: grab; position: relative; background: var(--bg); user-select: none; }
+    .universe-filter-bar { height: 3.8rem; padding: 0 1.4rem; display: flex; align-items: center; gap: 0.8rem; background: var(--surface-1); border-bottom: 1px solid var(--outline); flex-shrink: 0; font-family: var(--font-label); font-size: 1.1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-label); }
+    #universe-map-wrap { flex: 1; min-height: 0; overflow: hidden; cursor: grab; position: relative; background: var(--surface-0); user-select: none; }
     #universe-map-wrap.panning { cursor: grabbing; }
     /* The "almost 3D" tilt: the map plane leans away from the camera like a
        chart table. The rotateX/perspective values are applied from JS (U_TILT_*
@@ -26,7 +26,7 @@
        each label's map position through the same tilt maths on every commit.
        They can't cheaply follow per-frame gestures, so they fade out while a
        gesture is active and pop back when it settles (like web map apps). */
-    #universe-labels { position: absolute; inset: 0; overflow: hidden; pointer-events: none; transition: opacity 0.15s; }
+    #universe-labels { position: absolute; inset: 0; overflow: hidden; pointer-events: none; transition: opacity var(--duration-short); }
     #universe-labels.u-gesturing { opacity: 0; }
     #universe-labels span { position: absolute; left: 0; top: 0; white-space: nowrap; font-family: 'Barlow Condensed', sans-serif; display: none; }
     #universe-labels .u-hex-label    { font-weight: 500; letter-spacing: 0.04em; font-size: 1.1rem; opacity: 0.9; }
@@ -43,20 +43,20 @@
     /* ── UNIVERSE HOVER PANEL ── */
     #u-hover-panel {
       position: fixed; pointer-events: none; z-index: 200;
-      background: rgba(22,27,34,0.94); border: 1px solid var(--border);
+      background: rgba(22,27,34,0.94); border: 1px solid var(--outline);
       border-radius: 0.5rem; padding: 0.9rem 1.1rem; min-width: 15rem;
-      font-family: var(--font-cond); font-size: 1.2rem; line-height: 1.4;
+      font-family: var(--font-label); font-size: 1.2rem; line-height: 1.4;
       display: none; backdrop-filter: blur(0.6rem);
     }
     #u-hover-panel.visible { display: block; }
-    .uhp-name  { font-size: 1.3rem; font-weight: 600; color: var(--text); letter-spacing: 0.03em; }
+    .uhp-name  { font-size: 1.3rem; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; }
     .uhp-owner { font-size: 1.1rem; margin-top: 1px; }
-    .uhp-sep   { border-top: 1px solid var(--border); margin: 0.6rem 0; }
-    .uhp-nearest { display: flex; justify-content: space-between; gap: 1.2rem; color: var(--text-dim); font-size: 1.1rem; }
-    .uhp-nearest .uhp-stname { color: var(--text); }
-    .uhp-nearest .uhp-jumps  { color: var(--teal); white-space: nowrap; }
+    .uhp-sep   { border-top: 1px solid var(--outline); margin: 0.6rem 0; }
+    .uhp-nearest { display: flex; justify-content: space-between; gap: 1.2rem; color: var(--text-secondary); font-size: 1.1rem; }
+    .uhp-nearest .uhp-stname { color: var(--text-primary); }
+    .uhp-nearest .uhp-jumps  { color: var(--color-primary); white-space: nowrap; }
     .uhp-faction-row { display: flex; align-items: center; gap: 0.6rem; margin: 0.2rem 0; }
     .uhp-fdot  { width: 0.7rem; height: 0.7rem; border-radius: 50%; flex-shrink: 0; }
-    .uhp-fcode { flex: 1; color: var(--text); font-size: 1.1rem; letter-spacing: 0.05em; }
-    .uhp-fcount{ color: var(--text-dim); font-size: 1.1rem; font-family: var(--font-mono); }
+    .uhp-fcode { flex: 1; color: var(--text-primary); font-size: 1.1rem; letter-spacing: 0.05em; }
+    .uhp-fcount{ color: var(--text-secondary); font-size: 1.1rem; font-family: var(--font-data); }
 
