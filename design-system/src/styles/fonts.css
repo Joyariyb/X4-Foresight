@@ -1,0 +1,26 @@
+/* Brand typography. The app runs in QtWebEngine with the Barlow families
+   available from the system / Google Fonts; here we pull them from Google Fonts
+   at runtime so designs render in the real brand faces. Tabler icons ship as a
+   local woff2 (copied into the package) so icon glyphs never fall back to boxes. */
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
+
+@font-face {
+  font-family: "tabler-icons";
+  font-style: normal;
+  font-weight: 400;
+  src: url("../assets/fonts/tabler-icons.woff2") format("woff2");
+}
+
+/* Minimal icon class — set an X4Icon's name to any Tabler glyph (e.g. "wallet").
+   Mirrors the .ti base rule from the app's tabler-icons stylesheet. */
+.ti {
+  font-family: "tabler-icons" !important;
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

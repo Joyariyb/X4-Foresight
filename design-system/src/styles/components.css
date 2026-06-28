@@ -1,0 +1,70 @@
+/* Component styles ported from ui/css/shared-ui.css.
+   Two deliberate changes from the source:
+   1. rem → px at the app's 10px anchor (1rem === 10px) so components are
+      self-contained and don't depend on the host document's root font-size.
+   2. class names are namespaced with an `x4-` prefix. These rules ship in the
+      global styles.css that every claude.ai/design design receives, so a bare
+      `.card`/`.badge` would collide with the design agent's own markup. */
+
+/* ── SECTION HEADER ── */
+.x4-sec-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.x4-sec-title { font-family: var(--font-label); font-weight: 600; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-label); white-space: nowrap; }
+.x4-sec-line { flex: 1; height: 1px; background: var(--outline); }
+
+/* ── SUMMARY CARD ── */
+.x4-card { background: var(--surface-2); border: 1px solid var(--outline); border-radius: var(--radius-md); padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.x4-card__top { display: flex; align-items: center; gap: 6px; }
+.x4-card__icon { font-size: 14px; color: var(--text-label); }
+.x4-card__label { font-size: 10px; font-family: var(--font-label); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-label); }
+.x4-card__value { font-family: var(--font-data); font-size: 20px; color: var(--text-primary); margin-top: 4px; }
+.x4-card__value--amber { color: var(--color-warning); }
+.x4-card__value--red   { color: var(--color-negative); }
+.x4-card__value--teal  { color: var(--color-primary); }
+.x4-card__value--green { color: var(--color-positive); }
+
+/* ── ALERT ── */
+.x4-alert { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: var(--radius-md); font-size: 12px; font-family: var(--font-data); }
+.x4-alert__icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.x4-alert--red    { background: var(--color-negative-dim);   border: 1px solid var(--color-negative-line);  color: var(--color-negative); }
+.x4-alert--amber  { background: var(--color-warning-dim);    border: 1px solid var(--color-warning-line);   color: var(--color-warning); }
+.x4-alert--green  { background: var(--color-positive-dim);   border: 1px solid var(--color-positive-line);   color: var(--color-positive); }
+
+/* ── PANEL ── */
+.x4-panel { background: var(--surface-2); border: 1px solid var(--outline); border-radius: var(--radius-md); overflow: hidden; }
+.x4-panel__head { background: var(--surface-1); border-bottom: 1px solid var(--outline); padding: 7px 12px; font-family: var(--font-label); font-weight: 600; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-label); display: flex; align-items: center; justify-content: space-between; }
+.x4-panel__body { padding: 0; }
+
+/* ── DATA TABLE ── */
+.x4-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.x4-table th { font-family: var(--font-data); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-label); padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--outline); font-weight: 400; white-space: nowrap; }
+.x4-table td { padding: 6px 10px; border-bottom: 1px solid var(--outline); color: var(--text-secondary); white-space: nowrap; }
+.x4-table tr:last-child td { border-bottom: none; }
+.x4-table tbody tr:hover td { background: var(--state-hover); }
+.x4-table .x4-mono { font-family: var(--font-data); }
+.x4-table td.x4-table__num, .x4-table th.x4-table__num { text-align: right; font-family: var(--font-data); }
+
+/* ── BADGE ── */
+.x4-badge { display: inline-block; font-size: 10px; font-family: var(--font-data); padding: 1px 6px; border-radius: var(--radius-sm); letter-spacing: 0.03em; white-space: nowrap; border: 1px solid transparent; }
+.x4-badge--allied   { background: var(--color-positive-dim); color: var(--color-positive); border-color: var(--color-positive-line); }
+.x4-badge--friendly { background: var(--color-primary-dim);  color: var(--color-primary);  border-color: var(--color-primary-line); }
+.x4-badge--neutral  { background: var(--surface-2);          color: var(--text-secondary); border-color: var(--outline); }
+.x4-badge--hostile  { background: var(--color-warning-dim);  color: var(--color-warning);  border-color: var(--color-warning-line); }
+.x4-badge--atwar    { background: var(--color-negative-dim); color: var(--color-negative); border-color: var(--color-negative-line); }
+
+/* ── PROGRESS BAR (reputation / hull health) ── */
+.x4-bar-wrap { background: var(--outline); border-radius: var(--radius-sm); overflow: hidden; display: inline-block; vertical-align: middle; }
+.x4-bar-wrap--rep  { width: 80px; height: 3px; }
+.x4-bar-wrap--hull { width: 80px; height: 11px; border-radius: var(--radius-md); }
+.x4-bar { height: 100%; border-radius: var(--radius-sm); transition: width var(--duration-medium) var(--ease-standard); }
+
+/* ── TAG (ware / pill) ── */
+.x4-tag { display: inline-block; font-size: 10px; font-family: var(--font-data); padding: 2px 7px; border-radius: var(--radius-sm); background: var(--surface-1); border: 1px solid var(--outline); color: var(--text-secondary); white-space: nowrap; }
+
+/* ── TAB BUTTON ── */
+.x4-tab-btn { padding: 3px 10px; font-family: var(--font-label); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-label); background: transparent; border: 1px solid var(--outline); border-radius: var(--radius-sm); cursor: pointer; user-select: none; white-space: nowrap; transition: color var(--duration-short), border-color var(--duration-short); }
+.x4-tab-btn:hover { color: var(--text-secondary); border-color: var(--text-label); }
+.x4-tab-btn--active { color: var(--color-primary); border-color: var(--color-primary); }
+
+/* ── SHARED LAYOUT HELPERS (used by previews / consumers) ── */
+.x4-cards-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
+.x4-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
