@@ -2,4 +2,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://joyariyb.github.io/X4-Foresight/assets/sitemap.xml
+Sitemap: https://joyariyb.github.io/X4-Foresight/sitemap.xml
