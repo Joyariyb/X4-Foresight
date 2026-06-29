@@ -38,3 +38,9 @@ scratch/
 graphify-out/
 .graphifyignore
 CLAUDE.md
+
+# Design-sync converter artifacts (regenerated each run; state anchored by uploaded _ds_sync.json)
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/node_modules
