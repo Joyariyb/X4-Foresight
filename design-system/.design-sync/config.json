@@ -1,0 +1,15 @@
+{
+  "pkg": "@x4-foresight/design-system",
+  "globalName": "X4Foresight",
+  "shape": "package",
+  "buildCmd": "npm run build",
+  "cssEntry": "dist/x4-foresight-ds.css",
+  "readmeHeader": ".design-sync/conventions.md",
+  "overrides": {
+    "DataTable": { "cardMode": "column" },
+    "Panel": { "cardMode": "column" },
+    "Alert": { "cardMode": "column" },
+    "SectionHeader": { "cardMode": "column" },
+    "SummaryCard": { "cardMode": "column" }
+  }
+}

@@ -17,7 +17,12 @@ export default defineConfig({
       // React is a peer dep — never bundle it; the converter provides it at runtime.
       external: ["react", "react-dom", "react/jsx-runtime"],
       output: {
-        assetFileNames: "x4-foresight-ds.css",
+        // Name the single bundled stylesheet deterministically; leave other
+        // assets (the Tabler woff2) with hashed names under assets/.
+        assetFileNames: (asset) =>
+          asset.names?.some((n) => n.endsWith(".css"))
+            ? "x4-foresight-ds.css"
+            : "assets/[name]-[hash][extname]",
         globals: {
           react: "React",
           "react-dom": "ReactDOM",

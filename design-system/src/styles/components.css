@@ -55,7 +55,9 @@
 .x4-bar-wrap { background: var(--outline); border-radius: var(--radius-sm); overflow: hidden; display: inline-block; vertical-align: middle; }
 .x4-bar-wrap--rep  { width: 80px; height: 3px; }
 .x4-bar-wrap--hull { width: 80px; height: 11px; border-radius: var(--radius-md); }
-.x4-bar { height: 100%; border-radius: var(--radius-sm); transition: width var(--duration-medium) var(--ease-standard); }
+/* display:block so width/height apply — the fill is a <span> (inline by
+   default, which silently ignores both dimensions and collapses to 0). */
+.x4-bar { display: block; height: 100%; border-radius: var(--radius-sm); transition: width var(--duration-medium) var(--ease-standard); }
 
 /* ── TAG (ware / pill) ── */
 .x4-tag { display: inline-block; font-size: 10px; font-family: var(--font-data); padding: 2px 7px; border-radius: var(--radius-sm); background: var(--surface-1); border: 1px solid var(--outline); color: var(--text-secondary); white-space: nowrap; }
