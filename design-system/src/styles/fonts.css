@@ -1,8 +1,37 @@
-/* Brand typography. The app runs in QtWebEngine with the Barlow families
-   available from the system / Google Fonts; here we pull them from Google Fonts
-   at runtime so designs render in the real brand faces. Tabler icons ship as a
-   local woff2 (copied into the package) so icon glyphs never fall back to boxes. */
-@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
+/* Brand typography — self-hosted (SIL Open Font License). The fonts ship as
+   local woff2 inside the bundle rather than a Google Fonts @import: the
+   claude.ai/design render sandbox only applies fonts shipped in the bundle, so a
+   remote @import would silently fall back to substitutes. Latin subset, only the
+   weights the components use (Barlow 400/600, Barlow Condensed 600, Share Tech
+   Mono 400). Tabler icons (below) are local too, for the same reason. */
+@font-face {
+  font-family: "Barlow";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../assets/fonts/barlow-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Barlow";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../assets/fonts/barlow-600.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Barlow Condensed";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../assets/fonts/barlow-condensed-600.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Share Tech Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../assets/fonts/share-tech-mono-400.woff2") format("woff2");
+}
 
 @font-face {
   font-family: "tabler-icons";

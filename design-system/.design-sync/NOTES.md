@@ -15,8 +15,9 @@
 
 ## Font handling
 
-- Barlow / Barlow Condensed / Share Tech Mono: loaded from Google Fonts via `@import url(...)` in the compiled CSS. `[FONT_REMOTE]` — loads at runtime, no action needed.
+- Barlow (400/600), Barlow Condensed (600), Share Tech Mono (400): **self-hosted** as woff2 in `src/assets/fonts/`. Vite inlines them as base64 data URIs in `dist/x4-foresight-ds.css` at build time — they ship inside `_ds_bundle.css` and render correctly inside claude.ai/design's sandbox without a CDN.
 - tabler-icons: embedded as a base64 data URI in `x4-foresight-ds.css`. No separate woff2 file to manage.
+- Prior to 2026-06-29, Barlow and Share Tech Mono were loaded from Google Fonts (`@import url(...)`). The switch to self-hosted was made so the fonts render in the claude.ai/design sandbox (remote @import is not applied there).
 
 ## cardMode overrides
 
@@ -26,11 +27,11 @@
 
 ## Known render warns
 
-- `[FONT_REMOTE]` for Barlow families — expected, loads at runtime from Google Fonts
+(none — `[FONT_REMOTE]` for Barlow is resolved; fonts are now self-hosted)
 
 ## Re-sync risks
 
-- **Google Fonts**: the Barlow family load from the Google Fonts CDN at runtime. If the DS ever moves to self-hosted fonts, update `cssEntry` or `extraFonts` accordingly.
+- **Self-hosted font woff2 files**: `src/assets/fonts/barlow-400.woff2`, `barlow-600.woff2`, `barlow-condensed-600.woff2`, `share-tech-mono-400.woff2`. If fonts are updated or new weights added, rebuild and re-sync. The woff2 files are checked into the repo (not gitignored).
 - **tabler-icons subset**: `src/styles/icons.css` is a curated subset (~20 glyphs). If new icons are added there, rebuild and re-sync — the X4Icon preview's `CuratedSet` story lists the set at sync time.
 - **Preview content**: previews use hardcoded faction names, ware names, and credit values from the X4 universe. These are stable domain vocabulary, not live data.
 - **Playwright version**: the Chromium binary in `C:\Users\lenovo\AppData\Local\ms-playwright\chromium-1228` must stay in sync with the playwright version in `.ds-sync/node_modules`. If you upgrade playwright, re-run `npx playwright install chromium` from `.ds-sync/`.
