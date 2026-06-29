@@ -1,17 +1,21 @@
-import { SectionHeader, SummaryCard } from "@x4-foresight/design-system";
+import { SectionHeader } from '@x4-foresight/design-system';
 
-export const Basic = () => (
-  <div style={{ minWidth: 420 }}>
-    <SectionHeader title="Empire Overview" />
-  </div>
-);
+const bg: React.CSSProperties = { background: 'var(--surface-0)', padding: '16px' };
 
-export const WithContent = () => (
-  <div style={{ minWidth: 520 }}>
-    <SectionHeader title="Economy" />
-    <div className="x4-cards-row" style={{ marginTop: 4 }}>
-      <SummaryCard label="Account Balance" value="12,480,650 Cr" icon="wallet" tone="teal" />
-      <SummaryCard label="Net Profit / hr" value="+842,300 Cr" icon="trending-up" tone="green" />
+export function Single() {
+  return (
+    <div style={bg}>
+      <SectionHeader title="Fleet Overview" />
     </div>
-  </div>
-);
+  );
+}
+
+export function Multiple() {
+  return (
+    <div style={{ ...bg, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <SectionHeader title="Active Ships" />
+      <SectionHeader title="Stationed Vessels" />
+      <SectionHeader title="Trade Routes" />
+    </div>
+  );
+}

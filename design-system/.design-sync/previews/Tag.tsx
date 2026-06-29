@@ -1,15 +1,30 @@
-import { Tag } from "@x4-foresight/design-system";
+import { Tag } from '@x4-foresight/design-system';
 
-export const WareTags = () => (
-  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, maxWidth: 360 }}>
-    <Tag>Energy Cells</Tag>
-    <Tag>Hull Parts</Tag>
-    <Tag>Silicon Wafers</Tag>
-    <Tag>Graphene</Tag>
-    <Tag>Refined Metals</Tag>
-    <Tag>Microchips</Tag>
-    <Tag>Quantum Tubes</Tag>
-  </div>
-);
+const bg: React.CSSProperties = { background: 'var(--surface-0)', padding: '16px' };
+const row: React.CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: '6px' };
 
-export const Single = () => <Tag>Energy Cells</Tag>;
+export function WareList() {
+  return (
+    <div style={bg}>
+      <div style={row}>
+        <Tag>Energy Cells</Tag>
+        <Tag>Hull Parts</Tag>
+        <Tag>Smart Chips</Tag>
+        <Tag>Graphene</Tag>
+        <Tag>Refined Metals</Tag>
+        <Tag>Field Coils</Tag>
+        <Tag>Antimatter Cells</Tag>
+        <Tag>Microchips</Tag>
+        <Tag>Engine Parts</Tag>
+      </div>
+    </div>
+  );
+}
+
+export function Single() {
+  return (
+    <div style={bg}>
+      <Tag>Energy Cells</Tag>
+    </div>
+  );
+}

@@ -1,26 +1,31 @@
-import { SummaryCard } from "@x4-foresight/design-system";
+import { SummaryCard } from '@x4-foresight/design-system';
 
-export const AccountBalance = () => (
-  <SummaryCard label="Account Balance" value="12,480,650 Cr" icon="wallet" tone="teal" />
-);
+const bg: React.CSSProperties = { background: 'var(--surface-0)', padding: '16px' };
+const grid2: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' };
 
-export const NetProfit = () => (
-  <SummaryCard label="Net Profit / hr" value="+842,300 Cr" icon="trending-up" tone="green" />
-);
+export function KPIRow() {
+  return (
+    <div style={bg}>
+      <div style={grid2}>
+        <SummaryCard label="Account Balance" value="4 289 000 Cr" icon="coin" tone="teal" />
+        <SummaryCard label="Active Ships" value="42" icon="rocket" tone="green" />
+        <SummaryCard label="Hull Damage" value="3 ships" icon="shield" tone="amber" />
+        <SummaryCard label="Losses This Cycle" value="2" icon="swords" tone="red" />
+      </div>
+    </div>
+  );
+}
 
-export const StationsAtRisk = () => (
-  <SummaryCard label="Stations Low on Wares" value="3 / 17" icon="building-factory-2" tone="amber" />
-);
-
-export const ShipsLost = () => (
-  <SummaryCard label="Ships Lost (24h)" value="2" icon="ship" tone="red" />
-);
-
-export const SummaryStrip = () => (
-  <div className="x4-cards-row" style={{ minWidth: 640 }}>
-    <SummaryCard label="Account Balance" value="12,480,650 Cr" icon="wallet" tone="teal" />
-    <SummaryCard label="Net Worth" value="48,902,110 Cr" icon="coin" />
-    <SummaryCard label="Net Profit / hr" value="+842,300 Cr" icon="trending-up" tone="green" />
-    <SummaryCard label="Stations Low" value="3 / 17" icon="building-factory-2" tone="amber" />
-  </div>
-);
+export function Tones() {
+  return (
+    <div style={bg}>
+      <div style={grid2}>
+        <SummaryCard label="Default" value="186 412 Cr" />
+        <SummaryCard label="Teal" value="186 412 Cr" tone="teal" />
+        <SummaryCard label="Green" value="186 412 Cr" tone="green" />
+        <SummaryCard label="Amber" value="186 412 Cr" tone="amber" />
+        <SummaryCard label="Red" value="186 412 Cr" tone="red" />
+      </div>
+    </div>
+  );
+}

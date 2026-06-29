@@ -1,21 +1,28 @@
-import { Alert } from "@x4-foresight/design-system";
+import { Alert } from '@x4-foresight/design-system';
 
-export const Critical = () => (
-  <Alert tone="red">Xenon fleet detected jumping into Grand Exchange — 2 stations under threat.</Alert>
-);
+const bg: React.CSSProperties = { background: 'var(--surface-0)', padding: '16px' };
+const col: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: '8px' };
 
-export const Warning = () => (
-  <Alert tone="amber">Hull Parts Forge running below 20% input stock — production stalling.</Alert>
-);
+export function AllTones() {
+  return (
+    <div style={bg}>
+      <div style={col}>
+        <Alert tone="red">Capital ship destroyed: ARG Mjölnir lost near Hatikvah&apos;s Choice</Alert>
+        <Alert tone="amber">Hull integrity critical: TEL Serpent at 12% — return to dock</Alert>
+        <Alert tone="green">Trade route established: Energy Cells +840 Cr/cycle</Alert>
+      </div>
+    </div>
+  );
+}
 
-export const Positive = () => (
-  <Alert tone="green" icon="shield">Trade defence contract fulfilled — reputation with Teladi Company increased.</Alert>
-);
-
-export const Stacked = () => (
-  <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 420 }}>
-    <Alert tone="red">2 ships destroyed near Hatikvah's Choice III.</Alert>
-    <Alert tone="amber">Energy Cells surplus building up at 4 stations.</Alert>
-    <Alert tone="green" icon="shield">New wharf construction complete in Argon Prime.</Alert>
-  </div>
-);
+export function CustomIcons() {
+  return (
+    <div style={bg}>
+      <div style={col}>
+        <Alert tone="amber" icon="package">Argon Energy Cells stock below minimum threshold (120 / 500 units)</Alert>
+        <Alert tone="red" icon="swords">War declared: Xenon offensive detected in Grand Exchange sector</Alert>
+        <Alert tone="green" icon="trending-up">Station profit up 18% vs last cycle — Microchips margin improved</Alert>
+      </div>
+    </div>
+  );
+}

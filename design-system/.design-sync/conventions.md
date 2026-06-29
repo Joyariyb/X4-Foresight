@@ -1,64 +1,98 @@
-# X4 Foresight Design System — build conventions
+# X4 Foresight Design System — Conventions
 
-A dark, sci-fi *terminal* UI: deep charcoal surfaces, a teal primary accent, and
-semantic feedback colours (green / amber / red / purple / lime). Data is shown in
-a monospace font; labels in a condensed uppercase font. Build dashboards: summary
-KPI tiles, framed panels, dense data tables, status badges, and inline bars.
+## Wrapping and setup
 
-## Setup — no provider, but design on a dark surface
+No provider or root wrapper is required. Every component is pure presentational — no React context, theme, or router. Import and render directly.
 
-There is **no React provider or theme wrapper**. Components are self-styling the
-moment `styles.css` is loaded — all tokens live in `:root`. The one thing that
-*will* look wrong if you skip it: these components are built for a **dark
-background**. Put your own layout glue on a dark surface, or everything floats on
-default white. Wrap a screen like this:
+The system is **dark-only**: the token palette assumes a dark surface host. Wrap top-level content in a surface element to get the correct backdrop:
 
 ```jsx
-import { SummaryCard, Panel, DataTable, Badge, ProgressBar } from "@x4-foresight/design-system";
-
-<div style={{ background: "var(--bg)", color: "var(--text-primary)", padding: 16, fontFamily: "var(--font-body)" }}>
-  <div className="x4-cards-row">
-    <SummaryCard label="Account Balance" value="12,480,650 Cr" icon="wallet" tone="teal" />
-    <SummaryCard label="Net Profit / hr" value="+842,300 Cr" icon="trending-up" tone="green" />
-  </div>
-  <Panel title="Fleet">
-    <DataTable
-      columns={[{ header: "Ship", field: "ship" }, { header: "Hull", field: "hull" }]}
-      rows={[{ ship: "ARG Behemoth", hull: <ProgressBar variant="hull" value={92} /> }]}
-    />
-  </Panel>
+<div style={{ background: 'var(--surface-0)', padding: '16px' }}>
+  {/* components here */}
 </div>
 ```
 
-## Styling idiom — props for components, tokens for your own markup
+Surface tiers (dark to slightly raised): `var(--surface-0)` (#0d1117) → `var(--surface-1)` (#161b22) → `var(--surface-2)` (#1c2128). Components set their own surface automatically; only the page/section background needs explicit colour.
 
-**Style library components through their props, never `className`.** The design
-language is carried by enum props:
+## Styling idiom — props + CSS custom properties
 
-- `SummaryCard tone` / `ProgressBar tone`: `teal | green | amber | red` (`auto` ramps a bar green→amber→red by value)
-- `Badge relation`: `allied | friendly | neutral | hostile | atwar`
-- `Alert tone`: `red | amber | green`
-- `ProgressBar variant`: `rep` (thin) | `hull` (taller health bar)
-- `DataTable` columns take `numeric: true` to right-align in the data font
+This is a **props-based API with no utility classes**. Style the component through its props; use CSS variables only for layout glue the agent authors itself.
 
-**For your own layout glue, use the CSS custom properties** (defined globally in
-`styles.css`) — do not hard-code hex values:
+**Key semantic tokens** (defined in `styles.css` → `_ds_bundle.css`):
 
-- Surfaces: `--bg`, `--surface-1`, `--surface-2`, `--outline`
-- Text: `--text-primary`, `--text-secondary`, `--text-label` (brand green)
-- Accents: `--color-primary` (teal), `--color-positive`, `--color-warning`, `--color-negative`, `--color-special`, `--color-highlight`
-- Fonts: `--font-body` (Barlow), `--font-label` (Barlow Condensed, uppercase labels), `--font-data` (Share Tech Mono, all numbers/IDs)
-- Shape: `--radius-sm | --radius-md | --radius-lg`
+| Purpose | Token |
+|---|---|
+| Brand / primary | `var(--color-primary)` — teal #2dd4bf |
+| Positive / success | `var(--color-positive)` — green #3fb950 |
+| Warning | `var(--color-warning)` — amber #d29922 |
+| Danger / critical | `var(--color-negative)` — red #f85149 |
+| Label text (brand green) | `var(--text-label)` |
+| Primary text | `var(--text-primary)` |
+| Secondary text | `var(--text-secondary)` |
+| Body font | `var(--font-body)` — Barlow |
+| Data / monospace | `var(--font-data)` — Share Tech Mono |
+| Label / condensed | `var(--font-label)` — Barlow Condensed |
+| Standard outline | `var(--outline)` — dark border |
+| State hover bg | `var(--state-hover)` |
 
-Two layout helper classes ship for composing screens: `x4-cards-row` (auto-fit
-KPI grid) and `x4-two-col`. Icons come from `X4Icon name="<tabler-name>"` (a
-curated Tabler subset — wallet, coin, ship, rocket, building-factory-2, world,
-package, users, shield, swords, chart-line, trending-up/down, alert-triangle,
-flask, cpu, database, planet, building-warehouse).
+**Layout helpers** (shipped in `_ds_bundle.css`, usable in the agent's own markup):
+
+- `.x4-cards-row` — `grid; auto-fit; minmax(160px,1fr); gap:8px` — the standard summary-card strip
+- `.x4-two-col` — two equal columns, `gap:12px`
+
+Do **not** write `x4-badge`, `x4-table`, or other component-internal class names — they're owned by the component and not part of the public API.
 
 ## Where the truth lives
 
-Read the bound `styles.css` (and its `@import`ed `_ds_bundle.css`) for the full
-token list, and each component's `.d.ts` / `.prompt.md` for its exact props before
-composing. Numbers and identifiers always render in the monospace data font —
-keep that habit and screens read as authentic X4 readouts.
+- `styles.css` + its `@import` chain (includes `_ds_bundle.css`) — full token and component CSS; read this for the complete variable vocabulary
+- `components/<group>/<Name>/<Name>.prompt.md` — each component's props and usage notes
+- `components/<group>/<Name>/<Name>.d.ts` — TypeScript props interface
+
+## Idiomatic build snippet
+
+```jsx
+import {
+  SectionHeader,
+  SummaryCard,
+  Panel,
+  DataTable,
+  Badge,
+  ProgressBar,
+  Alert,
+} from '@x4-foresight/design-system';
+
+function EmpireOverview() {
+  return (
+    <div style={{ background: 'var(--surface-0)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+      {/* KPI strip — use .x4-cards-row or an equivalent auto-fit grid */}
+      <div className="x4-cards-row">
+        <SummaryCard label="Account Balance" value="4 289 000 Cr" icon="coin" tone="teal" />
+        <SummaryCard label="Active Ships" value="42" icon="rocket" tone="green" />
+        <SummaryCard label="Hull Damage" value="3 ships" icon="shield" tone="amber" />
+      </div>
+
+      <Alert tone="amber">TEL Serpent hull at 12% — dock immediately</Alert>
+
+      <SectionHeader title="Fleet Status" />
+
+      {/* Panel wraps DataTable flush — no extra padding on the body */}
+      <Panel title="Ships" headerExtra="42 ships">
+        <DataTable
+          columns={[
+            { header: 'Ship', field: 'name' },
+            { header: 'Faction', field: 'faction' },
+            { header: 'Hull', field: 'hull' },
+            { header: 'Cargo', field: 'cargo', numeric: true },
+          ]}
+          rows={[
+            { name: 'ARG Mjölnir', faction: <Badge relation="allied" />, hull: <ProgressBar value={87} variant="hull" tone="auto" />, cargo: '12 400' },
+            { name: 'TEL Serpent', faction: <Badge relation="friendly" />, hull: <ProgressBar value={12} variant="hull" tone="auto" />, cargo: '4 200' },
+          ]}
+        />
+      </Panel>
+
+    </div>
+  );
+}
+```

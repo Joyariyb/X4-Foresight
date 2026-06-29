@@ -1,17 +1,27 @@
-import { TabButton } from "@x4-foresight/design-system";
+import { TabButton } from '@x4-foresight/design-system';
 
-export const TabRow = () => (
-  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-    <TabButton active>Overview</TabButton>
-    <TabButton>Production</TabButton>
-    <TabButton>Storage</TabButton>
-    <TabButton>Docked Ships</TabButton>
-  </div>
-);
+const bg: React.CSSProperties = { background: 'var(--surface-0)', padding: '16px' };
+const row: React.CSSProperties = { display: 'flex', gap: '6px', flexWrap: 'wrap' };
 
-export const States = () => (
-  <div style={{ display: "flex", gap: 6 }}>
-    <TabButton active>Active</TabButton>
-    <TabButton>Inactive</TabButton>
-  </div>
-);
+export function TabRow() {
+  return (
+    <div style={bg}>
+      <div style={row}>
+        <TabButton active>Overview</TabButton>
+        <TabButton>Fleet</TabButton>
+        <TabButton>Stations</TabButton>
+        <TabButton>Wares</TabButton>
+        <TabButton>Factions</TabButton>
+      </div>
+    </div>
+  );
+}
+
+export function States() {
+  return (
+    <div style={{ ...bg, ...row }}>
+      <TabButton active>Active</TabButton>
+      <TabButton>Inactive</TabButton>
+    </div>
+  );
+}

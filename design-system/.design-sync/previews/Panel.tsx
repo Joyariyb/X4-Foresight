@@ -1,35 +1,55 @@
-import { Panel, DataTable, Tag, Badge } from "@x4-foresight/design-system";
+import { Panel, DataTable, Tag, Badge } from '@x4-foresight/design-system';
+import type { DataTableColumn } from '@x4-foresight/design-system';
 
-export const StationPanel = () => (
-  <div style={{ minWidth: 520 }}>
-    <Panel title="Grand Exchange · Trading Station" headerExtra={<Badge relation="allied">Owned</Badge>}>
-      <DataTable
-        columns={[
-          { header: "Ware", field: "ware" },
-          { header: "Stock", field: "stock", numeric: true },
-          { header: "Price", field: "price", numeric: true },
-        ]}
-        rows={[
-          { ware: "Energy Cells", stock: "48,200", price: "16 Cr" },
-          { ware: "Hull Parts", stock: "9,140", price: "242 Cr" },
-          { ware: "Silicon Wafers", stock: "2,008", price: "311 Cr" },
-        ]}
-      />
-    </Panel>
-  </div>
-);
+const bg: React.CSSProperties = { background: 'var(--surface-0)', padding: '16px' };
 
-export const WarePanel = () => (
-  <div style={{ minWidth: 360 }}>
-    <Panel title="Produced Wares" headerExtra="6">
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: 10 }}>
-        <Tag>Energy Cells</Tag>
-        <Tag>Hull Parts</Tag>
-        <Tag>Silicon Wafers</Tag>
-        <Tag>Graphene</Tag>
-        <Tag>Refined Metals</Tag>
-        <Tag>Microchips</Tag>
-      </div>
-    </Panel>
-  </div>
-);
+export function WithDataTable() {
+  const columns: DataTableColumn[] = [
+    { header: 'Station', field: 'name' },
+    { header: 'Sector', field: 'sector' },
+    { header: 'Relation', field: 'relation' },
+    { header: 'Value', field: 'value', numeric: true },
+  ];
+  const rows = [
+    { name: 'Getsu Fune Mining', sector: 'Getsu Fune', relation: <Badge relation="allied" />, value: '42 000 000 Cr' },
+    { name: "Hatikvah's Trade", sector: "Hatikvah's Choice", relation: <Badge relation="friendly" />, value: '18 200 000 Cr' },
+    { name: 'Matrix #9 Fab', sector: 'Matrix #9', relation: <Badge relation="neutral" />, value: '8 600 000 Cr' },
+  ];
+  return (
+    <div style={bg}>
+      <Panel title="Stations" headerExtra="3 stations">
+        <DataTable columns={columns} rows={rows} />
+      </Panel>
+    </div>
+  );
+}
+
+export function WithWareTags() {
+  return (
+    <div style={bg}>
+      <Panel title="Wares Traded" headerExtra="7 wares">
+        <div style={{ padding: '10px 12px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+          <Tag>Energy Cells</Tag>
+          <Tag>Hull Parts</Tag>
+          <Tag>Smart Chips</Tag>
+          <Tag>Graphene</Tag>
+          <Tag>Refined Metals</Tag>
+          <Tag>Field Coils</Tag>
+          <Tag>Antimatter Cells</Tag>
+        </div>
+      </Panel>
+    </div>
+  );
+}
+
+export function Basic() {
+  return (
+    <div style={bg}>
+      <Panel title="Empire Summary">
+        <div style={{ padding: '12px', fontFamily: 'var(--font-data)', fontSize: '12px', color: 'var(--text-secondary)' }}>
+          42 ships · 3 stations · 7 trade routes active
+        </div>
+      </Panel>
+    </div>
+  );
+}
