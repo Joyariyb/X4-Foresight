@@ -44,3 +44,6 @@ CLAUDE.md
 ds-bundle/
 .design-sync/.cache/
 .design-sync/node_modules
+
+# Design system (React lib — lives outside the main app's git history)
+design-system/
