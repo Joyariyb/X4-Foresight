@@ -171,6 +171,7 @@
           const result = JSON.parse(jsonStr);
           if (result.ok) {
             updateScanProgress(4);   // brief "all done" confirmation
+            if (typeof playScanComplete === "function") playScanComplete();
             _bridge.list_scans(function(scansStr) {
               try { populateScanPicker(JSON.parse(scansStr)); } catch(e) {}
             });

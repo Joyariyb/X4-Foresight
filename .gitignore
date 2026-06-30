@@ -48,9 +48,10 @@ ds-bundle/
 # Design system (React lib — lives outside the main app's git history)
 design-system/
 
-# Personal dev notes
+# Personal dev notes / standards (local reference, not part of the shipped program)
 TODO.md
 COMMENT_STYLE.md
+UI_STANDARDS.md
 
 # Package init files in db/
 db/__init__.py

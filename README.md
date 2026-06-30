@@ -56,7 +56,7 @@ See [`TODO.md`](TODO.md) for deferred work and the roadmap.
 
 ## Contributing
 
-Issues and pull requests welcome. Comment conventions are documented in [`COMMENT_STYLE.md`](COMMENT_STYLE.md).
+Issues and pull requests welcome.
 
 ---
 

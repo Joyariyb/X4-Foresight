@@ -589,57 +589,82 @@ def _extract_docked_ships(
                 ctx.npc_ship_codes[code] = _resolve_ship_type(macro)
             continue
 
-        hull_prefix, hull_name = _extract_hull_origin(macro)
-        raw_name = child.get("name")
-        custom_name = raw_name if (raw_name and not _LANG_REF_RE.match(raw_name)) else None
+        # Our own ship docked here — pull the full hull/crew/loadout entity. Same
+        # extraction whether the parent is a carrier or a station, so it lives in a
+        # shared helper (also called for ships docked at NPC stations).
+        _append_player_docked_ship(child, sector_macro, carrier_elem.get("id"), ctx)
 
-        hull_hp, hull_max, hull_pct    = _parse_hull(macro, child)
-        shield_hp, shield_max, shd_pct = _parse_shields(child)
-        order     = _parse_order(child)
-        commander = _parse_commander(child)
-        homebase  = _parse_homebase(child)
-        pilot_id  = _parse_pilot(child, code, sector_macro, ctx)
 
-        ship = Ship(
-            scan_id          = ctx.scan_id,
-            object_id        = obj_id,
-            code             = code,
-            name             = custom_name,
-            ship_class       = cls,
-            size             = SIZE_LABELS.get(cls, cls),
-            macro            = macro,
-            role             = _extract_role(macro),
-            owner_id         = "player",
-            owner_name       = "Player",
-            hull_origin_id   = hull_prefix,
-            hull_origin_name = hull_name,
-            sector_macro     = sector_macro,
-            order            = order,
-            homebase_id      = homebase,
-            docked_at        = carrier_elem.get("id"),  # docked inside this carrier
-            commander_id     = commander,
-            under_construction = False,
-            hull_hp          = hull_hp,
-            hull_max         = hull_max,
-            hull_pct         = hull_pct,
-            shield_hp        = shield_hp,
-            shield_max       = shield_max,
-            shield_pct       = shd_pct,
-            cargo_m3         = None,   # not yet extracted
-            cargo_max_m3     = None,
-            pilot_id         = pilot_id,
-            loadout          = _parse_loadout(child),
-        )
+def _append_player_docked_ship(child, sector_macro: str, docked_at_id: str, ctx) -> None:
+    """Build the full player Ship entity for one ship docked inside a buffered
+    subtree, and append it to ctx.
 
-        ctx.ships.append(ship)
-        ctx.player_ship_ids.add(obj_id)
+    Shared by EVERY docked-ship path — carrier hull, player station, and NPC
+    station — so a player ship is captured as part of the fleet no matter where
+    it is parked. The NPC-station caller is the important one: without it a player
+    trader sitting at an NPC station during a scan (its normal trading state)
+    vanishes from that scan, and the change feed reads the gap as a spurious
+    ship-lost / ship-reacquired pair on the next scan.
 
-        if homebase:
-            ctx.homebase_index[obj_id] = homebase
-        if code:
-            ctx.npc_ship_codes[code] = custom_name or _resolve_ship_type(macro)
+    `docked_at_id` is the id of the parent the ship is nested in (carrier or
+    station); it becomes the ship's docked_at FK.
+    """
+    macro  = child.get("macro", "")
+    code   = child.get("code",  "")
+    obj_id = child.get("id",    "")
+    cls    = child.get("class", "")
 
-        _extract_crew(child, code, sector_macro, ctx)
+    hull_prefix, hull_name = _extract_hull_origin(macro)
+    raw_name = child.get("name")
+    custom_name = raw_name if (raw_name and not _LANG_REF_RE.match(raw_name)) else None
+
+    hull_hp, hull_max, hull_pct    = _parse_hull(macro, child)
+    shield_hp, shield_max, shd_pct = _parse_shields(child)
+    order     = _parse_order(child)
+    commander = _parse_commander(child)
+    homebase  = _parse_homebase(child)
+    pilot_id  = _parse_pilot(child, code, sector_macro, ctx)
+
+    ship = Ship(
+        scan_id          = ctx.scan_id,
+        object_id        = obj_id,
+        code             = code,
+        name             = custom_name,
+        ship_class       = cls,
+        size             = SIZE_LABELS.get(cls, cls),
+        macro            = macro,
+        role             = _extract_role(macro),
+        owner_id         = "player",
+        owner_name       = "Player",
+        hull_origin_id   = hull_prefix,
+        hull_origin_name = hull_name,
+        sector_macro     = sector_macro,
+        order            = order,
+        homebase_id      = homebase,
+        docked_at        = docked_at_id,  # carrier or station the ship is nested in
+        commander_id     = commander,
+        under_construction = False,
+        hull_hp          = hull_hp,
+        hull_max         = hull_max,
+        hull_pct         = hull_pct,
+        shield_hp        = shield_hp,
+        shield_max       = shield_max,
+        shield_pct       = shd_pct,
+        cargo_m3         = None,   # not yet extracted
+        cargo_max_m3     = None,
+        pilot_id         = pilot_id,
+        loadout          = _parse_loadout(child),
+    )
+
+    ctx.ships.append(ship)
+    ctx.player_ship_ids.add(obj_id)
+
+    if homebase:
+        ctx.homebase_index[obj_id] = homebase
+    if code:
+        ctx.npc_ship_codes[code] = custom_name or _resolve_ship_type(macro)
+
+    _extract_crew(child, code, sector_macro, ctx)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -698,13 +723,17 @@ class ShipHandler:
         """
         Record ships docked inside an NPC station's buffered subtree.
 
-        Called alongside _npc.on_end() when an NPC station closes. Unlike
-        extract_station_docked_ships (which pulls full Ship entities for player
-        stations), this only writes ship_id → (code, macro, station_id) into
-        ctx.npc_docked_ships. Full entities aren't needed — the postprocessor
-        only uses code/macro for name resolution and station_id for counterparty
-        attribution, and we don't want to flood ctx.ships with every NPC visitor
-        across every NPC station in the galaxy.
+        Called alongside _npc.on_end() when an NPC station closes. NPC visitors
+        get only a ship_id → (code, macro, station_id) entry in ctx.npc_docked_ships
+        — full entities aren't needed (the postprocessor only uses code/macro for
+        name resolution and station_id for counterparty attribution), and we don't
+        want to flood ctx.ships with every NPC visitor across the galaxy.
+
+        PLAYER ships docked here ARE pulled as full Ship entities, though: a player
+        trader parked at an NPC station is part of our fleet and must appear in this
+        scan, or the change feed reports it as lost-then-reacquired. They are nested
+        inside the buffered NPC-station subtree, so the main loop never dispatched
+        them — this is their only capture point.
         """
         for child in station_elem.iter():
             if child is station_elem:
@@ -713,7 +742,9 @@ class ShipHandler:
             if cls not in SIZE_LABELS:
                 continue
             if child.get("owner", "") == "player":
-                continue   # player ships at NPC stations are handled elsewhere
+                _append_player_docked_ship(
+                    child, ctx.current_sector_macro, station_id, ctx)
+                continue
             ship_id = child.get("id", "")
             if ship_id:
                 ctx.npc_docked_ships[ship_id] = (

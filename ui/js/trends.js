@@ -62,7 +62,7 @@
   function _trendChartSvg(metric) {
     const vals = _trendSeries[metric.key] || [];
     const n    = _trendScans.length;
-    if (!n) return `<div style="padding:1.6rem;font-family:var(--font-mono);color:var(--text-faint)">No trend data yet.</div>`;
+    if (!n) return `<div class="trend-empty">No trend data yet.</div>`;
 
     const W = 720, H = 300, ml = 66, mr = 20, mt = 18, mb = 36;
     const pw = W - ml - mr, ph = H - mt - mb;
@@ -131,7 +131,7 @@
       <polyline points="${linePts}" fill="none" stroke="${metric.color}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>`;
 
     return `
-      <div style="background:#030d14;border:1px solid rgba(25,230,200,0.18);border-radius:0.3rem;box-shadow:inset 0 0 24px rgba(25,230,200,0.05);padding:0.4rem">
+      <div class="trend-chart-card">
         <svg viewBox="0 0 ${W} ${H}" style="display:block;width:100%;height:auto">
           <defs>
             <linearGradient id="${fillId}" x1="0" y1="${mt}" x2="0" y2="${mt + ph}" gradientUnits="userSpaceOnUse">
@@ -154,45 +154,45 @@
     _trendMetric = key;
     const host = document.getElementById('trend-chart');
     if (host) host.innerHTML = _trendChartSvg(TREND_METRICS.find(m => m.key === key));
-    document.querySelectorAll('#trend-metric-toggle .cf-toggle-btn')
+    document.querySelectorAll('#trend-metric-toggle .trend-toggle-btn')
       .forEach(b => b.classList.toggle('active', b.dataset.metric === key));
   }
 
   // ── changes feed ─────────────────────────────────────────────────────────────
   // Map each event type to an icon + colour + one-line description.
   function _changeDesc(c) {
-    const b = s => `<b style="color:var(--text)">${s ?? '?'}</b>`;
+    const b = s => `<b style="color:var(--text-primary)">${s ?? '?'}</b>`;
     switch (c.type) {
       case 'station_built':
-        return { icon: 'ti-building-factory-2', color: 'var(--green)',
+        return { icon: 'ti-building-factory-2', color: 'var(--color-positive)',
                  text: `Station built — ${b(c.code)}${c.name ? ' · ' + c.name : ''} in ${c.sector_name || c.sector_macro || '—'}` };
       case 'station_lost':
-        return { icon: 'ti-flame', color: 'var(--red)',
+        return { icon: 'ti-flame', color: 'var(--color-negative)',
                  text: `Station lost — ${b(c.code)}${c.name ? ' · ' + c.name : ''}` };
       case 'ship_gained':
-        return { icon: 'ti-rocket', color: 'var(--teal)',
+        return { icon: 'ti-rocket', color: 'var(--color-primary)',
                  text: `Ship acquired — ${b(c.code)} · ${c.type_name || c.name || '—'}` };
       case 'ship_lost':
-        return { icon: 'ti-circle-x', color: 'var(--red)',
+        return { icon: 'ti-circle-x', color: 'var(--color-negative)',
                  text: `Ship lost — ${b(c.code)} · ${c.type_name || c.name || '—'}` };
       case 'reputation_crossing': {
         const up = c.direction === 'up';
         return { icon: up ? 'ti-trending-up' : 'ti-trending-down',
-                 color: up ? 'var(--green)' : 'var(--amber)',
+                 color: up ? 'var(--color-positive)' : 'var(--color-warning)',
                  text: `${c.faction_name || c.faction} — ${c.from_tier} → ${b(c.to_tier)}` };
       }
       case 'milestone':
-        return { icon: 'ti-trophy', color: 'var(--amber)', text: c.label || 'Milestone' };
+        return { icon: 'ti-trophy', color: 'var(--color-warning)', text: c.label || 'Milestone' };
       default:
-        return { icon: 'ti-point', color: 'var(--text-dim)', text: c.type };
+        return { icon: 'ti-point', color: 'var(--text-secondary)', text: c.type };
     }
   }
 
   // Group the (already newest-first) feed by detecting scan, with a header per scan.
   function _changesFeedHtml(changes) {
     if (!changes.length) {
-      return `<div class="panel" style="padding:2.4rem;text-align:center;color:var(--text-dim);font-family:var(--font-mono)">
-        <i class="ti ti-history" style="font-size:2.4rem;color:var(--teal);opacity:0.5;display:block;margin-bottom:0.8rem"></i>
+      return `<div class="panel trend-feed-empty">
+        <i class="ti ti-history"></i>
         No changes recorded yet. Scan the same save again after time passes in-game to start tracking your empire's history.
       </div>`;
     }
@@ -201,19 +201,19 @@
       if (c.scan_id !== lastScan) {
         lastScan = c.scan_id;
         const gh = c.game_time_s != null ? Math.round(c.game_time_s / 3600) + 'h' : '';
-        html += `<div style="display:flex;align-items:center;gap:0.8rem;margin:1.2rem 0 0.5rem">
-          <span style="font-family:var(--font-cond);font-weight:600;font-size:1.2rem;color:var(--teal)">Scan #${c.scan_id}</span>
-          <span style="font-family:var(--font-mono);font-size:0.95rem;color:var(--text-faint)">${_trDate(c.scanned_at)}${gh ? ' · ' + gh : ''}</span>
-          <div style="flex:1;height:1px;background:var(--border)"></div>
+        html += `<div class="trend-scan-group">
+          <span class="trend-scan-id">Scan #${c.scan_id}</span>
+          <span class="trend-scan-date">${_trDate(c.scanned_at)}${gh ? ' · ' + gh : ''}</span>
+          <div class="trend-scan-line"></div>
         </div>`;
       }
       const d = _changeDesc(c);
-      html += `<div style="display:flex;align-items:center;gap:0.9rem;padding:0.55rem 0.9rem;border-bottom:1px solid var(--border)">
-        <i class="ti ${d.icon}" style="font-size:1.4rem;color:${d.color};flex-shrink:0"></i>
-        <span style="font-family:var(--font-mono);font-size:1.1rem;color:var(--text-dim)">${d.text}</span>
+      html += `<div class="trend-change-row">
+        <i class="ti ${d.icon} trend-change-icon" style="color:${d.color}"></i>
+        <span class="trend-change-text">${d.text}</span>
       </div>`;
     });
-    return `<div class="panel" style="padding:0.4rem 0.6rem 0.8rem">${html}</div>`;
+    return `<div class="panel trend-feed">${html}</div>`;
   }
 
   // ── trade-window cards ───────────────────────────────────────────────────────
@@ -261,35 +261,35 @@
     let deltaHtml = '';
     if (latest != null && prev != null) {
       const d = latest - prev;
-      const col = d > 0 ? 'var(--green)' : d < 0 ? 'var(--red)' : 'var(--text-faint)';
+      const col = d > 0 ? 'var(--color-positive)' : d < 0 ? 'var(--color-negative)' : 'var(--text-secondary)';
       const arrow = d > 0 ? '▲' : d < 0 ? '▼' : '·';
-      deltaHtml = `<span style="font-family:var(--font-mono);font-size:1.1rem;color:${col}">${arrow} ${_trFmtHead(Math.abs(d), metric.count)} since last scan</span>`;
+      deltaHtml = `<span class="trends-delta" style="color:${col}">${arrow} ${_trFmtHead(Math.abs(d), metric.count)} since last scan</span>`;
     }
 
     const toggle = TREND_METRICS.map(m =>
-      `<button class="cf-toggle-btn ${m.key === _trendMetric ? 'active' : ''}" data-metric="${m.key}" onclick="setTrendMetric('${m.key}')">${m.label}</button>`
+      `<button class="trend-toggle-btn ${m.key === _trendMetric ? 'active' : ''}" data-metric="${m.key}" onclick="setTrendMetric('${m.key}')">${m.label}</button>`
     ).join('');
 
     root.innerHTML = `
-      <div style="display:flex;align-items:baseline;gap:1rem;padding-bottom:0.2rem">
-        <div style="font-family:var(--font-cond);font-weight:600;font-size:1.8rem;color:var(--teal)">Empire Trajectory</div>
-        <div style="font-family:var(--font-mono);font-size:1.1rem;color:var(--text-dim)">${n} scan${n === 1 ? '' : 's'} on record</div>
+      <div class="trends-head">
+        <div class="trends-title">Empire Trajectory</div>
+        <div class="trends-sub">${n} scan${n === 1 ? '' : 's'} on record</div>
       </div>
 
       <div class="sec-header"><div class="sec-title">${metric.label}</div><div class="sec-line"></div></div>
-      <div style="display:flex;align-items:baseline;gap:1.2rem;margin-bottom:0.6rem">
-        <div style="font-family:var(--font-cond);font-weight:700;font-size:2.4rem;color:${metric.color}">${_trFmtHead(latest, metric.count)}</div>
+      <div class="trends-headline">
+        <div class="trends-metric-value" style="color:${metric.color}">${_trFmtHead(latest, metric.count)}</div>
         ${deltaHtml}
       </div>
-      <div id="trend-metric-toggle" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.8rem">${toggle}</div>
+      <div id="trend-metric-toggle" class="trend-toggle">${toggle}</div>
       <div id="trend-chart">${_trendChartSvg(metric)}</div>
 
-      <div style="margin-top:1.6rem">
+      <div class="trends-section">
         <div class="sec-header"><div class="sec-title">Trade Totals · All-Time</div><div class="sec-line"></div></div>
         <div class="cards-row">${_tradeCardsHtml(windows)}</div>
       </div>
 
-      <div style="margin-top:1.6rem">
+      <div class="trends-section">
         <div class="sec-header"><div class="sec-title">Recent Changes</div><div class="sec-line"></div></div>
         ${_changesFeedHtml(changes)}
       </div>`;

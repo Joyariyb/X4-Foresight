@@ -1,0 +1,61 @@
+    /* Core role: Styles for the Trends tab — empire-trajectory header, metric
+       toggle, chart card, and the changes feed. Mirrors the class-based +
+       semantic-token approach the other tabs use, replacing the inline styles
+       trends.js used to emit. */
+
+    /* ── PAGE HEADER ── */
+    /* "Empire Trajectory" title beside the scan-count subline. */
+    .trends-head { display: flex; align-items: baseline; gap: 1rem; padding-bottom: 0.2rem; }
+    .trends-title { font-family: var(--font-label); font-weight: 600; font-size: 1.8rem; color: var(--color-primary); }
+    .trends-sub { font-family: var(--font-data); font-size: 1.1rem; color: var(--text-secondary); }
+
+    /* ── METRIC HEADLINE ── */
+    /* The big current value + the "since last scan" delta. Both take their colour
+       inline (metric colour / delta sign) — only the typography lives here. */
+    .trends-headline { display: flex; align-items: baseline; gap: 1.2rem; margin-bottom: 0.6rem; }
+    .trends-metric-value { font-family: var(--font-label); font-weight: 700; font-size: 2.4rem; }
+    .trends-delta { font-family: var(--font-data); font-size: 1.1rem; }
+
+    /* ── METRIC TOGGLE ── */
+    /* rem-based (not the cqw-based .cf-toggle-btn) because the trends tab has no
+       container-query ancestor — cqw there would size off the viewport. Matches
+       .station-tab-btn's sizing so the buttons read the same as elsewhere. */
+    .trend-toggle { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.8rem; }
+    .trend-toggle-btn {
+      padding: 0.3rem 1rem; font-family: var(--font-data); font-size: 1rem; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--text-label); background: transparent;
+      border: 1px solid var(--outline); border-radius: var(--radius-sm); cursor: pointer; user-select: none;
+      white-space: nowrap; transition: color var(--duration-short), border-color var(--duration-short);
+    }
+    .trend-toggle-btn:hover { color: var(--text-secondary); border-color: var(--text-label); }
+    .trend-toggle-btn.active { color: var(--color-primary); border-color: var(--color-primary); }
+
+    /* ── CHART CARD ── */
+    /* The dark inset panel the trajectory SVG sits inside. The SVG's own
+       stroke/fill colours stay as hex in trends.js — CSS vars don't resolve in
+       SVG presentation attributes under QtWebEngine. */
+    .trend-chart-card {
+      background: var(--surface-0); border: 1px solid var(--color-primary-line);
+      border-radius: var(--radius-md); box-shadow: inset 0 0 24px var(--color-primary-dim); padding: 0.4rem;
+    }
+    .trend-empty { padding: 1.6rem; font-family: var(--font-data); color: var(--text-secondary); }
+
+    /* ── SECTION SPACING ── */
+    .trends-section { margin-top: 1.6rem; }
+
+    /* ── CHANGES FEED ── */
+    .trend-feed-empty { padding: 2.4rem; text-align: center; color: var(--text-secondary); font-family: var(--font-data); }
+    .trend-feed-empty i { font-size: 2.4rem; color: var(--color-primary); opacity: 0.5; display: block; margin-bottom: 0.8rem; }
+
+    .trend-feed { padding: 0.4rem 0.6rem 0.8rem; }
+
+    /* Per-scan group separator inside the feed. */
+    .trend-scan-group { display: flex; align-items: center; gap: 0.8rem; margin: 1.2rem 0 0.5rem; }
+    .trend-scan-id { font-family: var(--font-label); font-weight: 600; font-size: 1.2rem; color: var(--color-primary); }
+    .trend-scan-date { font-family: var(--font-data); font-size: 0.95rem; color: var(--text-secondary); }
+    .trend-scan-line { flex: 1; height: 1px; background: var(--outline); }
+
+    /* One event row. The leading icon's colour is set inline (per event type). */
+    .trend-change-row { display: flex; align-items: center; gap: 0.9rem; padding: 0.55rem 0.9rem; border-bottom: 1px solid var(--outline); }
+    .trend-change-icon { font-size: 1.4rem; flex-shrink: 0; }
+    .trend-change-text { font-family: var(--font-data); font-size: 1.1rem; color: var(--text-secondary); }
