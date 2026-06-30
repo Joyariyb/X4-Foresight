@@ -1,6 +1,12 @@
   // Core role: Shared UI constants (role/faction/ware sets, color mappings, faction metadata).
 
   const HOSTILE_ORIGINS = new Set(["Xenon", "Yaki", "Kha'ak"]);
+
+  // Factions whose standing with the player is hard-locked (permanently hostile at
+  // −30, can never be raised) — confirmed only Xenon and Kha'ak (egosoft wiki). They
+  // carry locked="1" in the save and are excluded from the Reputation History chart:
+  // a flat line that can't move is noise, and it would stretch the auto-zoomed Y axis.
+  const LOCKED_REP_FACTIONS = new Set(["xenon", "khaak"]);
   const MILITARY_ROLES  = new Set(["Fighter","Heavy Fighter","Corvette","Destroyer","Frigate","Gunboat"]);
   const MINER_ROLES     = new Set(["Miner (Solid)","Miner (Liquid)"]);
 

@@ -29,9 +29,22 @@
     }
     .trend-toggle-btn:hover { color: var(--text-secondary); border-color: var(--text-label); }
     .trend-toggle-btn.active { color: var(--color-primary); border-color: var(--color-primary); }
-    /* Kills/Losses sub-toggle for the Ships line — tucked just under the main row
-       with a left rule so it reads as a sub-option of the active metric. */
-    .trend-subtoggle { margin-top: -0.4rem; padding-left: 0.8rem; border-left: 2px solid var(--outline); }
+
+    /* Reputation chart legend — clickable faction chips that toggle each line. */
+    .rep-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 0.6rem; margin-top: 0.6rem; }
+    .rep-legend-chip {
+      display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0.6rem;
+      background: transparent; border: 1px solid var(--outline); border-radius: var(--radius-sm);
+      cursor: pointer; user-select: none;
+      transition: border-color var(--duration-short), opacity var(--duration-short);
+    }
+    .rep-legend-chip:hover { border-color: var(--text-label); }
+    .rep-legend-chip.off { opacity: 0.45; }
+    /* Dot border colour is the faction colour (data-driven, set inline). */
+    .rep-legend-dot { width: 0.7rem; height: 0.7rem; border-radius: 50%; border: 2px solid; flex-shrink: 0; }
+    .rep-legend-name {
+      font-family: var(--font-data); font-size: 1rem; color: var(--text-secondary); letter-spacing: 0.04em;
+    }
 
     /* ── CHART CARD ── */
     /* The dark inset panel the trajectory SVG sits inside. The SVG's own

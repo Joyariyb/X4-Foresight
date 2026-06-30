@@ -16,6 +16,8 @@
   let _trendChanges = [];           // cached data.changes — drives the Losses hover
   let _trendMetric  = 'net_worth';
   let _shipsMode    = 'kills';      // which combat series the single "Ships" line shows
+  const _repHidden  = new Set();    // faction_ids toggled OFF in the reputation chart
+  let _repMode      = 'change';     // reputation chart: 'change' (rebased) | 'absolute'
 
   // Which lines the toggle offers. `count` flags integer metrics (ships/stations)
   // so the axis and headline don't get credit-style M/k formatting. Colours are
@@ -31,6 +33,9 @@
     // switch) rather than two separate lines — see SHIPS_MODES and _effMetric. Both
     // sides are per-scan integer counts.
     { key: 'ships', label: 'Ships', count: true, combat: true },
+    // Reputation is a multi-line view (one line per faction + its own legend), so it
+    // renders its own chart instead of the single-metric line — see _activePanelHtml.
+    { key: 'reputation', label: 'Reputation', reputation: true },
   ];
 
   // The two faces of the combat line. seriesKey selects which per-scan array the
@@ -39,6 +44,12 @@
     kills:  { label: 'Ships Destroyed', seriesKey: 'ships_destroyed', color: CHART_KILL, btn: 'Kills' },
     losses: { label: 'Ships Lost',      seriesKey: 'ships_lost',      color: CHART_LOSS, btn: 'Losses' },
   };
+
+  // Reputation chart views. 'change' rebases each faction to 0 at its first scan so
+  // movement (not absolute level) fills the chart — the default, since inter-faction
+  // spread otherwise flattens every line. 'absolute' plots the raw standing. Order
+  // here sets the on-chart pill order (change on top).
+  const REP_MODES = { change: { btn: 'Change' }, absolute: { btn: 'Level' } };
 
   // Resolve a toggle entry to the metric actually drawn: combat entries swap in the
   // active Kills/Losses face; everything else maps its key straight to its series.
@@ -268,6 +279,29 @@
            + `<circle cx="${cx}" cy="${cy}" r="11" fill="transparent" data-trend-tip="${tip}" style="cursor:pointer"/>`;
     }).join('');
 
+    // Kills/Losses switch as a vertical sliding-pill in the left margin (x=2), the
+    // same on-chart placement and look as the cashflow Sell/Buy toggle — only on the
+    // combat line. The thumb takes the active mode's colour (CHART_KILL/CHART_LOSS)
+    // so the switch and the line it draws read as one. #051210 (near-black) for the
+    // active label matches the sibling cashflow pill — dark-on-bright for contrast.
+    const combatToggle = metric.combat ? `
+      <foreignObject x="2" y="${mt}" width="38" height="44">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="
+            width:38px;height:44px;display:grid;grid-template-rows:1fr 1fr;position:relative;
+            background:rgba(4,12,20,0.88);border:1px solid rgba(0,0,0,0.70);border-radius:2px;
+            overflow:hidden;user-select:none;
+            box-shadow:inset 0 2px 7px rgba(0,0,0,0.70),inset 0 1px 3px rgba(0,0,0,0.50),0 1px 0 rgba(255,255,255,0.07)">
+          <div style="position:absolute;left:1px;right:1px;height:20px;top:${_shipsMode === 'kills' ? '1px' : '23px'};
+              background:linear-gradient(170deg, ${eff.color}, ${eff.color}cc);border-radius:1px;pointer-events:none;
+              box-shadow:0 3px 9px rgba(0,0,0,0.70),inset 0 1px 0 rgba(255,255,255,0.40),inset 0 -1px 0 rgba(0,0,0,0.24)"></div>
+          ${Object.entries(SHIPS_MODES).map(([k, m]) => `
+          <span onclick="setShipsMode('${k}')" style="position:relative;z-index:1;cursor:pointer;
+              display:flex;align-items:center;justify-content:center;
+              font-family:var(--font-mono);font-size:7px;letter-spacing:0.06em;text-transform:uppercase;
+              color:${_shipsMode === k ? '#051210' : 'var(--text-faint)'};font-weight:${_shipsMode === k ? '700' : '400'}">${m.btn}</span>`).join('')}
+        </div>
+      </foreignObject>` : '';
+
     // n>1 draws the glow+line; a single point is just the dot.
     const lineLayer = n === 1 ? '' : `
       <path d="${areaPath}" fill="url(#${fillId})" stroke="none"/>
@@ -289,6 +323,7 @@
           <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="${CHART_ACCENT}" stroke-opacity="0.35" stroke-width="1"/>
           ${lineLayer}
           ${dots}
+          ${combatToggle}
         </svg>
       </div>`;
   }
@@ -298,6 +333,21 @@
   // both the initial render and the two toggle setters rebuild the same markup.
   function _activePanelHtml() {
     const metric = TREND_METRICS.find(m => m.key === _trendMetric) || TREND_METRICS[0];
+    const toggle = TREND_METRICS.map(m =>
+      `<button class="trend-toggle-btn ${m.key === _trendMetric ? 'active' : ''}" data-metric="${m.key}" onclick="setTrendMetric('${m.key}')">${m.label}</button>`
+    ).join('');
+
+    // Reputation is a multi-line view (per-faction lines + legend, game-time X), not a
+    // single headline value — so it renders its own chart instead of the metric line.
+    if (metric.reputation) {
+      return `
+        <div class="sec-header"><div class="sec-title">Reputation</div><div class="sec-line"></div></div>
+        <div class="trends-sub" style="margin-bottom:0.6rem">Per-faction standing across scans — toggle factions below the graph .</div>
+        <div id="trend-metric-toggle" class="trend-toggle">${toggle}</div>
+        <div id="rep-chart">${_repChartSvg()}</div>
+        <div id="rep-legend" class="rep-legend">${_repLegendChips()}</div>`;
+    }
+
     const eff    = _effMetric(metric);
     const vals   = _trendSeries[eff.seriesKey] || [];
     const n      = _trendScans.length;
@@ -316,19 +366,8 @@
       deltaHtml = `<span class="trends-delta" style="color:${col}">${arrow} ${_trFmtHead(Math.abs(d), eff.count)} since last scan</span>`;
     }
 
-    const toggle = TREND_METRICS.map(m =>
-      `<button class="trend-toggle-btn ${m.key === _trendMetric ? 'active' : ''}" data-metric="${m.key}" onclick="setTrendMetric('${m.key}')">${m.label}</button>`
-    ).join('');
-
-    // Sub-toggle (Kills/Losses) only for the combat line — mirrors the cashflow
-    // chart's Sell/Buy switch.
-    const subToggle = metric.combat
-      ? `<div id="trend-ships-toggle" class="trend-toggle trend-subtoggle">` +
-        Object.entries(SHIPS_MODES).map(([k, m]) =>
-          `<button class="trend-toggle-btn ${k === _shipsMode ? 'active' : ''}" onclick="setShipsMode('${k}')">${m.btn}</button>`
-        ).join('') + `</div>`
-      : '';
-
+    // The Kills/Losses switch lives ON the chart (left margin pill), mirroring the
+    // cashflow chart's Sell/Buy toggle — built inside _trendChartSvg, not here.
     return `
       <div class="sec-header"><div class="sec-title">${eff.label}</div><div class="sec-line"></div></div>
       <div class="trends-headline">
@@ -336,12 +375,11 @@
         ${deltaHtml}
       </div>
       <div id="trend-metric-toggle" class="trend-toggle">${toggle}</div>
-      ${subToggle}
       <div id="trend-chart">${_trendChartSvg(metric)}</div>`;
   }
 
   // Toggle setters: flip state, then rebuild the whole active panel (cheap, and it
-  // keeps the headline/section title/sub-toggle in sync with the chart).
+  // keeps the headline/section title/on-chart toggle in sync with the chart).
   function setTrendMetric(key) {
     _trendMetric = key;
     const host = document.getElementById('trend-active');
@@ -429,6 +467,199 @@
       <div class="card-top"><i class="ti ${c.icon}"></i><div class="lbl">${c.label}</div></div>
       <div class="val ${c.cls}">${c.value}</div>
     </div>`).join('');
+  }
+
+  // ── reputation history chart (multi-faction, per-scan, game-time X) ───────────
+  // One line per faction (FACTION_COLOURS), every point a SCAN positioned at its
+  // in-game timestamp so spacing reads as game-time. Y auto-zooms to the visible
+  // factions' standing range so small moves show. Uses series.reputation — the same
+  // standing value Diplomacy shows (already nets in trade). Legend below toggles.
+  // Factions eligible for the reputation chart: drop the hard-locked ones (Xenon,
+  // Kha'ak) whose standing can never change — see LOCKED_REP_FACTIONS.
+  function _repFactions() {
+    return (_trendSeries.reputation || []).filter(f => !LOCKED_REP_FACTIONS.has(f.faction_id));
+  }
+
+  // First known standing for a faction — the rebase anchor for Change mode.
+  const _repBase = f => { for (const v of (f.values || [])) if (v != null) return v; return 0; };
+
+  function _repChartSvg() {
+    const rep = _repFactions();
+    const n   = _trendScans.length;
+    if (!rep.length || !n) return `<div class="trend-empty">No reputation data yet.</div>`;
+
+    const W = 720, H = 320, ml = 66, mr = 20, mt = 18, mb = 42;
+    const pw = W - ml - mr, ph = H - mt - mb;
+    const change = _repMode === 'change';
+
+    // Plotted value for faction f at scan i: raw standing, or (Change mode) the move
+    // since that faction's first scan so every line starts at 0. null stays a gap.
+    const valAt = (f, i) => { const v = (f.values || [])[i]; if (v == null) return null; return change ? v - _repBase(f) : v; };
+
+    // X = each scan's in-game time (points ARE scans). Single scan → centre it.
+    const gts   = _trendScans.map(s => s.game_time_s || 0);
+    const gtMin = Math.min(...gts), gtMax = Math.max(...gts);
+    const xOf = i => n === 1 ? ml + pw / 2
+                  : ml + ((gts[i] - gtMin) / ((gtMax - gtMin) || 1)) * pw;
+
+    // Y auto-zoom to the VISIBLE factions' plotted range. Change mode always includes
+    // 0 (the shared rebase baseline). Cap differs: a change can span up to ±60.
+    const visible = rep.filter(f => !_repHidden.has(f.faction_id));
+    const seen = change ? [0] : [];
+    visible.forEach(f => _trendScans.forEach((s, i) => { const v = valAt(f, i); if (v != null) seen.push(v); }));
+    let lo = seen.length ? Math.min(...seen) : 0;
+    let hi = seen.length ? Math.max(...seen) : 0;
+    if (hi === lo) { lo -= 1; hi += 1; }
+    const cap = change ? 60 : 30;
+    const pad = (hi - lo) * 0.12;
+    lo = Math.max(-cap, lo - pad); hi = Math.min(cap, hi + pad);
+    const step  = _trNiceStep(hi - lo, 5);
+    const axBot = Math.floor(lo / step) * step;
+    const axTop = Math.ceil(hi / step) * step;
+    const yOf   = v => mt + ph - (v - axBot) / ((axTop - axBot) || 1) * ph;
+    // Axis labels track the gridline step's precision so a tightly-zoomed Y (small
+    // moves) doesn't print the same rounded integer on adjacent lines.
+    const fmtRep = v => { const s = step < 1 ? v.toFixed(1) : String(Math.round(v)); return v > 0 ? '+' + s : s; };
+
+    let yAxis = '';
+    for (let v = axBot; v <= axTop + step * 0.001; v += step) {
+      const y = yOf(v).toFixed(1);
+      const zero = Math.abs(v) < step * 0.001;
+      yAxis += `<line x1="${ml}" y1="${y}" x2="${ml + pw}" y2="${y}" stroke="${CHART_ACCENT}" stroke-opacity="${zero ? 0.3 : 0.09}" stroke-width="${zero ? 1 : 0.6}"/>`
+             + `<text x="${ml - 7}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.7" font-family="var(--font-mono)" font-size="11">${fmtRep(v)}</text>`;
+    }
+
+    // x: a faint marker + #id / game-hours label per scan (thinned if many).
+    const xStep = n <= 8 ? 1 : Math.ceil(n / 8);
+    let xAxis = '';
+    _trendScans.forEach((s, i) => {
+      if (i % xStep !== 0 && i !== n - 1) return;
+      const x = xOf(i).toFixed(1);
+      const gh = s.game_time_s != null ? Math.round(s.game_time_s / 3600) + 'h' : '';
+      xAxis += `<line x1="${x}" y1="${mt}" x2="${x}" y2="${mt + ph}" stroke="${CHART_LINE}" stroke-opacity="0.06" stroke-width="1"/>`
+             + `<text x="${x}" y="${mt + ph + 15}" text-anchor="middle" fill="${CHART_LINE}" fill-opacity="0.65" font-family="var(--font-mono)" font-size="10">#${s.scan_id}</text>`
+             + `<text x="${x}" y="${mt + ph + 28}" text-anchor="middle" fill="${CHART_LINE}" fill-opacity="0.40" font-family="var(--font-mono)" font-size="9">${gh}</text>`;
+    });
+
+    // one line + hoverable dots per visible faction
+    let lines = '';
+    visible.forEach(f => {
+      const col = FACTION_COLOURS[f.faction_id] || '#6e7681';
+      const pts = [];
+      _trendScans.forEach((s, i) => { const v = valAt(f, i); if (v != null) pts.push([xOf(i), yOf(v), i]); });
+      if (!pts.length) return;
+      if (pts.length > 1) {
+        const poly = pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+        lines += `<polyline points="${poly}" fill="none" stroke="${col}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>`;
+      }
+      lines += pts.map(([x, y, i]) => {
+        const tip = encodeURIComponent(_repTipHtml(f, i));
+        return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.4" fill="${col}"/>`
+             + `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="9" fill="transparent" data-trend-tip="${tip}" style="cursor:pointer"/>`;
+      }).join('');
+    });
+    if (!visible.length) {
+      lines = `<text x="${ml + pw / 2}" y="${mt + ph / 2}" text-anchor="middle" fill="${CHART_LINE}" fill-opacity="0.5" font-family="var(--font-mono)" font-size="12">All factions hidden — tap a chip below to show one</text>`;
+    }
+
+    // Level/Change switch — same on-chart sliding pill as the Ships line, in the left
+    // margin. Thumb is CHART_ACCENT (no single faction colour to key off).
+    const modeToggle = `
+      <foreignObject x="2" y="${mt}" width="38" height="44">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="
+            width:38px;height:44px;display:grid;grid-template-rows:1fr 1fr;position:relative;
+            background:rgba(4,12,20,0.88);border:1px solid rgba(0,0,0,0.70);border-radius:2px;
+            overflow:hidden;user-select:none;
+            box-shadow:inset 0 2px 7px rgba(0,0,0,0.70),inset 0 1px 3px rgba(0,0,0,0.50),0 1px 0 rgba(255,255,255,0.07)">
+          <div style="position:absolute;left:1px;right:1px;height:20px;top:${change ? '1px' : '23px'};
+              background:linear-gradient(170deg, ${CHART_ACCENT}, ${CHART_ACCENT}cc);border-radius:1px;pointer-events:none;
+              box-shadow:0 3px 9px rgba(0,0,0,0.70),inset 0 1px 0 rgba(255,255,255,0.40),inset 0 -1px 0 rgba(0,0,0,0.24)"></div>
+          ${Object.entries(REP_MODES).map(([k, m]) => `
+          <span onclick="setRepMode('${k}')" style="position:relative;z-index:1;cursor:pointer;
+              display:flex;align-items:center;justify-content:center;
+              font-family:var(--font-mono);font-size:7px;letter-spacing:0.06em;text-transform:uppercase;
+              color:${_repMode === k ? '#051210' : 'var(--text-faint)'};font-weight:${_repMode === k ? '700' : '400'}">${m.btn}</span>`).join('')}
+        </div>
+      </foreignObject>`;
+
+    return `
+      <div class="trend-chart-card">
+        <svg viewBox="0 0 ${W} ${H}" style="display:block;width:100%;height:auto">
+          <rect x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="#020a10"/>
+          ${yAxis}
+          ${xAxis}
+          <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="${CHART_ACCENT}" stroke-opacity="0.35" stroke-width="1"/>
+          ${lines}
+          ${modeToggle}
+        </svg>
+      </div>`;
+  }
+
+  // Legend chips — one per faction, coloured dot + name; click toggles the line.
+  function _repLegendChips() {
+    const rep = _repFactions();
+    return rep.map(f => {
+      const col = FACTION_COLOURS[f.faction_id] || '#6e7681';
+      const off = _repHidden.has(f.faction_id);
+      return `<button class="rep-legend-chip${off ? ' off' : ''}" onclick="toggleRepFaction('${f.faction_id}')">
+        <span class="rep-legend-dot" style="background:${off ? 'transparent' : col};border-color:${col}"></span>
+        <span class="rep-legend-name">${_factionShort(f.faction_name)}</span>
+      </button>`;
+    }).join('');
+  }
+
+  // Hover for one faction's point at scan i. Always shows the absolute standing
+  // (sign(), like Diplomacy) + tier, then the move since the previous scan AND since
+  // the first scan — the latter is the value the Change-mode line plots, so dot and
+  // tooltip agree in either mode.
+  function _repTipHtml(f, i) {
+    const s    = _trendScans[i];
+    const v    = (f.values || [])[i];
+    const prev = i > 0 ? (f.values || [])[i - 1] : null;
+    const col  = FACTION_COLOURS[f.faction_id] || '#6e7681';
+    const gh   = s.game_time_s != null ? Math.round(s.game_time_s / 3600) + 'h' : '';
+
+    const head = `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border)">
+        <span style="color:${col};font-size:1.1rem;letter-spacing:0.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:16rem">${_factionShort(f.faction_name)}</span>
+        <span style="color:var(--text-faint);font-family:var(--font-mono);font-size:0.95rem;white-space:nowrap">#${s.scan_id} · ${gh}</span>
+      </div>`;
+
+    const big = `<div style="margin-bottom:0.4rem">
+        <span style="font-family:var(--font-mono);font-size:1.7rem;color:${col};line-height:1">${v == null ? '—' : sign(v)}<span style="font-size:0.9rem;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.08em"> ${f.tier || ''}</span></span>
+      </div>`;
+
+    // Coloured ± move row (teal up / red down), 2dp to match Diplomacy's sign().
+    const moveRow = (label, d) => {
+      if (d == null) return '';
+      const c = d > 0 ? CHART_ACCENT : d < 0 ? CHART_LOSS : 'var(--text-faint)';
+      const ch = d > 0 ? '▲' : d < 0 ? '▼' : '▬';
+      return `<div style="display:flex;justify-content:space-between;gap:1.2rem;padding:1px 0">
+          <span style="color:var(--text-faint);font-size:1rem">${label}</span>
+          <span style="color:${c};font-family:var(--font-mono);font-size:1rem;white-space:nowrap">${ch} ${Math.abs(d).toFixed(2)}</span>
+        </div>`;
+    };
+
+    const sinceLast  = (v != null && prev != null) ? v - prev : null;
+    const sinceFirst = (v != null && i > 0) ? v - _repBase(f) : null;
+    const rows = (sinceLast == null && sinceFirst == null)
+      ? `<div style="color:var(--text-faint);font-size:1rem">first scan</div>`
+      : moveRow('Since last scan', sinceLast) + moveRow('Since first scan', sinceFirst);
+
+    return `<div style="min-width:16rem;max-width:24rem;padding:0.2rem 0">${head}${big}${rows}</div>`;
+  }
+
+  // Legend click: flip a faction's visibility, redraw chart + legend in place.
+  function toggleRepFaction(fid) {
+    if (_repHidden.has(fid)) _repHidden.delete(fid); else _repHidden.add(fid);
+    const c = document.getElementById('rep-chart');  if (c) c.innerHTML = _repChartSvg();
+    const l = document.getElementById('rep-legend'); if (l) l.innerHTML = _repLegendChips();
+  }
+
+  // On-chart pill: switch the reputation view between Change (rebased) and Level
+  // (absolute). Only the chart redraws (the pill lives inside it; legend is unchanged).
+  function setRepMode(mode) {
+    _repMode = mode;
+    const c = document.getElementById('rep-chart'); if (c) c.innerHTML = _repChartSvg();
   }
 
   // ── entry point (called from populate()) ─────────────────────────────────────
