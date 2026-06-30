@@ -15,6 +15,7 @@ from .handlers.npc_station import NpcStationHandler
 from .handlers.sector      import SectorHandler
 from .handlers.gate        import GateHandler
 from .handlers.resource    import ResourceHandler
+from .handlers.combat      import CombatHandler
 
 
 class Scanner:
@@ -33,8 +34,9 @@ class Scanner:
         # Load language file once; lang_path is a manual override if it exists.
         lang_root    = load_language_root(lang_path)
         sector_names = load_sector_names(lang_root)
-        # Pages: 20102=station basename refs, 20215=factory categories (resolve_station_type)
-        texts = load_text_pages(lang_root, {20102, 20215})
+        # Pages: 20102=station basename refs, 20215=factory categories (resolve_station_type),
+        # 20203=faction names (resolve {20203,N} refs on combat-kill log entries).
+        texts = load_text_pages(lang_root, {20102, 20215, 20203})
 
         self._station = StationHandler(sector_names, texts)
         self._ship    = ShipHandler()
@@ -45,6 +47,7 @@ class Scanner:
         self._sector  = SectorHandler(sector_names)
         self._gate    = GateHandler()
         self._resource = ResourceHandler()
+        self._combat  = CombatHandler(texts)
 
         # Stored for handlers that need them during scan (ship, station).
         self._sector_names = sector_names
@@ -234,6 +237,17 @@ class Scanner:
             # EconomyHandler harvests raw rows; classification/resolution is
             # deferred to the post-processor (id indexes aren't final yet here).
             self._economy.on_log(elem, ctx)
+
+        elif tag == 'stat':
+            # Savegame statistics row (<stats><stat id="..." value="..."/>).
+            # CombatHandler keeps only ships_destroyed; all other ids no-op.
+            self._combat.on_stat(elem, ctx)
+
+        elif tag == 'entry':
+            # Player event-log row. CombatHandler tallies the "Destroyed Enemy"
+            # reputation entries by faction; the many other entries (news, missions,
+            # tips) fail its cheap text check and no-op.
+            self._combat.on_entry(elem, ctx)
 
         elif tag == 'removed':
             # Open an <economylog><removed> block — despawned objects whose ids

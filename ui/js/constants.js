@@ -21,7 +21,8 @@
   const CHART_GLOW     = '#2dd4bf'; // dim wide under-stroke behind the data line (matches --teal)
   const CHART_LINE     = '#5eead4'; // bright data line (hourly), axis labels, ware fallback
   const CHART_LINE_ALT = '#7af5e4'; // bright data line (cumulative-by-trade mode)
-  const CHART_LOSS     = '#ef5350'; // negative / loss values
+  const CHART_LOSS     = '#ef5350'; // negative / loss values (incl. own-ship losses)
+  const CHART_KILL     = '#fb923c'; // offensive combat tally (enemy kills) — warm, distinct from CHART_LOSS
 
   const WARE_COLOURS = {
     // Raw resources

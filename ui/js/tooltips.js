@@ -544,7 +544,7 @@
       document.querySelectorAll('.avg-bars rect.avg-hot').forEach(r => r.classList.remove('avg-hot'));
       document.querySelectorAll('.avg-hot-line').forEach(l => { l.style.opacity = '0'; });
 
-      const el = e.target.closest('[data-hull-tip],[data-pilot-skills],[data-storage-tip],[data-modules-tip],[data-loadout-tip],[data-weapon-tip],[data-fleet-tip],[data-budget-tip],[data-cashflow-tip],[data-cfdetail],[data-cfware],[data-avgtip],[data-shipflow]');
+      const el = e.target.closest('[data-hull-tip],[data-pilot-skills],[data-storage-tip],[data-modules-tip],[data-loadout-tip],[data-weapon-tip],[data-fleet-tip],[data-trend-tip],[data-budget-tip],[data-cashflow-tip],[data-cfdetail],[data-cfware],[data-avgtip],[data-shipflow]');
       if (!el) { tip.style.display = 'none'; return; }
 
       if (el.dataset.cfdetail) {
@@ -686,6 +686,12 @@
       } else if (el.dataset.fleetTip) {
         // Assigned fleet breakdown: pre-rendered HTML encoded into the attribute
         tip.innerHTML = decodeURIComponent(el.dataset.fleetTip);
+        tip.style.color      = '';
+        tip.style.whiteSpace = 'normal';
+      } else if (el.dataset.trendTip) {
+        // Trends trajectory dot: pre-rendered HTML (value + delta, plus per-faction
+        // kill/rep breakdown on the Ships Destroyed line). Built in trends.js.
+        tip.innerHTML = decodeURIComponent(el.dataset.trendTip);
         tip.style.color      = '';
         tip.style.whiteSpace = 'normal';
       } else {

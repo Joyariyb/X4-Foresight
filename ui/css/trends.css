@@ -29,6 +29,9 @@
     }
     .trend-toggle-btn:hover { color: var(--text-secondary); border-color: var(--text-label); }
     .trend-toggle-btn.active { color: var(--color-primary); border-color: var(--color-primary); }
+    /* Kills/Losses sub-toggle for the Ships line — tucked just under the main row
+       with a left rule so it reads as a sub-option of the active metric. */
+    .trend-subtoggle { margin-top: -0.4rem; padding-left: 0.8rem; border-left: 2px solid var(--outline); }
 
     /* ── CHART CARD ── */
     /* The dark inset panel the trajectory SVG sits inside. The SVG's own

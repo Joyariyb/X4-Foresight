@@ -82,6 +82,15 @@ class ScanContext:
     trade_history_mining:   list[TradeHistoryMining]    = field(default_factory=list)
     trade_history_internal: list[TradeHistoryInternal]  = field(default_factory=list)
 
+    # ── Combat tallies (CombatHandler) ────────────────────────────────────────
+    # Lifetime player kill counter from <stats>; None until the stat is seen so a
+    # save without the block reads as "unknown" rather than a real zero.
+    combat_ships_destroyed: int | None = None
+    # Per-faction enemy-kill credits from the event log, keyed by faction_id (or
+    # the raw display name for factions absent from FACTION_NAMES). Each value is
+    # {faction_id, faction_name, kills} — see CombatHandler.on_entry.
+    combat_kills: dict[str, dict] = field(default_factory=dict)
+
 
     # ── Cross-handler reference data ──────────────────────────────────────────
     # Built early; read later. Safe: XML guarantees stations/ships before trades.

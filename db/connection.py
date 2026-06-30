@@ -61,6 +61,15 @@ def _migrate(conn: sqlite3.Connection) -> None:
     if 'is_discovered' not in sec_cols:
         conn.execute('ALTER TABLE sectors ADD COLUMN is_discovered INTEGER')
 
+    # ships_destroyed added when the combat-trends (kills/losses) feature landed.
+    # Appended at the scans table's physical end, matching schema.sql's last-column
+    # placement, so write.py's explicit-column INSERT stays correct on both fresh and
+    # migrated DBs. Old scans read NULL until re-scanned. (combat_kills is a new table,
+    # so CREATE IF NOT EXISTS handles it — no migration needed there.)
+    scan_cols = {row[1] for row in conn.execute('PRAGMA table_info(scans)')}
+    if 'ships_destroyed' not in scan_cols:
+        conn.execute('ALTER TABLE scans ADD COLUMN ships_destroyed INTEGER')
+
 
 def _populate_ware_metadata(conn: sqlite3.Connection) -> None:
     """Write static ware properties from data/wares.py into ware_metadata.

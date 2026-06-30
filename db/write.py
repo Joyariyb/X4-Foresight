@@ -51,16 +51,21 @@ def write_scan(conn: sqlite3.Connection, ctx) -> int:
     cur = conn.cursor()
 
     # ── ROOT ──────────────────────────────────────────────────────────────────
+    # Explicit column list (not positional VALUES) so the trailing ships_destroyed
+    # column maps correctly on databases that gained it via ALTER TABLE — see _migrate.
     cur.execute(
         "INSERT INTO scans(scanned_at, save_file, game_time_s, "
-        "player_name, player_sector, player_credits) VALUES(?,?,?,?,?,?)",
+        "player_name, player_sector, player_credits, ships_destroyed) "
+        "VALUES(?,?,?,?,?,?,?)",
         (datetime.now(timezone.utc).isoformat(timespec='seconds'),
          ctx.save_file, ctx.game_time_s,
-         ctx.player_name, ctx.player_sector, ctx.player_credits),
+         ctx.player_name, ctx.player_sector, ctx.player_credits,
+         ctx.combat_ships_destroyed),
     )
     scan_id = cur.lastrowid
 
     _write_reputation(cur, scan_id, ctx)
+    _write_combat_kills(cur, scan_id, ctx)
     _write_faction_relations(cur, scan_id, ctx)
     _write_stations(cur, scan_id, ctx)
     _write_ships(cur, scan_id, ctx)
@@ -81,6 +86,16 @@ def _write_reputation(cur, scan_id, ctx) -> None:
         "INSERT INTO reputation VALUES(?,?,?,?,?,?,?)",
         [(scan_id, r.faction_id, r.faction_name, r.value, r.base, r.booster, r.tier)
          for r in ctx.reputation],
+    )
+
+
+def _write_combat_kills(cur, scan_id, ctx) -> None:
+    # One row per faction that credited a kill. ctx.combat_kills is already keyed by
+    # faction (id or display-name fallback), so its values map straight to rows.
+    cur.executemany(
+        "INSERT INTO combat_kills VALUES(?,?,?,?)",
+        [(scan_id, b['faction_id'] or b['faction_name'], b['faction_name'], b['kills'])
+         for b in ctx.combat_kills.values()],
     )
 
 

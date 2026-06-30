@@ -71,6 +71,63 @@ def _fleet_by_role(conn, scan_id) -> dict[int, dict[str, int]]:
     return out
 
 
+def _ships_lost_per_scan(conn, scan_ids) -> dict[int, int]:
+    """{scan_id: count of player ships lost IN that scan's interval} (not cumulative).
+
+    A loss is a ship `code` present in the previous scan and gone in this one — the
+    exact roster diff compute_changes uses for ship_lost events. Each scan reports
+    only its own interval's losses so the chart shows per-scan activity, not a
+    running total. The first scan is the baseline (0 — no predecessor to diff)."""
+    out: dict[int, int] = {}
+    prev_codes: set[str] | None = None
+    for sid in scan_ids:
+        cur_codes = set(_ships_by_code(conn, sid).keys())
+        out[sid] = 0 if prev_codes is None else len(prev_codes - cur_codes)
+        prev_codes = cur_codes
+    return out
+
+
+def _per_scan_delta(cum: dict[int, int], scan_ids) -> list[int | None]:
+    """Turn a cumulative {scan_id: total} into a per-scan-interval delta list,
+    index-aligned to scan_ids.
+
+    Each entry is this scan's total minus the previous scan's, so the chart plots
+    what happened IN each interval rather than a climbing running total. The first
+    scan has no predecessor → 0. A scan with no stored total (None — taken before
+    the counter was tracked) yields None so the chart shows a gap, and the next real
+    value also can't form a delta (None) rather than reading the whole backlog as a
+    single spike."""
+    out: list[int | None] = []
+    prev: int | None = None
+    for idx, sid in enumerate(scan_ids):
+        v = cum.get(sid)
+        if idx == 0:
+            out.append(0 if v is not None else None)
+        elif v is None or prev is None:
+            out.append(None)
+        else:
+            out.append(max(0, v - prev))
+        prev = v
+    return out
+
+
+def _kills_by_faction_by_scan(conn, scan_id, scan_ids) -> list[list[dict]]:
+    """Per-scan faction kill breakdown, index-aligned to the `scans` axis.
+
+    Each element is that scan's list of {faction_id, faction_name, kills} (cumulative
+    counts), strongest first. Drives the Trends hover: the UI diffs a scan against its
+    predecessor here (and against the reputation series) to show kills-since-last-scan
+    and the matching reputation move per faction."""
+    by_scan: dict[int, list[dict]] = {}
+    for r in conn.execute(
+            "SELECT scan_id, faction_id, faction_name, kills FROM combat_kills "
+            "WHERE scan_id <= ? ORDER BY scan_id", (scan_id,)):
+        by_scan.setdefault(r['scan_id'], []).append(
+            {'faction_id': r['faction_id'], 'faction_name': r['faction_name'],
+             'kills': r['kills']})
+    return [sorted(by_scan.get(sid, []), key=lambda k: -k['kills']) for sid in scan_ids]
+
+
 def _net_worth_by_scan(conn, scan_id) -> dict[int, float]:
     """{scan_id: net_worth} for every scan up to scan_id — the same definition the
     series uses (credits + station cash + fleet hull + fleet equipment). Used by the
@@ -220,6 +277,13 @@ def compute_trends(conn: sqlite3.Connection, scan_id: int | None = None) -> dict
     station_count = {r['scan_id']: r['n'] for r in conn.execute(
         "SELECT scan_id, COUNT(*) AS n FROM stations WHERE scan_id <= ? GROUP BY scan_id",
         (scan_id,))}
+    # Lifetime enemy-kill counter off the scans row (cumulative in-game). Converted
+    # to a per-scan delta below so the chart shows kills made IN each interval, not a
+    # climbing total. None on scans taken before tracking → gap (see _per_scan_delta).
+    ships_destroyed_cum = {r['scan_id']: r['ships_destroyed'] for r in conn.execute(
+        "SELECT scan_id, ships_destroyed FROM scans WHERE scan_id <= ?", (scan_id,))}
+    # Player ship losses per scan interval, derived from the roster diff (no counter).
+    ships_lost = _ships_lost_per_scan(conn, scan_ids)
 
     # Full net worth = liquid credits + station account cash + fleet asset value
     # (hull + fitted equipment). See _ship_asset_value for the station-structure
@@ -228,6 +292,7 @@ def compute_trends(conn: sqlite3.Connection, scan_id: int | None = None) -> dict
     hull_val, equip_val = _ship_asset_value(conn, scan_id)
     fleet_roles = _fleet_by_role(conn, scan_id)
     rep_series  = _reputation_series(conn, scan_id, scan_ids)
+    kills_series = _kills_by_faction_by_scan(conn, scan_id, scan_ids)
     # axis is ordered oldest→newest, so its last row is the scan being viewed; bound
     # the trade windows to that scan's in-game clock.
     sel_game_time = axis[-1]['game_time_s'] if axis else None
@@ -247,6 +312,12 @@ def compute_trends(conn: sqlite3.Connection, scan_id: int | None = None) -> dict
             'station_cash':  [station_cash.get(sid, 0)  for sid in scan_ids],
             'ship_count':    [ship_count.get(sid, 0)    for sid in scan_ids],
             'station_count': [station_count.get(sid, 0) for sid in scan_ids],
+            # Combat: enemy kills (stat) and own-ship losses (roster diff), both
+            # PER-SCAN (interval activity, not a running total). kills_by_faction
+            # carries the per-scan hover breakdown (stored cumulative; the UI diffs it).
+            'ships_destroyed': _per_scan_delta(ships_destroyed_cum, scan_ids),
+            'ships_lost':      [ships_lost.get(sid, 0) for sid in scan_ids],
+            'kills_by_faction': kills_series,
             # Net-worth components (kept separate for transparency) and the total.
             'ship_hull_value':  [hull_val.get(sid, 0)  for sid in scan_ids],
             'ship_equip_value': [equip_val.get(sid, 0) for sid in scan_ids],

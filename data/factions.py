@@ -39,6 +39,26 @@ FACTION_NAMES = {
     "boron":            "[BOR] Queendom of Boron",
 }
 
+# Reverse lookup: in-game display name (no "[ABC] " prefix) → internal faction id.
+# The save's event log tags reputation-gain entries with a {20203,N} language ref
+# that resolves to the bare display name ("Teladi Company"), NOT the internal id,
+# so combat-kill tallies need this to key by the same faction_id the reputation
+# table uses — otherwise the two could never be joined in the Trends hover.
+FACTION_ID_BY_DISPLAY = {
+    name.split('] ', 1)[-1].lower(): fid
+    for fid, name in FACTION_NAMES.items()
+}
+
+
+def faction_id_from_display(display_name: str) -> str:
+    """Map a bare faction display name back to its internal id, or '' if unknown.
+
+    '' (rather than a guess) lets callers fall back to storing the raw display
+    name for minor factions that aren't in FACTION_NAMES, instead of silently
+    misattributing their kills to a known faction."""
+    return FACTION_ID_BY_DISPLAY.get((display_name or '').strip().lower(), '')
+
+
 # Factions that are excluded from the reputation report.
 # These represent neutral entities, player classification labels, or background NPCs
 # that do not have meaningful faction relationships in the game.

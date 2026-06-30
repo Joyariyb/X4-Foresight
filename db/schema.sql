@@ -17,7 +17,13 @@ CREATE TABLE IF NOT EXISTS scans (
     game_time_s     REAL    NOT NULL,            -- in-game clock — anchor for all time_ago math
     player_name     TEXT,
     player_sector   TEXT,
-    player_credits  INTEGER
+    player_credits  INTEGER,
+    -- Player lifetime kill counter from the savegame <stats> block. MUST stay the
+    -- last column: write.py inserts scans with an explicit column list, but _migrate
+    -- appends this column at the physical end on pre-existing DBs — keeping it last
+    -- here means fresh and migrated databases share one column order. NULL on scans
+    -- taken before this was tracked (re-scan to backfill).
+    ships_destroyed INTEGER
 );
 
 
@@ -46,6 +52,19 @@ CREATE TABLE IF NOT EXISTS faction_relations (
     tier          TEXT,                           -- "Allied", "Friendly", ...
     locked        INTEGER NOT NULL DEFAULT 0,     -- 1 = game hard-locks these standings (Xenon, Kha'ak)
     PRIMARY KEY (scan_id, faction_id, other_id)
+);
+
+-- Per-faction enemy-kill credits (cumulative, one row per faction per scan).
+-- Source: "Destroyed Enemy" reputation entries in the event log. The save does NOT
+-- record the destroyed ship's type, only which faction credited the kill — so this
+-- is a faction breakdown, not a ship-by-ship list. Counts are cumulative-to-scan
+-- (the log is the full lifetime history), so cross-scan deltas give kills-since.
+CREATE TABLE IF NOT EXISTS combat_kills (
+    scan_id       INTEGER NOT NULL REFERENCES scans(scan_id) ON DELETE CASCADE,
+    faction_id    TEXT    NOT NULL,               -- internal id, or raw display name if unknown
+    faction_name  TEXT,
+    kills         INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (scan_id, faction_id)
 );
 
 CREATE TABLE IF NOT EXISTS stations (
