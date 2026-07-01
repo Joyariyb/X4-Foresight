@@ -107,10 +107,22 @@
   // Faction filter dropdown — built from whatever owner factions actually
   // appear among the trade partners (not just the currently filtered rows),
   // so picking one faction doesn't make the others disappear from the list.
+  // Under the Tradable toggle, Hostile owners drop out of the source list
+  // entirely (same rep_tier check the row filter uses) rather than just
+  // being unselectable, so the dropdown never offers a faction with zero
+  // reachable stations.
   function npcFactionFilterDD() {
-    const factions = [...new Map(allNpcTradePartners.map(s => [s.owner_id, s.owner_name])).entries()]
+    const source = npcTradableOnly
+      ? allNpcTradePartners.filter(s => s.rep_tier !== 'Hostile')
+      : allNpcTradePartners;
+    const factions = [...new Map(source.map(s => [s.owner_id, s.owner_name])).entries()]
       .sort((a, b) => npcOwnerLabel(a[1]).localeCompare(npcOwnerLabel(b[1])));
     if (!factions.length) return '';
+
+    // Drop any selected faction that just fell out of the list (e.g. a
+    // Hostile-only faction when Tradable was just switched on) so the
+    // trigger never shows a stale badge for a faction no longer offered.
+    npcFactionFilter = npcFactionFilter.filter(id => factions.some(([fid]) => fid === id));
 
     const selected = npcFactionFilter;
     const triggerInner = selected.length === 0

@@ -49,10 +49,18 @@
     /* Faction dropdown reuses the generic .beqf-trigger shell (equipment
        pickers etc.), but here it sits beside the All/Tradable .fleet-subtab
        chips, so it borrows their font/size/padding to read as one matched
-       set (same height, same gap between all three). */
+       set. A percentage height on .beqf-trigger (resolved against the
+       stretched .beqf-dd) turned out unreliable in QtWebEngine, so instead
+       .beqf-dd itself becomes a flex container: its default align-items
+       (stretch) then grows .beqf-trigger to match .beqf-dd's own stretched
+       height directly, with no percentage resolution involved. .beqf-menu
+       stays position:absolute, so it's unaffected by .beqf-dd's new
+       display value. */
+    #npc-tradable-filter { align-items: stretch; }
+    #npc-tradable-filter .beqf-dd { display: flex; }
     #npc-tradable-filter .beqf-trigger {
       font-family: var(--font-label); font-weight: 600; font-size: 1.4rem; letter-spacing: 0.06em;
-      padding: 0.3rem 1rem;
+      padding: 0.3rem 1rem; box-sizing: border-box;
     }
 
     .npc-station-code { font-family: var(--font-data); font-size: 1rem; color: var(--text-secondary); }
