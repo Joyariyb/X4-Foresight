@@ -36,7 +36,7 @@
     <div class="nav-tab nav-dropdown" id="nav-stations"><i class="ti ti-building-factory-2"></i> Stations <i class="ti ti-chevron-down nav-dd-caret"></i>
       <div class="nav-dd-menu">
         <div class="nav-dd-item" onclick="switchTab('stations',document.getElementById('nav-stations'))"><i class="ti ti-user"></i> Player</div>
-        <div class="nav-dd-item" onclick="switchTab('stations-npc',document.getElementById('nav-stations'))"><i class="ti ti-robot"></i> NPC</div>
+        <div class="nav-dd-item" onclick="switchTab('stations-npc',document.getElementById('nav-stations')); renderNpcStationsVisibleRows()"><i class="ti ti-robot"></i> NPC</div>
       </div>
     </div>
     <div class="nav-tab" onclick="switchTab('crew',this)"><i class="ti ti-users"></i> Crew</div>

@@ -42,6 +42,10 @@
     if (s.tab === 'fleet' && s.fleetFaction) switchFleetTab(s.fleetFaction);
     if (s.tab === 'crew'  && s.crewRole)     switchCrewRole(s.crewRole);
     if (s.tab === 'diplomacy' && s.diploFaction) switchDiploTab(s.diploFaction);
+    // Its table is virtualized off the panel's real (post-switch) height, so
+    // a plain switchTab() here would leave it blank the same way a first-ever
+    // visit would — see renderNpcStationsVisibleRows() in npc-stations.js.
+    if (s.tab === 'stations-npc') renderNpcStationsVisibleRows();
     _navGuard = false;
     const content = document.getElementById('content');
     // Scroll restores after the panel is laid out (it was display:none).
