@@ -18,6 +18,16 @@
   // pans the scrubber.
   const counterpartyColourMap = {};
 
+  // Which axis the Mining Log pie currently groups by. Independent of
+  // econLogModeByStation (that switches the whole panel between Trade Log /
+  // Mining Log); this only matters once Mining Log is selected.
+  const miningPieModeByStation = {}; // 'resource' | 'ship'
+
+  // Stable per-ship slice colours for the mining pie's Ship mode, seeded once
+  // from the station's full mining history — same pattern as
+  // counterpartyColourMap above.
+  const miningShipColourMap = {};
+
   // Time-window scrubber state, one per station — same shape as cashflow-chart.js's
   // cfZoom so it can share the generic drag handler (see registerScrubber() call
   // at the bottom of this file). Unlike the cash-flow chart, the logs track's full
@@ -117,13 +127,13 @@
   // economyPieSvg (economy-chart.js) rather than shared, since that function
   // also drives the Breakdown pie's budget/graph/byship modes and isn't meant
   // to be generalised further.
-  function economyLogPieSvg(safeCode, stationCode, allTrades) {
+  function economyLogPieSvg(safeCode, stationCode, allTrades, allMining) {
     allTrades = allTrades || [];
 
-    // Mining deliveries have no counterparty — show the empty state instead of
-    // a real (but meaningless) pie.
+    // Mining deliveries have no counterparty, so this pie resolves them along
+    // two other axes instead — see miningPieSvg below.
     if ((econLogModeByStation[safeCode] || 'trade') === 'mining') {
-      return logPieEmptyState('No counterparty data', 'mining log');
+      return miningPieSvg(safeCode, stationCode, allMining || []);
     }
 
     // Seed the colour map once from the station's full, unwindowed trade
@@ -249,6 +259,225 @@
       </div>`;
   }
 
+  // Ghost donut for the Mining pie when there are no deliveries in the current
+  // window — unlike logPieEmptyState above, this keeps the SHIP/RESOURCE cycle
+  // pill clickable (mirrors graphPieEmptyState in economy-chart.js) so the
+  // user can still switch modes before any data scrolls into the window.
+  function miningPieEmptyState(safeCode, mode) {
+    const cx = 150, cy = 150, r = 92, hole = r * 0.5;
+    const ringMid = Math.round((r + hole) / 2);
+    const ringW   = r - hole;
+    const pillLabel = mode === 'ship' ? 'SHIP ›' : 'RESOURCE ›';
+    return `
+      <div style="padding:0">
+        <svg viewBox="-55 -25 410 350" style="width:100%;height:auto;display:block" overflow="visible">
+          <circle cx="${cx}" cy="${cy}" r="${ringMid}" fill="none"
+                  stroke="var(--outline)" stroke-width="${ringW}" stroke-dasharray="14 8" opacity="0.6"/>
+          <circle cx="${cx}" cy="${cy}" r="${hole}" fill="var(--surface-2)"/>
+          <g onclick="setMiningPieMode('${safeCode}')" style="cursor:pointer">
+            <rect x="${cx - 30}" y="${cy - 14}" width="60" height="12" rx="2"
+                  fill="${CHART_ACCENT}10" stroke="${CHART_ACCENT}30" stroke-width="0.5"/>
+            <text x="${cx}" y="${cy - 5}" text-anchor="middle" fill="${CHART_LINE}" fill-opacity="0.8"
+                  font-size="9" style="font-family:var(--font-data);letter-spacing:0.08em;text-transform:uppercase">${pillLabel}</text>
+          </g>
+          <text x="${cx}" y="${cy + 8}" text-anchor="middle" fill="var(--text-secondary)"
+                font-size="9" style="font-family:var(--font-data);letter-spacing:0.1em;text-transform:uppercase">No deliveries</text>
+          <text x="${cx}" y="${cy + 20}" text-anchor="middle" fill="var(--text-secondary)"
+                font-size="7.5" style="font-family:var(--font-data);opacity:0.55">in window</text>
+        </svg>
+      </div>`;
+  }
+
+  // Ship/Resource breakdown pie for the Mining Log pane — mining deliveries
+  // have no counterparty, so this pie resolves along two axes instead of one:
+  // which ship delivered (mirrors the trade pie's counterparty grouping) or
+  // which raw resource was delivered. Toggled by the cycle pill in the donut
+  // centre, same interaction as economyPieSvg's BUDGET/GRAPH pill
+  // (economy-chart.js). Geometry is copied verbatim from economyPieSvg, same
+  // as economyLogPieSvg above.
+  function miningPieSvg(safeCode, stationCode, allMining) {
+    const mode = miningPieModeByStation[safeCode] || 'resource';
+
+    // Same station/window scope as _miningLogHtml, so the pie always matches
+    // what's in the table below it. Mining deliveries are one-directional
+    // (the station only ever receives), so there's no direction filter here.
+    const zoom = econLogZoom[safeCode] || { hours: Infinity, offsetHours: 0 };
+    const rows = allMining.filter(t => t.station_code === stationCode && _inLogWindow(t.time_ago_s, zoom));
+
+    if (!rows.length) return miningPieEmptyState(safeCode, mode);
+
+    // Seed ship colours once from the station's full, unwindowed mining
+    // history so colours stay stable as the user pans the scrubber (mirrors
+    // counterpartyColourMap's seeding above).
+    if (mode === 'ship' && !miningShipColourMap[safeCode]) {
+      const names = [...new Set(
+        allMining.filter(t => t.station_code === stationCode).map(t => t.ship_name || t.ship_code || 'Unknown')
+      )].sort();
+      miningShipColourMap[safeCode] = {};
+      names.forEach((name, i) => {
+        miningShipColourMap[safeCode][name] = SHIP_COLOURS_PALETTE[i % SHIP_COLOURS_PALETTE.length];
+      });
+    }
+
+    // Per-key totals, plus a breakdown along the other axis so the hover
+    // tooltip can show e.g. a ship's per-resource split, or a resource's
+    // per-ship split.
+    const byKey = {};
+    rows.forEach(t => {
+      const key    = mode === 'ship' ? (t.ship_name || t.ship_code || 'Unknown') : (t.ware_name || 'Unknown');
+      const subKey = mode === 'ship' ? (t.ware_name || 'Unknown') : (t.ship_name || t.ship_code || 'Unknown');
+      const val = t.total_cr || 0;
+      if (!byKey[key]) byKey[key] = { total: 0, sub: {}, shipCode: t.ship_code };
+      byKey[key].total += val;
+      byKey[key].sub[subKey] = (byKey[key].sub[subKey] || 0) + val;
+    });
+
+    const lines = Object.entries(byKey)
+      .filter(([, v]) => v.total > 0)
+      .map(([name, v]) => ({ name, value: v.total, sub: v.sub, shipCode: v.shipCode }))
+      .sort((a, b) => b.value - a.value);
+
+    if (!lines.length) return miningPieEmptyState(safeCode, mode);
+
+    // ── Geometry — copied verbatim from economyPieSvg (economy-chart.js) ────
+    const cx = 150, cy = 150, r = 92;
+    const lift = 7; // px a slice translates outward on hover (also sizes the sheen)
+    const polar = (cxx, cyy, rad, deg) => {
+      const a = (deg - 90) * Math.PI / 180; // -90 so 0° starts at the top
+      return [cxx + rad * Math.cos(a), cyy + rad * Math.sin(a)];
+    };
+
+    const pieTotal = lines.reduce((sum, l) => sum + l.value, 0);
+
+    let angle = 0;
+    const slices = [];
+    lines.forEach(ln => {
+      const frac  = ln.value / pieTotal;
+      const start = angle;
+      const end   = angle + frac * 360;
+      angle = end;
+      const mid   = (start + end) / 2;
+      const col = mode === 'ship'
+        ? (miningShipColourMap[safeCode][ln.name] || 'var(--text-secondary)')
+        : (WARE_COLOURS[ln.name] || CHART_LINE);
+
+      let path;
+      if (frac >= 0.999) {
+        path = `M ${cx} ${cy - r} A ${r} ${r} 0 1 1 ${cx - 0.01} ${cy - r} Z`;
+      } else {
+        const [x1, y1] = polar(cx, cy, r, start);
+        const [x2, y2] = polar(cx, cy, r, end);
+        const largeArc = (end - start) > 180 ? 1 : 0;
+        path = `M ${cx} ${cy} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
+      }
+
+      const pct = (frac * 100).toFixed(1);
+      // Breakdown along the other axis, most-valuable first, so the tooltip
+      // can show e.g. "60% Ore, 40% Silicon" for a ship, or the reverse for a resource.
+      const subBreakdown = Object.entries(ln.sub)
+        .sort((a, b) => b[1] - a[1])
+        .map(([name, val]) => ({ name, pct: ((val / ln.value) * 100).toFixed(1) }));
+      const tip = encodeURIComponent(JSON.stringify({
+        name: ln.name, value: ln.value, pct, colour: col,
+        subLabel: mode === 'ship' ? 'Resource' : 'Ship', sub: subBreakdown,
+      }));
+      // Per-slice outward unit vector along the mid-angle, exposed as CSS vars
+      // so the :hover rule can lift the slice toward the viewer for a 3D "pop".
+      const [ux, uy] = polar(0, 0, 1, mid);
+      // Ship slices jump to the Fleet tab (mining ships delivering to a player
+      // station are always player-owned); resource slices aren't linked to
+      // anything (ware_id isn't exported for click-through).
+      const shipClick = (mode === 'ship' && ln.shipCode)
+        ? ` onclick="jumpToShip('${ln.shipCode}','player')" style="--dx:${(ux*lift).toFixed(2)}px;--dy:${(uy*lift).toFixed(2)}px;cursor:pointer"`
+        : ` style="--dx:${(ux*lift).toFixed(2)}px;--dy:${(uy*lift).toFixed(2)}px"`;
+      slices.push(
+        `<path class="pie-slice" d="${path}" fill="${col}" stroke="var(--surface-2)" stroke-width="1.5"
+               ${shipClick} data-mining-pie-tip="${tip}"></path>`
+      );
+    });
+
+    // Centre hole + total label make it a donut and give the figure a home.
+    const hole = r * 0.5;
+    const pillLabel = mode === 'ship' ? 'SHIP ›' : 'RESOURCE ›';
+
+    return `
+      <div style="padding:0">
+        <svg viewBox="-55 -25 410 350" style="width:100%;height:auto;display:block" overflow="visible">
+          <defs>
+            <radialGradient id="pieSheen" cx="0.36" cy="0.30" r="0.75">
+              <stop offset="0%"   stop-color="#fff" stop-opacity="0.42"/>
+              <stop offset="42%"  stop-color="#fff" stop-opacity="0.06"/>
+              <stop offset="62%"  stop-color="#000" stop-opacity="0"/>
+              <stop offset="100%" stop-color="#000" stop-opacity="0.42"/>
+            </radialGradient>
+            <radialGradient id="pieHole" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="60%"  stop-color="#000" stop-opacity="0"/>
+              <stop offset="100%" stop-color="#000" stop-opacity="0.55"/>
+            </radialGradient>
+          </defs>
+          <g class="pie-ring">${slices.join('')}</g>
+          <circle cx="${cx}" cy="${cy}" r="${r + lift}" fill="url(#pieSheen)" style="pointer-events:none"></circle>
+          <circle cx="${cx}" cy="${cy}" r="${hole}" fill="var(--surface-2)"></circle>
+          <circle cx="${cx}" cy="${cy}" r="${hole}" fill="url(#pieHole)" style="pointer-events:none"></circle>
+          <!-- Cycle pill replaces a static axis label — clicking toggles
+               SHIP → RESOURCE → SHIP for this station's mining pie only. -->
+          <g onclick="setMiningPieMode('${safeCode}')" style="cursor:pointer">
+            <rect x="${cx - 30}" y="${cy - 14}" width="60" height="12" rx="2"
+                  fill="${CHART_ACCENT}10" stroke="${CHART_ACCENT}30" stroke-width="0.5"/>
+            <text x="${cx}" y="${cy - 5}" text-anchor="middle" fill="${CHART_LINE}" fill-opacity="0.8"
+                  font-size="9" style="font-family:var(--font-data);letter-spacing:0.08em;text-transform:uppercase">${pillLabel}</text>
+          </g>
+          <text x="${cx}" y="${cy + 12}" text-anchor="middle" fill="var(--color-alert)"
+                font-size="15" style="font-family:var(--font-data)">${Math.round(pieTotal).toLocaleString()}</text>
+        </svg>
+      </div>`;
+  }
+
+  // Toggle the mining pie between Resource and Ship grouping, then rebuild
+  // just the pie in place — mirrors setPieMode's targeted rebuild in
+  // economy-chart.js.
+  function setMiningPieMode(safeCode) {
+    miningPieModeByStation[safeCode] = miningPieModeByStation[safeCode] === 'ship' ? 'resource' : 'ship';
+    const cache = econLogsCacheByStation[safeCode];
+    const el = document.getElementById('logpie-' + safeCode);
+    if (!el || !cache) return;
+    el.innerHTML = economyLogPieSvg(safeCode, cache.stationCode, cache.allTrades, cache.allMining);
+  }
+
+  // Mining pie slice hover — ship or resource name, delivery value, % share,
+  // and (like the trade pie) a breakdown along the other axis: a ship slice
+  // breaks down by resource, a resource slice breaks down by ship.
+  function miningPieTipHtml(d) {
+    const fmt = n => Math.round(n).toLocaleString();
+    const swatch = col => `<span style="display:inline-block;width:0.8rem;height:0.8rem;border-radius:var(--radius-sm);background:${col};flex-shrink:0"></span>`;
+    const subHtml = (d.sub || []).map(s => `
+      <div style="display:flex;justify-content:space-between;gap:1.2rem;padding:1px 0">
+        <span style="color:var(--text-secondary);font-size:0.95rem">${s.name}</span>
+        <span style="color:var(--text-secondary);font-family:var(--font-data);font-size:0.95rem">${s.pct}%</span>
+      </div>`).join('');
+    return `<div style="min-width:20rem;padding:0.2rem 0">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem">
+        <span style="display:inline-flex;align-items:center;gap:0.5rem;color:${d.colour};font-size:1.1rem;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap">${swatch(d.colour)}${d.name}</span>
+        <span style="color:${d.colour};font-family:var(--font-data);font-size:1.2rem">${d.pct}%</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;gap:1.2rem;padding:1px 0">
+        <span style="color:var(--text-brand);font-size:1rem">Delivery value</span>
+        <span style="color:var(--color-alert);font-family:var(--font-data);font-size:1.1rem">${fmt(d.value)} Cr</span>
+      </div>
+      ${subHtml ? `<div style="margin-top:0.5rem;padding-top:0.4rem;border-top:1px solid var(--outline)">
+        <div style="font-size:0.85rem;color:var(--text-brand);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.2rem">${d.subLabel}</div>
+        ${subHtml}
+      </div>` : ''}
+    </div>`;
+  }
+
+  registerTip('miningPieTip', (el, _e, tip) => {
+    tip.innerHTML = miningPieTipHtml(JSON.parse(decodeURIComponent(el.dataset.miningPieTip)));
+    tip.style.color = '';
+    tip.style.whiteSpace = 'normal';
+    return true;
+  });
+
   // Logs pie slice hover — counterparty name, credits, % share, and (unlike
   // the Breakdown pie) a per-ware breakdown of that counterparty's trades,
   // since the radial labels around the ring were dropped for being too
@@ -321,7 +550,7 @@
     const mode = econLogModeByStation[safeCode] || 'trade';
     return `
       <div class="econ-row">
-        <div id="logpie-${safeCode}" class="econ-pie">${economyLogPieSvg(safeCode, stationCode, allTrades)}</div>
+        <div id="logpie-${safeCode}" class="econ-pie">${economyLogPieSvg(safeCode, stationCode, allTrades, allMining)}</div>
         <div class="econ-graph">
           <div style="display:flex;align-items:center;gap:0.9375cqw;margin-bottom:0.625cqw">
             <button class="cf-toggle-btn ${mode === 'trade'  ? 'active' : ''}" onclick="setEconLogMode('${safeCode}','trade')"><i class="ti ti-arrows-exchange"></i> Trade Log</button>
