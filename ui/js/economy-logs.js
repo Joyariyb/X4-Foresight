@@ -12,6 +12,12 @@
   // panel in place without re-walking the whole card template.
   const econLogsCacheByStation = {};
 
+  // Stable per-counterparty slice colours for the Logs pie, seeded once from
+  // the station's full trade history (see economyLogPieSvg) — same pattern as
+  // shipColourMap in cashflow-chart.js, so colours don't reshuffle as the user
+  // pans the scrubber.
+  const counterpartyColourMap = {};
+
   // Time-window scrubber state, one per station — same shape as cashflow-chart.js's
   // cfZoom so it can share the generic drag handler (see registerScrubber() call
   // at the bottom of this file). Unlike the cash-flow chart, the logs track's full
@@ -84,13 +90,211 @@
     return `<span style="color:var(--text-label)">${name}</span>`;
   }
 
+  // Ghost donut for the Logs pie — same dashed-ring look as economy-chart.js's
+  // graphPieEmptyState, minus the BUDGET/GRAPH cycle pill (this pie has only
+  // one data source, so there's nothing to cycle to).
+  function logPieEmptyState(line1, line2) {
+    const cx = 150, cy = 150, r = 92, hole = r * 0.5;
+    const ringMid = Math.round((r + hole) / 2);
+    const ringW   = r - hole;
+    return `
+      <div style="padding:0">
+        <svg viewBox="-55 -25 410 350" style="width:100%;height:auto;display:block" overflow="visible">
+          <circle cx="${cx}" cy="${cy}" r="${ringMid}" fill="none"
+                  stroke="var(--outline)" stroke-width="${ringW}" stroke-dasharray="14 8" opacity="0.6"/>
+          <circle cx="${cx}" cy="${cy}" r="${hole}" fill="var(--surface-2)"/>
+          <text x="${cx}" y="${cy - 2}" text-anchor="middle" fill="var(--text-secondary)"
+                font-size="9" style="font-family:var(--font-data);letter-spacing:0.1em;text-transform:uppercase">${line1}</text>
+          <text x="${cx}" y="${cy + 10}" text-anchor="middle" fill="var(--text-secondary)"
+                font-size="7.5" style="font-family:var(--font-data);opacity:0.55">${line2}</text>
+        </svg>
+      </div>`;
+  }
+
+  // Counterparty breakdown pie for the Logs pane — mirrors the trade rows the
+  // table below shows exactly (same station/window/direction filters), so the
+  // pie and table never disagree. Geometry is copied verbatim from
+  // economyPieSvg (economy-chart.js) rather than shared, since that function
+  // also drives the Breakdown pie's budget/graph/byship modes and isn't meant
+  // to be generalised further.
+  function economyLogPieSvg(safeCode, stationCode, allTrades) {
+    allTrades = allTrades || [];
+
+    // Mining deliveries have no counterparty — show the empty state instead of
+    // a real (but meaningless) pie.
+    if ((econLogModeByStation[safeCode] || 'trade') === 'mining') {
+      return logPieEmptyState('No counterparty data', 'mining log');
+    }
+
+    // Seed the colour map once from the station's full, unwindowed trade
+    // history so colours stay stable as the user pans the scrubber (mirrors
+    // shipColourMap's seeding in cashflow-chart.js). 'Unknown' always gets
+    // var(--text-label) below, so it's excluded here.
+    if (!counterpartyColourMap[safeCode]) {
+      const names = [...new Set(
+        allTrades
+          .filter(t => t.station_code === stationCode && t.resolution !== 'despawned' && t.counterparty)
+          .map(t => t.counterparty)
+      )].sort();
+      counterpartyColourMap[safeCode] = {};
+      names.forEach((name, i) => {
+        counterpartyColourMap[safeCode][name] = SHIP_COLOURS_PALETTE[i % SHIP_COLOURS_PALETTE.length];
+      });
+    }
+
+    // Same station/window/direction scope as _tradeLogHtml, so the pie always
+    // matches what's in the table below it.
+    const dir = econLogDirectionByStation[safeCode] || 'all';
+    const dirFilter = dir === 'buy' ? 'In' : dir === 'sell' ? 'Out' : null;
+    const zoom = econLogZoom[safeCode] || { hours: Infinity, offsetHours: 0 };
+
+    // Per-counterparty totals, plus a per-ware breakdown of each bucket so the
+    // hover tooltip can show what share of that counterparty's trade came
+    // from each ware (e.g. "60% Advanced Electronics, 40% Energy Cells").
+    const byKey = {};
+    allTrades.forEach(t => {
+      if (t.station_code !== stationCode) return;
+      if (dirFilter && t.direction !== dirFilter) return;
+      if (!_inLogWindow(t.time_ago_s, zoom)) return;
+      const key = (t.resolution === 'despawned' || !t.counterparty) ? 'Unknown' : t.counterparty;
+      const val = t.total_cr || 0;
+      if (!byKey[key]) byKey[key] = { total: 0, wares: {} };
+      byKey[key].total += val;
+      const ware = t.ware_name || 'Unknown ware';
+      byKey[key].wares[ware] = (byKey[key].wares[ware] || 0) + val;
+    });
+
+    const lines = Object.entries(byKey)
+      .filter(([, v]) => v.total > 0)
+      .map(([name, v]) => ({ name, value: v.total, wares: v.wares }))
+      .sort((a, b) => b.value - a.value);
+
+    if (!lines.length) return logPieEmptyState('No trades', 'in window');
+
+    // ── Geometry — copied verbatim from economyPieSvg (economy-chart.js) ────
+    const cx = 150, cy = 150, r = 92;
+    const lift = 7; // px a slice translates outward on hover (also sizes the sheen)
+    const polar = (cxx, cyy, rad, deg) => {
+      const a = (deg - 90) * Math.PI / 180; // -90 so 0° starts at the top
+      return [cxx + rad * Math.cos(a), cyy + rad * Math.sin(a)];
+    };
+
+    const pieTotal = lines.reduce((sum, l) => sum + l.value, 0);
+
+    let angle = 0;
+    const slices = [];
+    lines.forEach(ln => {
+      const frac  = ln.value / pieTotal;
+      const start = angle;
+      const end   = angle + frac * 360;
+      angle = end;
+      const mid   = (start + end) / 2;
+      const col   = ln.name === 'Unknown' ? 'var(--text-label)' : (counterpartyColourMap[safeCode][ln.name] || 'var(--text-secondary)');
+
+      let path;
+      if (frac >= 0.999) {
+        path = `M ${cx} ${cy - r} A ${r} ${r} 0 1 1 ${cx - 0.01} ${cy - r} Z`;
+      } else {
+        const [x1, y1] = polar(cx, cy, r, start);
+        const [x2, y2] = polar(cx, cy, r, end);
+        const largeArc = (end - start) > 180 ? 1 : 0;
+        path = `M ${cx} ${cy} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
+      }
+
+      const pct = (frac * 100).toFixed(1);
+      // Ware breakdown within this counterparty's bucket, most-traded first,
+      // so the tooltip can show e.g. "60% Advanced Electronics, 40% Energy Cells".
+      const wareBreakdown = Object.entries(ln.wares)
+        .sort((a, b) => b[1] - a[1])
+        .map(([ware, val]) => ({ ware, pct: ((val / ln.value) * 100).toFixed(1) }));
+      const tip = encodeURIComponent(JSON.stringify({ name: ln.name, value: ln.value, pct, colour: col, wares: wareBreakdown }));
+      // Per-slice outward unit vector along the mid-angle, exposed as CSS vars
+      // so the :hover rule can lift the slice toward the viewer for a 3D "pop".
+      const [ux, uy] = polar(0, 0, 1, mid);
+      // Not clickable — counterparty_id isn't exported to the frontend (only
+      // counterparty_name is), so there's nothing for a slice click to jump to.
+      slices.push(
+        `<path class="pie-slice" d="${path}" fill="${col}" stroke="var(--surface-2)" stroke-width="1.5"
+               style="--dx:${(ux*lift).toFixed(2)}px;--dy:${(uy*lift).toFixed(2)}px" data-log-pie-tip="${tip}"></path>`
+      );
+    });
+
+    // Centre hole + total label make it a donut and give the figure a home.
+    const hole = r * 0.5;
+
+    return `
+      <div style="padding:0">
+        <svg viewBox="-55 -25 410 350" style="width:100%;height:auto;display:block" overflow="visible">
+          <defs>
+            <radialGradient id="pieSheen" cx="0.36" cy="0.30" r="0.75">
+              <stop offset="0%"   stop-color="#fff" stop-opacity="0.42"/>
+              <stop offset="42%"  stop-color="#fff" stop-opacity="0.06"/>
+              <stop offset="62%"  stop-color="#000" stop-opacity="0"/>
+              <stop offset="100%" stop-color="#000" stop-opacity="0.42"/>
+            </radialGradient>
+            <radialGradient id="pieHole" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="60%"  stop-color="#000" stop-opacity="0"/>
+              <stop offset="100%" stop-color="#000" stop-opacity="0.55"/>
+            </radialGradient>
+          </defs>
+          <g class="pie-ring">${slices.join('')}</g>
+          <circle cx="${cx}" cy="${cy}" r="${r + lift}" fill="url(#pieSheen)" style="pointer-events:none"></circle>
+          <circle cx="${cx}" cy="${cy}" r="${hole}" fill="var(--surface-2)"></circle>
+          <circle cx="${cx}" cy="${cy}" r="${hole}" fill="url(#pieHole)" style="pointer-events:none"></circle>
+          <text x="${cx}" y="${cy - 5}" text-anchor="middle" fill="var(--text-secondary)"
+                font-size="9" style="font-family:var(--font-data);letter-spacing:0.08em;text-transform:uppercase;opacity:0.7">Counterparty</text>
+          <text x="${cx}" y="${cy + 12}" text-anchor="middle" fill="var(--color-alert)"
+                font-size="15" style="font-family:var(--font-data)">${Math.round(pieTotal).toLocaleString()}</text>
+        </svg>
+      </div>`;
+  }
+
+  // Logs pie slice hover — counterparty name, credits, % share, and (unlike
+  // the Breakdown pie) a per-ware breakdown of that counterparty's trades,
+  // since the radial labels around the ring were dropped for being too
+  // cluttered with many distinct counterparties.
+  function logPieTipHtml(d) {
+    const fmt = n => Math.round(n).toLocaleString();
+    // Small square swatch in the ware's own colour — same dot pattern used
+    // for the sector-cluster legend (scl-dot in sectors.css) and the
+    // Breakdown pie's tooltip (economy-chart.js), reused inline here since
+    // tooltip markup is all inline styles, not CSS classes.
+    const swatch = col => `<span style="display:inline-block;width:0.8rem;height:0.8rem;border-radius:var(--radius-sm);background:${col};flex-shrink:0"></span>`;
+    const waresHtml = (d.wares || []).map(w => `
+      <div style="display:flex;justify-content:space-between;gap:1.2rem;padding:1px 0">
+        <span style="display:inline-flex;align-items:center;gap:0.5rem;color:var(--text-secondary);font-size:0.95rem">${swatch(WARE_COLOURS[w.ware] || CHART_LINE)}${w.ware}</span>
+        <span style="color:var(--text-secondary);font-family:var(--font-data);font-size:0.95rem">${w.pct}%</span>
+      </div>`).join('');
+    return `<div style="min-width:20rem;padding:0.2rem 0">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem">
+        <span style="display:inline-flex;align-items:center;gap:0.5rem;color:${d.colour};font-size:1.1rem;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap">${swatch(d.colour)}${d.name}</span>
+        <span style="color:${d.colour};font-family:var(--font-data);font-size:1.2rem">${d.pct}%</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;gap:1.2rem;padding:1px 0">
+        <span style="color:var(--text-brand);font-size:1rem">Trade value</span>
+        <span style="color:var(--color-alert);font-family:var(--font-data);font-size:1.1rem">${fmt(d.value)} Cr</span>
+      </div>
+      ${waresHtml ? `<div style="margin-top:0.5rem;padding-top:0.4rem;border-top:1px solid var(--outline)">${waresHtml}</div>` : ''}
+    </div>`;
+  }
+
+  registerTip('logPieTip', (el, _e, tip) => {
+    tip.innerHTML = logPieTipHtml(JSON.parse(decodeURIComponent(el.dataset.logPieTip)));
+    tip.style.color = '';
+    tip.style.whiteSpace = 'normal';
+    return true;
+  });
+
   // Entry point — called by populate.js when it builds a station card, and
   // again internally on every mode/direction toggle. Rebuilds and caches.
   //
-  // Wrapped in .econ-row/.econ-graph — the same dark backdrop, padding, and
-  // width caps (32-63.5rem) the Breakdown cash-flow chart uses — so the Logs
-  // window reads as the same shape and size as the graph it replaces, just
-  // with a table instead of an SVG chart inside.
+  // Wrapped in the same .econ-row/.econ-pie/.econ-graph structure as the
+  // Breakdown panel (pie left, graph right) so the row's flex-split — and
+  // therefore each side's width at any window size — comes out identical.
+  // The graph side's toggle header (cf-toggle-btn, cqw-based) and log box
+  // (aspect-ratio: 7/4, matching the cash-flow SVG's viewBox) also scale
+  // with width the same way the Breakdown side's chrome and chart do, so the
+  // two panels resize in lockstep instead of just matching at one width.
   function economyLogsHtml(safeCode, stationCode, allTrades, allMining) {
     allTrades = allTrades || [];
     allMining = allMining || [];
@@ -116,11 +320,12 @@
 
     const mode = econLogModeByStation[safeCode] || 'trade';
     return `
-      <div class="econ-row econ-row-logs">
+      <div class="econ-row">
+        <div id="logpie-${safeCode}" class="econ-pie">${economyLogPieSvg(safeCode, stationCode, allTrades)}</div>
         <div class="econ-graph">
-          <div class="trend-toggle" style="margin-bottom:0.6rem">
-            <button class="trend-toggle-btn ${mode === 'trade'  ? 'active' : ''}" onclick="setEconLogMode('${safeCode}','trade')"><i class="ti ti-arrows-exchange"></i> Trade Log</button>
-            <button class="trend-toggle-btn ${mode === 'mining' ? 'active' : ''}" onclick="setEconLogMode('${safeCode}','mining')"><i class="ti ti-triangle"></i> Mining Log</button>
+          <div style="display:flex;align-items:center;gap:0.9375cqw;margin-bottom:0.625cqw">
+            <button class="cf-toggle-btn ${mode === 'trade'  ? 'active' : ''}" onclick="setEconLogMode('${safeCode}','trade')"><i class="ti ti-arrows-exchange"></i> Trade Log</button>
+            <button class="cf-toggle-btn ${mode === 'mining' ? 'active' : ''}" onclick="setEconLogMode('${safeCode}','mining')"><i class="ti ti-triangle"></i> Mining Log</button>
           </div>
           ${mode === 'trade'
             ? _tradeLogHtml(safeCode, stationCode, allTrades)
@@ -149,8 +354,9 @@
 
   // Full per-station commercial trade log — same rows as the CLI's
   // COMPLETED TRADE LOG (display.py _trade_log), minus the raw ship ID
-  // (the UI links the ship name straight to the Naval tab instead).
-  const _TRADE_LOG_CAP = 150;
+  // (the UI links the ship name straight to the Naval tab instead). No row
+  // cap — .econlog-box scrolls, so the scrubber window is the only thing
+  // that limits what's shown; narrow it to cut down the row count.
 
   // Buy/Sell/All direction filter for the trade log — same vertical
   // sliding-pill look as the Ships graph's Total/Kills/Losses switch on the
@@ -200,8 +406,6 @@
       _inLogWindow(t.time_ago_s, zoom));
     rows.sort((a, b) => a.time_ago_s - b.time_ago_s); // most recent first
     const total = rows.length;
-    const truncated = total > _TRADE_LOG_CAP;
-    if (truncated) rows = rows.slice(0, _TRADE_LOG_CAP);
 
     const pill = _dirPillHtml(safeCode, dir);
 
@@ -240,7 +444,6 @@
           </tr></thead>
           <tbody>${trRows}</tbody>
         </table>
-        ${truncated ? `<div style="padding-top:0.6rem;font-family:var(--font-data);font-size:0.95rem;color:var(--text-label)">Showing ${_TRADE_LOG_CAP} most recent of ${total.toLocaleString()}</div>` : ''}
       </div>
     </div>`;
   }
@@ -285,8 +488,6 @@
     let rows = allMining.filter(t => t.station_code === stationCode && _inLogWindow(t.time_ago_s, zoom));
     rows.sort((a, b) => a.time_ago_s - b.time_ago_s); // most recent first
     const total = rows.length;
-    const truncated = total > _TRADE_LOG_CAP;
-    if (truncated) rows = rows.slice(0, _TRADE_LOG_CAP);
 
     if (!total) {
       return `<div class="econlog-box" style="display:flex;align-items:center;justify-content:center;text-align:center;font-family:var(--font-data);font-size:1.1rem;color:var(--text-brand)">No mining deliveries logged</div>`;
@@ -318,7 +519,6 @@
           </tr></thead>
           <tbody>${trRows}</tbody>
         </table>
-        ${truncated ? `<div style="padding-top:0.6rem;font-family:var(--font-data);font-size:0.95rem;color:var(--text-label)">Showing ${_TRADE_LOG_CAP} most recent of ${total.toLocaleString()}</div>` : ''}
       </div>`;
   }
 

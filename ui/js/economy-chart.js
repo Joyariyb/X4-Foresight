@@ -286,11 +286,16 @@
     function budgetTipHtml(d) {
       const fmt = n => Math.round(n).toLocaleString();
 
+      // Small square swatch in the slice's own colour — same dot pattern used
+      // for the sector-cluster legend (scl-dot in sectors.css), reused inline
+      // here since tooltip markup is all inline styles, not CSS classes.
+      const swatch = `<span style="display:inline-block;width:0.8rem;height:0.8rem;border-radius:var(--radius-sm);background:${d.colour};flex-shrink:0"></span>`;
+
       // Graph mode: only trade credits and share are known — no per-unit breakdown.
       if (d.mode === 'graph') {
         return `<div style="min-width:20rem;padding:0.2rem 0">
           <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem">
-            <span style="color:${d.colour};font-size:1.1rem;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap">${d.ware}</span>
+            <span style="display:inline-flex;align-items:center;gap:0.5rem;color:${d.colour};font-size:1.1rem;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap">${swatch}${d.ware}</span>
             <span style="color:${d.colour};font-family:var(--font-data);font-size:1.2rem">${d.pct}%</span>
           </div>
           <div style="display:flex;justify-content:space-between;gap:1.2rem;padding:1px 0">
@@ -311,7 +316,7 @@
       };
       return `<div style="min-width:20rem;padding:0.2rem 0">
         <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem">
-          <span style="color:${d.colour};font-size:1.1rem;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap">${d.ware}</span>
+          <span style="display:inline-flex;align-items:center;gap:0.5rem;color:${d.colour};font-size:1.1rem;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap">${swatch}${d.ware}</span>
           <span style="color:${d.colour};font-family:var(--font-data);font-size:1.2rem">${d.pct}%</span>
         </div>
         <div style="display:flex;justify-content:space-between;gap:1.2rem;padding:1px 0">
