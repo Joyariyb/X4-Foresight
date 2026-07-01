@@ -22,6 +22,7 @@
   "scanner/context.py",
   "scanner/entities.py",
   "scanner/galaxy_map.py",
+  "scanner/handlers/combat.py",
   "scanner/handlers/economy.py",
   "scanner/handlers/gate.py",
   "scanner/handlers/npc_station.py",
