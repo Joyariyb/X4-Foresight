@@ -745,6 +745,9 @@
       // centre; per-ware figures appear on slice hover. safeCode is the same
       // sanitised key used by the cashflow chart so both share a common ID space.
       const safeCode = s.code.replace(/[^a-z0-9]/gi, '');
+      // Which Economy sub-panel is showing — set by the Breakdown/Logs dropdown
+      // (selectEconomyView), defaults to Breakdown on first render.
+      const econView = economyViewByStation[s.code] || 'breakdown';
       const econRows = budLines.length === 0
         ? `<div style="padding:1.2rem 1.4rem;font-family:var(--font-data);font-size:1.1rem;color:var(--text-brand)">No economy data</div>`
         : `<!-- Pie (left) + cash-flow graph (right) as one locked, equal-height pair.
@@ -875,8 +878,13 @@
         <div class="station-tab-panel" data-tab="production" style="display:block">${prodHeader}${prodRows}</div>
         <div class="station-tab-panel" data-tab="docked"     style="display:none">${dockedRows}</div>
         </div>
-        <!-- Slider panel 1: Economy — reverse-engineered supply budget breakdown -->
-        <div class="station-slider-panel" data-slider="1" style="display:none">${econRows}</div>
+        <!-- Slider panel 1: Economy — Breakdown (budget/graph pair, unchanged) or
+             Logs (trade/mining history), switched by the Breakdown/Logs dropdown
+             above the tri-track. See selectEconomyView in station-helpers.js. -->
+        <div class="station-slider-panel" data-slider="1" style="display:none">
+          <div class="econview-panel" data-econview="breakdown" style="display:${econView === 'breakdown' ? 'block' : 'none'}">${econRows}</div>
+          <div class="econview-panel" data-econview="logs" id="econlogs-${safeCode}" style="display:${econView === 'logs' ? 'block' : 'none'}">${economyLogsHtml(safeCode, s.code, allTrades)}</div>
+        </div>
         <!-- Slider panel 2: placeholder for a future view -->
         <div class="station-slider-panel" data-slider="2" style="display:none">
           <div style="padding:1.2rem 1.4rem;font-family:var(--font-data);font-size:1.1rem;color:var(--text-brand)">—</div>

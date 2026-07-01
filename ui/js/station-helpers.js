@@ -26,10 +26,21 @@
     openEconomyDropdown = null;
   }
 
-  // Picking Breakdown or Logs from the dropdown: record the choice, jump the
+  // Swaps the visible sub-panel within an already-rendered Economy slider
+  // panel (breakdown vs. logs) without touching the rest of the card's DOM.
+  function setEconomyView(code, view) {
+    economyViewByStation[code] = view;
+    const card = document.getElementById('station-' + code);
+    if (!card) return;
+    card.querySelectorAll('.econview-panel').forEach(p => {
+      p.style.display = (p.dataset.econview === view) ? 'block' : 'none';
+    });
+  }
+
+  // Picking Breakdown or Logs from the dropdown: swap the sub-panel, jump the
   // slider to the Economy panel, and close the picker.
   function selectEconomyView(code, view) {
-    economyViewByStation[code] = view;
+    setEconomyView(code, view);
     setStationSlider(code, 1);
     closeAllEconomyDropdowns();
   }

@@ -43,4 +43,7 @@
     /* Sector cell (Fleet tab) — jumps to the Universe tab's Sectors subtab */
     .sector-link { cursor: pointer; }
     .sector-link:hover { color: var(--color-warning) !important; text-decoration: underline; }
+    /* Ship name cell (Economy → Logs trade/mining tables) — jumps to the Naval tab */
+    .ship-link { cursor: pointer; }
+    .ship-link:hover { color: var(--color-warning) !important; text-decoration: underline; }
 
