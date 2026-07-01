@@ -883,8 +883,10 @@
              Logs (trade/mining history), switched by the Breakdown/Logs dropdown
              above the tri-track. See selectEconomyView in station-helpers.js. -->
         <div class="station-slider-panel" data-slider="1" style="display:none">
-          <div class="econview-panel" data-econview="breakdown" style="display:${econView === 'breakdown' ? 'block' : 'none'}">${econRows}</div>
-          <div class="econview-panel" data-econview="logs" id="econlogs-${safeCode}" style="display:${econView === 'logs' ? 'block' : 'none'}">${economyLogsHtml(safeCode, s.code, allTrades, allMining)}</div>
+          <div class="econview-stack">
+            <div class="econview-panel${econView === 'breakdown' ? ' active' : ''}" data-econview="breakdown">${econRows}</div>
+            <div class="econview-panel${econView === 'logs' ? ' active' : ''}" data-econview="logs" id="econlogs-${safeCode}">${economyLogsHtml(safeCode, s.code, allTrades, allMining)}</div>
+          </div>
         </div>
         <!-- Slider panel 2: placeholder for a future view -->
         <div class="station-slider-panel" data-slider="2" style="display:none">

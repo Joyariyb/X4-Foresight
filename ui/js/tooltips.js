@@ -40,10 +40,20 @@
     document.addEventListener('mouseleave', function() { tip.style.display = 'none'; });
 
     // ── Scrubber zoom + pan drag handler ──────────────────────────────────────
+    // Generic across every registered SCRUBBER_KINDS entry (see tip-registry.js)
+    // — the cash-flow chart and the economy logs panel each register their own
+    // zoom store/bounds/rebuild callback but share this one drag implementation,
+    // so both sliders look and behave identically. Distinguished by
+    // data-scrubber-kind since data-scrubber (the safeCode) is shared by every
+    // per-station widget on the same card.
+    //
     // Mousedown on the handle body starts a pan; on either edge grip starts a
     // resize.  mousemove / mouseup are on the document so drags that leave the
     // element are not interrupted.
     (function() {
+      const resolve = (v, safeCode) => typeof v === 'function' ? v(safeCode) : v;
+      let scrubDrag = null;
+
       document.addEventListener('mousedown', function(e) {
         const resizeEl = e.target.closest('.cf-scrubber-resize[data-side]');
         const handleEl = !resizeEl && e.target.closest('.cf-scrubber-handle');
@@ -51,28 +61,32 @@
         // Only act when the click was inside a known scrubber part.
         if (!trackEl || (!resizeEl && !handleEl)) return;
 
+        const kindKey = trackEl.dataset.scrubberKind;
+        const kind = SCRUBBER_KINDS[kindKey];
         const safeCode = trackEl.dataset.scrubber;
-        if (!cfZoom[safeCode]) return;
-        const { hours, offsetHours } = cfZoom[safeCode];
+        if (!kind || !kind.zoom[safeCode]) return;
+        const { hours, offsetHours } = kind.zoom[safeCode];
 
-        cfScrubDrag = {
-          safeCode,
+        scrubDrag = {
+          kindKey, safeCode,
           // 'pan' moves both edges; 'resize-left'/'resize-right' moves one edge.
           mode:       resizeEl ? (resizeEl.dataset.side === 'left' ? 'resize-left' : 'resize-right') : 'pan',
           startX:     e.clientX,
           startHours: hours,
           startOff:   offsetHours,
           trackW:     trackEl.getBoundingClientRect().width,
+          maxHours:   resolve(kind.maxHours, safeCode),
+          minHours:   resolve(kind.minHours, safeCode),
           _raf:       false,
         };
         e.preventDefault(); // prevent text selection during drag
       });
 
       document.addEventListener('mousemove', function(e) {
-        if (!cfScrubDrag) return;
-        const { safeCode, mode, startX, startHours, startOff, trackW } = cfScrubDrag;
+        if (!scrubDrag) return;
+        const { kindKey, safeCode, mode, startX, startHours, startOff, trackW, maxHours, minHours } = scrubDrag;
         // Convert mouse delta (px) to hours using the track's current width.
-        const dH = (e.clientX - startX) / trackW * CF_MAX_HOURS;
+        const dH = (e.clientX - startX) / trackW * maxHours;
 
         let newH = startHours, newOff = startOff;
         if (mode === 'pan') {
@@ -91,37 +105,37 @@
         }
 
         // Clamp window width and offset so nothing goes out of range.
-        newH   = Math.max(CF_MIN_HOURS, Math.min(CF_MAX_HOURS, newH));
-        newOff = Math.max(0, Math.min(CF_MAX_HOURS - newH, newOff));
-        cfZoom[safeCode] = { hours: newH, offsetHours: newOff };
+        newH   = Math.max(minHours, Math.min(maxHours, newH));
+        newOff = Math.max(0, Math.min(maxHours - newH, newOff));
+        SCRUBBER_KINDS[kindKey].zoom[safeCode] = { hours: newH, offsetHours: newOff };
 
         // Fast-path: update the handle geometry immediately so the track feels
-        // responsive even before the full rAF chart rebuild completes.
-        const track = document.querySelector(`[data-scrubber="${safeCode}"]`);
+        // responsive even before the full rAF rebuild completes.
+        const track = document.querySelector(`[data-scrubber="${safeCode}"][data-scrubber-kind="${kindKey}"]`);
         if (track) {
           const handle = track.querySelector('.cf-scrubber-handle');
           if (handle) {
-            handle.style.left  = ((CF_MAX_HOURS - newOff - newH) / CF_MAX_HOURS * 100).toFixed(2) + '%';
-            handle.style.width = (newH / CF_MAX_HOURS * 100).toFixed(2) + '%';
+            handle.style.left  = ((maxHours - newOff - newH) / maxHours * 100).toFixed(2) + '%';
+            handle.style.width = (newH / maxHours * 100).toFixed(2) + '%';
           }
         }
 
-        // Throttle chart rebuilds to one per animation frame so intermediate
-        // mouse events don't pile up and cause jank.
-        if (!cfScrubDrag._raf) {
-          cfScrubDrag._raf = true;
+        // Throttle rebuilds to one per animation frame so intermediate mouse
+        // events don't pile up and cause jank.
+        if (!scrubDrag._raf) {
+          scrubDrag._raf = true;
           requestAnimationFrame(function() {
-            if (cfScrubDrag) { cfScrubDrag._raf = false; rebuildCfChart(safeCode); }
+            if (scrubDrag) { scrubDrag._raf = false; SCRUBBER_KINDS[kindKey].onChange(safeCode); }
           });
         }
       });
 
       document.addEventListener('mouseup', function() {
-        if (cfScrubDrag) {
-          // One final rebuild on release to guarantee the chart matches the
+        if (scrubDrag) {
+          // One final rebuild on release to guarantee the display matches the
           // handle's resting position even if the last rAF fired early.
-          rebuildCfChart(cfScrubDrag.safeCode);
-          cfScrubDrag = null;
+          SCRUBBER_KINDS[scrubDrag.kindKey].onChange(scrubDrag.safeCode);
+          scrubDrag = null;
         }
       });
     })();

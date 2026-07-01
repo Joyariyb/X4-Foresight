@@ -28,12 +28,16 @@
 
   // Swaps the visible sub-panel within an already-rendered Economy slider
   // panel (breakdown vs. logs) without touching the rest of the card's DOM.
+  // Toggles the 'active' class (opacity swap in charts.css), not display:none —
+  // display:none would tear down the Breakdown pie/chart's filter:drop-shadow
+  // layers, and QtWebEngine repainting those from scratch on every switch is
+  // what caused the visible lag (see the .econview-panel comment in charts.css).
   function setEconomyView(code, view) {
     economyViewByStation[code] = view;
     const card = document.getElementById('station-' + code);
     if (!card) return;
     card.querySelectorAll('.econview-panel').forEach(p => {
-      p.style.display = (p.dataset.econview === view) ? 'block' : 'none';
+      p.classList.toggle('active', p.dataset.econview === view);
     });
   }
 

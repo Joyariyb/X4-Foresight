@@ -21,3 +21,18 @@
   // markers) regardless of what is hovered now.
   const TIP_RESETS = [];
   function onTipReset(fn) { TIP_RESETS.push(fn); }
+
+  // Same idea, for the draggable time-window scrubber (.cf-scrubber-track) shared
+  // by the cash-flow chart and the economy logs panel — both want the exact same
+  // slider look/drag behaviour but keep their own per-station zoom state and
+  // rebuild logic. The generic drag handler in tooltips.js reads this map; it
+  // never touches a feature's zoom store directly.
+  //
+  // kind: 'cf' | 'logs' -> { zoom, minHours, maxHours, onChange }
+  //   zoom      { [safeCode]: { hours, offsetHours } } — mutated in place by drag
+  //   minHours  number, or (safeCode) => number — narrowest allowed window
+  //   maxHours  number, or (safeCode) => number — full width of the track (== the
+  //             window's total time span, may differ per station for logs)
+  //   onChange  (safeCode) => void — re-renders that feature after a drag step
+  const SCRUBBER_KINDS = {};
+  function registerScrubber(kind, def) { SCRUBBER_KINDS[kind] = def; }

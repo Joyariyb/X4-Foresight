@@ -137,3 +137,29 @@
       height: 32rem; overflow-y: auto;
     }
 
+    /* Logs panel's .econ-row only ever has one child (.econ-graph) — no pie
+       beside it — so .econ-row's justify-content:space-between pins it to the
+       left with dead space on the right. Right-justify it instead so it lines
+       up with where the cash-flow graph sits in the paired budget row above.
+       Padding still comes from .econ-row itself, so it matches exactly. */
+    .econ-row-logs { justify-content: flex-end; }
+
+    /* Breakdown/Logs sub-view swap (selectEconomyView/setEconomyView in
+       station-helpers.js). Both panels stack in the same grid cell and swap via
+       opacity rather than display:none — the Breakdown side carries the pie's
+       filter:drop-shadow ring plus a filter:drop-shadow per cash-flow chart
+       marker, and QtWebEngine repaints those filters from scratch any time the
+       element re-enters the render tree (see the ware/ship-chip transition
+       note above for the same repaint cost hitting from a different trigger).
+       opacity is a compositor-only property, so the already-painted layer is
+       just re-blended instead of rebuilt, which is what keeps the toggle from
+       stalling the main thread on repeated switches. */
+    .econview-stack { display: grid; }
+    .econview-panel {
+      grid-area: 1 / 1;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--duration-short);
+    }
+    .econview-panel.active { opacity: 1; pointer-events: auto; }
+

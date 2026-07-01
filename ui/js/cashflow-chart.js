@@ -11,8 +11,13 @@
   const CF_MIN_HOURS = 3, CF_MAX_HOURS = 24;
   const cfZoom = {}; // Persists across tab switches
   const cfStationCache = {}; // Reuse on scrubber drag (avoid recomputation)
-  let cfScrubDrag = null;
   const wareMode = {};
+
+  // Registers this chart's zoom store with the generic scrubber drag handler
+  // in tooltips.js (see SCRUBBER_KINDS in tip-registry.js) — rebuildCfChart is
+  // a hoisted function declaration, so referencing it here before its later
+  // definition in this file is fine.
+  registerScrubber('cf', { zoom: cfZoom, minHours: CF_MIN_HOURS, maxHours: CF_MAX_HOURS, onChange: rebuildCfChart });
 
   const avgWare = {};
   const avgMode = {};
@@ -968,7 +973,7 @@
     const { hours, offsetHours } = cfZoom[safeCode] || { hours: CF_MAX_HOURS, offsetHours: 0 };
     const hLeft  = ((CF_MAX_HOURS - offsetHours - hours) / CF_MAX_HOURS * 100).toFixed(2);
     const hWidth = (hours / CF_MAX_HOURS * 100).toFixed(2);
-    return `<div class="cf-scrubber-track" data-scrubber="${safeCode}">
+    return `<div class="cf-scrubber-track" data-scrubber="${safeCode}" data-scrubber-kind="cf">
       <div class="cf-scrubber-handle" style="left:${hLeft}%;width:${hWidth}%">
         <div class="cf-scrubber-resize" data-side="left"></div>
         <div class="cf-scrubber-resize" data-side="right"></div>
