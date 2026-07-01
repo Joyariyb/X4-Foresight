@@ -817,12 +817,19 @@
                          transform="rotate(-45 90 50)"/>
               </svg>
 
-              <div class="tri-track" id="tri-${s.code}" data-pos="0"
-                   style="width:25.2rem;position:relative;z-index:1">
-                <div class="tri-thumb"></div>
-                <span class="tri-opt active" onclick="setStationSlider('${s.code}',0)">Overview</span>
-                <span class="tri-opt"        onclick="setStationSlider('${s.code}',1)">Economy</span>
-                <span class="tri-opt"        onclick="setStationSlider('${s.code}',2)">More</span>
+              <div class="econ-dd-wrap" style="width:25.2rem;z-index:1">
+                <div class="tri-track" id="tri-${s.code}" data-pos="0" style="position:relative">
+                  <div class="tri-thumb"></div>
+                  <span class="tri-opt active" onclick="setStationSlider('${s.code}',0)">Overview</span>
+                  <span class="tri-opt"        onclick="toggleEconomyDropdown(event,'${s.code}')">Economy<i class="ti ti-chevron-down tri-opt-caret"></i></span>
+                  <span class="tri-opt"        onclick="setStationSlider('${s.code}',2)">More</span>
+                </div>
+                <!-- Breakdown/Logs picker for the Economy segment — click-driven
+                     (see toggleEconomyDropdown), anchored under that third only. -->
+                <div class="econ-dd-menu" id="econdd-${s.code}">
+                  <div class="econ-dd-item" onclick="selectEconomyView('${s.code}','breakdown')"><i class="ti ti-chart-donut-2"></i> Breakdown</div>
+                  <div class="econ-dd-item" onclick="selectEconomyView('${s.code}','logs')"><i class="ti ti-list-details"></i> Logs</div>
+                </div>
               </div>
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.5rem">

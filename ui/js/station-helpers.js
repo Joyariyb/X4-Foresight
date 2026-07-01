@@ -1,5 +1,43 @@
   // Core role: Station tab switcher, trader highlight, and budget stat display.
 
+  // Which sub-view (breakdown/logs) each station's Economy slider panel shows.
+  // Read by populate.js when it renders slider panel 1; defaults to breakdown.
+  const economyViewByStation = {};
+
+  // Opens/closes the Breakdown/Logs picker for one station's Economy segment.
+  // Click-driven (not hover, unlike the topbar nav dropdown) so it doesn't
+  // fire while the user is just passing the cursor over the tri-track.
+  let openEconomyDropdown = null;
+
+  function toggleEconomyDropdown(e, code) {
+    e.stopPropagation();
+    const menu = document.getElementById('econdd-' + code);
+    if (!menu) return;
+    const wasOpen = menu.classList.contains('open');
+    closeAllEconomyDropdowns();
+    if (!wasOpen) {
+      menu.classList.add('open');
+      openEconomyDropdown = code;
+    }
+  }
+
+  function closeAllEconomyDropdowns() {
+    document.querySelectorAll('.econ-dd-menu.open').forEach(m => m.classList.remove('open'));
+    openEconomyDropdown = null;
+  }
+
+  // Picking Breakdown or Logs from the dropdown: record the choice, jump the
+  // slider to the Economy panel, and close the picker.
+  function selectEconomyView(code, view) {
+    economyViewByStation[code] = view;
+    setStationSlider(code, 1);
+    closeAllEconomyDropdowns();
+  }
+
+  document.addEventListener('click', (e) => {
+    if (openEconomyDropdown && !e.target.closest('.econ-dd-wrap')) closeAllEconomyDropdowns();
+  });
+
   // Switches the visible tab panel within a single station card.
   function switchStationTab(code, tab) {
     const card = document.getElementById('station-' + code);

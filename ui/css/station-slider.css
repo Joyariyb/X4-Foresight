@@ -55,3 +55,42 @@
     /* Dark text on the bright teal thumb; subtle emboss via text-shadow.       */
     .tri-opt.active { color: #051210; font-weight: 700; text-shadow: 0 1px 0 rgba(255,255,255,0.22); }
 
+    /* Discreet caret on the Economy segment — hints at the Breakdown/Logs
+       dropdown without competing with the Overview/More labels either side.
+       Dim at rest, brightens with the rest of the label on hover/active. */
+    .tri-opt-caret {
+      margin-left: 0.3rem;
+      font-size: 0.85em;
+      opacity: 0.45;
+      vertical-align: -0.05em;
+      transition: opacity var(--duration-short);
+    }
+    .tri-opt:hover .tri-opt-caret { opacity: 0.75; }
+    .tri-opt.active .tri-opt-caret { opacity: 0.85; }
+
+    /* ── ECONOMY DROPDOWN (tri-track "Economy" segment → Breakdown / Logs) ──
+       Click-driven (toggleEconomyDropdown in station-helpers.js), unlike the
+       topbar's hover-driven nav-dd-menu — anchored under the Economy third
+       of the tri-track only, not the full slider width. */
+    .econ-dd-wrap { position: relative; }
+    .econ-dd-menu {
+      position: absolute; top: calc(100% + 0.4rem); left: 33.333%; width: 33.333%;
+      min-width: 11rem; z-index: 60;
+      background: var(--surface-1); border: 1px solid var(--outline);
+      border-radius: var(--radius-md);
+      box-shadow: 0 0.6rem 1.6rem rgba(0,0,0,0.5);
+      display: none; flex-direction: column; padding: 0.3rem 0;
+      opacity: 0; transform: translateY(-0.3rem);
+      transition: opacity var(--duration-short), transform var(--duration-short);
+    }
+    .econ-dd-menu.open { display: flex; opacity: 1; transform: translateY(0); }
+    .econ-dd-item {
+      display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 1rem;
+      font-family: var(--font-label); font-size: 1.05rem; letter-spacing: 0.05em;
+      text-transform: uppercase; color: var(--text-secondary); cursor: pointer;
+      white-space: nowrap;
+      transition: background var(--duration-short), color var(--duration-short);
+    }
+    .econ-dd-item:hover { background: var(--surface-2); color: #5eead4; }
+    .econ-dd-item i { font-size: 1.2rem; }
+
