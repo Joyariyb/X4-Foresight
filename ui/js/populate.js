@@ -73,7 +73,8 @@
     const players  = ships.player_ships;
     const stations  = data.stations       || [];
     const rep       = data.reputation     || [];
-    const allTrades = data.station_trades || [];
+    const allTrades = data.station_trades   || [];
+    const allMining = data.mining_deliveries || [];
     warePrices      = data.ware_prices    || {};
 
     document.getElementById("ov-pilot").textContent  = player.name || "—";
@@ -883,7 +884,7 @@
              above the tri-track. See selectEconomyView in station-helpers.js. -->
         <div class="station-slider-panel" data-slider="1" style="display:none">
           <div class="econview-panel" data-econview="breakdown" style="display:${econView === 'breakdown' ? 'block' : 'none'}">${econRows}</div>
-          <div class="econview-panel" data-econview="logs" id="econlogs-${safeCode}" style="display:${econView === 'logs' ? 'block' : 'none'}">${economyLogsHtml(safeCode, s.code, allTrades)}</div>
+          <div class="econview-panel" data-econview="logs" id="econlogs-${safeCode}" style="display:${econView === 'logs' ? 'block' : 'none'}">${economyLogsHtml(safeCode, s.code, allTrades, allMining)}</div>
         </div>
         <!-- Slider panel 2: placeholder for a future view -->
         <div class="station-slider-panel" data-slider="2" style="display:none">

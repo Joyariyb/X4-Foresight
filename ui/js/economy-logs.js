@@ -40,8 +40,12 @@
   // width caps (32-63.5rem) the Breakdown cash-flow chart uses — so the Logs
   // window reads as the same shape and size as the graph it replaces, just
   // with a table instead of an SVG chart inside.
-  function economyLogsHtml(safeCode, stationCode, allTrades) {
-    econLogsCacheByStation[safeCode] = { stationCode, allTrades: allTrades || [] };
+  function economyLogsHtml(safeCode, stationCode, allTrades, allMining) {
+    econLogsCacheByStation[safeCode] = {
+      stationCode,
+      allTrades: allTrades || [],
+      allMining: allMining || [],
+    };
     const mode = econLogModeByStation[safeCode] || 'trade';
     return `
       <div class="econ-row">
@@ -50,7 +54,9 @@
             <button class="trend-toggle-btn ${mode === 'trade'  ? 'active' : ''}" onclick="setEconLogMode('${safeCode}','trade')"><i class="ti ti-arrows-exchange"></i> Trade Log</button>
             <button class="trend-toggle-btn ${mode === 'mining' ? 'active' : ''}" onclick="setEconLogMode('${safeCode}','mining')"><i class="ti ti-triangle"></i> Mining Log</button>
           </div>
-          ${mode === 'trade' ? _tradeLogHtml(safeCode, stationCode, allTrades) : _miningLogPlaceholderHtml()}
+          ${mode === 'trade'
+            ? _tradeLogHtml(safeCode, stationCode, allTrades)
+            : _miningLogHtml(safeCode, stationCode, allMining || [])}
         </div>
       </div>`;
   }
@@ -69,7 +75,7 @@
     const cache = econLogsCacheByStation[safeCode];
     const el = document.getElementById('econlogs-' + safeCode);
     if (!cache || !el) return;
-    el.innerHTML = economyLogsHtml(safeCode, cache.stationCode, cache.allTrades);
+    el.innerHTML = economyLogsHtml(safeCode, cache.stationCode, cache.allTrades, cache.allMining);
   }
 
   // Full per-station commercial trade log — same rows as the CLI's
@@ -96,7 +102,7 @@
       </div>`;
 
     if (!total) {
-      return `${dirBar}<div style="padding:1.6rem 0;text-align:center;font-family:var(--font-data);font-size:1.1rem;color:var(--text-brand)">No trades logged</div>`;
+      return `${dirBar}<div class="econlog-box" style="display:flex;align-items:center;justify-content:center;text-align:center;font-family:var(--font-data);font-size:1.1rem;color:var(--text-brand)">No trades logged</div>`;
     }
 
     const trRows = rows.map(t => {
@@ -118,7 +124,7 @@
     }).join('');
 
     return `${dirBar}
-      <div style="overflow-x:auto">
+      <div class="econlog-box">
         <table class="data-table">
           <thead><tr>
             <th>Time</th><th>Ship</th><th>Dir</th><th>Ware</th>
@@ -131,8 +137,48 @@
       </div>`;
   }
 
-  // Mining Log wiring lands in a later increment — placeholder keeps the
-  // Trade/Mining toggle fully functional in the meantime.
-  function _miningLogPlaceholderHtml() {
-    return `<div style="padding:1.6rem 0;text-align:center;font-family:var(--font-data);font-size:1.1rem;color:var(--text-brand)">Mining log coming soon</div>`;
+  // Raw-resource deliveries (ore, silicon, ice, gas, ...) from player mining
+  // ships to this station — same rows as the CLI's "Mining deliveries" block
+  // in display.py's _trades(), but per-delivery rather than aggregated, and
+  // sorted most-recent-first like the trade log. One-directional (the
+  // station only ever receives), so there's no All/Buy/Sell filter here.
+  function _miningLogHtml(safeCode, stationCode, allMining) {
+    let rows = allMining.filter(t => t.station_code === stationCode);
+    rows.sort((a, b) => a.time_ago_s - b.time_ago_s); // most recent first
+    const total = rows.length;
+    const truncated = total > _TRADE_LOG_CAP;
+    if (truncated) rows = rows.slice(0, _TRADE_LOG_CAP);
+
+    if (!total) {
+      return `<div class="econlog-box" style="display:flex;align-items:center;justify-content:center;text-align:center;font-family:var(--font-data);font-size:1.1rem;color:var(--text-brand)">No mining deliveries logged</div>`;
+    }
+
+    const trRows = rows.map(t => {
+      const ship = t.ship_name || t.ship_code || '—';
+      // Mining ships delivering to a player station are always player-owned.
+      const shipHtml = t.ship_code
+        ? `<span class="ship-link" onclick="jumpToShip('${t.ship_code}','player')">${ship}</span>`
+        : ship;
+      return `<tr>
+        <td class="mono">${_tradeLogAgo(t.time_ago_s)}</td>
+        <td>${shipHtml}</td>
+        <td>${t.ware_name}</td>
+        <td class="mono" style="text-align:right">${t.amount.toLocaleString()}</td>
+        <td class="mono" style="text-align:right">${t.price_cr.toLocaleString(undefined, {maximumFractionDigits: 2})}</td>
+        <td class="mono" style="text-align:right">${Math.round(t.total_cr).toLocaleString()}</td>
+      </tr>`;
+    }).join('');
+
+    return `
+      <div class="econlog-box">
+        <table class="data-table">
+          <thead><tr>
+            <th>Time</th><th>Ship</th><th>Ware</th>
+            <th style="text-align:right">Units</th><th style="text-align:right">Cr/u</th>
+            <th style="text-align:right">Total Cr</th>
+          </tr></thead>
+          <tbody>${trRows}</tbody>
+        </table>
+        ${truncated ? `<div style="padding-top:0.6rem;font-family:var(--font-data);font-size:0.95rem;color:var(--text-label)">Showing ${_TRADE_LOG_CAP} most recent of ${total.toLocaleString()}</div>` : ''}
+      </div>`;
   }

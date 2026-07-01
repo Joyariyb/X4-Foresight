@@ -123,3 +123,17 @@
       container-type: inline-size;
     }
 
+    /* ── LOG WINDOW BOX (Economy → Logs) ──
+       Same dark inset-glow box the cash-flow chart's SVG sits in — see the
+       repeated background/border/box-shadow/padding literal in every chart
+       builder in cashflow-chart.js. Reused here (as a named class, since this
+       is its second use site) so the Logs window's content area matches the
+       Breakdown graph's box exactly. Fixed height + internal scroll, since a
+       trade log can run far longer than a chart's fixed aspect ratio. */
+    .econlog-box {
+      background: #030d14; border: 1px solid rgba(25,230,200,0.18);
+      border-radius: 0.3rem; box-shadow: inset 0 0 24px rgba(25,230,200,0.05);
+      padding: 0.4rem;
+      height: 32rem; overflow-y: auto;
+    }
+
