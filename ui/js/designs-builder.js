@@ -33,12 +33,12 @@
   // Per-category icon + colour for the section headers (.dsect-hd). The tint is
   // the same colour at low alpha, used as the header background.
   const SLOT_META = {
-    hull:     { icon:'ti-ufo',        color:'var(--yellow)', tint:'rgba(227,179,65,0.08)' },
-    weapon:   { icon:'ti-bolt',       color:'var(--red)',    tint:'rgba(248,81,73,0.08)' },
-    turret:   { icon:'ti-circle-dot', color:'var(--amber)',  tint:'rgba(210,153,34,0.08)' },
-    shield:   { icon:'ti-shield',     color:'var(--teal)',   tint:'rgba(45,212,191,0.08)' },
-    engine:   { icon:'ti-engine',     color:'var(--purple)', tint:'rgba(163,113,247,0.08)' },
-    thruster: { icon:'ti-windmill',   color:'var(--lime)',   tint:'rgba(57,255,20,0.08)' },
+    hull:     { icon:'ti-ufo',        color:'var(--color-highlight)', tint:'rgba(227,179,65,0.08)' },
+    weapon:   { icon:'ti-bolt',       color:'var(--color-negative)',    tint:'rgba(248,81,73,0.08)' },
+    turret:   { icon:'ti-circle-dot', color:'var(--color-warning)',  tint:'rgba(210,153,34,0.08)' },
+    shield:   { icon:'ti-shield',     color:'var(--color-primary)',   tint:'rgba(45,212,191,0.08)' },
+    engine:   { icon:'ti-engine',     color:'var(--color-special)', tint:'rgba(163,113,247,0.08)' },
+    thruster: { icon:'ti-windmill',   color:'var(--color-alert)',   tint:'rgba(57,255,20,0.08)' },
   };
 
   // Colour + tint for the size badge in the card summary. Mirrors the S/M/L
@@ -46,10 +46,10 @@
   // (SIZE_COLOURS in constants.js); XL doesn't exist there yet so it's only
   // defined here for now.
   const SIZE_TINT = {
-    S:  { c: 'var(--text-dim)', bg: 'rgba(255,255,255,0.05)' },
-    M:  { c: 'var(--teal)',     bg: 'rgba(45,212,191,0.08)' },
-    L:  { c: 'var(--amber)',    bg: 'rgba(210,153,34,0.08)' },
-    XL: { c: 'var(--purple)',   bg: 'rgba(163,113,247,0.08)' },
+    S:  { c: 'var(--text-secondary)', bg: 'rgba(255,255,255,0.05)' },
+    M:  { c: 'var(--color-primary)',     bg: 'rgba(45,212,191,0.08)' },
+    L:  { c: 'var(--color-warning)',    bg: 'rgba(210,153,34,0.08)' },
+    XL: { c: 'var(--color-special)',   bg: 'rgba(163,113,247,0.08)' },
   };
 
   const SLOT_STATS = {
@@ -341,7 +341,7 @@
       }).join('');
       equip += section(slot, label, slotsText, headerRow(defs) + body);
     }
-    if (!equip) equip = `<div style="padding:30px 10px;text-align:center;color:var(--text-dim);font-size:12px">No equipment fitted.</div>`;
+    if (!equip) equip = `<div style="padding:30px 10px;text-align:center;color:var(--text-secondary);font-size:12px">No equipment fitted.</div>`;
 
     // ── Hull preview (right half) — the swappable view, Hull/wireframe is the
     // only one built so far; more views (loadout diagram, stats) can slot in
@@ -361,7 +361,7 @@
 
     const n = d.ships.length;
     const chips = d.ships.map(s =>
-      `<span onclick="jumpToShip('${s.code}')" style="cursor:pointer;font-family:var(--font-mono);font-size:11px;color:var(--teal);border:1px solid var(--border);border-radius:2px;padding:2px 8px">${s.code}${s.name ? ' · ' + s.name : ''}</span>`
+      `<span onclick="jumpToShip('${s.code}')" style="cursor:pointer;font-family:var(--font-data);font-size:11px;color:var(--color-primary);border:1px solid var(--outline);border-radius:2px;padding:2px 8px">${s.code}${s.name ? ' · ' + s.name : ''}</span>`
     ).join('');
 
     // Summary strip — size badge, faction badge, ship count — lives in the
@@ -371,7 +371,7 @@
     const summaryMeta = `<span class="dcard-meta">
       <span class="dcard-size-badge" style="color:${sizeTint.c};background:${sizeTint.bg};border-color:${sizeTint.c}">${d.hullSize || '—'}</span>
       ${designBadge(d.hullFaction)}
-      <span class="dcard-meta-used">used by <b style="color:var(--lime)">${n}</b> ship${n > 1 ? 's' : ''}</span>
+      <span class="dcard-meta-used">used by <b style="color:var(--color-alert)">${n}</b> ship${n > 1 ? 's' : ''}</span>
     </span>`;
 
     // Native <details> for the whole-card collapse (same idiom as the Sectors
@@ -392,8 +392,8 @@
         ${hullPanel}
       </div>
       <div class="dcard-footer">
-        <span class="dcard-used" id="design-used-${idx}" onclick="toggleDesignShips(${idx})">used by <b style="color:var(--lime)">${n}</b> ship${n > 1 ? 's' : ''} <i class="ti ti-chevron-down"></i></span>
-        <span class="dcard-total-val">Design total <b>${designCr(d.totalCost)}</b> <span style="font-size:11px;color:var(--text-dim)">Cr</span></span>
+        <span class="dcard-used" id="design-used-${idx}" onclick="toggleDesignShips(${idx})">used by <b style="color:var(--color-alert)">${n}</b> ship${n > 1 ? 's' : ''} <i class="ti ti-chevron-down"></i></span>
+        <span class="dcard-total-val">Design total <b>${designCr(d.totalCost)}</b> <span style="font-size:11px;color:var(--text-secondary)">Cr</span></span>
       </div>
       <div id="design-ships-${idx}" class="dcard-ships">${chips}</div>
     </details>`;
@@ -457,7 +457,7 @@
       const def = owned[0] || Object.keys(HULL_CATALOG).sort()[0];
       if (def) { builderSelectHull(def); return; }
       document.getElementById('builder-root').innerHTML =
-        '<div style="padding:60px;text-align:center;color:var(--text-dim)">No hull catalog loaded — run a scan first.</div>';
+        '<div style="padding:60px;text-align:center;color:var(--text-secondary)">No hull catalog loaded — run a scan first.</div>';
       return;
     }
     renderBuilder();
@@ -595,7 +595,7 @@
     }).join('');
     // Ship icon + native select (grouped by faction); option text carries the
     // spelled-out size, e.g. "Cerberus Vanguard · Medium".
-    return `<div class="bhull"><i class="ti ti-rocket" style="color:var(--teal);font-size:16px"></i><select onchange="builderSelectHull(this.value)">${groups}</select></div>`;
+    return `<div class="bhull"><i class="ti ti-rocket" style="color:var(--color-primary);font-size:16px"></i><select onchange="builderSelectHull(this.value)">${groups}</select></div>`;
   }
 
   function renderBuilder() {
@@ -693,9 +693,9 @@
           const on = fitted.has(mac);
           const tipAttr = wantsTip ? ` data-weapon-tip="${encodeURIComponent(JSON.stringify({...e, _shipHeatFactor: shipHeatFactor}))}"` : '';
           return `<div class="borow ${on ? 'on' : ''}" onclick="builderFitAdd('${sel}','${mac}')"${tipAttr}>
-            ${designBadge(e.race)}<span style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${on ? 'color:var(--lime)' : ''}">${e.name}${e.mk ? ` Mk${e.mk}` : ''}</span>
+            ${designBadge(e.race)}<span style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${on ? 'color:var(--color-alert)' : ''}">${e.name}${e.mk ? ` Mk${e.mk}` : ''}</span>
             ${statCells(e)}<span class="dcost">${e.price != null ? designCr(e.price) : '—'}</span>
-            <i class="ti ${on ? 'ti-check' : 'ti-plus'}" style="color:var(--lime);font-size:13px"></i></div>`;
+            <i class="ti ${on ? 'ti-check' : 'ti-plus'}" style="color:var(--color-alert);font-size:13px"></i></div>`;
         }).join('');
 
       // In-Game/True Stats toggle for the hover tooltip's derived combat stats
@@ -706,17 +706,17 @@
       const trueOn = weaponStatsMode === 'true';
       const statsToggle = wantsStatsToggle ? `<button class="bstats-toggle ${trueOn ? 'on' : ''}"
           onclick="setWeaponStatsMode('${trueOn ? 'ingame' : 'true'}')"
-          title="${trueOn ? 'Showing True Stats (raw, 3dp, no truncation) — click for In-Game' : 'Showing In-Game stats (truncated to match the real tooltip) — click for True Stats'}">
+          data-text-tip="${trueOn ? 'Showing True Stats (raw, 3dp, no truncation) — click for In-Game' : 'Showing In-Game stats (truncated to match the real tooltip) — click for True Stats'}">
           <i class="ti ti-flask" style="font-size:11px"></i> True Stats</button>` : '';
 
       right = `<div class="bopts">
         <div class="bopts-h"><i class="ti ${m.icon}" style="color:${m.color};font-size:15px"></i><span class="lbl">Available · ${SIZE_WORD[selSize] || selSize.toUpperCase()} ${label}</span>${builderEqFilterDD(sel, selSize)}${statsToggle}<span class="mt">${selSize.toUpperCase()} mount${full ? ' · full' : ''}</span></div>
         <div style="padding:5px 8px">
           <div class="borow"><span></span><span></span>${headerCells}<span class="boh">Cost</span><span></span></div>
-          ${opts || '<div style="color:var(--text-dim);font-size:11px;padding:8px">No compatible equipment.</div>'}
+          ${opts || '<div style="color:var(--text-secondary);font-size:11px;padding:8px">No compatible equipment.</div>'}
         </div></div>`;
     } else {
-      right = `<div class="bopts" style="padding:30px;text-align:center;color:var(--text-dim)">Select a Fit button to choose equipment for that mount size.</div>`;
+      right = `<div class="bopts" style="padding:30px;text-align:center;color:var(--text-secondary)">Select a Fit button to choose equipment for that mount size.</div>`;
     }
 
     root.innerHTML = `
@@ -727,9 +727,9 @@
         <button class="bsave" onclick="builderSave()"><i class="ti ti-device-floppy" style="font-size:13px;vertical-align:-2px"></i> Save</button>
       </div>
       <div class="btwo"><div>${left}</div>${right}</div>
-      <div style="display:flex;align-items:baseline;gap:10px;border-top:1px solid var(--border);margin-top:10px;padding-top:9px">
-        <span style="font-family:var(--font-cond);font-weight:600;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dim)">Design total</span>
-        <span style="margin-left:auto;font-family:var(--font-mono);font-size:17px;color:var(--amber)">${designCr(total)} <span style="font-size:11px;color:var(--text-dim)">Cr</span></span>
+      <div style="display:flex;align-items:baseline;gap:10px;border-top:1px solid var(--outline);margin-top:10px;padding-top:9px">
+        <span style="font-family:var(--font-label);font-weight:600;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-secondary)">Design total</span>
+        <span style="margin-left:auto;font-family:var(--font-data);font-size:17px;color:var(--color-warning)">${designCr(total)} <span style="font-size:11px;color:var(--text-secondary)">Cr</span></span>
       </div>`;
   }
 
@@ -812,12 +812,12 @@
     const statFmt = n => Math.round(n).toLocaleString();
     const statRow = (label, value, color) => value == null ? '' :
         `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.4rem;padding:1px 0">
-           <span style="color:var(--text-dim);font-size:1.1rem">${label}</span>
-           <span style="font-family:var(--font-mono);font-size:1.1rem;white-space:nowrap${color ? `;color:${color}` : ''}">${value}</span>
+           <span style="color:var(--text-secondary);font-size:1.1rem">${label}</span>
+           <span style="font-family:var(--font-data);font-size:1.1rem;white-space:nowrap${color ? `;color:${color}` : ''}">${value}</span>
          </div>`;
     const statSection = (icon, color, title, rows) => !rows ? '' :
         `<div style="margin:0.8rem 0 0.2rem">
-           <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;color:${color};margin-bottom:0.4rem;padding-bottom:0.3rem;border-bottom:1px solid var(--border)">
+           <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;color:${color};margin-bottom:0.4rem;padding-bottom:0.3rem;border-bottom:1px solid var(--outline)">
              <i class="ti ${icon}" style="font-size:1.1rem"></i>${title}
            </div>
            ${rows}
@@ -873,10 +873,10 @@
       let dmgRows = '';
       if (e.damage_rate_burst != null) {
         if (e.slot === 'weapon') {
-          dmgRows += row('Burst Weapon Damage', `${dmg(e.damage_rate_burst)} MW`, 'var(--red)');
-          dmgRows += row('Sustained Weapon Damage', `${dmg(e.damage_rate_sustained)} MW`, 'var(--amber)');
+          dmgRows += row('Burst Weapon Damage', `${dmg(e.damage_rate_burst)} MW`, 'var(--color-negative)');
+          dmgRows += row('Sustained Weapon Damage', `${dmg(e.damage_rate_sustained)} MW`, 'var(--color-warning)');
         } else {
-          dmgRows += row('Weapon Damage', `${dmg(e.damage_rate_burst)} MW`, 'var(--red)');
+          dmgRows += row('Weapon Damage', `${dmg(e.damage_rate_burst)} MW`, 'var(--color-negative)');
         }
       }
 
@@ -908,9 +908,9 @@
         ${row('Compatibility', compat)}
         ${row('Storage Capacity', e.storage_capacity != null ? fmt(e.storage_capacity) : null)}
         ${row('Price', e.price_min != null ? `${fmt(e.price_min)}–${fmt(e.price_max)} Cr` : (e.price != null ? `${fmt(e.price)} Cr` : null))}
-        ${section('ti-bolt', 'var(--red)', 'Weapon Damage Rate', dmgRows)}
-        ${section('ti-target', 'var(--teal)', 'Projectile', projRows)}
-        ${section('ti-flame', 'var(--amber)', 'Heat', heatRows)}
+        ${section('ti-bolt', 'var(--color-negative)', 'Weapon Damage Rate', dmgRows)}
+        ${section('ti-target', 'var(--color-primary)', 'Projectile', projRows)}
+        ${section('ti-flame', 'var(--color-warning)', 'Heat', heatRows)}
       </div>`;
     }
 
@@ -948,8 +948,8 @@
         <div style="font-size:1.3rem;font-weight:600;color:var(--text);margin-bottom:0.2rem">${e.name}${e.mk ? ` Mk${e.mk}` : ''}</div>
         ${row('Compatibility', compat)}
         ${row('Price', e.price_min != null ? `${fmt(e.price_min)}–${fmt(e.price_max)} Cr` : (e.price != null ? `${fmt(e.price)} Cr` : null))}
-        ${section('ti-shield', 'var(--teal)', 'Shield Output', chargeRows)}
-        ${section('ti-lock', 'var(--amber)', 'Integrity', integRows)}
+        ${section('ti-shield', 'var(--color-primary)', 'Shield Output', chargeRows)}
+        ${section('ti-lock', 'var(--color-warning)', 'Integrity', integRows)}
       </div>`;
     }
 
@@ -987,10 +987,10 @@
         <div style="font-size:1.3rem;font-weight:600;color:var(--text);margin-bottom:0.2rem">${e.name}${e.mk ? ` Mk${e.mk}` : ''}</div>
         ${row('Compatibility', compat)}
         ${row('Price', e.price_min != null ? `${fmt(e.price_min)}–${fmt(e.price_max)} Cr` : (e.price != null ? `${fmt(e.price)} Cr` : null))}
-        ${section('ti-engine', 'var(--teal)', 'Thrust', thrustRows)}
-        ${section('ti-rocket', 'var(--red)', 'Boost', boostRows)}
-        ${section('ti-clock', 'var(--amber)', 'Travel', travelRows)}
-        ${section('ti-lock', 'var(--green)', 'Integrity', integRows)}
+        ${section('ti-engine', 'var(--color-primary)', 'Thrust', thrustRows)}
+        ${section('ti-rocket', 'var(--color-negative)', 'Boost', boostRows)}
+        ${section('ti-clock', 'var(--color-warning)', 'Travel', travelRows)}
+        ${section('ti-lock', 'var(--color-positive)', 'Integrity', integRows)}
       </div>`;
     }
 

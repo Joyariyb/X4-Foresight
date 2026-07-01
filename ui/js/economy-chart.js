@@ -92,19 +92,19 @@
       <div style="padding:0">
         <svg viewBox="-55 -25 410 350" style="width:100%;height:auto;display:block" overflow="visible">
           <circle cx="${cx}" cy="${cy}" r="${ringMid}" fill="none"
-                  stroke="var(--border)" stroke-width="${ringW}" stroke-dasharray="14 8" opacity="0.6"/>
-          <circle cx="${cx}" cy="${cy}" r="${hole}" fill="var(--bg-card)"/>
+                  stroke="var(--outline)" stroke-width="${ringW}" stroke-dasharray="14 8" opacity="0.6"/>
+          <circle cx="${cx}" cy="${cy}" r="${hole}" fill="var(--surface-2)"/>
           <!-- Pill stays clickable so the user can flip back to budget -->
           <g onclick="setPieMode('${safeCode}')" style="cursor:pointer">
             <rect x="${cx - 30}" y="${cy - 14}" width="60" height="12" rx="2"
                   fill="${CHART_ACCENT}10" stroke="${CHART_ACCENT}30" stroke-width="0.5"/>
             <text x="${cx}" y="${cy - 5}" text-anchor="middle" fill="${CHART_LINE}" fill-opacity="0.8"
-                  font-size="9" style="font-family:var(--font-mono);letter-spacing:0.08em;text-transform:uppercase">GRAPH ›</text>
+                  font-size="9" style="font-family:var(--font-data);letter-spacing:0.08em;text-transform:uppercase">GRAPH ›</text>
           </g>
-          <text x="${cx}" y="${cy + 8}" text-anchor="middle" fill="var(--text-dim)"
-                font-size="9" style="font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase">No trades</text>
-          <text x="${cx}" y="${cy + 20}" text-anchor="middle" fill="var(--text-dim)"
-                font-size="7.5" style="font-family:var(--font-mono);opacity:0.55">last 24 h</text>
+          <text x="${cx}" y="${cy + 8}" text-anchor="middle" fill="var(--text-secondary)"
+                font-size="9" style="font-family:var(--font-data);letter-spacing:0.1em;text-transform:uppercase">No trades</text>
+          <text x="${cx}" y="${cy + 20}" text-anchor="middle" fill="var(--text-secondary)"
+                font-size="7.5" style="font-family:var(--font-data);opacity:0.55">last 24 h</text>
         </svg>
       </div>`;
   }
@@ -147,7 +147,7 @@
                 .slice().sort((a, b) => b.value - a.value);
       const pieSum = lines.reduce((sum, l) => sum + l.value, 0);
       if (!lines.length || pieSum <= 0) {
-        return `<div style="padding:2.4rem 1.4rem;text-align:center;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No budget to chart</div>`;
+        return `<div style="padding:2.4rem 1.4rem;text-align:center;font-family:var(--font-data);font-size:1.1rem;color:var(--text-brand)">No budget to chart</div>`;
       }
       // bud.total is the pre-computed scanner sum; prefer it so the displayed
       // figure stays consistent with the budget table even if some lines were filtered.
@@ -174,7 +174,7 @@
       angle = end;
       const mid   = (start + end) / 2;
       // Ships carry a pre-assigned colour from shipColourMap; wares look up WARE_COLOURS.
-      const col   = ln.colour || WARE_COLOURS[ln.ware_name] || 'var(--text-dim)';
+      const col   = ln.colour || WARE_COLOURS[ln.ware_name] || 'var(--text-secondary)';
 
       // Slice path. A single full-circle ware would degenerate the arc, so draw
       // it as a complete circle instead of a zero-length wedge.
@@ -204,7 +204,7 @@
         ? ` onclick="jumpToShip('${ln.ware_name}','${ln.faction}')" style="--dx:${(ux*lift).toFixed(2)}px;--dy:${(uy*lift).toFixed(2)}px;cursor:pointer"`
         : ` style="--dx:${(ux*lift).toFixed(2)}px;--dy:${(uy*lift).toFixed(2)}px"`;
       slices.push(
-        `<path class="pie-slice" d="${path}" fill="${col}" stroke="var(--bg-card)" stroke-width="1.5"
+        `<path class="pie-slice" d="${path}" fill="${col}" stroke="var(--surface-2)" stroke-width="1.5"
                ${shipClick} data-budget-tip="${tip}"></path>`
       );
 
@@ -260,7 +260,7 @@
                hover lift so a lifted slice's rim stays under the sheen (otherwise
                the protruding crescent escapes the rim shading and looks bright). -->
           <circle cx="${cx}" cy="${cy}" r="${r + lift}" fill="url(#pieSheen)" style="pointer-events:none"></circle>
-          <circle cx="${cx}" cy="${cy}" r="${hole}" fill="var(--bg-card)"></circle>
+          <circle cx="${cx}" cy="${cy}" r="${hole}" fill="var(--surface-2)"></circle>
           <!-- Inner-edge shadow gives the centre hole apparent depth. -->
           <circle cx="${cx}" cy="${cy}" r="${hole}" fill="url(#pieHole)" style="pointer-events:none"></circle>
           <!-- Cycle pill replaces the static "Budget" label at the same centre position.
@@ -269,10 +269,10 @@
             <rect x="${cx - 30}" y="${cy - 14}" width="60" height="12" rx="2"
                   fill="${CHART_ACCENT}10" stroke="${CHART_ACCENT}30" stroke-width="0.5"/>
             <text x="${cx}" y="${cy - 5}" text-anchor="middle" fill="${CHART_LINE}" fill-opacity="0.8"
-                  font-size="9" style="font-family:var(--font-mono);letter-spacing:0.08em;text-transform:uppercase">${pillLabel}</text>
+                  font-size="9" style="font-family:var(--font-data);letter-spacing:0.08em;text-transform:uppercase">${pillLabel}</text>
           </g>
-          <text x="${cx}" y="${cy + 12}" text-anchor="middle" fill="var(--lime)"
-                font-size="15" style="font-family:var(--font-mono)">${Math.round(displayTotal).toLocaleString()}</text>
+          <text x="${cx}" y="${cy + 12}" text-anchor="middle" fill="var(--color-alert)"
+                font-size="15" style="font-family:var(--font-data)">${Math.round(displayTotal).toLocaleString()}</text>
           ${labels.join('')}
         </svg>
       </div>`;
@@ -291,11 +291,11 @@
         return `<div style="min-width:20rem;padding:0.2rem 0">
           <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem">
             <span style="color:${d.colour};font-size:1.1rem;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap">${d.ware}</span>
-            <span style="color:${d.colour};font-family:var(--font-mono);font-size:1.2rem">${d.pct}%</span>
+            <span style="color:${d.colour};font-family:var(--font-data);font-size:1.2rem">${d.pct}%</span>
           </div>
           <div style="display:flex;justify-content:space-between;gap:1.2rem;padding:1px 0">
-            <span style="color:var(--text-faint);font-size:1rem">Trade value</span>
-            <span style="color:var(--lime);font-family:var(--font-mono);font-size:1.1rem">${fmt(d.value)} Cr</span>
+            <span style="color:var(--text-brand);font-size:1rem">Trade value</span>
+            <span style="color:var(--color-alert);font-family:var(--font-data);font-size:1.1rem">${fmt(d.value)} Cr</span>
           </div>
         </div>`;
       }
@@ -312,17 +312,17 @@
       return `<div style="min-width:20rem;padding:0.2rem 0">
         <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem">
           <span style="color:${d.colour};font-size:1.1rem;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap">${d.ware}</span>
-          <span style="color:${d.colour};font-family:var(--font-mono);font-size:1.2rem">${d.pct}%</span>
+          <span style="color:${d.colour};font-family:var(--font-data);font-size:1.2rem">${d.pct}%</span>
         </div>
         <div style="display:flex;justify-content:space-between;gap:1.2rem;padding:1px 0">
-          <span style="color:var(--text-faint);font-size:1rem">Amount × Price</span>
-          <span style="color:var(--text-dim);font-family:var(--font-mono);font-size:1rem">${fmt(d.amount)} × ${fmt(d.price)}</span>
+          <span style="color:var(--text-brand);font-size:1rem">Amount × Price</span>
+          <span style="color:var(--text-secondary);font-family:var(--font-data);font-size:1rem">${fmt(d.amount)} × ${fmt(d.price)}</span>
         </div>
         <div style="display:flex;justify-content:space-between;gap:1.2rem;padding:1px 0">
-          <span style="color:var(--text-faint);font-size:1rem">Value</span>
-          <span style="color:var(--lime);font-family:var(--font-mono);font-size:1.1rem">${fmt(d.value)} Cr</span>
+          <span style="color:var(--text-brand);font-size:1rem">Value</span>
+          <span style="color:var(--color-alert);font-family:var(--font-data);font-size:1.1rem">${fmt(d.value)} Cr</span>
         </div>
-        <div style="margin-top:0.5rem;padding-top:0.4rem;border-top:1px solid var(--border);font-size:1rem;color:var(--text-faint)">${BASIS[d.basis] || d.basis}</div>
+        <div style="margin-top:0.5rem;padding-top:0.4rem;border-top:1px solid var(--outline);font-size:1rem;color:var(--text-brand)">${BASIS[d.basis] || d.basis}</div>
       </div>`;
     }
 

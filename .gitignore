@@ -25,6 +25,9 @@ x4_empire_state.json
 *.db-wal
 *.db-shm
 
+# Memory junction (points to ~/.claude/projects/.../memory; files live outside repo)
+memory/
+
 # OS junk
 .DS_Store
 Thumbs.db

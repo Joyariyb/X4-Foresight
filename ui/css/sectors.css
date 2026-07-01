@@ -47,10 +47,10 @@
     .sd-tag.tag-neutral { color: var(--text-primary);   border-color: var(--outline);         background: var(--surface-2); }
     .sd-tag.tag-rich    { color: var(--color-positive);  border-color: var(--color-positive-line);   background: var(--color-positive-dim); }
     .sd-tag.tag-sun     { color: var(--color-warning);  border-color: var(--color-warning-line);  background: var(--color-warning-dim); }
-    .sd-tag.tag-hub     { color: #388bfd;       border-color: rgba(56,139,253,0.4);  background: rgba(56,139,253,0.1); }
-    .sd-tag.tag-core     { color: var(--color-highlight); border-color: rgba(227,179,65,0.4);  background: rgba(227,179,65,0.1); }
+    .sd-tag.tag-hub     { color: var(--color-info);       border-color: var(--color-info-line);  background: var(--color-info-dim); }
+    .sd-tag.tag-core     { color: var(--color-highlight); border-color: var(--color-highlight-line);  background: var(--color-highlight-dim); }
     .sd-tag.tag-frontier { color: #f0883e;       border-color: rgba(240,136,62,0.4);  background: rgba(240,136,62,0.1); }
-    .sd-tag.tag-remote   { color: var(--color-special); border-color: var(--color-special-line); background: rgba(163,113,247,0.1); }
+    .sd-tag.tag-remote   { color: var(--color-special); border-color: var(--color-special-line); background: var(--color-special-dim); }
     .sd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 1rem; margin-bottom: 2.2rem; }
     .sd-stat { background: var(--surface-2); border: 1px solid var(--outline); border-radius: var(--radius-md); padding: 0.9rem 1.2rem; }
     .sd-stat-label { font-family: var(--font-label); font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-label); margin-bottom: 0.3rem; }

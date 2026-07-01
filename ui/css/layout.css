@@ -66,12 +66,12 @@
        burnt-orange (matches the scrubber accent) with bright text, for a HUD feel. */
     .nav-back-btn { font-family: var(--font-label); font-weight: 700; font-size: 1rem;
                     letter-spacing: 0.12em; text-transform: uppercase; color: #ffe9d6;
-                    background: #d4540a; border: none; padding: 0.3rem 1rem 0.3rem 1.1rem; cursor: pointer;
+                    background: var(--color-accent); border: none; padding: 0.3rem 1rem 0.3rem 1.1rem; cursor: pointer;
                     clip-path: polygon(0.7rem 0, 100% 0, calc(100% - 0.7rem) 100%, 0 100%);
                     transition: background var(--duration-short), color var(--duration-short); }
     .nav-back-btn:hover  { background: #ff6f1a; color: #fff; }
     .nav-back-btn:active { background: #b8470a; }
-    .sb-item { display: flex; align-items: center; gap: 0.7rem; justify-content: space-between; padding: 0.6rem 1.4rem; font-size: 1.2rem; font-family: var(--font-label); letter-spacing: 0.03em; color: var(--text-secondary); cursor: pointer; border-left: 0.2rem solid transparent; transition: background 0.1s, color 0.1s; }
+    .sb-item { display: flex; align-items: center; gap: 0.7rem; justify-content: space-between; padding: 0.6rem 1.4rem; font-size: 1.2rem; font-family: var(--font-label); letter-spacing: 0.03em; color: var(--text-secondary); cursor: pointer; border-left: 0.2rem solid transparent; transition: background var(--duration-short) var(--ease-standard), color var(--duration-short) var(--ease-standard); }
     .sb-item:hover { background: var(--surface-2); color: var(--text-primary); }
     .sb-item.active { background: var(--color-primary-dim); color: var(--color-primary); border-left-color: var(--color-primary); }
     .sb-item.warn { color: var(--color-negative); }

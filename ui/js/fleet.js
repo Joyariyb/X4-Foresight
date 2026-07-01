@@ -42,8 +42,8 @@
     });
 
     document.querySelector("#fleet-table tbody").innerHTML = sorted.map(s => {
-      const oCol    = ORDER_COLOURS[s.order] || "var(--text-dim)";
-      const sCol    = SIZE_COLOURS[s.size]   || "var(--text-dim)";
+      const oCol    = ORDER_COLOURS[s.order] || "var(--text-secondary)";
+      const sCol    = SIZE_COLOURS[s.size]   || "var(--text-secondary)";
       const oIcon   = ORDER_ICONS[s.order]   || "ti-circle";
       const nameStr = s.display_name || s.name || "—";
       // Gate the Hull Type cell's click-through on the hull actually being
@@ -58,7 +58,7 @@
       const hasPilot = s.pilot && s.pilot.name;
       if (!hasPilot) {
         // No crew assigned — dim italic placeholder so the column stays readable.
-        pilotEl = `<span style="color:var(--text-dim);font-style:italic;font-size:11px">Unassigned</span>`;
+        pilotEl = `<span style="color:var(--text-secondary);font-style:italic;font-size:11px">Unassigned</span>`;
       } else {
         const pilotName = s.pilot.name;
         const plt = (s.pilot.skills && s.pilot.skills.piloting != null)
@@ -92,7 +92,7 @@
       // scrolls directly to that station's card.
       const stationEl = s.homebase_code
         ? `<span class="stn-link" data-stn-code="${s.homebase_code}">${s.homebase_code}</span>`
-        : `<span style="color:var(--text-faint)">—</span>`;
+        : `<span style="color:var(--text-brand)">—</span>`;
 
       // Equipment loadout drives the hover tooltip on the ship name, and also
       // means there's a Designs-tab card for this ship to jump to. Both are
@@ -106,10 +106,10 @@
       return `<tr data-code="${s.code}">
         <td style="white-space:nowrap">
           <span class="ship-name"${loadoutAttr}>${nameStr}</span>
-          <span class="mono" style="color:var(--yellow);font-size:11px;margin-left:8px">${s.code}</span>
+          <span class="mono" style="color:var(--color-highlight);font-size:11px;margin-left:8px">${s.code}</span>
         </td>
         <td class="mono" style="color:${sCol}">${s.size}</td>
-        <td style="white-space:nowrap">${hasHullPage ? `<span class="hull-type-link" data-hull-macro="${s.macro}">` : ''}${hullBadge(s.hull_origin)}<i class="ti ${ROLE_ICONS[s.role]||'ti-rocket'}" style="font-size:12px;vertical-align:-2px;margin-left:5px;margin-right:3px;color:var(--text-faint)"></i>${s.role}${hasHullPage ? '</span>' : ''}</td>
+        <td style="white-space:nowrap">${hasHullPage ? `<span class="hull-type-link" data-hull-macro="${s.macro}">` : ''}${hullBadge(s.hull_origin)}<i class="ti ${ROLE_ICONS[s.role]||'ti-rocket'}" style="font-size:12px;vertical-align:-2px;margin-left:5px;margin-right:3px;color:var(--text-brand)"></i>${s.role}${hasHullPage ? '</span>' : ''}</td>
         <td>
           <div style="display:flex;flex-direction:column;gap:3px">
             ${hullBar(s.hull_pct, s.hull_hp, s.max_hull)}
@@ -117,9 +117,9 @@
           </div>
         </td>
         <td><i class="ti ${oIcon}" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:${oCol}"></i><span style="color:${oCol}">${s.order}</span></td>
-        <td style="color:var(--text-dim)">${s.sector_macro ? `<span class="sector-link" data-sector-macro="${s.sector_macro}">` : ''}<i class="ti ti-map-pin" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:var(--text-faint)"></i>${s.sector}${s.sector_macro ? '</span>' : ''}</td>
+        <td style="color:var(--text-secondary)">${s.sector_macro ? `<span class="sector-link" data-sector-macro="${s.sector_macro}">` : ''}<i class="ti ti-map-pin" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:var(--text-brand)"></i>${s.sector}${s.sector_macro ? '</span>' : ''}</td>
         <td style="white-space:nowrap">${stationEl}</td>
-        <td style="color:var(--text-faint);white-space:nowrap"><i class="ti ti-user" style="font-size:12px;vertical-align:-2px;margin-right:4px"></i>${pilotEl}</td>
+        <td style="color:var(--text-brand);white-space:nowrap"><i class="ti ti-user" style="font-size:12px;vertical-align:-2px;margin-right:4px"></i>${pilotEl}</td>
       </tr>`;
     }).join("");
   }
@@ -225,14 +225,14 @@
         const rows = items.map(e => {
           const mk  = e.mk ? ` Mk${e.mk}` : '';
           const fac = FACTION[e.race]
-            ? `<span style="color:var(--text-dim);font-size:1rem;margin-right:0.8rem">${FACTION[e.race]}</span>` : '';
+            ? `<span style="color:var(--text-secondary);font-size:1rem;margin-right:0.8rem">${FACTION[e.race]}</span>` : '';
           return `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;padding:1px 0">
-                    <span style="color:var(--text-dim);font-size:1.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.name}${mk}</span>
-                    <span style="flex-shrink:0;white-space:nowrap">${fac}<span style="color:var(--text-faint);font-size:1rem">×${e.count}</span></span>
+                    <span style="color:var(--text-secondary);font-size:1.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.name}${mk}</span>
+                    <span style="flex-shrink:0;white-space:nowrap">${fac}<span style="color:var(--text-brand);font-size:1rem">×${e.count}</span></span>
                   </div>`;
         }).join('');
         return `<div style="margin-bottom:0.8rem">
-                  <div style="font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-faint);margin-bottom:0.4rem;padding-bottom:0.3rem;border-bottom:1px solid var(--border)">${label}</div>
+                  <div style="font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-brand);margin-bottom:0.4rem;padding-bottom:0.3rem;border-bottom:1px solid var(--outline)">${label}</div>
                   ${rows}
                 </div>`;
       }).join('');

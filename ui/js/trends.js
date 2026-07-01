@@ -125,12 +125,12 @@
       // +N.NN, scaled −30..+30 form the Diplomacy tab uses, so reputation reads
       // identically here and there. Sub-0.01 drift is float noise; hide it.
       const rdHtml = (rd != null && Math.abs(rd) >= 0.005)
-        ? `<span style="color:${rd > 0 ? CHART_ACCENT : CHART_LOSS};font-family:var(--font-mono);font-size:0.95rem;margin-left:0.7rem">rep ${sign(rd)}</span>`
+        ? `<span style="color:${rd > 0 ? CHART_ACCENT : CHART_LOSS};font-family:var(--font-data);font-size:0.95rem;margin-left:0.7rem">rep ${sign(rd)}</span>`
         : '';
       const amount = i === 0 ? `${k.kills}` : `+${gained}`;
       rows.push(`<div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;padding:1px 0">
-          <span style="color:var(--text-dim);font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_factionShort(k.faction_name)}</span>
-          <span style="flex-shrink:0;white-space:nowrap"><span style="color:var(--text-dim);font-family:var(--font-mono);font-size:1rem">${amount}</span>${rdHtml}</span>
+          <span style="color:var(--text-secondary);font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_factionShort(k.faction_name)}</span>
+          <span style="flex-shrink:0;white-space:nowrap"><span style="color:var(--text-secondary);font-family:var(--font-data);font-size:1rem">${amount}</span>${rdHtml}</span>
         </div>`);
     });
     if (!rows.length) return '';
@@ -138,7 +138,7 @@
     // running total coming in — label it "to date" so it doesn't look like this scan.
     const title = i === 0 ? 'Kills credited by faction · to date' : 'New kills since last scan';
     return `<div style="margin-top:0.6rem">
-        <div style="font-size:0.85rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-faint);margin-bottom:0.3rem;padding-bottom:0.3rem;border-bottom:1px solid var(--border)">${title}</div>
+        <div style="font-size:0.85rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-brand);margin-bottom:0.3rem;padding-bottom:0.3rem;border-bottom:1px solid var(--outline)">${title}</div>
         ${rows.join('')}
       </div>`;
   }
@@ -151,18 +151,18 @@
     const sid  = _trendScans[i] && _trendScans[i].scan_id;
     const lost = _trendChanges.filter(c => c.type === 'ship_lost' && c.scan_id === sid);
     if (!lost.length) {
-      return i === 0 ? '' : `<div style="margin-top:0.5rem;font-size:1rem;color:var(--text-faint)">No ships lost this scan.</div>`;
+      return i === 0 ? '' : `<div style="margin-top:0.5rem;font-size:1rem;color:var(--text-brand)">No ships lost this scan.</div>`;
     }
     const MAX = 8;
     const rows = lost.slice(0, MAX).map(c => `
         <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;padding:1px 0">
-          <span style="color:var(--text-dim);font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.type_name || c.name || '—'}</span>
-          <span style="color:var(--text-faint);font-family:var(--font-mono);font-size:0.95rem;flex-shrink:0">${c.code || ''}</span>
+          <span style="color:var(--text-secondary);font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.type_name || c.name || '—'}</span>
+          <span style="color:var(--text-brand);font-family:var(--font-data);font-size:0.95rem;flex-shrink:0">${c.code || ''}</span>
         </div>`).join('');
     const more = lost.length - Math.min(lost.length, MAX);
-    const moreHtml = more > 0 ? `<div style="margin-top:0.3rem;font-size:1rem;color:var(--text-faint)">+${more} more</div>` : '';
+    const moreHtml = more > 0 ? `<div style="margin-top:0.3rem;font-size:1rem;color:var(--text-brand)">+${more} more</div>` : '';
     return `<div style="margin-top:0.6rem">
-        <div style="font-size:0.85rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-faint);margin-bottom:0.3rem;padding-bottom:0.3rem;border-bottom:1px solid var(--border)">Ships lost this scan</div>
+        <div style="font-size:0.85rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-brand);margin-bottom:0.3rem;padding-bottom:0.3rem;border-bottom:1px solid var(--outline)">Ships lost this scan</div>
         ${rows}${moreHtml}
       </div>`;
   }
@@ -175,9 +175,9 @@
     const v    = vals[i];
     const prev = i > 0 ? vals[i - 1] : null;
 
-    const head = `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border)">
-        <span style="color:var(--text-dim);font-family:var(--font-mono);font-size:1.05rem">Scan #${s.scan_id}</span>
-        <span style="color:var(--text-faint);font-size:1rem;letter-spacing:0.06em">${_trDate(s.scanned_at)}</span>
+    const head = `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem;padding-bottom:0.4rem;border-bottom:1px solid var(--outline)">
+        <span style="color:var(--text-secondary);font-family:var(--font-data);font-size:1.05rem">Scan #${s.scan_id}</span>
+        <span style="color:var(--text-brand);font-size:1rem;letter-spacing:0.06em">${_trDate(s.scanned_at)}</span>
       </div>`;
 
     // Per-scan metrics already represent one interval's activity, so a delta vs the
@@ -185,18 +185,18 @@
     // note. Cumulative metrics keep the "since last scan" change.
     let delta = '';
     if (eff.perScan) {
-      delta = i === 0 ? `<span style="color:var(--text-faint);font-size:1rem">first scan</span>` : '';
+      delta = i === 0 ? `<span style="color:var(--text-brand);font-size:1rem">first scan</span>` : '';
     } else if (v != null && prev != null) {
       const d = v - prev;
-      const c = d > 0 ? CHART_ACCENT : d < 0 ? CHART_LOSS : 'var(--text-faint)';
+      const c = d > 0 ? CHART_ACCENT : d < 0 ? CHART_LOSS : 'var(--text-brand)';
       const ch = d > 0 ? '▲' : d < 0 ? '▼' : '▬';
-      delta = `<span style="color:${c};font-family:var(--font-mono);font-size:1.05rem;white-space:nowrap">${ch} ${_trFmtHead(Math.abs(d), eff.count)}</span>`;
+      delta = `<span style="color:${c};font-family:var(--font-data);font-size:1.05rem;white-space:nowrap">${ch} ${_trFmtHead(Math.abs(d), eff.count)}</span>`;
     } else {
-      delta = `<span style="color:var(--text-faint);font-size:1rem">first scan</span>`;
+      delta = `<span style="color:var(--text-brand);font-size:1rem">first scan</span>`;
     }
 
     const big = `<div style="display:flex;align-items:baseline;justify-content:space-between;gap:1rem">
-        <span style="font-family:var(--font-mono);font-size:1.7rem;color:${eff.color};line-height:1">${_trFmtHead(v, eff.count)}<span style="font-size:0.9rem;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.08em"> ${eff.label}</span></span>
+        <span style="font-family:var(--font-data);font-size:1.7rem;color:${eff.color};line-height:1">${_trFmtHead(v, eff.count)}<span style="font-size:0.9rem;color:var(--text-brand);text-transform:uppercase;letter-spacing:0.08em"> ${eff.label}</span></span>
         ${delta}
       </div>`;
 
@@ -239,7 +239,7 @@
       const y = yOf(v).toFixed(1);
       const zero = Math.abs(v) < step * 0.001;
       yAxis += `<line x1="${ml}" y1="${y}" x2="${ml + pw}" y2="${y}" stroke="${CHART_ACCENT}" stroke-opacity="${zero ? 0.3 : 0.09}" stroke-width="${zero ? 1 : 0.6}"/>`
-             + `<text x="${ml - 7}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.7" font-family="var(--font-mono)" font-size="11">${_trFmtAxis(v, eff.count)}</text>`;
+             + `<text x="${ml - 7}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.7" font-family="var(--font-data)" font-size="11">${_trFmtAxis(v, eff.count)}</text>`;
     }
 
     // x labels: each scan's #id, thinned out when there are many.
@@ -248,7 +248,7 @@
     _trendScans.forEach((s, i) => {
       if (i % xStep !== 0 && i !== n - 1) return;
       const x = xOf(i).toFixed(1);
-      xAxis += `<text x="${x}" y="${mt + ph + 16}" text-anchor="middle" fill="${CHART_LINE}" fill-opacity="0.65" font-family="var(--font-mono)" font-size="11">#${s.scan_id}</text>`;
+      xAxis += `<text x="${x}" y="${mt + ph + 16}" text-anchor="middle" fill="${CHART_LINE}" fill-opacity="0.65" font-family="var(--font-data)" font-size="11">#${s.scan_id}</text>`;
     });
 
     // line + area + dots
@@ -297,8 +297,8 @@
           ${Object.entries(SHIPS_MODES).map(([k, m]) => `
           <span onclick="setShipsMode('${k}')" style="position:relative;z-index:1;cursor:pointer;
               display:flex;align-items:center;justify-content:center;
-              font-family:var(--font-mono);font-size:7px;letter-spacing:0.06em;text-transform:uppercase;
-              color:${_shipsMode === k ? '#051210' : 'var(--text-faint)'};font-weight:${_shipsMode === k ? '700' : '400'}">${m.btn}</span>`).join('')}
+              font-family:var(--font-data);font-size:7px;letter-spacing:0.06em;text-transform:uppercase;
+              color:${_shipsMode === k ? '#051210' : 'var(--text-brand)'};font-weight:${_shipsMode === k ? '700' : '400'}">${m.btn}</span>`).join('')}
         </div>
       </foreignObject>` : '';
 
@@ -526,7 +526,7 @@
       const y = yOf(v).toFixed(1);
       const zero = Math.abs(v) < step * 0.001;
       yAxis += `<line x1="${ml}" y1="${y}" x2="${ml + pw}" y2="${y}" stroke="${CHART_ACCENT}" stroke-opacity="${zero ? 0.3 : 0.09}" stroke-width="${zero ? 1 : 0.6}"/>`
-             + `<text x="${ml - 7}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.7" font-family="var(--font-mono)" font-size="11">${fmtRep(v)}</text>`;
+             + `<text x="${ml - 7}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.7" font-family="var(--font-data)" font-size="11">${fmtRep(v)}</text>`;
     }
 
     // x: a faint marker + #id / game-hours label per scan (thinned if many).
@@ -537,8 +537,8 @@
       const x = xOf(i).toFixed(1);
       const gh = s.game_time_s != null ? Math.round(s.game_time_s / 3600) + 'h' : '';
       xAxis += `<line x1="${x}" y1="${mt}" x2="${x}" y2="${mt + ph}" stroke="${CHART_LINE}" stroke-opacity="0.06" stroke-width="1"/>`
-             + `<text x="${x}" y="${mt + ph + 15}" text-anchor="middle" fill="${CHART_LINE}" fill-opacity="0.65" font-family="var(--font-mono)" font-size="10">#${s.scan_id}</text>`
-             + `<text x="${x}" y="${mt + ph + 28}" text-anchor="middle" fill="${CHART_LINE}" fill-opacity="0.40" font-family="var(--font-mono)" font-size="9">${gh}</text>`;
+             + `<text x="${x}" y="${mt + ph + 15}" text-anchor="middle" fill="${CHART_LINE}" fill-opacity="0.65" font-family="var(--font-data)" font-size="10">#${s.scan_id}</text>`
+             + `<text x="${x}" y="${mt + ph + 28}" text-anchor="middle" fill="${CHART_LINE}" fill-opacity="0.40" font-family="var(--font-data)" font-size="9">${gh}</text>`;
     });
 
     // one line + hoverable dots per visible faction
@@ -559,7 +559,7 @@
       }).join('');
     });
     if (!visible.length) {
-      lines = `<text x="${ml + pw / 2}" y="${mt + ph / 2}" text-anchor="middle" fill="${CHART_LINE}" fill-opacity="0.5" font-family="var(--font-mono)" font-size="12">All factions hidden — tap a chip below to show one</text>`;
+      lines = `<text x="${ml + pw / 2}" y="${mt + ph / 2}" text-anchor="middle" fill="${CHART_LINE}" fill-opacity="0.5" font-family="var(--font-data)" font-size="12">All factions hidden — tap a chip below to show one</text>`;
     }
 
     // Level/Change switch — same on-chart sliding pill as the Ships line, in the left
@@ -577,8 +577,8 @@
           ${Object.entries(REP_MODES).map(([k, m]) => `
           <span onclick="setRepMode('${k}')" style="position:relative;z-index:1;cursor:pointer;
               display:flex;align-items:center;justify-content:center;
-              font-family:var(--font-mono);font-size:7px;letter-spacing:0.06em;text-transform:uppercase;
-              color:${_repMode === k ? '#051210' : 'var(--text-faint)'};font-weight:${_repMode === k ? '700' : '400'}">${m.btn}</span>`).join('')}
+              font-family:var(--font-data);font-size:7px;letter-spacing:0.06em;text-transform:uppercase;
+              color:${_repMode === k ? '#051210' : 'var(--text-brand)'};font-weight:${_repMode === k ? '700' : '400'}">${m.btn}</span>`).join('')}
         </div>
       </foreignObject>`;
 
@@ -619,30 +619,30 @@
     const col  = FACTION_COLOURS[f.faction_id] || '#6e7681';
     const gh   = s.game_time_s != null ? Math.round(s.game_time_s / 3600) + 'h' : '';
 
-    const head = `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border)">
+    const head = `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem;padding-bottom:0.4rem;border-bottom:1px solid var(--outline)">
         <span style="color:${col};font-size:1.1rem;letter-spacing:0.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:16rem">${_factionShort(f.faction_name)}</span>
-        <span style="color:var(--text-faint);font-family:var(--font-mono);font-size:0.95rem;white-space:nowrap">#${s.scan_id} · ${gh}</span>
+        <span style="color:var(--text-brand);font-family:var(--font-data);font-size:0.95rem;white-space:nowrap">#${s.scan_id} · ${gh}</span>
       </div>`;
 
     const big = `<div style="margin-bottom:0.4rem">
-        <span style="font-family:var(--font-mono);font-size:1.7rem;color:${col};line-height:1">${v == null ? '—' : sign(v)}<span style="font-size:0.9rem;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.08em"> ${f.tier || ''}</span></span>
+        <span style="font-family:var(--font-data);font-size:1.7rem;color:${col};line-height:1">${v == null ? '—' : sign(v)}<span style="font-size:0.9rem;color:var(--text-brand);text-transform:uppercase;letter-spacing:0.08em"> ${f.tier || ''}</span></span>
       </div>`;
 
     // Coloured ± move row (teal up / red down), 2dp to match Diplomacy's sign().
     const moveRow = (label, d) => {
       if (d == null) return '';
-      const c = d > 0 ? CHART_ACCENT : d < 0 ? CHART_LOSS : 'var(--text-faint)';
+      const c = d > 0 ? CHART_ACCENT : d < 0 ? CHART_LOSS : 'var(--text-brand)';
       const ch = d > 0 ? '▲' : d < 0 ? '▼' : '▬';
       return `<div style="display:flex;justify-content:space-between;gap:1.2rem;padding:1px 0">
-          <span style="color:var(--text-faint);font-size:1rem">${label}</span>
-          <span style="color:${c};font-family:var(--font-mono);font-size:1rem;white-space:nowrap">${ch} ${Math.abs(d).toFixed(2)}</span>
+          <span style="color:var(--text-brand);font-size:1rem">${label}</span>
+          <span style="color:${c};font-family:var(--font-data);font-size:1rem;white-space:nowrap">${ch} ${Math.abs(d).toFixed(2)}</span>
         </div>`;
     };
 
     const sinceLast  = (v != null && prev != null) ? v - prev : null;
     const sinceFirst = (v != null && i > 0) ? v - _repBase(f) : null;
     const rows = (sinceLast == null && sinceFirst == null)
-      ? `<div style="color:var(--text-faint);font-size:1rem">first scan</div>`
+      ? `<div style="color:var(--text-brand);font-size:1rem">first scan</div>`
       : moveRow('Since last scan', sinceLast) + moveRow('Since first scan', sinceFirst);
 
     return `<div style="min-width:16rem;max-width:24rem;padding:0.2rem 0">${head}${big}${rows}</div>`;

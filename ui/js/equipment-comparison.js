@@ -119,7 +119,7 @@
   function equipStatCardHtml(macro, slot, letter) {
     const e = EQUIPMENT_CATALOG[macro];
     if (!e) return '';
-    const facColour = FACTION_COLOURS[raceKeyOf(e)] || '#2dd4bf';
+    const facColour = FACTION_COLOURS[raceKeyOf(e)] || 'var(--color-primary)';
     const m = SLOT_META[slot] || {};
     const size = (e.size || '').toLowerCase();
     const mk = e.mk ? ` Mk${e.mk}` : '';
@@ -172,18 +172,18 @@
     if (vA == null && vB == null) {
       return `<div class="hcmp-row">
         <div class="hcmp-lbl">${label}</div>
-        <div style="font-size:11px;color:var(--text-faint)">No data for either item.</div>
+        <div style="font-size:11px;color:var(--text-brand)">No data for either item.</div>
       </div>`;
     }
     const haveBoth = vA != null && vB != null;
     const a = vA ?? 0, b = vB ?? 0;
     const max = Math.max(a, b, 1);
     const lower = ECMP_LOWER_BETTER.has(key);
-    let colorA = 'var(--teal)', colorB = 'var(--teal)';
+    let colorA = 'var(--color-primary)', colorB = 'var(--color-primary)';
     if (haveBoth && a !== b) {
       const aWins = lower ? a < b : a > b;
-      colorA = aWins ? 'var(--lime)' : 'var(--red)';
-      colorB = aWins ? 'var(--red)' : 'var(--lime)';
+      colorA = aWins ? 'var(--color-alert)' : 'var(--color-negative)';
+      colorB = aWins ? 'var(--color-negative)' : 'var(--color-alert)';
     }
     const fmtV = v => v == null ? '—' : fmt(v);
     const bar = (val, pct, color, letter) => `<div class="hcmp-bar-line">

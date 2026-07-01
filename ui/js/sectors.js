@@ -72,7 +72,7 @@
     const active = s.sector_macro === _selectedSector ? ' active' : '';
     // Count of the player's own stations in this sector (badge when > 0).
     const pCount = (_playerStaBySector[s.sector_macro] || []).length;
-    const badge  = pCount ? `<span class="sr-sta-badge" title="${pCount} of your stations"><i class="ti ti-building-factory-2"></i>${pCount}</span>` : '';
+    const badge  = pCount ? `<span class="sr-sta-badge" data-text-tip="${pCount} of your stations"><i class="ti ti-building-factory-2"></i>${pCount}</span>` : '';
     const metric = metricHtml ? `<span class="sr-metric">${metricHtml}</span>` : '';
     return `<div class="sector-row${active}" data-macro="${s.sector_macro}" onclick="showSectorDetail('${s.sector_macro}')">`
          + `<span class="sr-dot" style="background:${dot}"></span>`
@@ -156,7 +156,7 @@
     const sec = _sectorInfoMap[macro];
     if (!sec) { detailEl.innerHTML = '<div class="sectors-empty">Sector not found.</div>'; return; }
 
-    const ownColor = FACTION_COLOURS[sec.owner_id] || 'var(--text-dim)';
+    const ownColor = FACTION_COLOURS[sec.owner_id] || 'var(--text-secondary)';
     const near     = _nearestStation[macro];
     const jumpsTxt = near ? (near.jumps === 0 ? 'In sector' : `${near.jumps} jump${near.jumps !== 1 ? 's' : ''}`) : '—';
     const sunTxt   = (sec.sunlight != null) ? Math.round(sec.sunlight * 100) + '%' : '—';
@@ -189,7 +189,7 @@
     html += '<div class="sd-grid">'
           + `<div class="sd-stat"><div class="sd-stat-label">Sunlight</div><div class="sd-stat-value">${sunTxt}</div></div>`
           + `<div class="sd-stat"><div class="sd-stat-label">Nearest Station</div><div class="sd-stat-value">${jumpsTxt}</div></div>`;
-    if (near) html += `<div class="sd-stat"><div class="sd-stat-label">Station</div><div class="sd-stat-value" style="font-size:13px;font-family:var(--font-cond)">${near.name}</div></div>`;
+    if (near) html += `<div class="sd-stat"><div class="sd-stat-label">Station</div><div class="sd-stat-value" style="font-size:13px;font-family:var(--font-label)">${near.name}</div></div>`;
     html += '</div>';
 
     // The player's own stations in this sector. Click jumps to the station card.

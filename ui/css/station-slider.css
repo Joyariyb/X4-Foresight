@@ -27,7 +27,7 @@
         rgba(46,202,178,0.93) 42%,
         rgba(29,170,150,0.91) 100%);
       border-radius: 1.6rem;
-      transition: left 0.22s cubic-bezier(0.4,0,0.2,1);
+      transition: left var(--duration-medium) var(--ease-standard);
       pointer-events: none;
       box-shadow:
         0 0.3rem 0.9rem rgba(0,0,0,0.70),       /* drop shadow — lifts thumb off track */

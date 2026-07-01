@@ -224,7 +224,7 @@
           <span class="scan-picker-num">#${s.scan_id}</span>
           <span class="scan-picker-detail">${save}${when ? '  ·  ' + when : ''}</span>
         </div>
-        <button class="scan-picker-del" title="Delete this scan" onclick="event.stopPropagation(); deleteScan(${s.scan_id})"><i class="ti ti-trash" style="font-size:13px"></i></button>
+        <button class="scan-picker-del" data-text-tip="Delete this scan" onclick="event.stopPropagation(); deleteScan(${s.scan_id})"><i class="ti ti-trash" style="font-size:13px"></i></button>
       `;
       row.addEventListener('click', () => {
         _currentScanId = s.scan_id;

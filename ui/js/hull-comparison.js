@@ -108,17 +108,17 @@
     if (vA == null && vB == null) {
       return `<div class="hcmp-row">
         <div class="hcmp-lbl">${label}</div>
-        <div style="font-size:11px;color:var(--text-faint)">No data for either hull.</div>
+        <div style="font-size:11px;color:var(--text-brand)">No data for either hull.</div>
       </div>`;
     }
     const haveBoth = vA != null && vB != null;
     const a = vA ?? 0, b = vB ?? 0;
     const max = Math.max(a, b, 1);
-    let colorA = 'var(--teal)', colorB = 'var(--teal)';
+    let colorA = 'var(--color-primary)', colorB = 'var(--color-primary)';
     if (haveBoth && a !== b) {
       const aWins = lowerBetter ? a < b : a > b;
-      colorA = aWins ? 'var(--lime)' : 'var(--red)';
-      colorB = aWins ? 'var(--red)' : 'var(--lime)';
+      colorA = aWins ? 'var(--color-alert)' : 'var(--color-negative)';
+      colorB = aWins ? 'var(--color-negative)' : 'var(--color-alert)';
     }
     const fmt = v => v == null ? '—' : designCr(v) + (unit ? ' ' + unit : '');
     const bar = (val, pct, color, letter, h) => {

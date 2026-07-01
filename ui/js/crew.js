@@ -110,8 +110,8 @@
         <td style="white-space:nowrap">${c.name}</td>
         <td><span class="badge" style="background:${col}22;color:${col};border-color:${col}44">${lbl}</span></td>
         <td><span style="letter-spacing:-1px">${skillStars(primaryPts)}</span></td>
-        <td style="color:var(--text-dim)">${c.assigned_to || '—'}</td>
-        <td style="color:var(--text-faint)">${c.sector || '—'}</td>
+        <td style="color:var(--text-secondary)">${c.assigned_to || '—'}</td>
+        <td style="color:var(--text-brand)">${c.sector || '—'}</td>
       </tr>`;
     }).join('');
   }
@@ -141,7 +141,7 @@
         return `<div class="file-skill-row">
           <span class="file-skill-name">${SKILL_NAMES[sk] || sk}</span>
           <span style="letter-spacing:-1px">${skillStars(pts)}</span>
-          <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);margin-left:4px">${pts} pts</span>
+          <span style="font-family:var(--font-data);font-size:10px;color:var(--text-brand);margin-left:4px">${pts} pts</span>
         </div>`;
       }).join('');
 
@@ -154,7 +154,7 @@
     ].filter(([, v]) => v);
     const metaHtml = metaRows.map(([lbl, val]) =>
       `<div style="display:flex;gap:8px;padding:2px 0;align-items:center">
-        <span style="min-width:72px;font-family:var(--font-mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-faint)">${lbl}</span>
+        <span style="min-width:72px;font-family:var(--font-data);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-brand)">${lbl}</span>
         <span class="file-meta-val">${val}</span>
       </div>`
     ).join('');

@@ -933,7 +933,7 @@
     // Strip the [ABR] bracket prefix that FACTION_NAMES includes (e.g. "[TEL] Teladi")
     const ownRaw    = sec?.owner_name   || '';
     const ownName   = ownRaw.replace(/^\[\w+\]\s*/, '') || 'Unclaimed';
-    const ownColor  = FACTION_COLOURS[sec?.owner_id] || 'var(--text-dim)';
+    const ownColor  = FACTION_COLOURS[sec?.owner_id] || 'var(--text-secondary)';
 
     let html = `<div class="uhp-name">${secName}</div>
 <div class="uhp-owner" style="color:${ownColor}">${ownName}</div>`;

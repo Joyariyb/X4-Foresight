@@ -67,7 +67,7 @@
     const allStation = allTrades.filter(t =>
       t.station_code === station.code && t.time_ago_s / 3600 < CF_MAX_HOURS);
     if (!allStation.length) {
-      return `<div class="econ-graph" style="padding:1.6rem 1.4rem;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No trade activity in the last 24h</div>`;
+      return `<div class="econ-graph" style="padding:1.6rem 1.4rem;font-family:var(--font-data);font-size:1.1rem;color:var(--text-brand)">No trade activity in the last 24h</div>`;
     }
     const net24 = allStation.reduce((s, t) =>
       s + (t.direction === 'Out' ? 1 : -1) * (t.total_cr || 0), 0);
@@ -76,14 +76,14 @@
       <div id="cf-${safeCode}" class="econ-graph">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:1.25cqw;margin-bottom:0.625cqw">
           <div style="display:flex;align-items:center;gap:0.9375cqw;min-width:0">
-            <span style="font-family:var(--font-mono);font-size:1.25cqw;letter-spacing:0.18em;color:${CHART_LINE};text-transform:uppercase;white-space:nowrap">Cash Flow</span>
+            <span style="font-family:var(--font-data);font-size:1.25cqw;letter-spacing:0.18em;color:${CHART_LINE};text-transform:uppercase;white-space:nowrap">Cash Flow</span>
             <button class="cf-toggle-btn active" data-mode="hourly"   onclick="setCashflowMode('${safeCode}','hourly')">Hourly</button>
             <button class="cf-toggle-btn"        data-mode="trade"    onclick="setCashflowMode('${safeCode}','trade')">By Trade</button>
             <button class="cf-toggle-btn"        data-mode="ware"     onclick="setCashflowMode('${safeCode}','ware')">By Ware</button>
             <button class="cf-toggle-btn"        data-mode="avgprice" onclick="setCashflowMode('${safeCode}','avgprice')">Avg Price</button>
             <button class="cf-toggle-btn"        data-mode="byship"   onclick="setCashflowMode('${safeCode}','byship')">By Ship</button>
           </div>
-          <span style="font-family:var(--font-mono);font-size:1.5625cqw;color:${net24 >= 0 ? CHART_ACCENT : CHART_LOSS};white-space:nowrap">${cfFmtCr(net24)}</span>
+          <span style="font-family:var(--font-data);font-size:1.5625cqw;color:${net24 >= 0 ? CHART_ACCENT : CHART_LOSS};white-space:nowrap">${cfFmtCr(net24)}</span>
         </div>
         <!-- Bodies split in two:
              • cf-avg — the Avg Price chart, built ONCE then mutated in place so
@@ -141,7 +141,7 @@
           : `-${h % 1 !== 0 ? h.toFixed(1) : Math.round(h)}H`;
         out.push(`<line x1="${x}" y1="${mt}" x2="${x}" y2="${mt + ph}" stroke="${CHART_ACCENT}" stroke-opacity="0.08" stroke-width="0.6"/>
           <text x="${x}" y="${mt + ph + 13}" text-anchor="middle" fill="${CHART_LINE}" fill-opacity="0.7"
-                style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.06em">${label}</text>`);
+                style="font-family:var(--font-data);font-size:0.8rem;letter-spacing:0.06em">${label}</text>`);
       }
       return out.join('');
     })();
@@ -158,7 +158,7 @@
       const labels = ticks.map(v => {
         const y = yOf(v).toFixed(1);
         return `<text x="${ml - 6}" y="${y}" text-anchor="end" dominant-baseline="middle"
-                      fill="${CHART_LINE}" fill-opacity="0.7" style="font-family:var(--font-mono);font-size:0.8rem">${cfFmtY(v)}</text>`;
+                      fill="${CHART_LINE}" fill-opacity="0.7" style="font-family:var(--font-data);font-size:0.8rem">${cfFmtY(v)}</text>`;
       }).join('');
       return grid + labels;
     };
@@ -180,7 +180,7 @@
     // If the zoom window contains no trades show a lightweight empty state for all
     // three modes so the scrubber remains visible and interactive.
     if (!trades.length) {
-      const empty = `<div style="padding:1.6rem 1.4rem;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No trades in this window</div>`;
+      const empty = `<div style="padding:1.6rem 1.4rem;font-family:var(--font-data);font-size:1.1rem;color:var(--text-brand)">No trades in this window</div>`;
       return `
         <div data-cfmode="hourly"  style="display:block">${empty}</div>
         <div data-cfmode="trade"   style="display:none">${empty}</div>
@@ -284,7 +284,7 @@
                 fill="${CHART_ACCENT}10" stroke="${CHART_ACCENT}30" stroke-width="0.5"/>
           <text x="${(ml + pw - 4).toFixed(1)}" y="${(mt + 11).toFixed(1)}" text-anchor="end"
                 fill="${CHART_LINE}" fill-opacity="0.75"
-                style="font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.08em">${typeLabel} ›</text>
+                style="font-family:var(--font-data);font-size:0.7rem;letter-spacing:0.08em">${typeLabel} ›</text>
         </g>`;
 
       return `
@@ -310,12 +310,12 @@
             </g>
             <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="${CHART_ACCENT}" stroke-opacity="0.35" stroke-width="1"/>
             <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.6"
-                  style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">CREDITS/HR</text>
+                  style="font-family:var(--font-data);font-size:0.8rem;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">CREDITS/HR</text>
             ${hitCols.join('')}
             ${typeIndicator}
           </svg>
         </div>
-        <div style="display:flex;gap:1.6rem;padding:0.6rem 0.2rem 0.2rem;font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.04em">
+        <div style="display:flex;gap:1.6rem;padding:0.6rem 0.2rem 0.2rem;font-family:var(--font-data);font-size:0.9rem;letter-spacing:0.04em">
           <span style="display:inline-flex;align-items:center;gap:0.5rem;color:${CHART_ACCENT}"><span style="display:inline-block;width:1.1rem;height:0.2rem;background:${CHART_ACCENT};border-radius:0.1rem;filter:drop-shadow(0 0 2px ${CHART_ACCENT})"></span>INCOME (SELLS)</span>
           <span style="display:inline-flex;align-items:center;gap:0.5rem;color:${CHART_LOSS}"><span style="display:inline-block;width:1.1rem;height:0.2rem;background:${CHART_LOSS};border-radius:0.1rem;filter:drop-shadow(0 0 2px ${CHART_LOSS})"></span>SPEND (BUYS)</span>
         </div>`;
@@ -384,7 +384,7 @@
                 fill="${CHART_ACCENT}10" stroke="${CHART_ACCENT}30" stroke-width="0.5"/>
           <text x="${(ml + pw - 4).toFixed(1)}" y="${(mt + 11).toFixed(1)}" text-anchor="end"
                 fill="${CHART_LINE}" fill-opacity="0.75"
-                style="font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.08em">${tradeTypeLabel} ›</text>
+                style="font-family:var(--font-data);font-size:0.7rem;letter-spacing:0.08em">${tradeTypeLabel} ›</text>
         </g>`;
 
       return `
@@ -409,7 +409,7 @@
             </g>
             <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="${CHART_ACCENT}" stroke-opacity="0.35" stroke-width="1"/>
             <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.6"
-                  style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">TRADE SIZE · CR</text>
+                  style="font-family:var(--font-data);font-size:0.8rem;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">TRADE SIZE · CR</text>
             <!-- Highlight ring follows the nearest trade on hover -->
             <circle class="cf-detail-marker" r="3.8" fill="none" stroke="#ffffff" stroke-width="1.5" style="display:none;pointer-events:none"/>
             <!-- Transparent plot overlay drives nearest-point hover; also cycles chart type on click -->
@@ -417,7 +417,7 @@
             ${tradeTypeIndicator}
           </svg>
         </div>
-        <div style="padding:0.6rem 0.2rem 0.2rem;font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.04em;color:var(--text-faint)">
+        <div style="padding:0.6rem 0.2rem 0.2rem;font-family:var(--font-data);font-size:0.9rem;letter-spacing:0.04em;color:var(--text-brand)">
           ${pts.length.toLocaleString()} trades · individual trade size · hover a point for trade details
         </div>`;
     })();
@@ -482,7 +482,7 @@
             <button class="cf-toggle-btn ${isSell ? 'active' : ''}" onclick="setWareMode('${safeCode}','sell')">Sell</button>
             <button class="cf-toggle-btn ${!isSell ? 'active' : ''}" onclick="setWareMode('${safeCode}','buy')">Buy</button>
           </div>
-          <div style="padding:0.6rem 0;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No ${isSell ? 'sell' : 'buy'} activity in this window</div>
+          <div style="padding:0.6rem 0;font-family:var(--font-data);font-size:1.1rem;color:var(--text-brand)">No ${isSell ? 'sell' : 'buy'} activity in this window</div>
         </div>`;
       }
 
@@ -589,9 +589,9 @@
         <line x1="${ml}" y1="${yMax.toFixed(1)}" x2="${(ml+pw).toFixed(1)}" y2="${yMax.toFixed(1)}" stroke="${CHART_ACCENT}" stroke-opacity="0.10" stroke-width="0.6"/>
         <line x1="${ml}" y1="${yAvg.toFixed(1)}" x2="${(ml+pw).toFixed(1)}" y2="${yAvg.toFixed(1)}" stroke="${CHART_ACCENT}" stroke-opacity="0.28" stroke-width="1" stroke-dasharray="4 3"/>
         <line x1="${ml}" y1="${yMin.toFixed(1)}" x2="${(ml+pw).toFixed(1)}" y2="${yMin.toFixed(1)}" stroke="${CHART_ACCENT}" stroke-opacity="0.10" stroke-width="0.6"/>
-        <text x="${ml-6}" y="${yMax.toFixed(1)}" text-anchor="end" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.70" style="font-family:var(--font-mono);font-size:0.8rem">MAX</text>
-        <text x="${ml-6}" y="${yAvg.toFixed(1)}" text-anchor="end" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.90" style="font-family:var(--font-mono);font-size:0.8rem">AVG</text>
-        <text x="${ml-6}" y="${yMin.toFixed(1)}" text-anchor="end" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.70" style="font-family:var(--font-mono);font-size:0.8rem">MIN</text>`;
+        <text x="${ml-6}" y="${yMax.toFixed(1)}" text-anchor="end" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.70" style="font-family:var(--font-data);font-size:0.8rem">MAX</text>
+        <text x="${ml-6}" y="${yAvg.toFixed(1)}" text-anchor="end" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.90" style="font-family:var(--font-data);font-size:0.8rem">AVG</text>
+        <text x="${ml-6}" y="${yMin.toFixed(1)}" text-anchor="end" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.70" style="font-family:var(--font-data);font-size:0.8rem">MIN</text>`;
 
       // Legend chips — clicking toggles the ware line on/off.
       const chips = wareNames.map(wareName => {
@@ -604,7 +604,7 @@
                              display:inline-flex;align-items:center;
                              padding:0.2rem 0.7rem;border-radius:0.2rem;
                              border:1px solid ${col}44;background:${col}22;
-                             color:${col};font-family:var(--font-mono);
+                             color:${col};font-family:var(--font-data);
                              font-size:1rem;white-space:nowrap;letter-spacing:0.04em;
                              user-select:none">${wareName}</span>`;
       }).join('');
@@ -624,7 +624,7 @@
             </g>
             <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt+ph}" stroke="${CHART_ACCENT}" stroke-opacity="0.35" stroke-width="1"/>
             <text x="9" y="${mt + ph/2}" text-anchor="middle" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.6"
-                  style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph/2})">PRICE · BAND</text>
+                  style="font-family:var(--font-data);font-size:0.8rem;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph/2})">PRICE · BAND</text>
             <!-- Highlight ring — stroke colour set dynamically to match the hovered ware -->
             <circle class="cf-ware-marker" r="4" fill="none" stroke="#ffffff" stroke-width="1.5" style="display:none;pointer-events:none"/>
             <!-- Transparent overlay that captures mouse events for nearest-point hover -->
@@ -637,7 +637,7 @@
                     fill="${CHART_ACCENT}10" stroke="${CHART_ACCENT}30" stroke-width="0.5"/>
               <text x="${(ml + pw - 4).toFixed(1)}" y="${(mt + 11).toFixed(1)}" text-anchor="end"
                     fill="${CHART_LINE}" fill-opacity="0.75"
-                    style="font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.08em">${wareType === 'area' ? 'AREA' : wareType === 'scatter' ? 'DOT' : 'STEP'} ›</text>
+                    style="font-family:var(--font-data);font-size:0.7rem;letter-spacing:0.08em">${wareType === 'area' ? 'AREA' : wareType === 'scatter' ? 'DOT' : 'STEP'} ›</text>
             </g>
             <!-- Sold/Bought toggle — must come after the hit rect in document order so
                  it paints and receives clicks on top of the crosshair overlay. -->
@@ -765,7 +765,7 @@
               <button class="cf-toggle-btn ${isSell ? 'active' : ''}" onclick="setShipMode('${safeCode}','sell')">Sell</button>
               <button class="cf-toggle-btn ${!isSell ? 'active' : ''}" onclick="setShipMode('${safeCode}','buy')">Buy</button>
             </div>
-            <div style="padding:0.6rem 0;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No ${isSell ? 'sell' : 'buy'} activity for [${factionLabel}] in this window</div>
+            <div style="padding:0.6rem 0;font-family:var(--font-data);font-size:1.1rem;color:var(--text-brand)">No ${isSell ? 'sell' : 'buy'} activity for [${factionLabel}] in this window</div>
           </div>`;
       }
 
@@ -903,7 +903,7 @@
                              display:inline-flex;align-items:center;
                              padding:0.2rem 0.7rem;border-radius:0.2rem;
                              border:1px solid ${col}44;background:${col}22;
-                             color:${col};font-family:var(--font-mono);
+                             color:${col};font-family:var(--font-data);
                              font-size:1rem;white-space:nowrap;letter-spacing:0.04em;
                              user-select:none">${label}</span>`;
       }).join('');
@@ -915,7 +915,7 @@
                 fill="${CHART_ACCENT}10" stroke="${CHART_ACCENT}30" stroke-width="0.5"/>
           <text x="${(ml + pw - 4).toFixed(1)}" y="${(mt + 11).toFixed(1)}" text-anchor="end"
                 fill="${CHART_LINE}" fill-opacity="0.75"
-                style="font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.08em">${typeLabel} ›</text>
+                style="font-family:var(--font-data);font-size:0.7rem;letter-spacing:0.08em">${typeLabel} ›</text>
         </g>`;
 
       // Commit hover store so tooltips.js can do nearest-point lookup.
@@ -937,7 +937,7 @@
             </g>
             <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="${CHART_ACCENT}" stroke-opacity="0.35" stroke-width="1"/>
             <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.6"
-                  style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">CREDITS/HR</text>
+                  style="font-family:var(--font-data);font-size:0.8rem;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">CREDITS/HR</text>
             <!-- Highlight ring for the nearest hovered datapoint; colour set dynamically -->
             <circle class="cf-ship-marker" r="5" fill="none" stroke="${CHART_LINE}" stroke-width="1.5" style="display:none;pointer-events:none"/>
             <!-- Transparent overlay captures mouse events; nearest-point search in tooltips.js -->
@@ -1048,7 +1048,7 @@
           <g class="avg-overlay" clip-path="url(#avgclip-${safeCode})"></g>
           <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ph}" stroke="${CHART_ACCENT}" stroke-opacity="0.35" stroke-width="1"/>
           <text x="9" y="${mt + ph / 2}" text-anchor="middle" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.6"
-                style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">PRICE · CR</text>
+                style="font-family:var(--font-data);font-size:0.8rem;letter-spacing:0.1em" transform="rotate(-90 9 ${mt + ph / 2})">PRICE · CR</text>
           <!-- Readout line: on hover it projects the bar's top across to the
                price axis at that hour's average. Colour set per-hover in JS. -->
           <line class="avg-hot-line" stroke-dasharray="3 3" stroke-width="0.8" style="opacity:0;transition:opacity 0.15s;pointer-events:none"/>
@@ -1128,9 +1128,9 @@
       return `<span onclick="setAvgWare('${safeCode}','${w}')"
         style="cursor:pointer;opacity:${on ? '1' : '0.4'};display:inline-flex;align-items:center;
                padding:0.2rem 0.7rem;border-radius:0.2rem;border:1px solid ${c}${on ? 'aa' : '44'};
-               background:${c}${on ? '33' : '14'};color:${c};font-family:var(--font-mono);
+               background:${c}${on ? '33' : '14'};color:${c};font-family:var(--font-data);
                font-size:1rem;white-space:nowrap;letter-spacing:0.04em;user-select:none">${w}</span>`;
-    }).join('') : `<span style="font-family:var(--font-mono);font-size:1rem;color:var(--text-faint)">No ${dir} activity in the last 24h</span>`;
+    }).join('') : `<span style="font-family:var(--font-data);font-size:1rem;color:var(--text-brand)">No ${dir} activity in the last 24h</span>`;
 
     // ── SOLD/BOUGHT toggle (vertical pill, mirrors By Ware) ──
     const isSell = dir === 'sell';
@@ -1180,7 +1180,7 @@
     gridEl.innerHTML = ticks.map(v => {
       const y = yOf(v).toFixed(1);
       return `<line x1="${ml}" y1="${y}" x2="${ml + pw}" y2="${y}" stroke="${CHART_ACCENT}" stroke-opacity="0.10" stroke-width="0.6"/>
-        <text x="${ml - 6}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.7" style="font-family:var(--font-mono);font-size:0.8rem">${cfFmtY(v)}</text>`;
+        <text x="${ml - 6}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="${CHART_LINE}" fill-opacity="0.7" style="font-family:var(--font-data);font-size:0.8rem">${cfFmtY(v)}</text>`;
     }).join('');
 
     // ── X ticks: same adaptive spacing as the other charts ──
@@ -1190,7 +1190,7 @@
       const x = xOf(h).toFixed(1);
       const label = h === 0 ? 'NOW' : h < 1 ? `-${Math.round(h * 60)}M` : `-${h % 1 !== 0 ? h.toFixed(1) : Math.round(h)}H`;
       xt += `<line x1="${x}" y1="${mt}" x2="${x}" y2="${mt + ph}" stroke="${CHART_ACCENT}" stroke-opacity="0.08" stroke-width="0.6"/>
-        <text x="${x}" y="${mt + ph + 13}" text-anchor="middle" fill="${CHART_LINE}" fill-opacity="0.7" style="font-family:var(--font-mono);font-size:0.8rem;letter-spacing:0.06em">${label}</text>`;
+        <text x="${x}" y="${mt + ph + 13}" text-anchor="middle" fill="${CHART_LINE}" fill-opacity="0.7" style="font-family:var(--font-data);font-size:0.8rem;letter-spacing:0.06em">${label}</text>`;
     }
     xtEl.innerHTML = xt;
 
@@ -1279,7 +1279,7 @@
       <rect x="${(ml + pw - 38).toFixed(1)}" y="${(mt + 3).toFixed(1)}" width="36" height="13" rx="2"
             fill="${CHART_ACCENT}10" stroke="${CHART_ACCENT}30" stroke-width="0.5" onclick="cycleChart('${safeCode}','avg')" style="cursor:pointer"/>
       <text x="${(ml + pw - 4).toFixed(1)}" y="${(mt + 11).toFixed(1)}" text-anchor="end"
-            fill="${CHART_LINE}" fill-opacity="0.75" onclick="cycleChart('${safeCode}','avg')" style="cursor:pointer;font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.08em">${avgTypeLabel} ›</text>`;
+            fill="${CHART_LINE}" fill-opacity="0.75" onclick="cycleChart('${safeCode}','avg')" style="cursor:pointer;font-family:var(--font-data);font-size:0.7rem;letter-spacing:0.08em">${avgTypeLabel} ›</text>`;
 
     // ── Hit columns + tooltip data (only for hours that have trades) ──
     // Full-height transparent rects so the cursor catches the whole column, not
@@ -1448,8 +1448,8 @@
     const cfFmtU = n => Math.round(n).toLocaleString();
     const cfRow = (label, value, colour) => `
         <div style="display:flex;justify-content:space-between;gap:1.2rem;padding:1px 0">
-          <span style="color:var(--text-faint);font-size:1rem">${label}</span>
-          <span style="color:${colour || 'var(--text-dim)'};font-family:var(--font-mono);font-size:1rem;text-align:right">${value}</span>
+          <span style="color:var(--text-brand);font-size:1rem">${label}</span>
+          <span style="color:${colour || 'var(--text-secondary)'};font-family:var(--font-data);font-size:1rem;text-align:right">${value}</span>
         </div>`;
 
     function cashflowTipHtml(d) {
@@ -1462,20 +1462,20 @@
       const shown = d.rows.slice(0, MAX);
       const more  = d.rows.length - shown.length;
       return `<div style="min-width:23rem;padding:0.2rem 0">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border)">
-          <span style="color:var(--text-faint);font-size:1rem;letter-spacing:0.08em;text-transform:uppercase">${span}</span>
-          <span style="color:${d.net >= 0 ? CHART_ACCENT : CHART_LOSS};font-family:var(--font-mono);font-size:1.1rem">${fmtC(d.net)} Cr</span>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem;padding-bottom:0.4rem;border-bottom:1px solid var(--outline)">
+          <span style="color:var(--text-brand);font-size:1rem;letter-spacing:0.08em;text-transform:uppercase">${span}</span>
+          <span style="color:${d.net >= 0 ? CHART_ACCENT : CHART_LOSS};font-family:var(--font-data);font-size:1.1rem">${fmtC(d.net)} Cr</span>
         </div>` +
         shown.map(r => `
           <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;padding:1px 0">
             <span style="font-size:1rem;letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:13rem;color:${r.colour}">
               <span style="color:${r.dir === 'sell' ? CHART_ACCENT : CHART_LOSS}">${r.dir === 'sell' ? '▲' : '▼'}</span> ${r.ware}
             </span>
-            <span style="font-family:var(--font-mono);font-size:1rem;color:var(--text-dim);flex-shrink:0;white-space:nowrap">
+            <span style="font-family:var(--font-data);font-size:1rem;color:var(--text-secondary);flex-shrink:0;white-space:nowrap">
               ${fmtU(r.units)}u · <span style="color:${r.cr >= 0 ? CHART_ACCENT : CHART_LOSS}">${fmtC(r.cr)}</span>
             </span>
           </div>`).join('') +
-        (more > 0 ? `<div style="margin-top:0.4rem;font-size:1rem;color:var(--text-faint)">+${more} more ware${more > 1 ? 's' : ''}</div>` : '') +
+        (more > 0 ? `<div style="margin-top:0.4rem;font-size:1rem;color:var(--text-brand)">+${more} more ware${more > 1 ? 's' : ''}</div>` : '') +
       `</div>`;
     }
 
@@ -1493,7 +1493,7 @@
         const isSell = t.dir === 'sell';
         const dirCol = isSell ? CHART_ACCENT : CHART_LOSS;
         const cpRow  = t.counterparty
-          ? `<div style="color:var(--text-faint);font-family:var(--font-mono);font-size:0.82rem;padding-left:1.3rem;margin-top:2px;letter-spacing:0.04em">${isSell ? '→' : '←'} ${t.counterparty}</div>`
+          ? `<div style="color:var(--text-brand);font-family:var(--font-data);font-size:0.82rem;padding-left:1.3rem;margin-top:2px;letter-spacing:0.04em">${isSell ? '→' : '←'} ${t.counterparty}</div>`
           : '';
         return `<div style="padding:5px 0 4px;border-bottom:1px solid rgba(255,255,255,0.05)">
           <div style="display:flex;align-items:baseline;gap:0.45rem">
@@ -1501,24 +1501,24 @@
             <span style="color:${t.wareColour};font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.ware}</span>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:baseline;padding-left:1.3rem;margin-top:3px">
-            <span style="font-family:var(--font-mono);font-size:0.88rem;color:var(--text-faint);white-space:nowrap">
-              ${fmtU(t.amount)}<span style="color:var(--text-faint);opacity:0.5"> ×</span> ${fmtU(t.priceEa)} Cr
+            <span style="font-family:var(--font-data);font-size:0.88rem;color:var(--text-brand);white-space:nowrap">
+              ${fmtU(t.amount)}<span style="color:var(--text-brand);opacity:0.5"> ×</span> ${fmtU(t.priceEa)} Cr
             </span>
-            <span style="font-family:var(--font-mono);font-size:1rem;color:${CHART_ACCENT};white-space:nowrap;flex-shrink:0">${fmtC(t.total)} Cr</span>
+            <span style="font-family:var(--font-data);font-size:1rem;color:${CHART_ACCENT};white-space:nowrap;flex-shrink:0">${fmtC(t.total)} Cr</span>
           </div>
           ${cpRow}
         </div>`;
       }).join('');
 
       return `<div style="min-width:26rem;max-width:34rem;padding:0.2rem 0">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.4rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.4rem;padding-bottom:0.4rem;border-bottom:1px solid var(--outline)">
           <span style="color:${d.colour};font-size:1rem;letter-spacing:0.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:20rem">${label}</span>
-          <span style="font-family:var(--font-mono);font-size:0.85rem;color:var(--text-faint);flex-shrink:0">${span}</span>
+          <span style="font-family:var(--font-data);font-size:0.85rem;color:var(--text-brand);flex-shrink:0">${span}</span>
         </div>
         ${tradeRows}
-        <div style="margin-top:0.4rem;padding-top:0.4rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:baseline">
-          <span style="font-size:0.9rem;color:var(--text-faint)">${d.trades.length} trade${d.trades.length !== 1 ? 's' : ''}</span>
-          <span style="font-family:var(--font-mono);font-size:1.1rem;color:${CHART_ACCENT}">${fmtC(d.total)} Cr</span>
+        <div style="margin-top:0.4rem;padding-top:0.4rem;border-top:1px solid var(--outline);display:flex;justify-content:space-between;align-items:baseline">
+          <span style="font-size:0.9rem;color:var(--text-brand)">${d.trades.length} trade${d.trades.length !== 1 ? 's' : ''}</span>
+          <span style="font-family:var(--font-data);font-size:1.1rem;color:${CHART_ACCENT}">${fmtC(d.total)} Cr</span>
         </div>
       </div>`;
     }
@@ -1540,7 +1540,7 @@
       const partyLabel   = d.dir === 'sell' ? 'Buyer' : 'Seller';
       const row = cfRow;
       return `<div style="min-width:22rem;padding:0.2rem 0">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem;padding-bottom:0.4rem;border-bottom:1px solid var(--outline)">
           <span style="color:${d.colour};font-size:1.1rem;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:16rem">
             <span style="color:${d.dir === 'sell' ? CHART_ACCENT : CHART_LOSS}">${d.dir === 'sell' ? '▲ SOLD' : '▼ BOUGHT'}</span> ${d.ware}
           </span>
@@ -1550,7 +1550,7 @@
         (d.counterparty ? row(partyLabel, d.counterparty) : '') +
         (shipResolved   ? row('Ship', d.ship) : '') +
         (!d.counterparty && !shipResolved ? row(partyLabel, 'Unknown') : '') +
-        `<div style="margin-top:0.5rem;padding-top:0.4rem;border-top:1px solid var(--border);text-align:right;font-size:1rem;color:var(--text-faint)">${ago}</div>
+        `<div style="margin-top:0.5rem;padding-top:0.4rem;border-top:1px solid var(--outline);text-align:right;font-size:1rem;color:var(--text-brand)">${ago}</div>
       </div>`;
     }
 
@@ -1578,7 +1578,7 @@
 
       return `<div style="min-width:22rem;padding:0.2rem 0">
         <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;
-                    margin-bottom:0.5rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border)">
+                    margin-bottom:0.5rem;padding-bottom:0.4rem;border-bottom:1px solid var(--outline)">
           <span style="color:${d.colour};font-size:1.1rem;letter-spacing:0.05em;text-transform:uppercase;
                        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:18rem">
             <span style="color:${d.dir === 'buy' ? CHART_LOSS : CHART_ACCENT}">${d.dir === 'buy' ? '▼ BOUGHT' : '▲ SOLD'}</span> ${d.ware}
@@ -1590,8 +1590,8 @@
         row('Amount',     `${fmtU(d.amount)} units`) +
         (d.counterparty ? row(d.dir === 'buy' ? 'Seller' : 'Buyer', d.counterparty) : '') +
         (shipResolved   ? row('Ship',  d.ship)         : '') +
-        `<div style="margin-top:0.5rem;padding-top:0.4rem;border-top:1px solid var(--border);
-                     text-align:right;font-size:1rem;color:var(--text-faint)">${ago}</div>
+        `<div style="margin-top:0.5rem;padding-top:0.4rem;border-top:1px solid var(--outline);
+                     text-align:right;font-size:1rem;color:var(--text-brand)">${ago}</div>
       </div>`;
     }
 
@@ -1605,44 +1605,44 @@
       const dirCol   = d.dir === 'sell' ? CHART_ACCENT : CHART_LOSS;
 
       // Delta vs the previous populated hour.
-      let deltaHtml = `<span style="color:var(--text-faint);font-size:1rem">first hour</span>`;
+      let deltaHtml = `<span style="color:var(--text-brand);font-size:1rem">first hour</span>`;
       if (d.prevAvg != null && d.prevAvg > 0) {
         const diff = d.avg - d.prevAvg;
         const pct  = Math.abs(diff / d.prevAvg * 100);
         const flat = Math.abs(diff) < 0.005 * d.prevAvg;
-        const c    = flat ? 'var(--text-faint)' : diff > 0 ? CHART_ACCENT : CHART_LOSS;
+        const c    = flat ? 'var(--text-brand)' : diff > 0 ? CHART_ACCENT : CHART_LOSS;
         const ch   = flat ? '▬' : diff > 0 ? '▲' : '▼';
-        deltaHtml  = `<span style="color:${c};font-family:var(--font-mono);font-size:1.1rem">${ch} ${pct.toFixed(1)}%</span>`;
+        deltaHtml  = `<span style="color:${c};font-family:var(--font-data);font-size:1.1rem">${ch} ${pct.toFixed(1)}%</span>`;
       }
 
       // Marker position within the hour's min–max range (clamped).
       const range   = (d.max - d.min) || 1;
       const avgFrac = Math.max(0, Math.min(1, (d.avg - d.min) / range)) * 100;
       const spread  = d.max > d.min
-        ? `<div style="display:flex;justify-content:space-between;font-size:0.9rem;color:var(--text-faint);font-family:var(--font-mono);margin-bottom:0.2rem">
+        ? `<div style="display:flex;justify-content:space-between;font-size:0.9rem;color:var(--text-brand);font-family:var(--font-data);margin-bottom:0.2rem">
              <span>${fmtU(d.min)}</span><span style="letter-spacing:0.12em">SPREAD</span><span>${fmtU(d.max)}</span>
            </div>
            <div style="position:relative;height:0.5rem;background:${d.colour}22;border-radius:0.3rem;margin-bottom:0.6rem;overflow:visible">
              <div style="position:absolute;inset:0;background:linear-gradient(90deg,${d.colour}33,${d.colour}66);border-radius:0.3rem"></div>
              <div style="position:absolute;left:${avgFrac.toFixed(1)}%;top:50%;width:0.7rem;height:0.7rem;border-radius:50%;background:${d.colour};transform:translate(-50%,-50%);box-shadow:0 0 0.5rem ${d.colour}"></div>
            </div>`
-        : `<div style="font-size:0.9rem;color:var(--text-faint);font-family:var(--font-mono);margin-bottom:0.6rem">single trade · no spread</div>`;
+        : `<div style="font-size:0.9rem;color:var(--text-brand);font-family:var(--font-data);margin-bottom:0.6rem">single trade · no spread</div>`;
 
       return `<div style="min-width:21rem;padding:0.2rem 0">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.6rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.6rem;padding-bottom:0.4rem;border-bottom:1px solid var(--outline)">
           <span style="color:${d.colour};font-size:1.1rem;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:16rem">
             <span style="color:${dirCol}">${dirLabel}</span> ${d.ware}
           </span>
-          <span style="color:var(--text-faint);font-size:1rem;letter-spacing:0.06em;white-space:nowrap">${span}</span>
+          <span style="color:var(--text-brand);font-size:1rem;letter-spacing:0.06em;white-space:nowrap">${span}</span>
         </div>
         <div style="display:flex;align-items:baseline;justify-content:space-between;gap:1rem;margin-bottom:0.7rem">
-          <span style="font-family:var(--font-mono);font-size:1.8rem;color:${d.colour};line-height:1">${fmtU(d.avg)}<span style="font-size:1rem;color:var(--text-faint)"> cr avg</span></span>
+          <span style="font-family:var(--font-data);font-size:1.8rem;color:${d.colour};line-height:1">${fmtU(d.avg)}<span style="font-size:1rem;color:var(--text-brand)"> cr avg</span></span>
           ${deltaHtml}
         </div>
         ${spread}
         <div style="display:flex;justify-content:space-between;gap:1.2rem">
-          <span style="color:var(--text-faint);font-size:1rem">Trades this hour</span>
-          <span style="color:var(--text-dim);font-family:var(--font-mono);font-size:1rem">${d.count}</span>
+          <span style="color:var(--text-brand);font-size:1rem">Trades this hour</span>
+          <span style="color:var(--text-secondary);font-family:var(--font-data);font-size:1rem">${d.count}</span>
         </div>
       </div>`;
     }

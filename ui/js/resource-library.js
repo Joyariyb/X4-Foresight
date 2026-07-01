@@ -345,12 +345,12 @@
 
     if (!rows.length) {
       document.getElementById('reslib-tbody').innerHTML =
-        `<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:3rem">No hulls match the selected filters.</td></tr>`;
+        `<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:3rem">No hulls match the selected filters.</td></tr>`;
       return;
     }
 
     document.getElementById('reslib-tbody').innerHTML = rows.map(r => {
-      const tint = SIZE_TINT[(r.size || '').toUpperCase()] || { c: 'var(--text-dim)', bg: 'transparent' };
+      const tint = SIZE_TINT[(r.size || '').toUpperCase()] || { c: 'var(--text-secondary)', bg: 'transparent' };
       const hp = ['weapon','turret','shield'].map(slot => {
         const cap = r.hardpoints[slot];
         if (!cap) return '';
@@ -365,7 +365,7 @@
         <td style="color:${tint.c}">${SIZE_WORD[r.size] || (r.size||'').toUpperCase()}</td>
         <td class="mono">${r.max_hull != null ? designCr(r.max_hull) : '—'}</td>
         <td class="mono">${r.price != null ? designCr(r.price) : '—'}</td>
-        <td>${hp || '<span style="color:var(--text-faint)">—</span>'}${r.purchasable ? '' : ' <span class="badge neutral">Capture Only</span>'}</td>
+        <td>${hp || '<span style="color:var(--text-brand)">—</span>'}${r.purchasable ? '' : ' <span class="badge neutral">Capture Only</span>'}</td>
       </tr>`;
     }).join('');
   }
@@ -397,7 +397,7 @@
     </tr>`;
 
     document.getElementById('reslib-tbody').innerHTML = rows.map(e => {
-      const tint = SIZE_TINT[(e.size || '').toUpperCase()] || { c: 'var(--text-dim)', bg: 'transparent' };
+      const tint = SIZE_TINT[(e.size || '').toUpperCase()] || { c: 'var(--text-secondary)', bg: 'transparent' };
       const mk = e.mk ? ` Mk${e.mk}` : '';
       const missileTag = isMissile(e) ? ' <span class="badge neutral">Missile</span>' : '';
       const tipAttr = wantsTip ? ` data-weapon-tip="${encodeURIComponent(JSON.stringify({ ...e, _shipHeatFactor: 1 }))}"` : '';
@@ -450,7 +450,7 @@
         <div class="dhull-stat"><span class="dhs-lbl">Missiles</span><span class="dhs-val">${h.missile_storage != null ? designCr(h.missile_storage) : '—'}</span></div>
         <div class="dhull-stat"><span class="dhs-lbl">Units</span><span class="dhs-val">${h.unit_storage != null ? designCr(h.unit_storage) : '—'}</span></div>
       </div>
-      ${cargoTagsLabel ? `<div style="width:100%;text-align:center;font-size:1rem;color:var(--text-faint);margin-top:-0.4rem">Cargo: ${cargoTagsLabel}</div>` : ''}
+      ${cargoTagsLabel ? `<div style="width:100%;text-align:center;font-size:1rem;color:var(--text-brand);margin-top:-0.4rem">Cargo: ${cargoTagsLabel}</div>` : ''}
     </div>`;
   }
 
@@ -471,7 +471,7 @@
     panel.style.display = '';
 
     if (!h) {
-      panel.innerHTML = `<div style="padding:6rem;text-align:center;color:var(--text-dim)">Hull not found — it may have dropped out of the loaded catalog.</div>`;
+      panel.innerHTML = `<div style="padding:6rem;text-align:center;color:var(--text-secondary)">Hull not found — it may have dropped out of the loaded catalog.</div>`;
       return;
     }
 
@@ -486,7 +486,7 @@
     ].filter(Boolean).join(' ');
 
     const description = h.description
-      ? `<div style="font-size:1.2rem;color:var(--text-dim);line-height:1.6;font-style:italic;margin-bottom:1.4rem;max-width:82rem">${h.description}</div>`
+      ? `<div style="font-size:1.2rem;color:var(--text-secondary);line-height:1.6;font-style:italic;margin-bottom:1.4rem;max-width:82rem">${h.description}</div>`
       : '';
 
     // Same padded-to-4-columns convention as designCardHtml()'s statCells/
@@ -537,7 +537,7 @@
                 <span class="dcost">${e.price != null ? designCr(e.price) : '—'}</span>
               </div>`;
             }).join('')
-          : `<div style="padding:0.6rem 0.2rem;color:var(--text-faint);font-size:1.1rem">No catalogued ${label.toLowerCase()} fit this size yet.</div>`;
+          : `<div style="padding:0.6rem 0.2rem;color:var(--text-brand);font-size:1.1rem">No catalogued ${label.toLowerCase()} fit this size yet.</div>`;
         return `<details class="dsub-box reslib-hpcard" style="border-color:${hexA(box.hex,0.3)};background:${box.bg}">
           <summary class="dsub-hd">
             <span class="dsub-badge" style="color:${box.hex};background:${box.bg};border-color:${box.hex}">${sz.toUpperCase()}</span>
@@ -556,7 +556,7 @@
         <div class="dsect-body">${body}</div>
       </div>`;
     }
-    if (!sections) sections = `<div style="padding:3rem 1rem;text-align:center;color:var(--text-dim);font-size:1.2rem">This hull has no equipment hardpoints.</div>`;
+    if (!sections) sections = `<div style="padding:3rem 1rem;text-align:center;color:var(--text-secondary);font-size:1.2rem">This hull has no equipment hardpoints.</div>`;
 
     panel.innerHTML = `
       ${badges ? `<div style="margin-bottom:1rem">${badges}</div>` : ''}

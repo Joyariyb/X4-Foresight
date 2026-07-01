@@ -29,7 +29,7 @@
 
   function repBar(value) {
     const pct = Math.min(Math.abs(value) / 30 * 100, 100).toFixed(1);
-    const col = value >= 0 ? "var(--green)" : "var(--red)";
+    const col = value >= 0 ? "var(--color-positive)" : "var(--color-negative)";
     const dir = value >= 0 ? "left" : "right";
     return `<div class="rep-bar-wrap"><div class="rep-bar" style="width:${pct}%;background:${col};float:${dir}"></div></div>`;
   }
@@ -41,13 +41,13 @@
       const raw = (hullHp !== null && hullHp !== undefined)
         ? Math.round(hullHp).toLocaleString() + " HP"
         : "—";
-      return `<span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint)">${raw}</span>`;
+      return `<span style="font-family:var(--font-data);font-size:10px;color:var(--text-brand)">${raw}</span>`;
     }
 
     const barWidth = Math.min(pct, 100).toFixed(1);
     let color;
     if (pct > 100) {
-      color = "#388bfd";
+      color = "var(--color-info)";
     } else {
       // Squaring the ratio makes colour shift from green toward red faster —
       // 80% health already reads as yellow-green rather than staying near-green.
@@ -81,11 +81,11 @@
       const raw = (shieldHp !== null && shieldHp !== undefined)
         ? Math.round(shieldHp).toLocaleString() + " HP"
         : "—";
-      return `<span style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint)">${raw}</span>`;
+      return `<span style="font-family:var(--font-data);font-size:10px;color:var(--text-brand)">${raw}</span>`;
     }
 
     const barWidth = Math.min(pct, 100).toFixed(1);
-    const color = pct >= 80 ? "#388bfd" : pct >= 50 ? "var(--amber)" : "var(--red)";
+    const color = pct >= 80 ? "var(--color-info)" : pct >= 50 ? "var(--color-warning)" : "var(--color-negative)";
 
     const label = pct >= 100 ? "Full" : `${Math.round(pct)}%`;
     const tipParts = [label];
@@ -115,16 +115,16 @@
     for (let i = 1; i <= 5; i++) {
       if (stars >= i) {
         // full star
-        html += `<span style="color:var(--amber)">★</span>`;
+        html += `<span style="color:var(--color-warning)">★</span>`;
       } else if (stars >= i - 0.5) {
         // half star: dim empty star underneath, amber star clipped to 50% on top
         html += `<span style="position:relative;display:inline-block">` +
-                `<span style="color:var(--text-dim)">★</span>` +
-                `<span style="position:absolute;left:0;top:0;width:50%;overflow:hidden;color:var(--amber)">★</span>` +
+                `<span style="color:var(--text-secondary)">★</span>` +
+                `<span style="position:absolute;left:0;top:0;width:50%;overflow:hidden;color:var(--color-warning)">★</span>` +
                 `</span>`;
       } else {
         // empty star
-        html += `<span style="color:var(--text-dim)">☆</span>`;
+        html += `<span style="color:var(--text-secondary)">☆</span>`;
       }
     }
     return html;
@@ -145,8 +145,8 @@
     ];
     const rows = SKILL_ORDER.filter(([key]) => skills[key] != null);
     const nameHeader = name
-      ? `<div style="color:var(--teal);font-weight:700;margin-bottom:${rows.length ? 6 : 0}px;` +
-        `${rows.length ? 'padding-bottom:5px;border-bottom:1px solid var(--border);' : ''}` +
+      ? `<div style="color:var(--color-primary);font-weight:700;margin-bottom:${rows.length ? 6 : 0}px;` +
+        `${rows.length ? 'padding-bottom:5px;border-bottom:1px solid var(--outline);' : ''}` +
         `white-space:nowrap">${name}</div>`
       : '';
     if (!rows.length) return nameHeader || '—';
@@ -167,6 +167,17 @@
   registerTip('hullTip', (el, _e, tip) => {
     tip.textContent      = el.dataset.hullTip;
     tip.style.color      = el.dataset.hullColor || '';
+    tip.style.whiteSpace = 'nowrap';
+    return true;
+  });
+
+  // Generic plain-text tip for anything that would otherwise reach for a native
+  // title= (icons, table cells, buttons, …). Stamp data-text-tip instead so the
+  // hover renders through the shared, styled #hull-tip popover — never title=,
+  // it renders unstyled and can't be positioned (see UI_STANDARDS.md §8).
+  registerTip('textTip', (el, _e, tip) => {
+    tip.textContent      = el.dataset.textTip;
+    tip.style.color      = '';
     tip.style.whiteSpace = 'nowrap';
     return true;
   });

@@ -106,8 +106,8 @@
       Object.entries(byRole).sort((a,b)=>b[1]-a[1]).map(([role,count]) => {
         const icon = ROLE_ICONS[role] || "ti-rocket";
         return `<tr>
-          <td><i class="ti ${icon}" style="font-size:13px;vertical-align:-2px;margin-right:6px;color:var(--text-faint)"></i>${role}</td>
-          <td class="mono" style="color:var(--teal)">${count}</td>
+          <td><i class="ti ${icon}" style="font-size:13px;vertical-align:-2px;margin-right:6px;color:var(--text-brand)"></i>${role}</td>
+          <td class="mono" style="color:var(--color-primary)">${count}</td>
         </tr>`;
       }).join("");
 
@@ -115,7 +115,7 @@
     const byOrder = fleet.by_order || {};
     document.querySelector("#order-table tbody").innerHTML =
       Object.entries(byOrder).sort((a,b)=>b[1]-a[1]).map(([order,count]) => {
-        const col  = ORDER_COLOURS[order] || "var(--text-dim)";
+        const col  = ORDER_COLOURS[order] || "var(--text-secondary)";
         const icon = ORDER_ICONS[order]   || "ti-circle";
         return `<tr>
           <td><i class="ti ${icon}" style="font-size:13px;vertical-align:-2px;margin-right:6px;color:${col}"></i>${order}</td>
@@ -245,7 +245,7 @@
       item.style.setProperty('--tab-bg',     hexToRgba(color, 0.12));
       item.style.setProperty('--tab-border', hexToRgba(color, 0.3));
       item.innerHTML = locked
-        ? `${label} <i class="ti ti-lock" style="font-size:12px" title="Standings locked by the game"></i>`
+        ? `${label} <i class="ti ti-lock" style="font-size:12px" data-text-tip="Standings locked by the game"></i>`
         : label;
       item.onclick = () => switchDiploTab(factionId);
       return item;
@@ -280,7 +280,7 @@
         // Panel — same table shape as the player standings, minus base/booster
         // (NPC boosters are not extracted).
         const lockNote = locked
-          ? `<span style="font-size:11px;color:var(--text-faint);margin-left:8px;letter-spacing:0;text-transform:none">
+          ? `<span style="font-size:11px;color:var(--text-brand);margin-left:8px;letter-spacing:0;text-transform:none">
                <i class="ti ti-lock" style="font-size:11px;vertical-align:-1px"></i> standings locked by the game</span>`
           : '';
         const panel = document.createElement('div');
@@ -295,13 +295,13 @@
             <table class="data-table">
               <thead><tr><th>Faction</th><th>Tier</th><th>Score</th><th>Bar</th></tr></thead>
               <tbody>${rows.map(r => {
-                const col = { Allied:"var(--green)", Friendly:"var(--teal)", Neutral:"var(--text-dim)", Hostile:"var(--amber)", "At War":"var(--red)" }[r.tier] || "var(--text-dim)";
+                const col = { Allied:"var(--color-positive)", Friendly:"var(--color-primary)", Neutral:"var(--text-secondary)", Hostile:"var(--color-warning)", "At War":"var(--color-negative)" }[r.tier] || "var(--text-secondary)";
                 const isPlayer = r.other_id === 'player';
                 const hint = r.mirrored
                   ? 'Mirrored from your own standings — this faction stores no player entry in the save'
                   : 'How this faction sees you';
                 const name = isPlayer
-                  ? `<span style="color:#2dd4bf" title="${hint}">${player.name || 'Player'} (you)</span>`
+                  ? `<span style="color:#2dd4bf" data-text-tip="${hint}">${player.name || 'Player'} (you)</span>`
                   : r.other_name;
                 return `<tr${isPlayer ? ' style="background:rgba(45,212,191,0.07)"' : ''}>
                   <td>${name}</td>
@@ -330,19 +330,19 @@
       rep.forEach(r => { relLookup['player|' + r.faction_id] = r; });
 
       let mhtml = '<table class="diplo-matrix"><thead><tr><th class="dm-row"></th>'
-        + matrixOrder.map(f => `<th title="${dmName(f)}">${dmTag(f)}</th>`).join('')
+        + matrixOrder.map(f => `<th data-text-tip="${dmName(f)}">${dmTag(f)}</th>`).join('')
         + '</tr></thead><tbody>';
       matrixOrder.forEach(a => {
-        mhtml += `<tr><th class="dm-row" title="Open the ${dmName(a)} tab"
+        mhtml += `<tr><th class="dm-row" data-text-tip="Open the ${dmName(a)} tab"
                       onclick="switchDiploTab('${a}')">${dmTag(a)}</th>`;
         matrixOrder.forEach(b => {
           if (a === b) { mhtml += '<td class="dm-empty"></td>'; return; }
           const r = relLookup[a + '|' + b] || relLookup[b + '|' + a];
-          if (!r) { mhtml += '<td class="dm-empty" title="No standing recorded in the save">·</td>'; return; }
+          if (!r) { mhtml += '<td class="dm-empty" data-text-tip="No standing recorded in the save">·</td>'; return; }
           const col = TIER_COLOURS[r.tier] || '#8b949e';
           const v   = Math.round(r.value);
           mhtml += `<td style="background:${hexToRgba(col, 0.15)};color:${col}"
-                        title="${dmName(a)} ↔ ${dmName(b)}: ${sign(r.value)} (${r.tier})">${v > 0 ? '+' + v : v}</td>`;
+                        data-text-tip="${dmName(a)} ↔ ${dmName(b)}: ${sign(r.value)} (${r.tier})">${v > 0 ? '+' + v : v}</td>`;
         });
         mhtml += '</tr>';
       });
@@ -366,7 +366,7 @@
       mpanel.innerHTML = `
         <div class="sec-header">
           <div class="sec-title">Relations Matrix
-            <span style="font-size:11px;color:var(--text-dim);margin-left:8px;letter-spacing:0;text-transform:none">
+            <span style="font-size:11px;color:var(--text-secondary);margin-left:8px;letter-spacing:0;text-transform:none">
               row = how that faction sees each column · click a row label to open its tab</span>
           </div>
           <div class="sec-line"></div>
@@ -386,29 +386,29 @@
 
       // Hull health
       const hullPct    = s.hull_pct;
-      const hullColor  = hullPct == null ? 'var(--text-faint)' : hullPct >= 95 ? 'var(--green)' : hullPct >= 50 ? 'var(--amber)' : 'var(--red)';
+      const hullColor  = hullPct == null ? 'var(--text-brand)' : hullPct >= 95 ? 'var(--color-positive)' : hullPct >= 50 ? 'var(--color-warning)' : 'var(--color-negative)';
       const hullPctStr = hullPct != null ? Math.round(hullPct) + '%' : '—';
       const hullBarW   = hullPct != null ? Math.min(hullPct, 100).toFixed(1) : '0';
 
       // Shield health — scanner doesn't capture station shields yet; shows — until added
       const shieldPct    = s.shield_pct;
-      const shieldColor  = shieldPct == null ? 'var(--text-faint)' : shieldPct >= 80 ? '#388bfd' : shieldPct >= 50 ? 'var(--amber)' : 'var(--red)';
+      const shieldColor  = shieldPct == null ? 'var(--text-brand)' : shieldPct >= 80 ? '#388bfd' : shieldPct >= 50 ? 'var(--color-warning)' : 'var(--color-negative)';
       const shieldPctStr = shieldPct != null ? Math.round(shieldPct) + '%' : '—';
       const shieldBarW   = shieldPct != null ? Math.min(shieldPct, 100).toFixed(1) : '0';
 
       // Shield cell inner HTML — null renders a "NO SHIELDS" label centred in the bar area
       const shieldDisplay = shieldPct == null
         ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
-             <span style="font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--red)">Shields</span>
+             <span style="font-family:var(--font-data);font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--color-negative)">Shields</span>
            </div>
-           <div style="height:2.2rem;background:var(--border);border-radius:0.2rem;display:flex;align-items:center;justify-content:center">
-             <span style="font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--red)">No Shields</span>
+           <div style="height:2.2rem;background:var(--outline);border-radius:0.2rem;display:flex;align-items:center;justify-content:center">
+             <span style="font-family:var(--font-data);font-size:0.9rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-negative)">No Shields</span>
            </div>`
         : `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
-             <span style="font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;color:${attnColor(shieldColor)}">Shields</span>
-             <span style="font-family:var(--font-mono);font-size:1.1rem;color:${shieldColor}">${shieldPctStr}</span>
+             <span style="font-family:var(--font-data);font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;color:${attnColor(shieldColor)}">Shields</span>
+             <span style="font-family:var(--font-data);font-size:1.1rem;color:${shieldColor}">${shieldPctStr}</span>
            </div>
-           <div style="height:2.2rem;background:var(--border);border-radius:0.2rem;overflow:hidden">
+           <div style="height:2.2rem;background:var(--outline);border-radius:0.2rem;overflow:hidden">
              <div style="height:100%;width:${shieldBarW}%;background:${shieldColor};border-radius:0.2rem"></div>
            </div>`;
 
@@ -417,16 +417,16 @@
       const statusLabel = statusRaw.includes('construction') ? 'UNDER CONSTRUCTION'
                         : statusRaw.includes('wreck')        ? 'DESTROYED'
                         : 'OPERATIONAL';
-      const statusColor = statusRaw.includes('construction') ? 'var(--amber)'
-                        : statusRaw.includes('wreck')        ? 'var(--red)'
-                        : 'var(--green)';
+      const statusColor = statusRaw.includes('construction') ? 'var(--color-warning)'
+                        : statusRaw.includes('wreck')        ? 'var(--color-negative)'
+                        : 'var(--color-positive)';
 
       // Two-state label colour rule: amber/red values demand attention so the
       // label inherits the same colour as its value — they read as one unit.
       // Any other colour (green, teal, blue) is "healthy/normal" so the label
       // stays muted and only the value carries the colour.
       const attnColor = col =>
-        (col === 'var(--amber)' || col === 'var(--red)') ? col : 'var(--text-faint)';
+        (col === 'var(--color-warning)' || col === 'var(--color-negative)') ? col : 'var(--text-brand)';
 
       // Stats
       const dockedShips  = s.docked_ships || [];
@@ -436,13 +436,13 @@
       // Distinct from docked ships, which are physically present right now.
       const af        = s.assigned_fleet || {};
       const afTotal   = af.total   || 0;
-      const afColor   = afTotal > 0 ? 'var(--teal)' : 'var(--text-faint)';
+      const afColor   = afTotal > 0 ? 'var(--color-primary)' : 'var(--text-brand)';
       // Build tooltip rows for each non-zero bucket, falling back to "None assigned".
       const afBuckets = [
-        { label: 'Traders', val: af.traders || 0, color: 'var(--teal)'   },
-        { label: 'Miners',  val: af.miners  || 0, color: 'var(--amber)'  },
-        { label: 'Combat',  val: af.combat  || 0, color: 'var(--red)'    },
-        { label: 'Other',   val: af.other   || 0, color: 'var(--text-dim)'},
+        { label: 'Traders', val: af.traders || 0, color: 'var(--color-primary)'   },
+        { label: 'Miners',  val: af.miners  || 0, color: 'var(--color-warning)'  },
+        { label: 'Combat',  val: af.combat  || 0, color: 'var(--color-negative)'    },
+        { label: 'Other',   val: af.other   || 0, color: 'var(--text-secondary)'},
       ];
       const afTipRows = afBuckets
         .filter(b => b.val > 0)
@@ -452,13 +452,13 @@
          </div>`)
         .join('');
       const afTipHtml = afTipRows
-        ? `<div style="font-family:var(--font-mono);font-size:1.1rem;min-width:11rem">${afTipRows}</div>`
-        : `<div style="font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">None assigned</div>`;
+        ? `<div style="font-family:var(--font-data);font-size:1.1rem;min-width:11rem">${afTipRows}</div>`
+        : `<div style="font-family:var(--font-data);font-size:1.1rem;color:var(--text-brand)">None assigned</div>`;
       const afTipAttr = `data-fleet-tip="${encodeURIComponent(afTipHtml)}"`;
 
       const storageRaw   = s.cargo_adj_pct;
       const storageStr   = storageRaw != null ? Math.round(storageRaw) + '%' : '—';
-      const storageColor = storageRaw != null ? (storageRaw > 90 ? 'var(--red)' : storageRaw > 70 ? 'var(--amber)' : 'var(--teal)') : 'var(--text-faint)';
+      const storageColor = storageRaw != null ? (storageRaw > 90 ? 'var(--color-negative)' : storageRaw > 70 ? 'var(--color-warning)' : 'var(--color-primary)') : 'var(--text-brand)';
 
       // Build per-type storage breakdown for the hover tooltip.
       // Fixed accent colour per storage category — matches the in-game cargo display.
@@ -472,9 +472,9 @@
       const cargoByType = {};
       (s.cargo_by_type || []).forEach(c => { cargoByType[c.cargo_type] = c; });
       const allStorageTypes = [
-        { label: 'Container', type: 'container', color: 'var(--teal)'   },
-        { label: 'Solid',     type: 'solid',     color: 'var(--amber)'  },
-        { label: 'Liquid',    type: 'liquid',    color: 'var(--purple)' },
+        { label: 'Container', type: 'container', color: 'var(--color-primary)'   },
+        { label: 'Solid',     type: 'solid',     color: 'var(--color-warning)'  },
+        { label: 'Liquid',    type: 'liquid',    color: 'var(--color-special)' },
       ].map(t => {
         const c = cargoByType[t.type] || {};
         return { label: t.label, color: t.color,
@@ -487,7 +487,7 @@
         const totalMax = allStorageTypes.reduce((acc, t) => acc + t.max, 0);
         const totalM3  = allStorageTypes.reduce((acc, t) => acc + t.m3,  0);
         storageTipTypes.push({
-          label: 'Total', color: 'var(--green)', isTotal: true,
+          label: 'Total', color: 'var(--color-positive)', isTotal: true,
           pct:   totalMax > 0 ? totalM3 / totalMax * 100 : null,
           m3:    totalM3, max: totalMax,
         });
@@ -530,10 +530,10 @@
       // Label colour follows the two-state rule via attnColor().
       // tipAttr is an optional extra attribute string e.g. 'data-storage-tip="..."'
       const sc = (lbl, val, col = 'var(--text)', last = false, tipAttr = '', icon = '') =>
-        `<div style="padding:1rem 1.2rem;text-align:center;background:var(--bg-card);border-radius:0.3rem${tipAttr ? ';cursor:default' : ''}" ${tipAttr}>
+        `<div style="padding:1rem 1.2rem;text-align:center;background:var(--surface-2);border-radius:0.3rem${tipAttr ? ';cursor:default' : ''}" ${tipAttr}>
            ${icon ? `<div style="font-size:1.5rem;color:${attnColor(col)};margin-bottom:0.3rem"><i class="ti ${icon}"></i></div>` : ''}
-           <div style="font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.1em;text-transform:uppercase;color:${attnColor(col)};margin-bottom:0.5rem">${lbl}</div>
-           <div style="font-family:var(--font-mono);font-size:2rem;color:${col}">${val}</div>
+           <div style="font-family:var(--font-data);font-size:0.9rem;letter-spacing:0.1em;text-transform:uppercase;color:${attnColor(col)};margin-bottom:0.5rem">${lbl}</div>
+           <div style="font-family:var(--font-data);font-size:2rem;color:${col}">${val}</div>
          </div>`;
 
       // ── PRODUCTION TAB ─────────────────────────────────────────────────────
@@ -572,9 +572,9 @@
       };
 
       const prodRows = wares.length === 0
-        ? `<div style="padding:1.2rem 1.4rem;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No production modules</div>`
+        ? `<div style="padding:1.2rem 1.4rem;font-family:var(--font-data);font-size:1.1rem;color:var(--text-brand)">No production modules</div>`
         : wares.map(w => {
-            const wareCol  = WARE_COLOURS[w] || 'var(--text-dim)';
+            const wareCol  = WARE_COLOURS[w] || 'var(--text-secondary)';
             // ware_id key matches the inventory dict: "Energy Cells" → "energycells"
             const wareKey  = w.toLowerCase().replace(/\s+/g, '');
             const inv      = (s.inventory || {})[wareKey] || {};
@@ -596,46 +596,46 @@
             const stockLabel = Math.round(inv.amount ?? 0).toLocaleString();
             const consLabel  = consHr > 0 ? Math.round(consHr).toLocaleString() + '/hr' : '';
             // Double shadow punches the text out of the bright fill behind it.
-            const barTextStyle = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:0.9rem;color:var(--text);text-shadow:0 0 3px rgba(2,8,14,0.95),0 0 3px rgba(2,8,14,0.95);pointer-events:none';
+            const barTextStyle = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-data);font-size:0.9rem;color:var(--text);text-shadow:0 0 3px rgba(2,8,14,0.95),0 0 3px rgba(2,8,14,0.95);pointer-events:none';
 
             // Runtime label: time until this ware's production stops due to a depleted
             // input. null minutes = no inputs needed (e.g. energy cells) → show nothing.
             const rt = runtimes[w];
-            let rtLabel = '', rtColor = 'var(--text-faint)', rtTitle = '';
+            let rtLabel = '', rtColor = 'var(--text-brand)', rtTitle = '';
             if (rt && rt.minutes !== null) {
               rtTitle = rt.limiting_ware ? `Limiting input: ${rt.limiting_ware}` : '';
               if (rt.minutes === 0) {
                 rtLabel = 'OUT';
-                rtColor = 'var(--red)';
+                rtColor = 'var(--color-negative)';
               } else if (rt.minutes < 60) {    // < 1 h → red
                 rtLabel = fmtRuntime(rt.minutes);
-                rtColor = 'var(--red)';
+                rtColor = 'var(--color-negative)';
               } else if (rt.minutes < 120) {   // 1 h – 2 h → amber
                 rtLabel = fmtRuntime(rt.minutes);
-                rtColor = 'var(--amber)';
+                rtColor = 'var(--color-warning)';
               } else {
                 rtLabel = fmtRuntime(rt.minutes);
                 // > 2 h — all the same faint colour, not urgent
               }
             }
             const rtSpan = rtLabel
-              ? `<span style="font-family:var(--font-mono);font-size:1rem;color:${rtColor};min-width:5.2rem;text-align:right" title="${rtTitle}">${rtLabel}</span>`
+              ? `<span style="font-family:var(--font-data);font-size:1rem;color:${rtColor};min-width:5.2rem;text-align:right" data-text-tip="${rtTitle}">${rtLabel}</span>`
               : `<span style="min-width:5.2rem"></span>`;
 
-            return `<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border)">
-               <div style="display:flex;align-items:center;gap:0.8rem;padding:0.5rem 1.4rem;border-right:1px solid var(--border)">
-                 <span style="font-family:var(--font-mono);font-size:1.1rem;letter-spacing:0.06em;text-transform:uppercase;color:${wareCol};min-width:16rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${w.toUpperCase()}</span>
-                 <div style="flex:1;height:1.3rem;background:${wareCol}30;border-radius:0.2rem;overflow:hidden;position:relative" title="Stockpile: ${stockLabel} units · ${storagePct.toFixed(1)}% of ${cargType} bay">
+            return `<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--outline)">
+               <div style="display:flex;align-items:center;gap:0.8rem;padding:0.5rem 1.4rem;border-right:1px solid var(--outline)">
+                 <span style="font-family:var(--font-data);font-size:1.1rem;letter-spacing:0.06em;text-transform:uppercase;color:${wareCol};min-width:16rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${w.toUpperCase()}</span>
+                 <div style="flex:1;height:1.3rem;background:${wareCol}30;border-radius:0.2rem;overflow:hidden;position:relative" data-text-tip="Stockpile: ${stockLabel} units · ${storagePct.toFixed(1)}% of ${cargType} bay">
                    <div style="height:100%;width:${storagePct.toFixed(1)}%;background:${wareCol};border-radius:0.2rem"></div>
                    <span style="${barTextStyle}">${stockLabel}</span>
                  </div>
                </div>
                <div style="display:flex;align-items:center;gap:0.8rem;padding:0.5rem 1.4rem">
-                 <div style="flex:1;height:1.3rem;background:${wareCol}30;border-radius:0.2rem;overflow:hidden;position:relative" title="Internal use: ${usagePct.toFixed(1)}% of output consumed internally">
+                 <div style="flex:1;height:1.3rem;background:${wareCol}30;border-radius:0.2rem;overflow:hidden;position:relative" data-text-tip="Internal use: ${usagePct.toFixed(1)}% of output consumed internally">
                    <div style="height:100%;width:${usagePct.toFixed(1)}%;background:${wareCol};border-radius:0.2rem"></div>
                    <span style="${barTextStyle}">${consLabel}</span>
                  </div>
-                 <span style="font-family:var(--font-mono);font-size:1rem;color:var(--text-faint);min-width:5.4rem;text-align:right">${rateLabel}</span>
+                 <span style="font-family:var(--font-data);font-size:1rem;color:var(--text-brand);min-width:5.4rem;text-align:right">${rateLabel}</span>
                  ${rtSpan}
                </div>
              </div>`;
@@ -644,10 +644,10 @@
       // Column titles for the production rows — built with the same grid and
       // flex slots as the rows themselves so each title sits exactly over its
       // column. Only shown when there are rows to label.
-      const prodHdrStyle = 'font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-faint)';
+      const prodHdrStyle = 'font-family:var(--font-data);font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-brand)';
       const prodHeader = wares.length === 0 ? '' :
-        `<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border);background:var(--bg-panel)">
-           <div style="display:flex;gap:0.8rem;padding:0.4rem 1.4rem;border-right:1px solid var(--border)">
+        `<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--outline);background:var(--surface-1)">
+           <div style="display:flex;gap:0.8rem;padding:0.4rem 1.4rem;border-right:1px solid var(--outline)">
              <span style="${prodHdrStyle};min-width:16rem">Ware</span>
              <span style="${prodHdrStyle};flex:1">Stockpile</span>
            </div>
@@ -660,7 +660,7 @@
 
       // ── DOCKED SHIPS TAB ───────────────────────────────────────────────────
       const dockedRows = dockedShips.length === 0
-        ? `<div style="padding:1.2rem 1.4rem;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No docked ships</div>`
+        ? `<div style="padding:1.2rem 1.4rem;font-family:var(--font-data);font-size:1.1rem;color:var(--text-brand)">No docked ships</div>`
         : dockedShips.map(ds => {
             // Look up the ship first in the player fleet, then in the full NPC list.
             // This handles both directly-owned ships and civilian-faction ships that
@@ -674,53 +674,53 @@
             const shipFaction   = matchedNpc ? matchedNpc.owner : 'player';
             const clickable     = !!matched && !ds.under_construction;
             return `<div class="${clickable ? 'docked-ship-row' : ''}"
-                         style="display:flex;align-items:center;gap:1rem;padding:0.6rem 1.4rem;border-bottom:1px solid var(--border);${clickable ? 'cursor:pointer' : ''}"
+                         style="display:flex;align-items:center;gap:1rem;padding:0.6rem 1.4rem;border-bottom:1px solid var(--outline);${clickable ? 'cursor:pointer' : ''}"
                          ${clickable ? `onclick="jumpToShip('${ds.code}', '${shipFaction}')"` : ''}>
-              <span style="font-family:var(--font-mono);color:var(--yellow);font-size:1.1rem;min-width:6.4rem">${ds.code}</span>
-              <span style="font-family:var(--font-mono);font-size:1rem;color:var(--text-faint);padding:0.1rem 0.5rem;border:1px solid var(--border);border-radius:0.2rem">${cls}</span>
+              <span style="font-family:var(--font-data);color:var(--color-highlight);font-size:1.1rem;min-width:6.4rem">${ds.code}</span>
+              <span style="font-family:var(--font-data);font-size:1rem;color:var(--text-brand);padding:0.1rem 0.5rem;border:1px solid var(--outline);border-radius:0.2rem">${cls}</span>
               <span class="ship-name" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${shipName}</span>
               ${ds.under_construction
-                ? '<span style="font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.1em;color:var(--amber)">CONSTRUCTING</span>'
-                : clickable ? '<span style="font-family:var(--font-mono);font-size:0.9rem;color:var(--text-faint)">→ Fleet</span>' : ''}
+                ? '<span style="font-family:var(--font-data);font-size:0.9rem;letter-spacing:0.1em;color:var(--color-warning)">CONSTRUCTING</span>'
+                : clickable ? '<span style="font-family:var(--font-data);font-size:0.9rem;color:var(--text-brand)">→ Fleet</span>' : ''}
             </div>`;
           }).join('');
 
       // ── STORAGE TAB ────────────────────────────────────────────────────────
       // adj fields match the game's displayed fill (physical cargo ± trade reservations).
       const fmtM3 = v => v == null ? '—' : v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(1)+'k' : String(Math.round(v));
-      const TYPE_COLOR = { container:'var(--teal)', solid:'var(--amber)', liquid:'var(--purple)' };
+      const TYPE_COLOR = { container:'var(--color-primary)', solid:'var(--color-warning)', liquid:'var(--color-special)' };
       const TYPE_LABEL = { container:'Container',   solid:'Solid',        liquid:'Liquid'        };
 
       const hasStorage = ['container','solid','liquid'].some(t => s[`cargo_${t}_adj_pct`] != null) || s.cargo_adj_pct != null;
-      let storageRows  = `<div style="padding:1.2rem 1.4rem;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No storage data</div>`;
+      let storageRows  = `<div style="padding:1.2rem 1.4rem;font-family:var(--font-data);font-size:1.1rem;color:var(--text-brand)">No storage data</div>`;
       if (hasStorage) {
         const typeRowsHtml = ['container','solid','liquid'].map(t => {
           const pct = s[`cargo_${t}_adj_pct`];
           const m3  = s[`cargo_${t}_adj_m3`];
           const max = s[`cargo_${t}_max`];
           if (pct == null) return '';
-          const col = pct > 90 ? 'var(--red)' : TYPE_COLOR[t];
-          return `<div style="display:flex;align-items:center;gap:0.8rem;padding:0.5rem 1.4rem;border-bottom:1px solid var(--border)">
-            <span style="font-family:var(--font-mono);font-size:1rem;letter-spacing:0.06em;text-transform:uppercase;color:${col};min-width:6.8rem">${TYPE_LABEL[t]}</span>
-            <div style="flex:1;height:0.3rem;background:var(--border);border-radius:0.2rem;overflow:hidden">
+          const col = pct > 90 ? 'var(--color-negative)' : TYPE_COLOR[t];
+          return `<div style="display:flex;align-items:center;gap:0.8rem;padding:0.5rem 1.4rem;border-bottom:1px solid var(--outline)">
+            <span style="font-family:var(--font-data);font-size:1rem;letter-spacing:0.06em;text-transform:uppercase;color:${col};min-width:6.8rem">${TYPE_LABEL[t]}</span>
+            <div style="flex:1;height:0.3rem;background:var(--outline);border-radius:0.2rem;overflow:hidden">
               <div style="height:100%;width:${Math.min(pct,100).toFixed(1)}%;background:${col};border-radius:0.2rem"></div>
             </div>
-            <span style="font-family:var(--font-mono);font-size:1.1rem;color:${col};min-width:3.4rem;text-align:right">${pct.toFixed(0)}%</span>
-            <span style="font-family:var(--font-mono);font-size:1rem;color:var(--text-faint);white-space:nowrap">${fmtM3(m3)}/${fmtM3(max)} m³</span>
+            <span style="font-family:var(--font-data);font-size:1.1rem;color:${col};min-width:3.4rem;text-align:right">${pct.toFixed(0)}%</span>
+            <span style="font-family:var(--font-data);font-size:1rem;color:var(--text-brand);white-space:nowrap">${fmtM3(m3)}/${fmtM3(max)} m³</span>
           </div>`;
         }).join('');
 
         let totalRow = '';
         if (s.cargo_adj_pct != null) {
           const pct = s.cargo_adj_pct;
-          const col = pct > 90 ? 'var(--red)' : pct > 70 ? 'var(--amber)' : 'var(--green)';
-          totalRow = `<div style="display:flex;align-items:center;gap:0.8rem;padding:0.6rem 1.4rem;background:var(--bg-panel)">
-            <span style="font-family:var(--font-mono);font-size:1rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-faint);min-width:6.8rem">Total</span>
-            <div style="flex:1;height:0.4rem;background:var(--border);border-radius:0.2rem;overflow:hidden">
+          const col = pct > 90 ? 'var(--color-negative)' : pct > 70 ? 'var(--color-warning)' : 'var(--color-positive)';
+          totalRow = `<div style="display:flex;align-items:center;gap:0.8rem;padding:0.6rem 1.4rem;background:var(--surface-1)">
+            <span style="font-family:var(--font-data);font-size:1rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-brand);min-width:6.8rem">Total</span>
+            <div style="flex:1;height:0.4rem;background:var(--outline);border-radius:0.2rem;overflow:hidden">
               <div style="height:100%;width:${Math.min(pct,100).toFixed(1)}%;background:${col};border-radius:0.2rem"></div>
             </div>
-            <span style="font-family:var(--font-mono);font-size:1.1rem;color:${col};min-width:3.4rem;text-align:right">${pct.toFixed(0)}%</span>
-            <span style="font-family:var(--font-mono);font-size:1rem;color:var(--text-faint);white-space:nowrap">${fmtM3(s.cargo_adj_m3)}/${fmtM3(s.cargo_max)} m³</span>
+            <span style="font-family:var(--font-data);font-size:1.1rem;color:${col};min-width:3.4rem;text-align:right">${pct.toFixed(0)}%</span>
+            <span style="font-family:var(--font-data);font-size:1rem;color:var(--text-brand);white-space:nowrap">${fmtM3(s.cargo_adj_m3)}/${fmtM3(s.cargo_max)} m³</span>
           </div>`;
         }
         storageRows = typeRowsHtml + totalRow;
@@ -746,7 +746,7 @@
       // sanitised key used by the cashflow chart so both share a common ID space.
       const safeCode = s.code.replace(/[^a-z0-9]/gi, '');
       const econRows = budLines.length === 0
-        ? `<div style="padding:1.2rem 1.4rem;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">No economy data</div>`
+        ? `<div style="padding:1.2rem 1.4rem;font-family:var(--font-data);font-size:1.1rem;color:var(--text-brand)">No economy data</div>`
         : `<!-- Pie (left) + cash-flow graph (right) as one locked, equal-height pair.
              All sizing/justification lives in .econ-row / .econ-pie / .econ-graph
              (ui/css/charts.css). Wraps to stacked on narrow windows. -->
@@ -758,16 +758,16 @@
       return `<div class="panel" id="station-${s.code}">
         <!-- Header: vertical faction tag + name/location/status -->
         <div style="display:flex;min-height:5.2rem">
-          <div style="writing-mode:vertical-lr;transform:rotate(180deg);font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.18em;color:var(--text-faint);background:var(--bg-panel);border-right:1px solid var(--border);padding:0.8rem 0.6rem;display:flex;align-items:center;justify-content:center;text-transform:uppercase;flex-shrink:0">
+          <div style="writing-mode:vertical-lr;transform:rotate(180deg);font-family:var(--font-data);font-size:0.9rem;letter-spacing:0.18em;color:var(--text-brand);background:var(--surface-1);border-right:1px solid var(--outline);padding:0.8rem 0.6rem;display:flex;align-items:center;justify-content:center;text-transform:uppercase;flex-shrink:0">
             ${factionTag}
           </div>
-          <div style="flex:1;padding:0.8rem 1.4rem;background:var(--bg-panel)">
+          <div style="flex:1;padding:0.8rem 1.4rem;background:var(--surface-1)">
             <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1rem">
               <div style="display:flex;align-items:baseline;gap:1rem;min-width:0;overflow:hidden">
-                <span style="font-family:var(--font-mono);font-size:1.3rem;color:var(--lime);letter-spacing:0.1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name.trim().toUpperCase()}</span>
-                <span style="font-family:var(--font-mono);color:var(--yellow);font-size:1.1rem;white-space:nowrap">${s.code}</span>
+                <span style="font-family:var(--font-data);font-size:1.3rem;color:var(--color-alert);letter-spacing:0.1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name.trim().toUpperCase()}</span>
+                <span style="font-family:var(--font-data);color:var(--color-highlight);font-size:1.1rem;white-space:nowrap">${s.code}</span>
               </div>
-              <span style="font-family:var(--font-mono);font-size:1rem;color:${statusColor};letter-spacing:0.12em;white-space:nowrap;flex-shrink:0">${statusLabel}</span>
+              <span style="font-family:var(--font-data);font-size:1rem;color:${statusColor};letter-spacing:0.12em;white-space:nowrap;flex-shrink:0">${statusLabel}</span>
             </div>
             <!-- Two ring planes at ±45° form a cross over the planet.
                  Technique: clip-path lives on a <g> with NO transform, so the
@@ -826,8 +826,8 @@
               </div>
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.5rem">
-              <span style="font-family:var(--font-mono);font-size:1rem;color:var(--text-faint);letter-spacing:0.08em">${s.sector.toUpperCase()}</span>
-              <span style="font-family:var(--font-mono);font-size:1rem;color:var(--text-dim);letter-spacing:0.06em">${typeLabel}</span>
+              <span style="font-family:var(--font-data);font-size:1rem;color:var(--text-brand);letter-spacing:0.08em">${s.sector.toUpperCase()}</span>
+              <span style="font-family:var(--font-data);font-size:1rem;color:var(--text-secondary);letter-spacing:0.06em">${typeLabel}</span>
             </div>
           </div>
         </div>
@@ -836,15 +836,15 @@
              region for the Economy panel (1) or the placeholder (2). -->
         <div class="station-slider-panel" data-slider="0" style="display:block">
         <!-- Sunlight strip — Overview only; one-liner below the sector name. -->
-        ${bud.sunlight != null ? `<div style="padding:0.4rem 1.4rem;border-bottom:1px solid var(--border);background:var(--bg-panel)"><span style="font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-faint)">Sunlight </span><span style="font-family:var(--font-mono);font-size:1rem;color:var(--text-dim)">${Math.round(bud.sunlight*100)}%</span></div>` : ''}
+        ${bud.sunlight != null ? `<div style="padding:0.4rem 1.4rem;border-bottom:1px solid var(--outline);background:var(--surface-1)"><span style="font-family:var(--font-data);font-size:0.9rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-brand)">Sunlight </span><span style="font-family:var(--font-data);font-size:1rem;color:var(--text-secondary)">${Math.round(bud.sunlight*100)}%</span></div>` : ''}
         <!-- Hull + Shields health bars -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
-          <div style="padding:0.7rem 1.4rem;border-right:1px solid var(--border)">
+        <div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--outline);border-bottom:1px solid var(--outline)">
+          <div style="padding:0.7rem 1.4rem;border-right:1px solid var(--outline)">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
-              <span style="font-family:var(--font-mono);font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;color:${attnColor(hullColor)}">Hull</span>
-              <span style="font-family:var(--font-mono);font-size:1.1rem;color:${hullColor}">${hullPctStr}</span>
+              <span style="font-family:var(--font-data);font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;color:${attnColor(hullColor)}">Hull</span>
+              <span style="font-family:var(--font-data);font-size:1.1rem;color:${hullColor}">${hullPctStr}</span>
             </div>
-            <div style="height:2.2rem;background:var(--border);border-radius:0.2rem;overflow:hidden">
+            <div style="height:2.2rem;background:var(--outline);border-radius:0.2rem;overflow:hidden">
               <div style="height:100%;width:${hullBarW}%;background:${hullColor};border-radius:0.2rem"></div>
             </div>
           </div>
@@ -853,14 +853,14 @@
           </div>
         </div>
         <!-- Stats row: Modules | Crew | Ships | Storage -->
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.4rem;padding:0.4rem;background:var(--bg-panel);border-bottom:1px solid var(--border)">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.4rem;padding:0.4rem;background:var(--surface-1);border-bottom:1px solid var(--outline)">
           ${sc('Modules', modCount, 'var(--text)',                                      false, moduleTipAttr, 'ti-building-community')}
-          ${sc('Crew',    '—',      'var(--text-faint)',                               false, '',             'ti-users')}
+          ${sc('Crew',    '—',      'var(--text-brand)',                               false, '',             'ti-users')}
           ${sc('Ships',   afTotal,   afColor,                                             false, afTipAttr,  'ti-ship')}
           ${sc('Storage', storageStr, storageColor,                                   true,  storageTipAttr, 'ti-box')}
         </div>
         <!-- Tab bar -->
-        <div style="display:flex;gap:0.4rem;padding:0.6rem 1rem;border-bottom:1px solid var(--border);background:var(--bg-panel)">
+        <div style="display:flex;gap:0.4rem;padding:0.6rem 1rem;border-bottom:1px solid var(--outline);background:var(--surface-1)">
           <button class="station-tab-btn active" data-tab="production" onclick="switchStationTab('${s.code}','production')"><i class="ti ti-settings" style="font-size:1.1rem;vertical-align:-1px;margin-right:0.4rem"></i>Production</button>
           <button class="station-tab-btn" data-tab="docked" onclick="switchStationTab('${s.code}','docked')"><i class="ti ti-ship" style="font-size:1.1rem;vertical-align:-1px;margin-right:0.4rem"></i>Docked${dockedShips.length > 0 ? ' · ' + dockedShips.length : ''}</button>
         </div>
@@ -872,22 +872,22 @@
         <div class="station-slider-panel" data-slider="1" style="display:none">${econRows}</div>
         <!-- Slider panel 2: placeholder for a future view -->
         <div class="station-slider-panel" data-slider="2" style="display:none">
-          <div style="padding:1.2rem 1.4rem;font-family:var(--font-mono);font-size:1.1rem;color:var(--text-faint)">—</div>
+          <div style="padding:1.2rem 1.4rem;font-family:var(--font-data);font-size:1.1rem;color:var(--text-brand)">—</div>
         </div>
       </div>`;
     }).join("");
 
     // Faction standings
     document.querySelector("#rep-table tbody").innerHTML = rep.map(f => {
-      const col   = { Allied:"var(--green)", Friendly:"var(--teal)", Neutral:"var(--text-dim)", Hostile:"var(--amber)", "At War":"var(--red)" }[f.tier] || "var(--text-dim)";
+      const col   = { Allied:"var(--color-positive)", Friendly:"var(--color-primary)", Neutral:"var(--text-secondary)", Hostile:"var(--color-warning)", "At War":"var(--color-negative)" }[f.tier] || "var(--text-secondary)";
       const boost = f.booster ? sign(f.booster) : "—";
       return `<tr>
         <td>${f.faction_name}</td>
         <td>${tierBadge(f.tier)}</td>
         <td class="mono" style="color:${col}">${sign(f.value)}</td>
         <td>${repBar(f.value)}</td>
-        <td class="mono" style="color:var(--text-faint)">${sign(f.base)}</td>
-        <td class="mono" style="color:var(--text-faint)">${boost}</td>
+        <td class="mono" style="color:var(--text-brand)">${sign(f.base)}</td>
+        <td class="mono" style="color:var(--text-brand)">${boost}</td>
       </tr>`;
     }).join("");
 
@@ -945,14 +945,14 @@
         groups.map(g =>
           `<div style="margin-bottom:0.8rem">
              <div style="font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;
-                         color:var(--text-faint);margin-bottom:0.4rem;padding-bottom:0.3rem;
-                         border-bottom:1px solid var(--border)">${g.category}</div>
+                         color:var(--text-brand);margin-bottom:0.4rem;padding-bottom:0.3rem;
+                         border-bottom:1px solid var(--outline)">${g.category}</div>
              ${g.items.map(([name, count]) =>
                `<div style="display:flex;justify-content:space-between;align-items:baseline;
                             gap:1.2rem;padding:1px 0">
-                  <span style="color:var(--text-dim);font-size:1.1rem;white-space:nowrap;
+                  <span style="color:var(--text-secondary);font-size:1.1rem;white-space:nowrap;
                                overflow:hidden;text-overflow:ellipsis">${name}</span>
-                  <span style="color:var(--text-faint);font-size:1rem;flex-shrink:0">×${count}</span>
+                  <span style="color:var(--text-brand);font-size:1rem;flex-shrink:0">×${count}</span>
                 </div>`
              ).join('')}
            </div>`
@@ -973,14 +973,14 @@
             ? `<div style="margin-top:0.2rem;text-align:right;font-size:1rem;color:${t.color};opacity:0.75">${fmtM3(t.m3)} / ${fmtM3(t.max)} m³</div>`
             : '';
           const sep = t.isTotal
-            ? `<div style="border-top:1px solid var(--border);margin:0.5rem 0 0.8rem"></div>`
+            ? `<div style="border-top:1px solid var(--outline);margin:0.5rem 0 0.8rem"></div>`
             : '';
           return `${sep}<div style="margin-bottom:0.8rem">
             <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.3rem">
               <span style="font-size:1rem;letter-spacing:0.1em;text-transform:uppercase;color:${t.color}">${t.label}</span>
-              <span style="color:${t.color};font-family:var(--font-mono);margin-left:1.2rem">${pctLabel}</span>
+              <span style="color:${t.color};font-family:var(--font-data);margin-left:1.2rem">${pctLabel}</span>
             </div>
-            <div style="height:0.6rem;background:var(--border);border-radius:0.2rem;overflow:hidden">
+            <div style="height:0.6rem;background:var(--outline);border-radius:0.2rem;overflow:hidden">
               <div style="height:100%;width:${barW}%;background:${t.color};border-radius:0.2rem"></div>
             </div>
             ${sub}

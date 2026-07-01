@@ -10,11 +10,14 @@
   const MILITARY_ROLES  = new Set(["Fighter","Heavy Fighter","Corvette","Destroyer","Frigate","Gunboat"]);
   const MINER_ROLES     = new Set(["Miner (Solid)","Miner (Liquid)"]);
 
-  const ORDER_COLOURS = { Trading:"var(--green)", Mining:"var(--amber)", Escorting:"var(--teal)", Waiting:"var(--text-faint)" };
-  const SIZE_COLOURS  = { XL:"var(--purple)", L:"var(--amber)", M:"var(--teal)", S:"var(--text-dim)" };
+  // Semantic tier only — these feed inline style="color:…" (faction-tabs.js,
+  // fleet.js, populate.js), which is the JS equivalent of body.html, so §1's
+  // "never reference the palette tier outside base.css" applies here too.
+  const ORDER_COLOURS = { Trading:"var(--color-positive)", Mining:"var(--color-warning)", Escorting:"var(--color-primary)", Waiting:"var(--text-brand)" };
+  const SIZE_COLOURS  = { XL:"var(--color-special)", L:"var(--color-warning)", M:"var(--color-primary)", S:"var(--text-secondary)" };
 
   // ── Chart series palette ──────────────────────────────────────────────────
-  // These are hex literals rather than var(--teal): the cash-flow and economy
+  // These are hex literals rather than var(--color-primary): the cash-flow and economy
   // charts render as inline SVG, and CSS custom properties don't resolve inside
   // SVG presentation attributes (fill="…", stroke="…"). Centralised here so the
   // teal family stays in one place instead of drifting into the near-identical

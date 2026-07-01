@@ -93,7 +93,7 @@
     row.scrollIntoView({ block: 'center', behavior: 'smooth' });
     // Flash using the faction's theme colour so the highlight feels appropriate.
     const flashColor = faction === 'player'
-      ? 'var(--teal-dim)'
+      ? 'var(--color-primary-dim)'
       : hexToRgba(FACTION_COLOURS[faction] || '#6e7681', 0.18);
     row.style.transition = '';
     row.style.background = flashColor;
@@ -127,7 +127,7 @@
     }
     card.scrollIntoView({ block: 'center', behavior: 'smooth' });
     card.style.transition = '';
-    card.style.background = 'var(--teal-dim)';
+    card.style.background = 'var(--color-primary-dim)';
     requestAnimationFrame(() => {
       card.style.transition = 'background 1.5s';
       card.style.background = '';
