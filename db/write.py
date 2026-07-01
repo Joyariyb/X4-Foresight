@@ -338,11 +338,14 @@ def _write_reference(cur, scan_id, ctx) -> None:
           n.sector_macro, n.owner_id, n.owner_name) for n in ctx.npc_stations],
     )
     ware_rows = [
-        (n.object_id, w, _ware_name(w))
+        (n.object_id, w.ware_id, _ware_name(w.ware_id),
+         int(w.is_buying), int(w.is_selling), w.price, w.amount, int(w.illegal))
         for n in ctx.npc_stations for w in n.wares
     ]
     cur.executemany(
-        "INSERT OR REPLACE INTO npc_station_wares VALUES(?,?,?)", ware_rows,
+        "INSERT OR REPLACE INTO npc_station_wares"
+        "(station_id, ware_id, ware_name, is_buying, is_selling, price, amount, illegal)"
+        " VALUES(?,?,?,?,?,?,?,?)", ware_rows,
     )
 
     # Galaxy connectivity graph. The topology is one coherent graph re-derived

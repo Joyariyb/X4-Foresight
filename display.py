@@ -297,7 +297,7 @@ def _npc_stations(ctx, sector_name: dict) -> None:
             name = paint(n.name, RED) if hostile(n.owner_id) else f"{BOLD}{n.name}{RESET}"
             print(f"  {conn} {mark}{name}")
             if n.wares:
-                wares = _wrap([WARE_NAMES.get(w, w.replace('_', ' ').title())
+                wares = _wrap([WARE_NAMES.get(w.ware_id, w.ware_id.replace('_', ' ').title())
                                for w in n.wares], 62)
                 print(f"  {ind} {DIM}Trades : {wares[0]}{RESET}")
                 for extra in wares[1:]:

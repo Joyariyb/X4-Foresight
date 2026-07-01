@@ -5,6 +5,10 @@
   const NPC_RANGE_MAX = 5;
 
   let allNpcTradePartners = [];
+  // Full station_trades ledger (same array populate.js's economy logs read),
+  // captured here so the Inspector popup can filter it by counterparty_id
+  // without needing its own copy of the render pipeline's `data`.
+  let npcStationTrades    = [];
   let npcRangeMin         = 0;
   let npcRangeMax         = NPC_RANGE_MAX;
   let npcStationSortKey   = 'jumps';
@@ -195,12 +199,13 @@
 
   function renderNpcStations(data) {
     allNpcTradePartners = data.npc_trade_partners || [];
+    npcStationTrades     = data.station_trades || [];
     renderNpcStationsTable();
   }
 
   function npcStationRow(s) {
     return `
-      <tr>
+      <tr class="npc-station-row" data-object-id="${s.object_id}">
         <td><div>${s.name}</div><div class="npc-station-code">${s.code}</div></td>
         <td>${npcOwnerBadge(s)} ${tierBadge(s.rep_tier)}</td>
         <td>
@@ -298,8 +303,12 @@
   });
 
   // Sector cell navigation — same delegated-click pattern as fleet.js's
-  // .sector-link handling, scoped to this table only.
+  // .sector-link handling, scoped to this table only. Checked first so the
+  // sector link's own jump-to-sector action takes priority over the row's
+  // open-inspector action beneath it.
   document.getElementById('npc-stations-table').addEventListener('click', function(e) {
     const link = e.target.closest('.sector-link');
-    if (link) goToSector(link.dataset.sectorMacro);
+    if (link) { goToSector(link.dataset.sectorMacro); return; }
+    const row = e.target.closest('tr[data-object-id]');
+    if (row) openNpcStationInspector(npcSortedRows.find(s => s.object_id === row.dataset.objectId));
   });

@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from data.factions import FACTION_NAMES
 from data.wares import WARE_NAMES
-from ..entities import NpcStation
+from ..entities import NpcStation, NpcStationWare
 from ..language import (
     resolve_text_ref,
     resolve_station_type,
@@ -138,32 +138,50 @@ class NpcStationHandler:
         #
         # Format A — summary attribute (pirate bases, some station types):
         #   <trade wares="majadust spacefuel spaceweed">
+        #   No buy/sell direction is given at all — these are undirected.
         #
         # Format B — god-production stations (no summary attribute):
         #   <trade>
         #     <offers><production>
-        #       <trade ware="advancedelectronics" seller="..."/>
-        #       <trade ware="energycells"         buyer="..."/>
+        #       <trade ware="advancedelectronics" seller="[own id]" amount="810" price="..."/>
+        #       <trade ware="energycells" buyer="[own id]" amount="2607" desired="2607" price="..." flags="...|shady"/>
         #     </production></offers>
         #   </trade>
+        # buyer=/seller= holds the station's own component id — its presence
+        # (not its value) is what marks the direction of that trade offer.
         #
-        # We try Format A first; if wares is empty, collect unique ware IDs
-        # from the individual <trade ware="..."> elements inside the offers.
+        # We try Format A first; if wares is empty, walk the individual
+        # <trade ware="..."> elements inside the offers — this is the same
+        # subtree walk that used to just collect ware IDs, so reading the
+        # extra attributes here costs nothing extra (no second traversal).
         trade_elem = elem.find('trade')
-        wares: list[str] = []
+        wares: list[NpcStationWare] = []
 
         if trade_elem is not None:
             wares_str = trade_elem.get('wares', '')
             if wares_str:
-                # Format A
-                wares = wares_str.split()
+                # Format A — direction unknown, so leave is_buying/is_selling False
+                wares = [NpcStationWare(ware_id=w) for w in wares_str.split()]
             else:
-                # Format B — deduplicate with a set so each ware appears once
-                wares = sorted({
-                    t.get('ware', '')
-                    for t in trade_elem.findall('.//trade')
-                    if t.get('ware')
-                })
+                # Format B — one station can list the same ware in more than one
+                # offer (rare), so merge by ware_id rather than emitting duplicates.
+                by_ware: dict[str, NpcStationWare] = {}
+                for t in trade_elem.findall('.//trade'):
+                    ware_id = t.get('ware', '')
+                    if not ware_id:
+                        continue
+                    w = by_ware.setdefault(ware_id, NpcStationWare(ware_id=ware_id))
+                    if t.get('buyer'):
+                        w.is_buying = True
+                    if t.get('seller'):
+                        w.is_selling = True
+                    if (price := t.get('price')):
+                        w.price = int(price)
+                    if (amount := t.get('amount')):
+                        w.amount = int(amount)
+                    if 'shady' in (t.get('flags') or ''):
+                        w.illegal = True
+                wares = sorted(by_ware.values(), key=lambda w: w.ware_id)
 
         # ── Build and register ────────────────────────────────────────────────
         station = NpcStation(

@@ -371,6 +371,11 @@ CREATE TABLE IF NOT EXISTS npc_station_wares (
     station_id   TEXT NOT NULL,
     ware_id      TEXT NOT NULL,
     ware_name    TEXT,
+    is_buying    INTEGER NOT NULL DEFAULT 0,
+    is_selling   INTEGER NOT NULL DEFAULT 0,
+    price        INTEGER,
+    amount       INTEGER,
+    illegal      INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (station_id, ware_id)
 );
 

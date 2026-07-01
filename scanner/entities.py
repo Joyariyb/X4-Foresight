@@ -190,6 +190,20 @@ class Station:
 # ─────────────────────────────────────────────────────────────────────────────
 
 @dataclass
+class NpcStationWare:
+    ware_id:    str
+    # Format-B stations (god-production) tag each trade offer with its own
+    # buyer=/seller= attribute, so direction is known. Format-A stations
+    # (pirate/black-market bases) only give a flat wares="..." summary with
+    # no direction in the save file at all — both flags stay False for those.
+    is_buying:  bool = False
+    is_selling: bool = False
+    price:      int | None = None   # current offer price, credits
+    amount:     int | None = None   # sellers: current stock; buyers: desired quantity
+    illegal:    bool = False        # 'shady' flag — restricted black-market good
+
+
+@dataclass
 class NpcStation:
     scan_id:      int
     object_id:    str    # hex component ID
@@ -200,8 +214,8 @@ class NpcStation:
     sector_macro: str    # FK → sectors.sector_macro
     owner_id:     str    # faction ID e.g. "teladi"
     owner_name:   str    # faction display name e.g. "Teladi Company"
-    wares:        list[str] = field(default_factory=list)
-    # wares → own table: npc_station_wares (scan_id, station_id, ware_id, ware_name, is_buying, is_selling)
+    wares:        list[NpcStationWare] = field(default_factory=list)
+    # wares → own table: npc_station_wares (station_id, ware_id, ware_name, is_buying, is_selling, price, amount, illegal)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

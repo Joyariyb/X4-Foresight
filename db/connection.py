@@ -70,6 +70,20 @@ def _migrate(conn: sqlite3.Connection) -> None:
     if 'ships_destroyed' not in scan_cols:
         conn.execute('ALTER TABLE scans ADD COLUMN ships_destroyed INTEGER')
 
+    # is_buying/is_selling/price/amount/illegal added when NPC station wares
+    # gained buy/sell direction (previously just a flat ware-name list). All
+    # appended at the table's physical end, after schema.sql's declared
+    # ware_name column — write.py uses an explicit column-name INSERT so this
+    # matches on both fresh and migrated DBs. Old rows read 0/NULL until the
+    # station is re-scanned.
+    nsw_cols = {row[1] for row in conn.execute('PRAGMA table_info(npc_station_wares)')}
+    if 'is_buying' not in nsw_cols:
+        conn.execute('ALTER TABLE npc_station_wares ADD COLUMN is_buying INTEGER NOT NULL DEFAULT 0')
+        conn.execute('ALTER TABLE npc_station_wares ADD COLUMN is_selling INTEGER NOT NULL DEFAULT 0')
+        conn.execute('ALTER TABLE npc_station_wares ADD COLUMN price INTEGER')
+        conn.execute('ALTER TABLE npc_station_wares ADD COLUMN amount INTEGER')
+        conn.execute('ALTER TABLE npc_station_wares ADD COLUMN illegal INTEGER NOT NULL DEFAULT 0')
+
 
 def _populate_ware_metadata(conn: sqlite3.Connection) -> None:
     """Write static ware properties from data/wares.py into ware_metadata.

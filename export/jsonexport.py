@@ -346,17 +346,28 @@ def _sectors(conn) -> list[dict]:
     return rows
 
 
-def _npc_station_wares(conn) -> dict[str, list[str]]:
-    """{station_id: [ware_name, ...]} for every NPC station's trade goods.
+def _npc_station_wares(conn) -> dict[str, list[dict]]:
+    """{station_id: [{ware_name, is_buying, is_selling, price, amount, illegal}, ...]}
+    for every NPC station's trade goods.
 
     npc_station_wares is a latest-only reference table (no scan_id), matching
-    npc_stations itself — see _write_reference() in db/write.py.
+    npc_stations itself — see _write_reference() in db/write.py. is_buying/
+    is_selling are both 0 for Format-A stations (pirate/black-market bases),
+    which the save file never gives a trade direction for at all.
     """
     rows = conn.execute(
-        "SELECT station_id, ware_name FROM npc_station_wares ORDER BY ware_name")
-    out: dict[str, list[str]] = {}
+        "SELECT station_id, ware_name, is_buying, is_selling, price, amount, illegal "
+        "FROM npc_station_wares ORDER BY ware_name")
+    out: dict[str, list[dict]] = {}
     for r in rows:
-        out.setdefault(r['station_id'], []).append(r['ware_name'])
+        out.setdefault(r['station_id'], []).append({
+            'ware_name':  r['ware_name'],
+            'is_buying':  bool(r['is_buying']),
+            'is_selling': bool(r['is_selling']),
+            'price':      r['price'],
+            'amount':     r['amount'],
+            'illegal':    bool(r['illegal']),
+        })
     return out
 
 
@@ -502,6 +513,10 @@ def _station_trades(conn, scan_id, game_time) -> list[dict]:
         'ship_name':       r['ship_name'],
         'ship_owner_id':   r['ship_owner_id'],
         'ship_owner_name': r['ship_owner_name'],
+        # Raw id alongside the display name — the NPC Station Inspector matches
+        # rows to a station by id rather than counterparty_name (which isn't
+        # guaranteed unique the way an object_id is).
+        'counterparty_id': r['counterparty_id'],
         'counterparty':    r['counterparty_name'],
         # How the counterparty was resolved, so consumers can weight
         # confidence. PROVEN: direct/courier. INFERRED: homebase/visit/sector/

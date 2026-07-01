@@ -65,6 +65,11 @@
 
     .npc-station-code { font-family: var(--font-data); font-size: 1rem; color: var(--text-secondary); }
 
+    /* Whole row opens the inspector popup (see npc-station-inspector.js) — the
+       .sector-link cell inside it still jumps to the sector on its own click,
+       handled first by the delegated listener in npc-stations.js. */
+    .npc-station-row { cursor: pointer; }
+
     /* Sector cell reuses fleet.js's .sector-link (crew.css) for the click-to-jump
        affordance; jump count sits beneath it like the code line under a station name. */
     .npc-jumps { font-family: var(--font-data); font-size: 1rem; color: var(--text-secondary); }
