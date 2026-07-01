@@ -230,7 +230,12 @@
     const lo = Math.min(0, ...numeric);
     let   hi = Math.max(...numeric);
     if (hi === lo) hi = lo + 1;                         // flat series → avoid /0
-    const step  = _trNiceStep(hi - lo, 5);
+    // Count axes (ships/stations) label gridlines as rounded integers, so a
+    // sub-1 step would round two distinct gridlines to the same number
+    // (e.g. 0.5 and 1.5 both → "1..2"). Floor count steps at 1 to guarantee
+    // every gridline rounds to a distinct integer.
+    let step = _trNiceStep(hi - lo, 5);
+    if (eff.count && step < 1) step = 1;
     const axTop = Math.ceil(hi / step) * step || step;
     const axBot = Math.floor(lo / step) * step;
     const yOf   = v => mt + ph - (v - axBot) / (axTop - axBot) * ph;
