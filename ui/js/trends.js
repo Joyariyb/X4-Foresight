@@ -15,7 +15,7 @@
   let _trendScans   = [];
   let _trendChanges = [];           // cached data.changes — drives the Losses hover
   let _trendMetric  = 'net_worth';
-  let _shipsMode    = 'kills';      // which combat series the single "Ships" line shows
+  let _shipsMode    = 'total';      // which face the single "Ships" line shows
   const _repHidden  = new Set();    // faction_ids toggled OFF in the reputation chart
   let _repMode      = 'change';     // reputation chart: 'change' (rebased) | 'absolute'
 
@@ -27,22 +27,24 @@
     { key: 'net_worth',     label: 'Net Worth',    color: CHART_ACCENT },
     { key: 'credits',       label: 'Credits',      color: '#fdd835' },
     { key: 'station_cash',  label: 'Station Cash', color: '#5eead4' },
-    { key: 'ship_count',    label: 'Ships',        color: '#38bdf8', count: true },
     { key: 'station_count', label: 'Stations',     color: '#a3e635', count: true },
-    // One combat line with a Kills/Losses sub-toggle (like the cashflow Sell/Buy
-    // switch) rather than two separate lines — see SHIPS_MODES and _effMetric. Both
-    // sides are per-scan integer counts.
+    // One "Ships" line with a Total/Kills/Losses sub-toggle (like the cashflow
+    // Sell/Buy switch) rather than three separate toggle entries — see SHIPS_MODES
+    // and _effMetric. Total is cumulative (ship_count); Kills/Losses are per-scan.
     { key: 'ships', label: 'Ships', count: true, combat: true },
     // Reputation is a multi-line view (one line per faction + its own legend), so it
     // renders its own chart instead of the single-metric line — see _activePanelHtml.
     { key: 'reputation', label: 'Reputation', reputation: true },
   ];
 
-  // The two faces of the combat line. seriesKey selects which per-scan array the
-  // chart plots; colour comes from the shared CHART palette (offence vs attrition).
+  // The three faces of the Ships line. seriesKey selects which array the chart
+  // plots; colour comes from the shared CHART palette. Total is the cumulative
+  // fleet size (perScan: false, so it gets a normal since-last-scan delta like any
+  // other running total); Kills/Losses are per-scan interval counts.
   const SHIPS_MODES = {
-    kills:  { label: 'Ships Destroyed', seriesKey: 'ships_destroyed', color: CHART_KILL, btn: 'Kills' },
-    losses: { label: 'Ships Lost',      seriesKey: 'ships_lost',      color: CHART_LOSS, btn: 'Losses' },
+    total:  { label: 'Ships',           seriesKey: 'ship_count',     color: '#38bdf8',  btn: 'Total',  perScan: false },
+    kills:  { label: 'Ships Destroyed', seriesKey: 'ships_destroyed', color: CHART_KILL, btn: 'Kills',  perScan: true },
+    losses: { label: 'Ships Lost',      seriesKey: 'ships_lost',      color: CHART_LOSS, btn: 'Losses', perScan: true },
   };
 
   // Reputation chart views. 'change' rebases each faction to 0 at its first scan so
@@ -52,11 +54,11 @@
   const REP_MODES = { change: { btn: 'Change' }, absolute: { btn: 'Level' } };
 
   // Resolve a toggle entry to the metric actually drawn: combat entries swap in the
-  // active Kills/Losses face; everything else maps its key straight to its series.
+  // active Total/Kills/Losses face; everything else maps its key straight to its series.
   function _effMetric(metric) {
     if (!metric.combat) return { ...metric, seriesKey: metric.key };
     const m = SHIPS_MODES[_shipsMode];
-    return { ...metric, seriesKey: m.seriesKey, label: m.label, color: m.color, perScan: true };
+    return { ...metric, seriesKey: m.seriesKey, label: m.label, color: m.color, perScan: m.perScan };
   }
 
   // ── small helpers ──────────────────────────────────────────────────────────
@@ -279,19 +281,24 @@
            + `<circle cx="${cx}" cy="${cy}" r="11" fill="transparent" data-trend-tip="${tip}" style="cursor:pointer"/>`;
     }).join('');
 
-    // Kills/Losses switch as a vertical sliding-pill in the left margin (x=2), the
-    // same on-chart placement and look as the cashflow Sell/Buy toggle — only on the
-    // combat line. The thumb takes the active mode's colour (CHART_KILL/CHART_LOSS)
-    // so the switch and the line it draws read as one. #051210 (near-black) for the
-    // active label matches the sibling cashflow pill — dark-on-bright for contrast.
+    // Total/Kills/Losses switch as a vertical sliding-pill in the left margin (x=2),
+    // the same on-chart placement and look as the cashflow Sell/Buy toggle — only on
+    // the combat line. Row height is fixed at 22px per mode (was tuned for the 2-mode
+    // pill) so a 3rd mode just grows the pill downward rather than shrinking rows.
+    // The thumb takes the active mode's colour so the switch and the line it draws
+    // read as one. #051210 (near-black) for the active label matches the sibling
+    // cashflow pill — dark-on-bright for contrast.
+    const shipsModeKeys = Object.keys(SHIPS_MODES);
+    const rowH = 22, pillH = rowH * shipsModeKeys.length;
+    const activeTop = shipsModeKeys.indexOf(_shipsMode) * rowH + 1;
     const combatToggle = metric.combat ? `
-      <foreignObject x="2" y="${mt}" width="38" height="44">
+      <foreignObject x="2" y="${mt}" width="38" height="${pillH}">
         <div xmlns="http://www.w3.org/1999/xhtml" style="
-            width:38px;height:44px;display:grid;grid-template-rows:1fr 1fr;position:relative;
+            width:38px;height:${pillH}px;display:grid;grid-template-rows:repeat(${shipsModeKeys.length}, 1fr);position:relative;
             background:rgba(4,12,20,0.88);border:1px solid rgba(0,0,0,0.70);border-radius:2px;
             overflow:hidden;user-select:none;
             box-shadow:inset 0 2px 7px rgba(0,0,0,0.70),inset 0 1px 3px rgba(0,0,0,0.50),0 1px 0 rgba(255,255,255,0.07)">
-          <div style="position:absolute;left:1px;right:1px;height:20px;top:${_shipsMode === 'kills' ? '1px' : '23px'};
+          <div style="position:absolute;left:1px;right:1px;height:20px;top:${activeTop}px;
               background:linear-gradient(170deg, ${eff.color}, ${eff.color}cc);border-radius:1px;pointer-events:none;
               box-shadow:0 3px 9px rgba(0,0,0,0.70),inset 0 1px 0 rgba(255,255,255,0.40),inset 0 -1px 0 rgba(0,0,0,0.24)"></div>
           ${Object.entries(SHIPS_MODES).map(([k, m]) => `
