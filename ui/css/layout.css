@@ -24,6 +24,9 @@
     .scan-picker-detail { font-family: var(--font-data); font-size: 1.1rem; color: var(--text-secondary); }
     .scan-picker-del { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.3rem 0.5rem; border-radius: var(--radius-md); line-height: 1; flex-shrink: 0; }
     .scan-picker-del:hover { color: var(--color-negative); background: var(--color-negative-dim); }
+    .scan-picker-footer { border-top: 1px solid var(--outline); padding: 0.6rem; }
+    .scan-picker-delall { width: 100%; background: none; border: 1px solid var(--outline); border-radius: var(--radius-md); color: var(--color-negative); font-family: var(--font-label); font-size: 1.1rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.6rem; cursor: pointer; transition: background var(--duration-short) var(--ease-standard), border-color var(--duration-short) var(--ease-standard); }
+    .scan-picker-delall:hover, .scan-picker-delall.armed { background: var(--color-negative-dim); border-color: var(--color-negative-line); }
 
     /* ── NAV (tabs now live inside #topbar) ── */
     .nav-tab { padding: 0 1.6rem; display: flex; align-items: center; gap: 0.6rem; font-family: var(--font-label); font-weight: 500; font-size: 1.3rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-secondary); cursor: pointer; border-bottom: 0.2rem solid transparent; position: relative; top: 1px; transition: color var(--duration-short); user-select: none; }

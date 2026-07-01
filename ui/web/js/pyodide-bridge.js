@@ -127,4 +127,10 @@ window._bridge = {
       .then(cb)
       .catch(e => cb(JSON.stringify({ error: String(e) })));
   },
+
+  delete_all_scans(cb) {
+    callWorker("delete_all_scans", {})
+      .then(cb)
+      .catch(e => cb(JSON.stringify({ error: String(e) })));
+  },
 };

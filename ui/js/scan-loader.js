@@ -234,6 +234,33 @@
       menu.appendChild(row);
     });
 
+    const footer = document.createElement('div');
+    footer.className = 'scan-picker-footer';
+    footer.innerHTML = `<button class="scan-picker-delall">Delete All Scans</button>`;
+    // Two-click confirm (no modal): first click arms it, second click within
+    // 3s actually deletes. Clicking elsewhere/closing the menu disarms it
+    // (the menu is rebuilt from scratch on every open, so a stale armed
+    // state can never carry over between opens).
+    const delAllBtn = footer.querySelector('.scan-picker-delall');
+    let armed = false, armTimer = null;
+    delAllBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!armed) {
+        armed = true;
+        delAllBtn.textContent = 'Click again to confirm';
+        delAllBtn.classList.add('armed');
+        armTimer = setTimeout(() => {
+          armed = false;
+          delAllBtn.textContent = 'Delete All Scans';
+          delAllBtn.classList.remove('armed');
+        }, 3000);
+        return;
+      }
+      clearTimeout(armTimer);
+      deleteAllScans();
+    });
+    menu.appendChild(footer);
+
     field.style.display = '';
   }
 
@@ -256,6 +283,18 @@
           populateScanPicker(scans);
         } catch(e) { /* silent */ }
       });
+    });
+  }
+
+  // Delete every scan then refresh the picker. Called after the footer
+  // button's two-click arm/confirm in populateScanPicker.
+  function deleteAllScans() {
+    if (!_bridge) return;
+    _bridge.delete_all_scans(function() {
+      _currentScanId = null;
+      document.getElementById('scan-picker-menu').style.display = 'none';
+      populateScanPicker([]);
+      refreshScanStatusCard();
     });
   }
 

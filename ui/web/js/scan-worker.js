@@ -122,6 +122,12 @@ import pyweb.web_entry as web_entry
 web_entry.delete_scan(_scan_id)
 `);
         break;
+      case "delete_all_scans":
+        result = pyodide.runPython(`
+import pyweb.web_entry as web_entry
+web_entry.delete_all_scans()
+`);
+        break;
       default:
         throw new Error("Unknown message type: " + type);
     }

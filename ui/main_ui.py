@@ -280,6 +280,22 @@ class EmpireBridge(QObject):
         except Exception as e:
             return json.dumps({"error": f"Could not delete scan: {e}"})
 
+    @pyqtSlot(result=str)
+    def delete_all_scans(self) -> str:
+        """Delete every scan (and cascaded child rows). Returns JSON
+        {"ok": true} on success or {"error": "..."} on failure."""
+        try:
+            conn = get_connection(DB_PATH)
+            try:
+                conn.execute("DELETE FROM scans")
+                conn.execute("DELETE FROM sqlite_sequence WHERE name = 'scans'")
+                conn.commit()
+            finally:
+                conn.close()
+            return json.dumps({"ok": True})
+        except Exception as e:
+            return json.dumps({"error": f"Could not delete all scans: {e}"})
+
 
 # ── Main window ───────────────────────────────────────────────────────────────
 

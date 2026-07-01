@@ -65,7 +65,7 @@
       position: fixed; display: none; padding: 0.3rem 0.8rem;
       background: #0f1712; border: 1px solid var(--outline);
       font-family: var(--font-data); font-size: 1.3rem; color: var(--color-alert);
-      white-space: nowrap; border-radius: var(--radius-sm); pointer-events: none; z-index: 1000;
+      white-space: nowrap; border-radius: var(--radius-sm); pointer-events: none; z-index: 10000; /* above .scan-picker-menu (9999), the highest other layer in the app */
     }
 
     /* ── LAYOUT ── */
