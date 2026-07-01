@@ -33,7 +33,12 @@
         <div class="nav-dd-item" onclick="switchTab('designs',document.getElementById('nav-naval')); renderDesigns()"><i class="ti ti-vector-triangle"></i> Designs</div>
       </div>
     </div>
-    <div class="nav-tab" onclick="switchTab('stations',this)"><i class="ti ti-building-factory-2"></i> Stations</div>
+    <div class="nav-tab nav-dropdown" id="nav-stations"><i class="ti ti-building-factory-2"></i> Stations <i class="ti ti-chevron-down nav-dd-caret"></i>
+      <div class="nav-dd-menu">
+        <div class="nav-dd-item" onclick="switchTab('stations',document.getElementById('nav-stations'))"><i class="ti ti-user"></i> Player</div>
+        <div class="nav-dd-item" onclick="switchTab('stations-npc',document.getElementById('nav-stations'))"><i class="ti ti-robot"></i> NPC</div>
+      </div>
+    </div>
     <div class="nav-tab" onclick="switchTab('crew',this)"><i class="ti ti-users"></i> Crew</div>
     <div class="nav-tab" onclick="switchTab('diplomacy',this)"><i class="ti ti-world"></i> Diplomacy</div>
     <div class="nav-tab nav-dropdown" id="nav-universe"><i class="ti ti-planet"></i> Universe <i class="ti ti-chevron-down nav-dd-caret"></i>
@@ -335,9 +340,68 @@
       </div>
 
       <!-- STATIONS TAB -->
+      <!-- Second entry under the Stations dropdown is tab-stations-npc, below. -->
       <div class="tab-panel" id="tab-stations">
         <div class="sec-header"><div class="sec-title">Stations</div><div class="sec-line"></div></div>
         <div id="stations-grid" style="display:flex;flex-direction:column;gap:1rem;"></div>
+      </div>
+
+      <!-- STATIONS TAB — NPC -->
+      <!-- Renders in npc-stations.js (renderNpcStations, called from populate.js). -->
+      <div class="tab-panel" id="tab-stations-npc">
+        <div class="sec-header"><div class="sec-title">NPC Stations</div><div class="sec-line"></div></div>
+
+        <div class="npc-controls">
+          <span class="npc-controls-label">Trade range</span>
+          <div class="npc-range">
+            <div class="npc-range-ticks"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div>
+            <div class="npc-range-track">
+              <div class="npc-range-track-bg"></div>
+              <div class="npc-range-fill" id="npc-range-fill"></div>
+              <input type="range" class="npc-range-input" id="npc-range-min" min="0" max="5" value="0" step="1"
+                     oninput="setNpcRangeMin(this.value)">
+              <input type="range" class="npc-range-input" id="npc-range-max" min="0" max="5" value="5" step="1"
+                     oninput="setNpcRangeMax(this.value)">
+            </div>
+          </div>
+          <span class="npc-range-out" id="npc-range-out">0–5 jumps</span>
+
+          <!-- Tradable toggle (reuses .fleet-subtab, same chip as the Ship
+               Designs size filter) and faction filter (built and reopened by
+               npcFactionFilterDD() in npc-stations.js — same .beqf-dd
+               multi-select shell as the Ship Builder's equipment faction
+               filter) share one dfb-group so all three controls sit at the
+               same gap. -->
+          <div class="dfb-group" id="npc-tradable-filter">
+            <div class="fleet-subtab active" onclick="setNpcTradableFilter(false,this)">All</div>
+            <div class="fleet-subtab" onclick="setNpcTradableFilter(true,this)">Tradable</div>
+            <div id="npc-faction-dd-slot"></div>
+          </div>
+
+          <span class="npc-range-count" id="npc-range-count"></span>
+        </div>
+
+        <div class="panel" id="npc-stations-panel" style="overflow:auto; max-height: calc(100vh - 26rem);">
+          <table class="data-table" id="npc-stations-table">
+            <thead>
+              <tr>
+                <th data-sort-key="name"  onclick="setNpcStationSort('name')">Station</th>
+                <th data-sort-key="owner" onclick="setNpcStationSort('owner')">Owner</th>
+                <th data-sort-key="jumps" onclick="setNpcStationSort('jumps')">Sector</th>
+                <th data-sort-key="type"  onclick="setNpcStationSort('type')">Type</th>
+              </tr>
+            </thead>
+            <tbody id="npc-stations-rows"></tbody>
+          </table>
+        </div>
+
+        <div id="npc-stations-empty" style="display:none;flex-direction:column;align-items:center;gap:1rem;padding:8rem 2rem;color:var(--text-secondary)">
+          <i class="ti ti-building-factory-2" style="font-size:4rem;color:var(--color-special);opacity:0.5"></i>
+          <div class="cond" style="font-size:1.8rem;font-weight:600;color:var(--text-primary)">No trade partners in range</div>
+          <div style="font-size:1.3rem;max-width:42rem;text-align:center;line-height:1.6">
+            Widen the trade range, or none of your reachable neighbours are on trading terms yet.
+          </div>
+        </div>
       </div>
 
       <!-- CREW TAB -->

@@ -1,0 +1,62 @@
+    /* Core role: Styles for the Stations → NPC tab (trade-range slider, jump distance). */
+
+    .npc-controls {
+      display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+      padding-bottom: 0.8rem; margin-bottom: 1.2rem; border-bottom: 1px solid var(--outline);
+    }
+    .npc-controls-label {
+      font-family: var(--font-label); font-size: 1.1rem; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--text-label);
+    }
+    .npc-range-out { font-family: var(--font-data); font-size: 1.3rem; color: var(--color-primary); min-width: 8rem; }
+    .npc-range-count { font-family: var(--font-data); font-size: 1.2rem; color: var(--text-secondary); }
+
+    /* Dual-thumb range — two native <input type="range"> layered on one track
+       (no single-element browser control does two thumbs). Both inputs go
+       fully transparent via appearance:none; only their thumbs stay visible
+       and clickable (pointer-events re-enabled on the thumb pseudo-elements
+       only), so dragging either one doesn't fight the other's hit area. The
+       visible track/fill live in separate divs underneath, purely cosmetic. */
+    .npc-range { width: 16rem; }
+    .npc-range-ticks {
+      display: flex; justify-content: space-between; padding: 0 0.1rem 0.3rem;
+      font-family: var(--font-data); font-size: 1rem; color: var(--text-secondary);
+    }
+    .npc-range-track { position: relative; height: 1.8rem; }
+    .npc-range-track-bg, .npc-range-fill {
+      position: absolute; top: 50%; left: 0; height: 0.3rem; border-radius: var(--radius-sm);
+      transform: translateY(-50%); pointer-events: none;
+    }
+    .npc-range-track-bg { width: 100%; background: var(--outline); }
+    .npc-range-fill { background: var(--color-primary); }
+
+    .npc-range-input {
+      position: absolute; top: 0; left: 0; width: 100%; height: 1.8rem; margin: 0;
+      -webkit-appearance: none; appearance: none; background: transparent; pointer-events: none;
+    }
+    .npc-range-input::-webkit-slider-runnable-track { background: transparent; height: 0.3rem; }
+    .npc-range-input::-webkit-slider-thumb {
+      -webkit-appearance: none; pointer-events: auto; cursor: pointer;
+      width: 1.4rem; height: 1.4rem; border-radius: 50%; margin-top: -0.55rem;
+      background: var(--color-primary); border: 2px solid var(--surface-0);
+    }
+    .npc-range-input::-moz-range-track { background: transparent; height: 0.3rem; }
+    .npc-range-input::-moz-range-thumb {
+      pointer-events: auto; cursor: pointer; width: 1.4rem; height: 1.4rem; border-radius: 50%;
+      background: var(--color-primary); border: 2px solid var(--surface-0);
+    }
+
+    /* Faction dropdown reuses the generic .beqf-trigger shell (equipment
+       pickers etc.), but here it sits beside the All/Tradable .fleet-subtab
+       chips, so it borrows their font/size/padding to read as one matched
+       set (same height, same gap between all three). */
+    #npc-tradable-filter .beqf-trigger {
+      font-family: var(--font-label); font-weight: 600; font-size: 1.4rem; letter-spacing: 0.06em;
+      padding: 0.3rem 1rem;
+    }
+
+    .npc-station-code { font-family: var(--font-data); font-size: 1rem; color: var(--text-secondary); }
+
+    /* Sector cell reuses fleet.js's .sector-link (crew.css) for the click-to-jump
+       affordance; jump count sits beneath it like the code line under a station name. */
+    .npc-jumps { font-family: var(--font-data); font-size: 1rem; color: var(--text-secondary); }

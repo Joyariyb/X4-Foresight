@@ -346,6 +346,63 @@ def _sectors(conn) -> list[dict]:
     return rows
 
 
+def _npc_station_wares(conn) -> dict[str, list[str]]:
+    """{station_id: [ware_name, ...]} for every NPC station's trade goods.
+
+    npc_station_wares is a latest-only reference table (no scan_id), matching
+    npc_stations itself — see _write_reference() in db/write.py.
+    """
+    rows = conn.execute(
+        "SELECT station_id, ware_name FROM npc_station_wares ORDER BY ware_name")
+    out: dict[str, list[str]] = {}
+    for r in rows:
+        out.setdefault(r['station_id'], []).append(r['ware_name'])
+    return out
+
+
+
+# Hard ceiling on the Stations → NPC tab's trade-range slider. Beyond this,
+# a station is no longer a realistic trade partner, so there's no point
+# shipping it to the client at all — keeps the payload bounded regardless
+# of how far the player's empire has spread.
+NPC_TRADE_RANGE_MAX_JUMPS = 5
+
+
+def _npc_trade_partners(conn, scan_id, distances_from_player) -> list[dict]:
+    """
+    NPC stations the player can realistically trade with: owner faction isn't
+    At War (mirrors ReputationEntry.can_trade — value >= -10), the station's
+    sector has a path from a player-held sector, and that path is within
+    NPC_TRADE_RANGE_MAX_JUMPS. The galaxy holds every NPC station regardless
+    of faction or location, so this filter is what keeps the payload to
+    stations a player would actually consider — the UI's jump-range slider
+    narrows further, within this same ceiling, client-side.
+
+    A station is dropped (not just given null jumps) when its sector isn't in
+    distances_from_player at all, meaning no player sector can reach it.
+    """
+    rows = _rows(
+        conn,
+        "SELECT s.object_id, s.code, s.name, s.station_type, s.sector_macro, "
+        "       s.owner_id, s.owner_name, r.value AS rep_value, r.tier AS rep_tier "
+        "FROM npc_stations s "
+        "JOIN reputation r ON r.faction_id = s.owner_id AND r.scan_id = ? "
+        "WHERE s.last_scan_id = ? AND r.value >= -10 AND s.sector_macro IS NOT NULL",
+        (scan_id, scan_id),
+    )
+    wares = _npc_station_wares(conn)
+    out = []
+    for r in rows:
+        jumps = distances_from_player.get(r['sector_macro'])
+        if jumps is None or jumps > NPC_TRADE_RANGE_MAX_JUMPS:
+            continue
+        r['jumps'] = jumps
+        r['wares'] = wares.get(r['object_id'], [])
+        out.append(r)
+    out.sort(key=lambda s: s['jumps'])
+    return out
+
+
 def _npc_station_counts(conn, scan_id) -> dict:
     """
     Returns {sector_macro: [{owner_id, owner_name, count}, ...]} for all NPC
@@ -572,6 +629,9 @@ def to_export(conn: sqlite3.Connection, scan_id: int | None = None) -> dict:
     game_time = scan['game_time_s']
     ships = _ships(conn, scan_id)
     npc_ships = _npc_ships(conn, scan_id)
+    # Computed once and reused by npc_trade_partners — rebuilding the sector
+    # graph a second time for the same scan would just repeat the same BFS.
+    galaxy_map = _galaxy_map(conn, scan_id)
 
     return {
         'meta': {
@@ -589,8 +649,9 @@ def to_export(conn: sqlite3.Connection, scan_id: int | None = None) -> dict:
         'reputation':            _reputation(conn, scan_id),
         'faction_relations':     _faction_relations(conn, scan_id),
         'sectors':               _sectors(conn),
-        'galaxy_map':            _galaxy_map(conn, scan_id),
+        'galaxy_map':            galaxy_map,
         'npc_stations_by_sector': _npc_station_counts(conn, scan_id),
+        'npc_trade_partners':    _npc_trade_partners(conn, scan_id, galaxy_map['distances_from_player']),
         'stations':              _stations(conn, scan_id),
         'ships':                 ships,
         'fleet_summary':         _fleet_summary(ships),

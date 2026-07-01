@@ -70,8 +70,7 @@
   // straight from a ship row to its home station.
   function goToStation(code) {
     _navRecord();
-    const stationsTab = document.querySelector('.nav-tab[onclick*="\'stations\'"]');
-    switchTab('stations', stationsTab);
+    switchTab('stations', document.getElementById('nav-stations'));
     _navAfterJump();
     const card = document.getElementById('station-' + code);
     if (card) card.scrollIntoView({ block: 'center', behavior: 'smooth' });

@@ -63,6 +63,7 @@
     // storage / production fields are a separate wiring pass (the card handles
     // their absence gracefully — empty panels, not errors).
     (data.stations || []).forEach(s => { s.sector = resolveSector(s); });
+    (data.npc_trade_partners || []).forEach(s => { s.sector = resolveSector(s); });
 
     // Re-assemble the { fleet_summary, player_ships, npc_ships } object the
     // rest of populate() reads as `ships`.
@@ -940,6 +941,7 @@
     // degrades to an empty tab instead of throwing mid-populate.
     if (typeof renderTrends === 'function') renderTrends(data);
 
+    renderNpcStations(data);
     renderUniverseMap(data);
     // renderUniverseMap repopulates the shared sector maps; if the Sectors tab
     // is already open, rebuild it against the new scan (and refresh the detail).
