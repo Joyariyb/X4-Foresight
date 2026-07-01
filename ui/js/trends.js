@@ -91,11 +91,11 @@
   const _factionShort = n => (n || '').replace(/^\[[^\]]+\]\s*/, '');
 
   // ── stylized hover tooltip ───────────────────────────────────────────────────
-  // Trend dots feed the shared #hull-tip popover via the central dispatcher in
-  // tooltips.js (see its [data-trend-tip] branch), the same way every other chart
-  // hover works — the dot just carries the pre-rendered HTML, encoded, like the
-  // fleet breakdown does. Built here (not in tooltips.js) because the per-faction
-  // kill/rep maths is trends-specific. The layout idiom — bordered header, big
+  // Trend dots feed the shared #hull-tip popover via the central dispatch engine
+  // in tooltips.js (through the trendTip handler registered at the bottom of this
+  // file), the same way every other chart hover works — the dot just carries the
+  // pre-rendered HTML, encoded, like the fleet breakdown does. Built here because
+  // the per-faction kill/rep maths is trends-specific. The layout idiom — bordered header, big
   // value + delta, then space-between rows — matches the cashflow/avg-price tips.
 
   // The "Ships Destroyed" extra: which factions credited the kills and the matching
@@ -696,3 +696,13 @@
         ${_changesFeedHtml(_trendChanges)}
       </div>`;
   }
+
+  // ── Tooltip registration ──────────────────────────────────────────
+  // Trends trajectory dot: pre-rendered HTML (value + delta, plus per-faction
+  // kill/rep breakdown on the Ships Destroyed line), built above at stamp time.
+  registerTip('trendTip', (el, _e, tip) => {
+    tip.innerHTML = decodeURIComponent(el.dataset.trendTip);
+    tip.style.color      = '';
+    tip.style.whiteSpace = 'normal';
+    return true;
+  });

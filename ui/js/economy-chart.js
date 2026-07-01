@@ -277,3 +277,62 @@
         </svg>
       </div>`;
   }
+
+  // ── Tooltip content builders ───────────────────────────────
+  // Moved out of tooltips.js (the dispatcher there is a shared engine): each
+  // builder lives with the feature that stamps its matching data-* attribute.
+  // The dispatcher still calls these by name — they are file-global here.
+
+    function budgetTipHtml(d) {
+      const fmt = n => Math.round(n).toLocaleString();
+
+      // Graph mode: only trade credits and share are known — no per-unit breakdown.
+      if (d.mode === 'graph') {
+        return `<div style="min-width:20rem;padding:0.2rem 0">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem">
+            <span style="color:${d.colour};font-size:1.1rem;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap">${d.ware}</span>
+            <span style="color:${d.colour};font-family:var(--font-mono);font-size:1.2rem">${d.pct}%</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:1.2rem;padding:1px 0">
+            <span style="color:var(--text-faint);font-size:1rem">Trade value</span>
+            <span style="color:var(--lime);font-family:var(--font-mono);font-size:1.1rem">${fmt(d.value)} Cr</span>
+          </div>
+        </div>`;
+      }
+
+      // Budget mode: per-slice economy tooltip — ware name in its colour, share of
+      // budget, the amount × price = value figures, and which rule set the value.
+      const BASIS = {
+        'manual storage cap':    'Manual storage cap',
+        'auto: 2h production':   'Automatic · 2h production',
+        'auto: 2h consumption':  'Automatic · 2h consumption',
+        'trade (max price)':     'Trade ware · max price',
+        'buy order (unverified)':'Buy order',
+      };
+      return `<div style="min-width:20rem;padding:0.2rem 0">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.5rem">
+          <span style="color:${d.colour};font-size:1.1rem;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap">${d.ware}</span>
+          <span style="color:${d.colour};font-family:var(--font-mono);font-size:1.2rem">${d.pct}%</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;gap:1.2rem;padding:1px 0">
+          <span style="color:var(--text-faint);font-size:1rem">Amount × Price</span>
+          <span style="color:var(--text-dim);font-family:var(--font-mono);font-size:1rem">${fmt(d.amount)} × ${fmt(d.price)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;gap:1.2rem;padding:1px 0">
+          <span style="color:var(--text-faint);font-size:1rem">Value</span>
+          <span style="color:var(--lime);font-family:var(--font-mono);font-size:1.1rem">${fmt(d.value)} Cr</span>
+        </div>
+        <div style="margin-top:0.5rem;padding-top:0.4rem;border-top:1px solid var(--border);font-size:1rem;color:var(--text-faint)">${BASIS[d.basis] || d.basis}</div>
+      </div>`;
+    }
+
+
+  // ── Tooltip registration ──────────────────────────────────────────
+  // Economy donut slice hover (ware share, figures, basis). Registered here with
+  // the chart that stamps data-budget-tip; see tip-registry.js for the contract.
+  registerTip('budgetTip', (el, _e, tip) => {
+    tip.innerHTML = budgetTipHtml(JSON.parse(decodeURIComponent(el.dataset.budgetTip)));
+    tip.style.color      = '';
+    tip.style.whiteSpace = 'normal';
+    return true;
+  });

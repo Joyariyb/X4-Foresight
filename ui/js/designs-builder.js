@@ -801,3 +801,209 @@
 
   const HOSTILE_FACTIONS = new Set(['xenon', 'khaak']);
 
+
+  // ── Tooltip content builders ───────────────────────────────
+  // Moved out of tooltips.js (the dispatcher there is a shared engine): each
+  // builder lives with the feature that stamps its matching data-* attribute.
+  // The dispatcher still calls these by name — they are file-global here.
+
+    // Shared stat-tooltip helpers for the weapon/shield/engine builders below —
+    // identical markup, so defined once here instead of re-declared in each.
+    const statFmt = n => Math.round(n).toLocaleString();
+    const statRow = (label, value, color) => value == null ? '' :
+        `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.4rem;padding:1px 0">
+           <span style="color:var(--text-dim);font-size:1.1rem">${label}</span>
+           <span style="font-family:var(--font-mono);font-size:1.1rem;white-space:nowrap${color ? `;color:${color}` : ''}">${value}</span>
+         </div>`;
+    const statSection = (icon, color, title, rows) => !rows ? '' :
+        `<div style="margin:0.8rem 0 0.2rem">
+           <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;color:${color};margin-bottom:0.4rem;padding-bottom:0.3rem;border-bottom:1px solid var(--border)">
+             <i class="ti ${icon}" style="font-size:1.1rem"></i>${title}
+           </div>
+           ${rows}
+         </div>`;
+
+    function weaponTipHtml(e) {
+      // Weapon/turret stats hover — Compatibility + Price up top (no header),
+      // then three sections named exactly what the real in-game tooltip
+      // calls them: Weapon Damage Rate, Projectile, Heat. Every formula here
+      // (including the beam-weapon ×4 shield quirk and the burst/sustained
+      // split) was reverse-engineered and validated against real in-game
+      // tooltips this session — see gamefiles/generate_equipment.py.
+
+      const fmt = statFmt;
+      const km  = n => (n / 1000).toFixed(1) + ' km';
+      const sp  = n => n >= 1e8 ? '1c' : fmt(n) + ' m/s';
+
+      // In-Game vs True Stats (weaponStatsMode, toggled from designs-builder.js)
+      // — only applies to the handful of fields the real tooltip DERIVES
+      // (damage rates, rate of fire, cooldown/overheat): the game TRUNCATES
+      // these rather than rounding them (confirmed this session against
+      // several Cerberus Sentinel weapons — e.g. the M Beam's cooldown is a
+      // true 8.882s, the game shows "8.8", we used to show a rounded "8.9").
+      // True Stats shows the same raw value to 3dp with no truncation, for
+      // checking the maths against generate_equipment.py's formulas. Price/
+      // storage/hull integrity/range/speed are plain XML values the game
+      // never rounds, so they always use fmt() above regardless of mode.
+      const isTrue = weaponStatsMode === 'true';
+      const dmg = n => isTrue
+        ? n.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })
+        : Math.floor(n).toLocaleString();
+      const truncFixed = (n, dp) => {
+        const f = Math.pow(10, dp);
+        return isTrue ? n.toFixed(3) : (Math.floor(n * f) / f).toFixed(dp);
+      };
+
+      // Missile/Standard/Advanced — a hypothesis from 2 confirmed data points
+      // this session (every Argon-branded item checked said Standard, every
+      // race-less "gen_" weapon said Advanced), not proven across the whole
+      // catalog. Easy to revisit here without touching the data pipeline.
+      const compat = (e.class === 'missileturret' || e.class === 'missilelauncher')
+        ? 'Missile' : (e.race ? 'Standard' : 'Advanced');
+
+      const row = statRow;
+
+      const section = statSection;
+
+      // weapon-slot items (player-aimed weapons/launchers) always show the
+      // Burst/Sustained split, even when they're numerically equal (no heat
+      // throttling) -- confirmed against the Ion Blasters, which have no
+      // bullet heat data at all yet still show both lines in-game. Turret-
+      // slot items show a single "Weapon Damage" line instead.
+      let dmgRows = '';
+      if (e.damage_rate_burst != null) {
+        if (e.slot === 'weapon') {
+          dmgRows += row('Burst Weapon Damage', `${dmg(e.damage_rate_burst)} MW`, 'var(--red)');
+          dmgRows += row('Sustained Weapon Damage', `${dmg(e.damage_rate_sustained)} MW`, 'var(--amber)');
+        } else {
+          dmgRows += row('Weapon Damage', `${dmg(e.damage_rate_burst)} MW`, 'var(--red)');
+        }
+      }
+
+      let projRows = '';
+      projRows += row('Shield Damage', e.damage_shield != null ? `${dmg(e.damage_shield)} MJ` : null);
+      projRows += row('Hull Damage (Shielded)', e.damage_hull != null ? `${dmg(e.damage_hull_while_shielded || 0)} MJ` : null);
+      projRows += row('Hull Damage', e.damage_hull != null ? `${dmg(e.damage_hull)} MJ` : null);
+      projRows += row('Effective Range', e.range_m != null ? km(e.range_m) : null);
+      projRows += row('Projectile Speed', e.projectile_speed_m_s != null ? sp(e.projectile_speed_m_s) : null);
+
+      let heatRows = '';
+      heatRows += row('Rate of Fire', e.reload_rate != null ? `${truncFixed(e.reload_rate, 2)} /s` : null);
+      heatRows += row('Rotation Speed', e.rotation_speed != null ? `${e.rotation_speed}°/s` : null);
+      heatRows += row('Max Hull Integrity', e.hull_max != null ? `${fmt(e.hull_max)} MJ` : null);
+      if (e.time_to_overheat != null) {
+        // Time to Overheat is genuinely ship-dependent -- confirmed against
+        // real tooltips this session: a ship's <modifiers><weapon heat=X/>
+        // multiplies heat generation, shortening it proportionally, while
+        // Sustained Weapon Damage and Cooldown Duration are unaffected.
+        // _shipHeatFactor rides along in the data-weapon-tip payload from
+        // designs-builder.js (the currently selected hull's factor, 1 if none).
+        const heatFactor = e._shipHeatFactor || 1;
+        heatRows += row('Time to Overheat', `${truncFixed(e.time_to_overheat / heatFactor, 1)} s`);
+        heatRows += row('Cooldown Duration', `${truncFixed(e.cooldown_duration, 1)} s`);
+      }
+
+      return `<div style="min-width:21.5rem;max-width:28rem;padding:0.2rem 0">
+        <div style="font-size:1.3rem;font-weight:600;color:var(--text);margin-bottom:0.2rem">${e.name}${e.mk ? ` Mk${e.mk}` : ''}</div>
+        ${row('Compatibility', compat)}
+        ${row('Storage Capacity', e.storage_capacity != null ? fmt(e.storage_capacity) : null)}
+        ${row('Price', e.price_min != null ? `${fmt(e.price_min)}–${fmt(e.price_max)} Cr` : (e.price != null ? `${fmt(e.price)} Cr` : null))}
+        ${section('ti-bolt', 'var(--red)', 'Weapon Damage Rate', dmgRows)}
+        ${section('ti-target', 'var(--teal)', 'Projectile', projRows)}
+        ${section('ti-flame', 'var(--amber)', 'Heat', heatRows)}
+      </div>`;
+    }
+
+    function shieldTipHtml(e) {
+      // Shield stats hover — same Compatibility/Price-up-top, sectioned-rows
+      // layout as weaponTipHtml, but for shield fields (see generate_equipment.py's
+      // shield branch). hull_max and disruption_stability are both absent on
+      // "integrated" shields (no separate hitpoints to disrupt), so a missing
+      // disruption_stability genuinely means "not resistant", not "no data".
+      const fmt = statFmt;
+      const compat = e.race ? 'Standard' : 'Advanced';
+
+      const row = statRow;
+
+      const section = statSection;
+
+      let chargeRows = '';
+      chargeRows += row('Shield Capacity', e.capacity != null ? `${fmt(e.capacity)} MJ` : null);
+      chargeRows += row('Recharge Rate', e.recharge_rate != null ? `${fmt(e.recharge_rate)} MJ/s` : null);
+      chargeRows += row('Recharge Delay', e.recharge_delay != null ? `${e.recharge_delay.toFixed(1)} s` : null);
+      if (e.capacity != null && e.recharge_rate) {
+        chargeRows += row('Time to Full Recharge', `${(e.capacity / e.recharge_rate).toFixed(1)} s`);
+      }
+
+      // Reuses the same .badge.allied/.badge.atwar pill the rest of the app
+      // already uses for green/red status (e.g. faction relations) instead of
+      // inventing a new colour pairing.
+      const resistant = e.disruption_stability != null;
+      const integRows = row('Hull Integrity', e.hull_max != null ? `${fmt(e.hull_max)} MJ` : null) +
+        `<div style="margin-top:0.5rem"><span class="badge ${resistant ? 'allied' : 'atwar'}">
+           ${resistant ? `Disruptor Resistant (${e.disruption_stability})` : 'Not Disruptor Resistant'}
+         </span></div>`;
+
+      return `<div style="min-width:21.5rem;max-width:28rem;padding:0.2rem 0">
+        <div style="font-size:1.3rem;font-weight:600;color:var(--text);margin-bottom:0.2rem">${e.name}${e.mk ? ` Mk${e.mk}` : ''}</div>
+        ${row('Compatibility', compat)}
+        ${row('Price', e.price_min != null ? `${fmt(e.price_min)}–${fmt(e.price_max)} Cr` : (e.price != null ? `${fmt(e.price)} Cr` : null))}
+        ${section('ti-shield', 'var(--teal)', 'Shield Output', chargeRows)}
+        ${section('ti-lock', 'var(--amber)', 'Integrity', integRows)}
+      </div>`;
+    }
+
+    function engineTipHtml(e) {
+      // Engine stats hover — same layout family as weaponTipHtml/shieldTipHtml.
+      // boost_thrust/travel_thrust are MULTIPLIERS on thrust_forward (X4's own
+      // convention, e.g. "x6.9"), not absolute kN, so they're shown distinctly
+      // from the raw kN thrust figures rather than re-using fmt()+unit.
+      // hull_max is absent on "integrated" engines (S/M/XS — no separate hull
+      // to damage; see generate_equipment.py's engine branch), same convention
+      // as shieldTipHtml's Integrity section.
+      const fmt = statFmt;
+      const compat = e.race ? 'Standard' : 'Advanced';
+
+      const row = statRow;
+
+      const section = statSection;
+
+      let thrustRows = '';
+      thrustRows += row('Forward Thrust', e.thrust_forward != null ? `${fmt(e.thrust_forward)} kN` : null);
+      thrustRows += row('Reverse Thrust', e.thrust_reverse != null ? `${fmt(e.thrust_reverse)} kN` : null);
+
+      let boostRows = '';
+      boostRows += row('Boost Thrust', e.boost_thrust != null ? `×${e.boost_thrust.toFixed(1)}` : null);
+      boostRows += row('Duration', e.boost_duration != null ? `${e.boost_duration.toFixed(1)} s` : null);
+      boostRows += row('Recharge', e.boost_recharge != null ? `${e.boost_recharge.toFixed(1)} s` : null);
+
+      let travelRows = '';
+      travelRows += row('Travel Thrust', e.travel_thrust != null ? `×${e.travel_thrust.toFixed(1)}` : null);
+      travelRows += row('Charge Time', e.travel_charge != null ? `${e.travel_charge.toFixed(1)} s` : null);
+
+      const integRows = row('Hull Integrity', e.hull_max != null ? `${fmt(e.hull_max)} MJ` : null);
+
+      return `<div style="min-width:21.5rem;max-width:28rem;padding:0.2rem 0">
+        <div style="font-size:1.3rem;font-weight:600;color:var(--text);margin-bottom:0.2rem">${e.name}${e.mk ? ` Mk${e.mk}` : ''}</div>
+        ${row('Compatibility', compat)}
+        ${row('Price', e.price_min != null ? `${fmt(e.price_min)}–${fmt(e.price_max)} Cr` : (e.price != null ? `${fmt(e.price)} Cr` : null))}
+        ${section('ti-engine', 'var(--teal)', 'Thrust', thrustRows)}
+        ${section('ti-rocket', 'var(--red)', 'Boost', boostRows)}
+        ${section('ti-clock', 'var(--amber)', 'Travel', travelRows)}
+        ${section('ti-lock', 'var(--green)', 'Integrity', integRows)}
+      </div>`;
+    }
+
+
+  // ── Tooltip registration ──────────────────────────────────────────
+  // Ship Builder / Resource Library weapon-slot row hover. One data-weapon-tip
+  // attribute carries every slot; route by payload.slot to the matching builder.
+  registerTip('weaponTip', (el, _e, tip) => {
+    const payload = JSON.parse(decodeURIComponent(el.dataset.weaponTip));
+    tip.innerHTML = payload.slot === 'shield' ? shieldTipHtml(payload)
+      : payload.slot === 'engine' ? engineTipHtml(payload)
+      : weaponTipHtml(payload);
+    tip.style.color      = '';
+    tip.style.whiteSpace = 'normal';
+    return true;
+  });

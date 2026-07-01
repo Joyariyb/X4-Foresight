@@ -934,3 +934,83 @@
     document.getElementById("shell").style.display   = "flex";
   }
 
+
+  // ── Tooltip content builders ───────────────────────────────
+  // Moved out of tooltips.js (the dispatcher there is a shared engine): each
+  // builder lives with the feature that stamps its matching data-* attribute.
+  // The dispatcher still calls these by name — they are file-global here.
+
+    function moduleTipHtml(groups) {
+      return `<div style="min-width:18rem;max-width:26rem;padding:0.2rem 0">` +
+        groups.map(g =>
+          `<div style="margin-bottom:0.8rem">
+             <div style="font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;
+                         color:var(--text-faint);margin-bottom:0.4rem;padding-bottom:0.3rem;
+                         border-bottom:1px solid var(--border)">${g.category}</div>
+             ${g.items.map(([name, count]) =>
+               `<div style="display:flex;justify-content:space-between;align-items:baseline;
+                            gap:1.2rem;padding:1px 0">
+                  <span style="color:var(--text-dim);font-size:1.1rem;white-space:nowrap;
+                               overflow:hidden;text-overflow:ellipsis">${name}</span>
+                  <span style="color:var(--text-faint);font-size:1rem;flex-shrink:0">×${count}</span>
+                </div>`
+             ).join('')}
+           </div>`
+        ).join('') +
+      `</div>`;
+    }
+
+    function storageTipHtml(types) {
+      // Renders each storage type as a label + % row followed by a fill bar.
+      // Label, percentage, and m³ text all use the category's fixed accent colour.
+      // The Total row is preceded by a thin separator line.
+      const fmtM3 = v => v >= 1e6 ? (v/1e6).toFixed(2)+'M' : v >= 1e3 ? (v/1e3).toFixed(1)+'K' : v;
+      return `<div style="min-width:22rem;padding:0.2rem 0">` +
+        types.map(t => {
+          const barW = t.pct != null ? Math.min(t.pct, 100) : 0;
+          const pctLabel = t.pct != null ? `${t.pct}%` : '—';
+          const sub = (t.m3 != null && t.max != null)
+            ? `<div style="margin-top:0.2rem;text-align:right;font-size:1rem;color:${t.color};opacity:0.75">${fmtM3(t.m3)} / ${fmtM3(t.max)} m³</div>`
+            : '';
+          const sep = t.isTotal
+            ? `<div style="border-top:1px solid var(--border);margin:0.5rem 0 0.8rem"></div>`
+            : '';
+          return `${sep}<div style="margin-bottom:0.8rem">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.3rem">
+              <span style="font-size:1rem;letter-spacing:0.1em;text-transform:uppercase;color:${t.color}">${t.label}</span>
+              <span style="color:${t.color};font-family:var(--font-mono);margin-left:1.2rem">${pctLabel}</span>
+            </div>
+            <div style="height:0.6rem;background:var(--border);border-radius:0.2rem;overflow:hidden">
+              <div style="height:100%;width:${barW}%;background:${t.color};border-radius:0.2rem"></div>
+            </div>
+            ${sub}
+          </div>`;
+        }).join('') +
+      `</div>`;
+    }
+
+
+  // ── Tooltip registration ──────────────────────────────────────────
+  // Station cards stamp these: storage-bay breakdown, module list, and the
+  // pre-rendered assigned-fleet breakdown (fleet tip HTML is built at stamp time).
+  registerTip('storageTip', (el, _e, tip) => {
+    tip.innerHTML = storageTipHtml(JSON.parse(decodeURIComponent(el.dataset.storageTip)));
+    tip.style.color      = '';
+    tip.style.whiteSpace = 'normal';
+    return true;
+  });
+
+  registerTip('modulesTip', (el, _e, tip) => {
+    tip.innerHTML = moduleTipHtml(JSON.parse(decodeURIComponent(el.dataset.modulesTip)));
+    tip.style.color      = '';
+    tip.style.whiteSpace = 'normal';
+    return true;
+  });
+
+  registerTip('fleetTip', (el, _e, tip) => {
+    // Pre-rendered HTML encoded into the attribute at stamp time.
+    tip.innerHTML = decodeURIComponent(el.dataset.fleetTip);
+    tip.style.color      = '';
+    tip.style.whiteSpace = 'normal';
+    return true;
+  });

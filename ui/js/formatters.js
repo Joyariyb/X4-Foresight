@@ -160,3 +160,13 @@
     }).join('');
   }
 
+
+  // ── Tooltip registration ──────────────────────────────────────────
+  // Hull/shield bars stamp data-hull-tip (+ data-hull-color): plain coloured text,
+  // no HTML. The simplest tip, and the historical default branch of the dispatcher.
+  registerTip('hullTip', (el, _e, tip) => {
+    tip.textContent      = el.dataset.hullTip;
+    tip.style.color      = el.dataset.hullColor || '';
+    tip.style.whiteSpace = 'nowrap';
+    return true;
+  });

@@ -197,3 +197,63 @@
     }
   });
 
+
+  // ── Tooltip content builders ───────────────────────────────
+  // Moved out of tooltips.js (the dispatcher there is a shared engine): each
+  // builder lives with the feature that stamps its matching data-* attribute.
+  // The dispatcher still calls these by name — they are file-global here.
+
+    function loadoutTipHtml(loadout) {
+      // Same layout as moduleTipHtml, plus maker faction when available.
+      const SLOT_ORDER = [
+        ['weapon',   'Weapons'],
+        ['turret',   'Turrets'],
+        ['shield',   'Shields'],
+        ['engine',   'Engine'],
+        ['thruster', 'Thruster'],
+      ];
+      const FACTION = {
+        argon:'Argon', paranid:'Paranid', teladi:'Teladi', split:'Split',
+        terran:'Terran', boron:'Boron', xenon:'Xenon', khaak:"Kha'ak",
+        pirate:'Pirate', yaki:'Yaki',
+      };
+      const sections = SLOT_ORDER.map(([slot, label]) => {
+        // Skip unresolved internal parts (raw macros still end in "_macro"), so a
+        // deployable's hidden engine never shows a raw id in the tooltip.
+        const items = loadout.filter(e => e.slot === slot && !e.name.endsWith('_macro'));
+        if (!items.length) return '';
+        const rows = items.map(e => {
+          const mk  = e.mk ? ` Mk${e.mk}` : '';
+          const fac = FACTION[e.race]
+            ? `<span style="color:var(--text-dim);font-size:1rem;margin-right:0.8rem">${FACTION[e.race]}</span>` : '';
+          return `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;padding:1px 0">
+                    <span style="color:var(--text-dim);font-size:1.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.name}${mk}</span>
+                    <span style="flex-shrink:0;white-space:nowrap">${fac}<span style="color:var(--text-faint);font-size:1rem">×${e.count}</span></span>
+                  </div>`;
+        }).join('');
+        return `<div style="margin-bottom:0.8rem">
+                  <div style="font-size:0.9rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-faint);margin-bottom:0.4rem;padding-bottom:0.3rem;border-bottom:1px solid var(--border)">${label}</div>
+                  ${rows}
+                </div>`;
+      }).join('');
+      return `<div style="min-width:20rem;max-width:28rem;padding:0.2rem 0">${sections || '—'}</div>`;
+    }
+
+
+  // ── Tooltip registration ──────────────────────────────────────────
+  // Fleet rows stamp both of these: the ship-name equipment loadout and the
+  // pilot-skills stars. pilotTipHtml lives in formatters.js (loaded earlier).
+  registerTip('loadoutTip', (el, _e, tip) => {
+    tip.innerHTML = loadoutTipHtml(JSON.parse(decodeURIComponent(el.dataset.loadoutTip)));
+    tip.style.color      = '';
+    tip.style.whiteSpace = 'normal';
+    return true;
+  });
+
+  registerTip('pilotSkills', (el, _e, tip) => {
+    // data-pilot-name is the pilot's display name (moved off the row).
+    tip.innerHTML = pilotTipHtml(JSON.parse(el.dataset.pilotSkills), el.dataset.pilotName || '');
+    tip.style.color      = '';
+    tip.style.whiteSpace = 'nowrap';
+    return true;
+  });
