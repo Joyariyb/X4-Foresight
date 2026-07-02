@@ -1,6 +1,7 @@
 # Core role: Harvests the player's notification/event log and career stats from the savegame.
 
 from __future__ import annotations
+import dataclasses
 import re
 
 from scanner.language import resolve_text_ref
@@ -10,6 +11,58 @@ from scanner.entities import PlayerEvent
 # resolve_text_ref() only handles a bare whole-string ref (the faction= case);
 # event prose mixes refs into sentences ("… under attack by {20203,101}.").
 _EMBEDDED_REF_RE = re.compile(r'\{(\d+),(\d+)\}')
+
+# The game writes line breaks inside event prose as a literal "[\012]" token
+# (octal 012 = LF) instead of a real newline — e.g. reputation events read
+# "Reason: Trade Completed[\012]Current reputation: 21". Decoded here, once,
+# so the DB/JSON carry real newlines and no consumer needs to know the escape.
+_NEWLINE_ESCAPE = '[\\012]'
+
+
+def _richness(e: PlayerEvent) -> tuple:
+    """Orders a double-logged pair: the categorised/attributed row wins."""
+    return (e.category != 'uncategorised', bool(e.faction_name),
+            e.component_id is not None)
+
+
+def _texts_match(a: str, b: str) -> bool:
+    """True when the texts are equal, or one is the other minus leading
+    line(s) — the bare reputation twin carries an extra "Faction: X" first
+    line that its faction=-attributed twin drops."""
+    if a == b:
+        return True
+    longer, shorter = (a, b) if len(a) > len(b) else (b, a)
+    return bool(shorter) and longer.endswith('\n' + shorter)
+
+
+def dedupe_events(events: list[PlayerEvent]) -> list[PlayerEvent]:
+    """Collapses event rows the game logs twice (observed in 7.x saves).
+
+    Many events land in the log as two rows at the exact same timestamp: a
+    bare one (no category/faction/component) plus a richer twin — e.g. pirate
+    sightings get a categorised 'alerts' copy carrying component=, reputation
+    changes get a copy carrying faction= without the "Faction: X" text line.
+    Rows merge when time and title match and the texts match per
+    _texts_match(); the richer row wins, and any field it lacks is filled
+    from the discarded twin. Order of the kept rows is preserved.
+    """
+    kept_by_key: dict[tuple, list[int]] = {}
+    out: list[PlayerEvent | None] = list(events)
+    for i, ev in enumerate(events):
+        key = (ev.game_time_s, ev.title)
+        for j in kept_by_key.get(key, ()):
+            kept = out[j]
+            if kept is not None and _texts_match(kept.text, ev.text):
+                w, l = (kept, ev) if _richness(kept) >= _richness(ev) else (ev, kept)
+                out[j] = dataclasses.replace(
+                    w,
+                    faction_name = w.faction_name or l.faction_name,
+                    component_id = w.component_id or l.component_id)
+                out[i] = None
+                break
+        else:
+            kept_by_key.setdefault(key, []).append(i)
+    return [e for e in out if e is not None]
 
 
 class EventLogHandler:
@@ -40,6 +93,14 @@ class EventLogHandler:
         return _EMBEDDED_REF_RE.sub(
             lambda m: self._texts.get(f'{m.group(1)}:{m.group(2)}', m.group(0)), s)
 
+    def _clean(self, s: str) -> str:
+        """Full title/text cleanup: resolve refs, then decode newline escapes.
+
+        Escape decoding runs AFTER ref resolution because the escape can live
+        inside the resolved t-file text too, not just the save attribute.
+        """
+        return self._resolve_embedded(s).replace(_NEWLINE_ESCAPE, '\n')
+
     def on_stat(self, elem, ctx) -> None:
         """Record one career stat (first occurrence wins; numeric values only)."""
         sid = elem.get('id') or ''
@@ -65,8 +126,8 @@ class EventLogHandler:
         ctx.player_events.append(PlayerEvent(
             scan_id      = ctx.scan_id,
             category     = elem.get('category') or 'uncategorised',
-            title        = self._resolve_embedded(title),
-            text         = self._resolve_embedded(text),
+            title        = self._clean(title),
+            text         = self._clean(text),
             faction_name = resolve_text_ref(faction_ref, self._texts) if faction_ref else '',
             component_id = elem.get('component') or None,
             game_time_s  = t,

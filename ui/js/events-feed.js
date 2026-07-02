@@ -3,7 +3,9 @@
   //
   // First file written under UI_STANDARDS §11: one namespace global, internals
   // private to the IIFE. populate() hands data in via setData(); the sidebar's
-  // Events item calls render() when the tab opens.
+  // Events item calls render() when the tab opens. Layout classes live in
+  // css/events.css; each row also stamps a data-event-tip with its full
+  // pre-rendered tooltip (UI_STANDARDS §8).
   window.EventsFeed = (function () {
 
     // Display order = triage order: what needs action first.
@@ -64,12 +66,29 @@
       const cells = STAT_LABELS
         .filter(([id]) => _stats[id] != null)
         .map(([id, label]) => `
-          <div style="display:flex;flex-direction:column;gap:0.2rem">
-            <span style="font-family:var(--font-label);color:var(--text-label);text-transform:uppercase;letter-spacing:0.08em;font-size:1.1rem">${label}</span>
-            <span class="mono" style="font-size:1.6rem">${_stats[id].toLocaleString()}</span>
+          <div class="events-stat">
+            <span class="events-stat-label">${label}</span>
+            <span class="events-stat-value">${_stats[id].toLocaleString()}</span>
           </div>`).join('');
       if (!cells) return '';
-      return `<div style="display:flex;gap:2.4rem;flex-wrap:wrap;padding:1rem 1.2rem;border:1px solid var(--outline);border-radius:var(--radius-md);background:var(--surface-1);margin-bottom:1.2rem">${cells}</div>`;
+      return `<div class="events-stats">${cells}</div>`;
+    }
+
+    // Full tooltip for one row: category header, then the complete event text
+    // with its real line breaks — the feed row itself clamps to one line.
+    // Same layout idiom as the trends/cashflow tips: bordered header, then body.
+    function _tipHtml(e, m) {
+      const head = `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.6rem;margin-bottom:0.4rem;padding-bottom:0.4rem;border-bottom:1px solid var(--outline)">
+          <span style="color:${m.colour};font-family:var(--font-label);font-size:1.1rem;letter-spacing:0.08em;text-transform:uppercase"><i class="ti ${m.icon}"></i> ${m.label}</span>
+          <span style="color:var(--text-secondary);font-family:var(--font-data);font-size:1.05rem">${_ago(e.time_ago_s)} ago</span>
+        </div>`;
+      const title = e.title ? `<div style="color:var(--text-primary)">${e.title}</div>` : '';
+      const text  = e.text && e.text !== e.title
+        ? `<div style="color:var(--text-secondary);font-size:1.2rem;margin-top:0.2rem;white-space:pre-line">${e.text}</div>` : '';
+      const faction = e.faction_name
+        ? `<div style="margin-top:0.4rem;color:var(--text-brand);font-size:1.1rem">${e.faction_name}</div>` : '';
+      // max-width so a long single line wraps instead of spanning the screen.
+      return `<div style="max-width:42rem">${head}${title}${text}${faction}</div>`;
     }
 
     function render() {
@@ -77,8 +96,10 @@
       if (!root) return;
 
       const total = Object.values(_events).reduce((n, l) => n + l.length, 0);
+      // .station-tab-btn is the shared rem-based tab chip — see events.css for
+      // why it's this and not the chart cards' cqw-sized .cf-toggle-btn.
       const chip = (key, label, count) =>
-        `<button class="cf-toggle-btn ${_filter === key ? 'active' : ''}" onclick="EventsFeed.setFilter('${key}')">${label} <span class="mono">${count.toLocaleString()}</span></button>`;
+        `<button class="station-tab-btn ${_filter === key ? 'active' : ''}" onclick="EventsFeed.setFilter('${key}')">${label}<span class="events-filter-count">${count.toLocaleString()}</span></button>`;
       const chips = [chip('all', 'All', total)]
         .concat(Object.keys(CATEGORY_META)
           .filter(c => (_events[c] || []).length)
@@ -87,24 +108,38 @@
 
       const rows = _rows().map(e => {
         const m = CATEGORY_META[e.category] || CATEGORY_META.uncategorised;
+        // The row shows one line ("·" between the event's lines); the hover
+        // tip carries the full multi-line text.
+        const oneLine = (e.text || '').split('\n').join(' · ');
         return `
-          <div style="display:flex;gap:1rem;align-items:center;padding:0.55rem 1rem;border-bottom:1px solid var(--outline)">
-            <i class="ti ${m.icon}" style="color:${m.colour};font-size:1.5rem;flex:none"></i>
-            <div style="flex:1;min-width:0">
-              <div>${e.title || e.text}</div>
+          <div class="event-row" data-event-tip="${encodeURIComponent(_tipHtml(e, m))}">
+            <i class="ti ${m.icon} event-icon" style="color:${m.colour}"></i>
+            <div class="event-main">
+              <div>${e.title || oneLine}</div>
               ${e.text && e.title && e.text !== e.title
-                ? `<div style="color:var(--text-secondary);font-size:1.2rem;margin-top:0.1rem">${e.text}</div>` : ''}
+                ? `<div class="event-text">${oneLine}</div>` : ''}
             </div>
-            ${e.faction_name ? `<span style="color:var(--text-brand);flex:none;font-size:1.2rem">${e.faction_name}</span>` : ''}
-            <span class="mono" style="color:var(--text-secondary);flex:none;min-width:6rem;text-align:right">${_ago(e.time_ago_s)}</span>
+            ${e.faction_name ? `<span class="event-faction">${e.faction_name}</span>` : ''}
+            <span class="event-ago">${_ago(e.time_ago_s)}</span>
           </div>`;
       }).join('');
 
       root.innerHTML = `
         ${_statsStripHtml()}
-        <div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin-bottom:1rem">${chips}</div>
-        ${rows || `<div style="color:var(--text-secondary);padding:2rem 1rem">No events in this scan${_filter !== 'all' ? ' for this category' : ''}.</div>`}`;
+        <div class="events-filter">${chips}</div>
+        ${rows || `<div class="events-empty">No events in this scan${_filter !== 'all' ? ' for this category' : ''}.</div>`}`;
     }
+
+    // ── Tooltip registration ──────────────────────────────────────────
+    // Rows carry pre-rendered HTML, encoded at stamp time — the trendTip /
+    // fleetTip pattern. Colour reset + normal wrapping because #hull-tip
+    // defaults to nowrap alert-coloured single-line text.
+    registerTip('eventTip', (el, _e, tip) => {
+      tip.innerHTML = decodeURIComponent(el.dataset.eventTip);
+      tip.style.color      = '';
+      tip.style.whiteSpace = 'normal';
+      return true;
+    });
 
     return { setData, setFilter, render };
   })();

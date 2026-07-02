@@ -13,6 +13,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 
 from data.wares import WARE_NAMES
+from scanner.handlers.events import dedupe_events
 from scanner.ship_names import ship_display_name
 from scanner import galaxy_map
 
@@ -253,7 +254,10 @@ EVENTS_PER_CATEGORY = 50
 def _write_player_events(cur, scan_id, ctx) -> None:
     """Most recent EVENTS_PER_CATEGORY event rows per category."""
     by_cat = defaultdict(list)
-    for ev in ctx.player_events:
+    # Dedupe before grouping: the game's double-logged pairs straddle
+    # categories (bare uncategorised row + categorised twin), so collapsing
+    # after the split would leave one half of each pair behind.
+    for ev in dedupe_events(ctx.player_events):
         by_cat[ev.category].append(ev)
     rows = []
     for evs in by_cat.values():

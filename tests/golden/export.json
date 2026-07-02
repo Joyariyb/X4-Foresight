@@ -650,7 +650,13 @@
         0
       ],
       "kills_by_faction": [
-        []
+        [
+          {
+            "faction_id": "teladi",
+            "faction_name": "[TEL] Teladi Company",
+            "kills": 1
+          }
+        ]
       ],
       "ship_hull_value": [
         437295
@@ -716,6 +722,14 @@
         "component_id": "[0x1000]",
         "game_time_s": 998500.0,
         "time_ago_s": 1500.0
+      },
+      {
+        "title": "SCA",
+        "text": "Location: Test Sector",
+        "faction_name": "",
+        "component_id": "[0x9000]",
+        "game_time_s": 994500.0,
+        "time_ago_s": 5500.0
       }
     ],
     "upkeep": [
@@ -736,6 +750,24 @@
         "component_id": null,
         "game_time_s": 996000.0,
         "time_ago_s": 4000.0
+      },
+      {
+        "title": "Reputation gained: +1",
+        "text": "Reason: Destroyed Enemy\nCurrent reputation: 3",
+        "faction_name": "Teladi Company",
+        "component_id": null,
+        "game_time_s": 994000.0,
+        "time_ago_s": 6000.0
+      }
+    ],
+    "news": [
+      {
+        "title": "Reputation gained",
+        "text": "Faction: Teladi Company\nReason: Trade Completed\nCurrent reputation: 21",
+        "faction_name": "Teladi Company",
+        "component_id": null,
+        "game_time_s": 995000.0,
+        "time_ago_s": 5000.0
       }
     ]
   },

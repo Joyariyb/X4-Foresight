@@ -278,6 +278,18 @@
       <entry time="997500.0" category="upkeep" title="Assigned Individual Test Pilot to Hauler One" component="[0x3000]"/>
       <!-- no category attribute: must bucket as 'uncategorised'. -->
       <entry time="996000.0" title="Note without category" text="Rows missing category= must not be dropped."/>
+      <!-- news row: the game's [\012] newline escape (octal LF) in text, mixed
+           with a faction ref — must decode to real newlines after resolution. -->
+      <entry time="995000.0" category="news" title="Reputation gained" text="Faction: {20203,101}[\012]Reason: Trade Completed[\012]Current reputation: 21" faction="{20203,101}"/>
+      <!-- double-logged pair (the game writes many events twice, same
+           timestamp): bare row + categorised alerts twin carrying component=.
+           dedupe_events() must collapse these into the twin at DB-write time. -->
+      <entry time="994500.0" title="SCA" text="Location: Test Sector"/>
+      <entry time="994500.0" category="alerts" title="SCA" text="Location: Test Sector" interact="showonmap" component="[0x9000]"/>
+      <!-- reputation flavour of the pair: the bare row embeds "Faction:" as
+           its first text line; the twin carries faction= and drops that line. -->
+      <entry time="994000.0" title="Reputation gained: +1" text="Faction: {20203,101}[\012]Reason: Destroyed Enemy[\012]Current reputation: 3"/>
+      <entry time="994000.0" title="Reputation gained: +1" text="Reason: Destroyed Enemy[\012]Current reputation: 3" faction="{20203,101}"/>
     </log>
   </universe>
 </savegame>

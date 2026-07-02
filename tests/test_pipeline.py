@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 from conftest import MINI_SAVE
+from scanner.entities import PlayerEvent
+from scanner.handlers.events import dedupe_events
 from scanner.scanner import Scanner
 
 
@@ -366,8 +368,17 @@ class TestEventLog:
         # from the same dispatch — both must see it.
         assert ctx.combat_ships_destroyed == 7
 
+    def test_double_logged_kill_counts_once(self, ctx):
+        # The fixture's "Destroyed Enemy" rep event appears twice (bare twin +
+        # faction= twin, the game's double-logging). CombatHandler must credit
+        # exactly one kill, to the attributed faction — no 'Unknown' bucket.
+        assert set(ctx.combat_kills) == {'teladi'}
+        assert ctx.combat_kills['teladi']['kills'] == 1
+
     def test_events_captured_with_refs_resolved(self, ctx):
-        assert len(ctx.player_events) == 3
+        # 8 raw rows — the two double-logged pairs are still split here; they
+        # only collapse at DB-write time (dedupe_events, tested below).
+        assert len(ctx.player_events) == 8
         ev = next(e for e in ctx.player_events if e.category == 'alerts')
         assert ev.title == 'Station under attack'
         # The {20203,101} ref embedded mid-sentence resolves via mini_lang.
@@ -376,12 +387,69 @@ class TestEventLog:
         assert ev.component_id == '[0x1000]'
         assert ev.time_ago_s == 1500.0
 
+    def test_newline_escape_decoded(self, ctx):
+        # The game encodes line breaks in event prose as a literal "[\012]"
+        # token; consumers must receive real newlines, decoded after the
+        # embedded faction ref resolves.
+        ev = next(e for e in ctx.player_events if e.category == 'news')
+        assert ev.text == ('Faction: Teladi Company\n'
+                           'Reason: Trade Completed\n'
+                           'Current reputation: 21')
+
     def test_missing_category_buckets_uncategorised(self, ctx):
         assert sorted(e.category for e in ctx.player_events) == [
-            'alerts', 'uncategorised', 'upkeep']
+            'alerts', 'alerts', 'news',
+            'uncategorised', 'uncategorised', 'uncategorised', 'uncategorised',
+            'upkeep']
 
     def test_construction_entries_not_captured(self, ctx):
         # Station construction sequences reuse the <entry> tag
         # (<entry index= macro=>) — they carry no title/text and must never
         # surface as events. Every captured event in the fixture has a title.
         assert all(e.title for e in ctx.player_events)
+
+
+class TestEventDedupe:
+    """dedupe_events() collapses the game's double-logged rows (same
+    timestamp, bare row + richer twin) — shapes taken from a real 7.x save."""
+
+    @staticmethod
+    def _ev(**kw):
+        base = dict(scan_id=1, category='uncategorised', title='SCA',
+                    text='Location: Grand Exchange III', faction_name='',
+                    component_id=None, game_time_s=100.0, time_ago_s=50.0)
+        return PlayerEvent(**{**base, **kw})
+
+    def test_bare_and_categorised_twin_merge(self):
+        merged = dedupe_events([
+            self._ev(),
+            self._ev(category='alerts', component_id='[0x61a880b]'),
+        ])
+        assert len(merged) == 1
+        # The categorised twin wins, keeping its component link.
+        assert merged[0].category == 'alerts'
+        assert merged[0].component_id == '[0x61a880b]'
+
+    def test_faction_prefix_twin_merge(self):
+        merged = dedupe_events([
+            self._ev(title='Reputation gained',
+                     text='Faction: Teladi Company\nReason: Trade Completed\n'
+                          'Current reputation: 21'),
+            self._ev(title='Reputation gained',
+                     text='Reason: Trade Completed\nCurrent reputation: 21',
+                     faction_name='Teladi Company'),
+        ])
+        assert len(merged) == 1
+        # faction= twin wins: faction lands in its own column, and the text
+        # drops the now-redundant "Faction:" first line.
+        assert merged[0].faction_name == 'Teladi Company'
+        assert merged[0].text == 'Reason: Trade Completed\nCurrent reputation: 21'
+
+    def test_distinct_same_time_events_kept(self):
+        # Same timestamp + title but genuinely different texts (two war
+        # updates in the same tick) must NOT merge.
+        merged = dedupe_events([
+            self._ev(title='War update: ', text='Mounting defence in True Sight'),
+            self._ev(title='War update: ', text='Reconnaissance in Holy Vision'),
+        ])
+        assert len(merged) == 2

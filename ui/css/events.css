@@ -1,0 +1,33 @@
+    /* Core role: Styles for the Captains Log events tab — career-stats strip,
+       category filter row, and the event feed rows. Class-based + semantic
+       tokens, same approach as trends.css. */
+
+    /* ── CAREER STATS STRIP ── */
+    .events-stats { display: flex; flex-wrap: wrap; gap: 2.4rem; padding: 1rem 1.2rem; background: var(--surface-1); border: 1px solid var(--outline); border-radius: var(--radius-md); margin-bottom: 1.2rem; }
+    .events-stat { display: flex; flex-direction: column; gap: 0.2rem; }
+    .events-stat-label { font-family: var(--font-label); font-size: 1.1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-label); }
+    .events-stat-value { font-family: var(--font-data); font-size: 1.6rem; color: var(--text-primary); }
+
+    /* ── CATEGORY FILTER ── */
+    /* The chips themselves reuse .station-tab-btn (shared-ui.css), the shared
+       rem-based tab chip — NOT .cf-toggle-btn, which is cqw-sized for the
+       chart cards' container query and balloons when used outside one (the
+       same reason trends.css grew .trend-toggle-btn). */
+    .events-filter { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+    .events-filter-count { font-family: var(--font-data); opacity: 0.7; margin-left: 0.5rem; }
+
+    /* ── FEED ROWS ── */
+    /* Hover uses the shared state layer (UI_STANDARDS §6) — it also signals
+       that the row carries a tooltip with the full event text. */
+    .event-row { display: flex; align-items: center; gap: 1rem; padding: 0.55rem 1rem; border-bottom: 1px solid var(--outline); }
+    .event-row:hover { background: var(--state-hover); }
+    /* Icon colour is set inline — it's the per-category accent from the JS
+       CATEGORY_META table, not a fixed style. */
+    .event-icon { font-size: 1.5rem; flex: none; }
+    .event-main { flex: 1; min-width: 0; }
+    /* Secondary line clamps to one line — the tooltip carries the full
+       multi-line text, so a long event can't stretch the feed row. */
+    .event-text { color: var(--text-secondary); font-size: 1.2rem; margin-top: 0.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .event-faction { color: var(--text-brand); font-size: 1.2rem; flex: none; }
+    .event-ago { font-family: var(--font-data); color: var(--text-secondary); font-size: 1.2rem; flex: none; min-width: 6rem; text-align: right; }
+    .events-empty { color: var(--text-secondary); font-family: var(--font-data); padding: 2rem 1rem; }

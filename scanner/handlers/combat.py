@@ -54,6 +54,14 @@ class CombatHandler:
         if 'Destroyed Enemy' not in text:
             return
 
+        # 7.x saves double-log reputation events: an attributed row (faction=)
+        # plus a bare twin whose text instead opens with a "Faction: X" line.
+        # Skip the bare twin so one kill isn't tallied twice — once correctly
+        # and once into the 'Unknown' bucket. (Same save quirk dedupe_events
+        # in events.py collapses for the event feed.)
+        if text.startswith('Faction:'):
+            return
+
         ref = elem.get('faction') or ''
         name = resolve_text_ref(ref, self._texts) if ref else ''
         fid = faction_id_from_display(name)

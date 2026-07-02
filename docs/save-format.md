@@ -92,6 +92,19 @@ ENTRY SHAPE:
   warnings (most actionable); `upkeep` = crew/asset assignments;
   `missions`/`diplomacy` = storyline.
 - `title`/`text` — human strings, but MAY contain `{page,id}` language refs.
+  Line breaks appear as a literal `[\012]` token (octal LF), e.g. reputation
+  events: `Reason: Trade Completed[\012]Current reputation: 21` —
+  EventLogHandler decodes these to real newlines after ref resolution.
+- Reputation titles carry the amount only sometimes: `"Reputation gained: +1"`
+  on mission/kill rewards (84 of ~2,300 rep rows in the researched save);
+  trade rep-ticks say just `"Reputation gained"` — the delta isn't stored.
+- DOUBLE-LOGGING (7.x saves): many events are written twice at the exact same
+  `time=` — a bare row (no category/faction/component) plus a richer twin.
+  SCA sightings get a categorised `alerts` copy with `component=`; reputation
+  events get a `faction=` copy whose text drops the bare twin's leading
+  `Faction: X` line. `dedupe_events()` (events.py) collapses the pairs before
+  DB write, and CombatHandler skips `Faction:`-prefixed kill rows so a kill
+  isn't credited twice.
 - `component` — links the event to a ship/station object_id, i.e. to entities
   we already scan. (This is what tied a named-crew frigate and a diplomacy
   gift-ship to two "civilian" hulls docked at the HQ.)
