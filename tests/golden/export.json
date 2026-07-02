@@ -1,0 +1,712 @@
+{
+  "meta": {
+    "scan_id": 1,
+    "save_file": "mini_save.xml",
+    "game_time_s": 1000000.0,
+    "scans_total": 1
+  },
+  "player": {
+    "name": "Test Pilot",
+    "sector": "Testora Prime",
+    "credits": 123456789
+  },
+  "reputation": [
+    {
+      "faction_id": "argon",
+      "faction_name": "[ARG] Argon Federation",
+      "value": 11.76,
+      "base": 10.0,
+      "booster": 6.99,
+      "tier": "Friendly"
+    },
+    {
+      "faction_id": "teladi",
+      "faction_name": "[TEL] Teladi Company",
+      "value": 6.99,
+      "base": 6.99,
+      "booster": 0.0,
+      "tier": "Neutral"
+    },
+    {
+      "faction_id": "xenon",
+      "faction_name": "[XEN] Xenon",
+      "value": -25.05,
+      "base": -25.05,
+      "booster": 0.0,
+      "tier": "At War"
+    }
+  ],
+  "faction_relations": [
+    {
+      "faction_id": "argon",
+      "faction_name": "[ARG] Argon Federation",
+      "other_id": "player",
+      "other_name": "Player",
+      "value": 10.0,
+      "tier": "Friendly",
+      "locked": 0
+    },
+    {
+      "faction_id": "argon",
+      "faction_name": "[ARG] Argon Federation",
+      "other_id": "teladi",
+      "other_name": "[TEL] Teladi Company",
+      "value": 5.05,
+      "tier": "Neutral",
+      "locked": 0
+    },
+    {
+      "faction_id": "argon",
+      "faction_name": "[ARG] Argon Federation",
+      "other_id": "xenon",
+      "other_name": "[XEN] Xenon",
+      "value": -25.05,
+      "tier": "At War",
+      "locked": 0
+    },
+    {
+      "faction_id": "xenon",
+      "faction_name": "[XEN] Xenon",
+      "other_id": "argon",
+      "other_name": "[ARG] Argon Federation",
+      "value": -25.05,
+      "tier": "At War",
+      "locked": 1
+    },
+    {
+      "faction_id": "xenon",
+      "faction_name": "[XEN] Xenon",
+      "other_id": "player",
+      "other_name": "Player",
+      "value": -25.05,
+      "tier": "At War",
+      "locked": 1
+    }
+  ],
+  "sectors": [
+    {
+      "sector_macro": "cluster_1_sector001_macro",
+      "sector_name": "Testora Prime",
+      "cluster_macro": "cluster_1_macro",
+      "cluster_name": "cluster_1_macro",
+      "owner_id": "argon",
+      "owner_name": "[ARG] Argon Federation",
+      "sunlight": 1.0,
+      "is_discovered": true,
+      "resources": [
+        {
+          "ware": "ore",
+          "ware_name": "Ore",
+          "yield_level": "high",
+          "recharge_max": 999823,
+          "recharge_time": 0
+        },
+        {
+          "ware": "silicon",
+          "ware_name": "Silicon",
+          "yield_level": "medium",
+          "recharge_max": 20000,
+          "recharge_time": 0
+        }
+      ]
+    },
+    {
+      "sector_macro": "cluster_2_sector001_macro",
+      "sector_name": "Testora Rim",
+      "cluster_macro": "cluster_2_macro",
+      "cluster_name": "cluster_2_macro",
+      "owner_id": "teladi",
+      "owner_name": "[TEL] Teladi Company",
+      "sunlight": 1.0,
+      "is_discovered": true,
+      "resources": []
+    }
+  ],
+  "galaxy_map": {
+    "player_sectors": [
+      "cluster_1_sector001_macro"
+    ],
+    "edges": [
+      [
+        "cluster_1_sector001_macro",
+        "cluster_2_sector001_macro",
+        1
+      ]
+    ],
+    "distances_from_player": {
+      "cluster_1_sector001_macro": 0,
+      "cluster_2_sector001_macro": 1
+    }
+  },
+  "npc_stations_by_sector": {
+    "cluster_2_sector001_macro": [
+      {
+        "owner_id": "teladi",
+        "owner_name": "[TEL] Teladi Company",
+        "count": 1
+      }
+    ]
+  },
+  "npc_trade_partners": [
+    {
+      "object_id": "[0x2000]",
+      "code": "TRD-042",
+      "name": "TEL Solar Power Plant II (TRD-042)",
+      "station_type": "Solar Power Plant",
+      "sector_macro": "cluster_2_sector001_macro",
+      "owner_id": "teladi",
+      "owner_name": "[TEL] Teladi Company",
+      "rep_value": 6.99,
+      "rep_tier": "Neutral",
+      "jumps": 1,
+      "wares": [
+        {
+          "ware_name": "Energy Cells",
+          "is_buying": false,
+          "is_selling": false,
+          "price": null,
+          "amount": null,
+          "illegal": false
+        },
+        {
+          "ware_name": "Silicon Wafers",
+          "is_buying": false,
+          "is_selling": false,
+          "price": null,
+          "amount": null,
+          "illegal": false
+        }
+      ]
+    }
+  ],
+  "stations": [
+    {
+      "object_id": "[0x1000]",
+      "code": "STA-001",
+      "name": "Test Energy Plant",
+      "sector_macro": "cluster_1_sector001_macro",
+      "status": "Operational",
+      "module_count": 3,
+      "hull_hp": 673500.0,
+      "hull_max": 782000.0,
+      "hull_pct": 86.12531969309462,
+      "shield_hp": 55200.0,
+      "shield_max": 55200.0,
+      "shield_pct": 100.0,
+      "cargo_m3": 5000.0,
+      "cargo_max_m3": 1000000.0,
+      "cargo_pct": 0.5,
+      "cargo_adj_pct": 0.6,
+      "account_amount": 2000000,
+      "budget_total": 0.0,
+      "budget_sunlight": 1.0,
+      "inventory": {
+        "energycells": {
+          "amount": 5000,
+          "volume_m3": 5000.0,
+          "cargo_type": "container"
+        }
+      },
+      "cargo_by_type": [
+        {
+          "cargo_type": "container",
+          "m3": 5000.0,
+          "max_m3": 1000000.0,
+          "pct": 0.5
+        }
+      ],
+      "modules": [
+        {
+          "macro": "shield_arg_l_standard_01_mk1_macro",
+          "category": "Shield",
+          "produces": null,
+          "display_name": "Shield Generator"
+        },
+        {
+          "macro": "storage_arg_l_container_01_macro",
+          "category": "Storage",
+          "produces": null,
+          "display_name": "Container Storage"
+        },
+        {
+          "macro": "prod_gen_energycells_macro",
+          "category": "Production",
+          "produces": "Energy Cells",
+          "display_name": "Energy Cell Production"
+        }
+      ],
+      "production": "Energy Cells",
+      "production_rates": {
+        "Energy Cells": 10500.0
+      },
+      "consumption_rates": {
+        "Energy Cells": 0.0
+      },
+      "production_runtimes": {
+        "Energy Cells": {
+          "minutes": null,
+          "limiting_ware": null,
+          "time_to_cap_hours": 94.66666666666667
+        }
+      },
+      "assigned_fleet": {
+        "total": 3,
+        "traders": 1,
+        "miners": 0,
+        "combat": 2,
+        "other": 0
+      },
+      "budget": {
+        "total": 0.0,
+        "sunlight": 1.0,
+        "lines": [
+          {
+            "ware": "energycells",
+            "ware_name": "Energy Cells",
+            "amount": 21000,
+            "price": 0.0,
+            "value": 0.0,
+            "basis": "auto: 2h production"
+          }
+        ]
+      }
+    }
+  ],
+  "ships": [
+    {
+      "object_id": "[0x1100]",
+      "code": "FGT-001",
+      "name": null,
+      "ship_class": "ship_s",
+      "size": "S",
+      "macro": "ship_arg_s_fighter_01_a_macro",
+      "role": "Fighter",
+      "owner_id": "player",
+      "owner_name": "Player",
+      "hull_origin_id": "arg",
+      "hull_origin_name": "Argon",
+      "sector_macro": "cluster_1_sector001_macro",
+      "ship_order": "Idle",
+      "homebase_id": "[0x1000]",
+      "docked_at": "[0x1000]",
+      "commander_id": "[0x1005]",
+      "under_construction": 0,
+      "hull_hp": null,
+      "hull_max": 3100.0,
+      "hull_pct": 100.0,
+      "shield_hp": null,
+      "shield_max": null,
+      "shield_pct": null,
+      "cargo_m3": null,
+      "cargo_max_m3": null,
+      "pilot_id": null,
+      "homebase_code": "STA-001",
+      "display_name": "Nova Vanguard",
+      "type_name": "Nova Vanguard",
+      "hull_price": 131970,
+      "hardpoints": {
+        "engine": {
+          "s": 2
+        },
+        "shield": {
+          "s": 1
+        },
+        "weapon": {
+          "s": 3
+        }
+      },
+      "loadout": []
+    },
+    {
+      "object_id": "[0x3000]",
+      "code": "HAU-001",
+      "name": "Hauler One",
+      "ship_class": "ship_m",
+      "size": "M",
+      "macro": "ship_arg_m_trans_container_01_a_macro",
+      "role": "Freighter",
+      "owner_id": "player",
+      "owner_name": "Player",
+      "hull_origin_id": "arg",
+      "hull_origin_name": "Argon",
+      "sector_macro": "cluster_1_sector001_macro",
+      "ship_order": "Trading",
+      "homebase_id": "[0x1000]",
+      "docked_at": null,
+      "commander_id": null,
+      "under_construction": 0,
+      "hull_hp": 3000.0,
+      "hull_max": 6000.0,
+      "hull_pct": 50.0,
+      "shield_hp": 8625.0,
+      "shield_max": 11500.0,
+      "shield_pct": 75.0,
+      "cargo_m3": null,
+      "cargo_max_m3": null,
+      "pilot_id": "[0x3001]",
+      "homebase_code": "STA-001",
+      "display_name": "Hauler One",
+      "type_name": "Mercury Vanguard",
+      "hull_price": 173355,
+      "hardpoints": {
+        "engine": {
+          "m": 1
+        },
+        "shield": {
+          "m": 1
+        },
+        "turret": {
+          "m": 2
+        }
+      },
+      "loadout": [
+        {
+          "slot": "engine",
+          "macro": "engine_arg_m_allround_01_mk1_macro",
+          "count": 1,
+          "name": "All-round Engine",
+          "mk": 1,
+          "race": "argon",
+          "size": "m",
+          "thrust_forward": 960,
+          "thrust_reverse": 960,
+          "travel_thrust": 10.5,
+          "boost_thrust": 7.4,
+          "price": 13074
+        },
+        {
+          "slot": "shield",
+          "macro": "shield_arg_m_standard_01_mk1_macro",
+          "count": 2,
+          "name": "Shield Generator",
+          "mk": 1,
+          "race": "argon",
+          "size": "m",
+          "capacity": 5750,
+          "recharge_rate": 100,
+          "recharge_delay": 12.5,
+          "price": 17117
+        },
+        {
+          "slot": "thruster",
+          "macro": "thruster_gen_m_allround_01_mk1_macro",
+          "count": 1,
+          "name": "All-round Thrusters",
+          "mk": 1,
+          "race": null,
+          "size": "m",
+          "strafe": 1010,
+          "pitch": 223,
+          "yaw": 223,
+          "roll": 350,
+          "price": 13019
+        }
+      ]
+    },
+    {
+      "object_id": "[0x3100]",
+      "code": "FGT-002",
+      "name": null,
+      "ship_class": "ship_s",
+      "size": "S",
+      "macro": "ship_arg_s_fighter_01_a_macro",
+      "role": "Fighter",
+      "owner_id": "player",
+      "owner_name": "Player",
+      "hull_origin_id": "arg",
+      "hull_origin_name": "Argon",
+      "sector_macro": "cluster_1_sector001_macro",
+      "ship_order": "Escorting",
+      "homebase_id": "[0x1000]",
+      "docked_at": null,
+      "commander_id": "[0x1005]",
+      "under_construction": 0,
+      "hull_hp": null,
+      "hull_max": 3100.0,
+      "hull_pct": 100.0,
+      "shield_hp": null,
+      "shield_max": null,
+      "shield_pct": null,
+      "cargo_m3": null,
+      "cargo_max_m3": null,
+      "pilot_id": null,
+      "homebase_code": "STA-001",
+      "display_name": "Nova Vanguard",
+      "type_name": "Nova Vanguard",
+      "hull_price": 131970,
+      "hardpoints": {
+        "engine": {
+          "s": 2
+        },
+        "shield": {
+          "s": 1
+        },
+        "weapon": {
+          "s": 3
+        }
+      },
+      "loadout": []
+    }
+  ],
+  "fleet_summary": {
+    "total": 3,
+    "by_role": {
+      "Fighter": 2,
+      "Freighter": 1
+    },
+    "by_size": {
+      "S": 2,
+      "M": 1
+    },
+    "by_order": {
+      "Idle": 1,
+      "Trading": 1,
+      "Escorting": 1
+    }
+  },
+  "npc_ships": [
+    {
+      "object_id": "[0x4000]",
+      "code": "TLV-042",
+      "name": "Vulture Vanguard",
+      "ship_class": "ship_m",
+      "size": "M",
+      "macro": "ship_tel_m_trans_container_01_a_macro",
+      "role": "Freighter",
+      "owner_id": "teladi",
+      "owner_name": "[TEL] Teladi Company",
+      "sector_macro": "cluster_1_sector001_macro",
+      "sector_name": "Testora Prime",
+      "destination": null,
+      "ship_order": "Trading"
+    }
+  ],
+  "npc_presence": {
+    "Testora Prime": {
+      "[TEL] Teladi Company": {
+        "Freighter": 1
+      }
+    }
+  },
+  "crew": [
+    {
+      "role": "manager",
+      "name": "Mira Tan",
+      "object_id": "[0x1004]",
+      "seed": "424242",
+      "assigned_code": "STA-001",
+      "assigned_type": "station",
+      "sector_macro": "cluster_1_sector001_macro",
+      "faction": "argon",
+      "gender": "female",
+      "skill_piloting": 2,
+      "skill_management": 14,
+      "skill_morale": 8,
+      "skill_engineering": 0,
+      "skill_boarding": 0
+    },
+    {
+      "role": "pilot",
+      "name": "Rex Calder",
+      "object_id": "[0x3001]",
+      "seed": "777777",
+      "assigned_code": "HAU-001",
+      "assigned_type": "ship",
+      "sector_macro": "cluster_1_sector001_macro",
+      "faction": "argon",
+      "gender": "male",
+      "skill_piloting": 8,
+      "skill_management": 5,
+      "skill_morale": 5,
+      "skill_engineering": 0,
+      "skill_boarding": 0
+    },
+    {
+      "role": "service",
+      "name": "Service Crew #1",
+      "object_id": null,
+      "seed": "888888",
+      "assigned_code": "HAU-001",
+      "assigned_type": "ship",
+      "sector_macro": "cluster_1_sector001_macro",
+      "faction": "argon",
+      "gender": "male",
+      "skill_piloting": 1,
+      "skill_management": 0,
+      "skill_morale": 2,
+      "skill_engineering": 3,
+      "skill_boarding": 0
+    }
+  ],
+  "station_trades": [
+    {
+      "station_code": "STA-001",
+      "station_name": "Test Energy Plant",
+      "direction": "Out",
+      "ware": "energycells",
+      "ware_name": "Energy Cells",
+      "amount": 1000,
+      "price_cr": 17.0,
+      "total_cr": 17000.0,
+      "time_ago_s": 1000.0,
+      "ship_code": "HAU-001",
+      "ship_name": "Hauler One",
+      "ship_owner_id": "player",
+      "ship_owner_name": "Player",
+      "counterparty_id": "[0x2000]",
+      "counterparty": "TEL Solar Power Plant II (TRD-042)",
+      "resolution": "courier"
+    },
+    {
+      "station_code": "STA-001",
+      "station_name": "Test Energy Plant",
+      "direction": "In",
+      "ware": "energycells",
+      "ware_name": "Energy Cells",
+      "amount": 500,
+      "price_cr": 15.8,
+      "total_cr": 7900.0,
+      "time_ago_s": 3000.0,
+      "ship_code": "TLV-042",
+      "ship_name": "Vulture Vanguard",
+      "ship_owner_id": "teladi",
+      "ship_owner_name": "[TEL] Teladi Company",
+      "counterparty_id": "[0x2000]",
+      "counterparty": "TEL Solar Power Plant II (TRD-042)",
+      "resolution": "visit"
+    },
+    {
+      "station_code": "STA-001",
+      "station_name": "Test Energy Plant",
+      "direction": "In",
+      "ware": "energycells",
+      "ware_name": "Energy Cells",
+      "amount": 200,
+      "price_cr": 15.0,
+      "total_cr": 3000.0,
+      "time_ago_s": 5000.0,
+      "ship_code": "Old Heron [OLD-123]",
+      "ship_name": "Old Heron [OLD-123]",
+      "ship_owner_id": "",
+      "ship_owner_name": "",
+      "counterparty_id": null,
+      "counterparty": null,
+      "resolution": "despawned"
+    }
+  ],
+  "mining_deliveries": [],
+  "internal_transfers": [],
+  "trends": {
+    "windows": {
+      "basis": "game_time_s",
+      "buckets": [
+        {
+          "label": "all-time",
+          "game_hours": null,
+          "station_trades": {
+            "value_cr": 27900.0,
+            "volume_units": 1700,
+            "trades": 3,
+            "sold_cr": 17000.0,
+            "bought_cr": 10900.0,
+            "net_cr": 6100.0
+          },
+          "mining_deliveries": {
+            "value_cr": 0,
+            "volume_units": 0,
+            "trades": 0
+          },
+          "internal_transfers": {
+            "value_cr": 0,
+            "volume_units": 0,
+            "trades": 0
+          }
+        }
+      ]
+    },
+    "series": {
+      "scans": [
+        {
+          "scan_id": 1,
+          "game_time_s": 1000000.0
+        }
+      ],
+      "credits": [
+        123456789
+      ],
+      "station_cash": [
+        2000000
+      ],
+      "ship_count": [
+        3
+      ],
+      "station_count": [
+        1
+      ],
+      "ships_destroyed": [
+        null
+      ],
+      "ships_lost": [
+        0
+      ],
+      "kills_by_faction": [
+        []
+      ],
+      "ship_hull_value": [
+        437295
+      ],
+      "ship_equip_value": [
+        60327
+      ],
+      "net_worth": [
+        125954411
+      ],
+      "fleet_by_role": {
+        "traders": [
+          1
+        ],
+        "miners": [
+          0
+        ],
+        "combat": [
+          2
+        ],
+        "other": [
+          0
+        ]
+      },
+      "reputation": [
+        {
+          "faction_id": "argon",
+          "faction_name": "[ARG] Argon Federation",
+          "tier": "Friendly",
+          "latest": 11.76,
+          "values": [
+            11.76
+          ]
+        },
+        {
+          "faction_id": "teladi",
+          "faction_name": "[TEL] Teladi Company",
+          "tier": "Neutral",
+          "latest": 6.99,
+          "values": [
+            6.99
+          ]
+        },
+        {
+          "faction_id": "xenon",
+          "faction_name": "[XEN] Xenon",
+          "tier": "At War",
+          "latest": -25.05,
+          "values": [
+            -25.05
+          ]
+        }
+      ]
+    }
+  },
+  "changes": [],
+  "active_trades": [],
+  "in_progress_deliveries": []
+}

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Core role: Minimal X4 language file (t/0001-l044.xml stand-in) so scanner tests resolve sector names deterministically. -->
+<!--
+  Why this exists: Scanner(lang_path=None) falls back to reading the language
+  file out of a real X4 installation via gamefiles.catalog — so test results
+  would depend on whether the machine running them has the game installed.
+  Passing this file as lang_path short-circuits that lookup entirely.
+
+  Only page 20004 (sector names) matters for the mini save: without a resolvable
+  sector name, SectorHandler skips the sector AND never sets
+  ctx.current_sector_macro, which silently drops every station/ship/gate in it.
+
+  The ID formula (see scanner/language.py macro_to_sector_name):
+    cluster_1_sector001_macro -> "10" + "011" -> t id="10011"
+    cluster_2_sector001_macro -> "20" + "011" -> t id="20011"
+  load_sector_names() extracts the name from the trailing parentheses.
+-->
+<language id="44">
+  <page id="20004" title="Sectors">
+    <t id="10011">{20003,10002}(Testora Prime)</t>
+    <t id="20011">{20003,20002}(Testora Rim)</t>
+  </page>
+</language>

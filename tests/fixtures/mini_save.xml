@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Core role: Hand-built miniature X4 save exercising every scanner handler for the regression tests. -->
+<!--
+  Shapes are derived from what the handlers in scanner/handlers/*.py actually
+  parse (there is no real save in the repo — they are gitignored). Notes on
+  deliberate simplifications:
+
+  * Real saves wrap nested components in <connections><connection> chains; the
+    scanner only tracks <component> elements on its stack, so components are
+    nested directly here to keep the file readable.
+  * Macros are real vanilla macros wherever a handler resolves them against the
+    generated data tables (SHIP_STATS / STATION_STATS / WARE_*), because
+    unknown macros are silently dropped from module/hull accounting.
+  * All ids use the bracketed-hex form the scanner's indexes key on, except the
+    despawned trader ("853"), which deliberately uses the plain-decimal form to
+    exercise norm_id() (853 == 0x355).
+-->
+<savegame>
+  <info>
+    <game time="1000000" code="X4" version="710"/>
+    <player name="Test Pilot" location="{20004,10011}"/>
+  </info>
+  <universe>
+    <factions>
+      <!-- Player block: credits <account> is only captured while inside this
+           block, and <booster> rows are only collected here. -->
+      <faction id="player">
+        <account id="[0x5]" amount="123456789"/>
+        <relations>
+          <relation faction="argon" relation="0.01"/>
+          <relation faction="teladi" relation="0.005"/>
+          <relation faction="xenon" relation="-0.32"/>
+          <booster faction="argon" relation="0.005" time="999900"/>
+        </relations>
+      </faction>
+      <!-- NPC faction: feeds ctx.faction_relations (base values only). -->
+      <faction id="argon">
+        <relations>
+          <relation faction="teladi" relation="0.0032"/>
+          <relation faction="xenon" relation="-0.32"/>
+          <relation faction="player" relation="0.01"/>
+        </relations>
+      </faction>
+      <!-- locked="1" relations wrapper (Xenon-style hard-locked standings). -->
+      <faction id="xenon">
+        <relations locked="1">
+          <relation faction="argon" relation="-0.32"/>
+          <relation faction="player" relation="-0.32"/>
+        </relations>
+      </faction>
+      <!-- Visitor stub: must be ignored (not in FACTION_NAMES). -->
+      <faction id="visitor001">
+        <relations>
+          <relation faction="argon" relation="0.9"/>
+        </relations>
+      </faction>
+    </factions>
+    <component class="galaxy" macro="xu_ep2_universe_macro" id="[0x1]">
+      <!-- ================= Sector 1: Testora Prime (player home) ========== -->
+      <component class="cluster" macro="cluster_1_macro" id="[0x10]">
+        <component class="sector" macro="cluster_1_sector001_macro" owner="argon" knownto="player" id="[0x11]">
+          <!-- 9.00-format resource areas: resource + yield encoded in yieldid. -->
+          <resourceareas>
+            <area yieldid="sphere_large_ore_high_slow" yield="954823"/>
+            <area yieldid="sphere_small_ore_low_slow" yield="45000"/>
+            <area yieldid="sphere_small_silicon_medium_veryslow" yield="20000"/>
+          </resourceareas>
+          <component class="zone" macro="zone001_cluster_1_sector001_macro" id="[0x12]">
+
+            <!-- Player station (buffered subtree). name= is a literal player
+                 name (Path A), so no sector prefix / roman numeral is added. -->
+            <component class="station" macro="station_gen_factory_01_macro" name="Test Energy Plant" owner="player" id="[0x1000]" code="STA-001">
+              <construction>
+                <sequence>
+                  <entry index="1" macro="prod_gen_energycells_macro"/>
+                  <entry index="2" macro="storage_arg_l_container_01_macro"/>
+                  <entry index="3" macro="dockarea_arg_m_station_01_macro"/>
+                </sequence>
+              </construction>
+              <!-- Production module at 50% hull (max_hull 217000 in STATION_STATS). -->
+              <component class="production" macro="prod_gen_energycells_macro" id="[0x1001]">
+                <hull value="108500"/>
+              </component>
+              <!-- Container storage, full health (no <hull> child = 100%). -->
+              <component class="storage" macro="storage_arg_l_container_01_macro" id="[0x1002]">
+                <cargo>
+                  <ware ware="energycells" amount="5000"/>
+                </cargo>
+              </component>
+              <component class="dockingbay" macro="dockingbay_arg_m_01_macro" id="[0x1006]"/>
+              <!-- Station shield module at full capacity (no <shield> child).
+                   Shield modules contribute to shield accounting, not hull. -->
+              <component class="shieldgenerator" macro="shield_arg_l_standard_01_mk1_macro" id="[0x1007]"/>
+              <!-- The subordinates connection id is what ship homebase/commander
+                   refs point at; _resolve_ship_homebases maps it back to
+                   [0x1000] through ctx.dockingbay_index. -->
+              <connections>
+                <connection connection="subordinates" id="[0x1005]"/>
+              </connections>
+              <!-- own="1" marks the station wallet (others are trade escrow). -->
+              <account id="[0x1003]" amount="2000000" own="1"/>
+              <trade>
+                <reservations>
+                  <!-- buy-type reservation: +1000 m3 of inbound cargo space. -->
+                  <reservation ware="energycells" amount="1000" flags="sellermoneyvirtual|buyermoneyvirtual"/>
+                </reservations>
+              </trade>
+              <control>
+                <post id="manager" component="[0x1004]"/>
+              </control>
+              <component class="npc" macro="character_argon_female_asi_manager_01_macro" name="Mira Tan" id="[0x1004]">
+                <traits>
+                  <skills management="14" morale="8" piloting="2"/>
+                </traits>
+                <npcseed seed="424242"/>
+              </component>
+              <!-- Player fighter docked INSIDE the station subtree: only
+                   extract_station_docked_ships() can see it. -->
+              <component class="ship_s" macro="ship_arg_s_fighter_01_a_macro" owner="player" id="[0x1100]" code="FGT-001">
+                <connections>
+                  <connection connection="commander" id="[0x1101]">
+                    <connected connection="[0x1005]"/>
+                  </connection>
+                </connections>
+              </component>
+            </component>
+
+            <!-- Free-flying player freighter (buffered). Homebase comes from the
+                 TradeRoutine range param; the temp DockAt marks an in-progress
+                 commercial delivery to the NPC station. -->
+            <component class="ship_m" macro="ship_arg_m_trans_container_01_a_macro" name="Hauler One" owner="player" id="[0x3000]" code="HAU-001" thruster="thruster_gen_m_allround_01_mk1_macro">
+              <hull value="3000"/>
+              <!-- Equipment: one damaged shield (explicit <shield> child) plus
+                   one at full capacity (absent child = 100%), and an engine.
+                   These feed both shield accounting and the loadout list. -->
+              <component class="shieldgenerator" macro="shield_arg_m_standard_01_mk1_macro" id="[0x3002]">
+                <shield value="2875"/>
+              </component>
+              <component class="shieldgenerator" macro="shield_arg_m_standard_01_mk1_macro" id="[0x3003]"/>
+              <component class="engine" macro="engine_arg_m_allround_01_mk1_macro" id="[0x3004]"/>
+              <orders>
+                <order id="[0x30]" order="TradeRoutine" default="1" state="started">
+                  <param name="range" type="component" value="[0x1005]"/>
+                </order>
+                <order id="[0x31]" order="DockAt" state="critical" temp="1">
+                  <param name="destination" type="component" value="[0x2000]"/>
+                  <param name="trading" type="integer" value="1"/>
+                </order>
+              </orders>
+              <control>
+                <post id="aipilot" component="[0x3001]"/>
+              </control>
+              <component class="npc" macro="character_argon_male_asi_pilot_01_macro" name="Rex Calder" id="[0x3001]">
+                <traits>
+                  <skills piloting="8" management="5" morale="5"/>
+                </traits>
+                <npcseed seed="777777"/>
+              </component>
+              <people>
+                <person macro="character_argon_male_cau_crew_01_macro" role="service">
+                  <npcseed seed="888888"/>
+                  <skills engineering="3" morale="2" piloting="1"/>
+                </person>
+              </people>
+            </component>
+
+            <!-- Free-flying player fighter: no trade order, so homebase must be
+                 resolved from the commander connection ref instead. -->
+            <component class="ship_s" macro="ship_arg_s_fighter_01_a_macro" owner="player" id="[0x3100]" code="FGT-002">
+              <orders>
+                <order id="[0x32]" order="Escort" default="1"/>
+              </orders>
+              <connections>
+                <connection connection="commander" id="[0x3101]">
+                  <connected connection="[0x1005]"/>
+                </connection>
+              </connections>
+            </component>
+
+            <!-- NPC ship: streamed, never buffered. Order label is captured from
+                 the <order> elements streaming past. -->
+            <component class="ship_m" macro="ship_tel_m_trans_container_01_a_macro" owner="teladi" id="[0x4000]" code="TLV-042">
+              <orders>
+                <order id="[0x40]" order="TradeRoutine" default="1" state="started"/>
+              </orders>
+            </component>
+
+            <!-- Gate endpoint A. Pair link is a child element, hence buffering. -->
+            <component class="gate" macro="props_gates_anc_gate_macro" id="[0x5000]" code="GTE-001">
+              <connections>
+                <connection connection="destination" id="[0x5001]">
+                  <connected connection="[0x5101]"/>
+                </connection>
+              </connections>
+            </component>
+          </component>
+        </component>
+      </component>
+      <!-- ================= Sector 2: Testora Rim (Teladi) ================== -->
+      <component class="cluster" macro="cluster_2_macro" id="[0x20]">
+        <component class="sector" macro="cluster_2_sector001_macro" owner="teladi" knownto="player" id="[0x21]">
+          <component class="zone" macro="zone001_cluster_2_sector001_macro" id="[0x22]">
+
+            <!-- NPC station. No name attribute, so the type comes from the
+                 production macro (energycells -> "Solar Power Plant"),
+                 nameindex=2 appends "II". -->
+            <component class="station" macro="station_tel_tradestation_l_macro" owner="teladi" id="[0x2000]" code="TRD-042" nameindex="2">
+              <component class="production" macro="prod_gen_energycells_macro" id="[0x2001]"/>
+              <component class="dockingbay" macro="dockingbay_tel_m_01_macro" id="[0x2002]"/>
+              <!-- NPC ship docked at an NPC station: recorded shallow in
+                   ctx.npc_docked_ships, never in ctx.ships. -->
+              <component class="ship_m" macro="ship_tel_m_trans_container_01_a_macro" owner="teladi" id="[0x2100]" code="TLV-100"/>
+              <!-- Format A ware summary attribute. -->
+              <trade wares="energycells siliconwafers"/>
+            </component>
+
+            <!-- Gate endpoint B: pair connection named after the route, not
+                 "destination" — the handler must not filter by name. -->
+            <component class="gate" macro="props_gates_anc_gate_macro" id="[0x5100]" code="GTE-002">
+              <connections>
+                <connection connection="clustergate001to002" id="[0x5101]">
+                  <connected connection="[0x5001]"/>
+                </connection>
+              </connections>
+            </component>
+          </component>
+        </component>
+      </component>
+    </component>
+    <!-- Despawned economy objects: their plain-decimal ids appear as trade
+         counterparties after the object itself is gone from the save. -->
+    <economylog>
+      <removed>
+        <object id="853" name="Old Heron" code="OLD-123"/>
+      </removed>
+    </economylog>
+    <!-- Global completed-trade log. price is in CENTS. Rows deliberately cover:
+         despawned seller, NPC-ship visit evidence, NPC-ship sale to the player,
+         and a courier BUY+SELL leg pair. -->
+    <log>
+      <entries type="trade">
+        <!-- Despawned trader (id 853 = [0x355]) sold to the player station. -->
+        <log type="trade" time="995000" ware="energycells" v="200" price="1500" seller="853" buyer="[0x1000]"/>
+        <!-- Visit evidence: TLV-042 traded this ware at the TEL station, which
+             lets the post-processor infer its counterparty below. -->
+        <log type="trade" time="996500" ware="energycells" v="500" price="1550" seller="[0x2000]" buyer="[0x4000]"/>
+        <!-- NPC ship sells to the player station (counterparty via 'visit'). -->
+        <log type="trade" time="997000" ware="energycells" v="500" price="1580" seller="[0x4000]" buyer="[0x1000]"/>
+        <!-- Courier BUY leg: station loads its own hauler (internal price).
+             Must be suppressed as an in-progress pickup by the post-processor. -->
+        <log type="trade" time="998000" ware="energycells" v="1000" price="1200" seller="[0x1000]" buyer="[0x3000]"/>
+        <!-- Courier SELL leg: hauler sells at the TEL station (commercial price).
+             Attributed back to STA-001 with resolution 'courier'. -->
+        <log type="trade" time="999000" ware="energycells" v="1000" price="1700" seller="[0x3000]" buyer="[0x2000]"/>
+        <!-- Offer row: no buyer/seller pair — must be skipped by the harvester. -->
+        <log type="selloffer" time="999500" ware="energycells" v="800" price="1650" owner="[0x2000]"/>
+      </entries>
+    </log>
+  </universe>
+</savegame>
