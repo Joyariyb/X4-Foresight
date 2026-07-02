@@ -1,7 +1,7 @@
 # Core role: Project metadata + dependency manifest (the repo runs in place; installing is optional).
 #
-# Quick start without installing:  pip install lxml            (pipeline/CLI only)
-#                                  pip install lxml PyQt6 PyQt6-WebEngine   (desktop UI)
+# Quick start without installing:  pip install lxml isal            (pipeline/CLI only)
+#                                  pip install lxml isal PyQt6 PyQt6-WebEngine   (desktop UI)
 # Or as an editable install:       pip install -e .[desktop,dev]
 
 [build-system]
@@ -16,6 +16,10 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "lxml>=5.0",
+    # ISA-L-backed gzip — cuts save-file decompression time (scanner/language.py
+    # falls back to stdlib gzip if this wheel isn't available, e.g. Pyodide,
+    # which loads its own package list in ui/web/js/scan-worker.js).
+    "isal>=1.8",
 ]
 
 [project.optional-dependencies]

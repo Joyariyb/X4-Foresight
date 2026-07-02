@@ -19,6 +19,24 @@ from .handlers.combat      import CombatHandler
 from .handlers.events      import EventLogHandler
 
 
+# Every tag any handler dispatches on, across _on_component_start/_on_element_start/
+# _on_element_end below AND ResourceHandler's own tag checks (it runs off the raw tag
+# string too, not through the elif chains here). Passed to iterparse's tag= filter so
+# the parser never surfaces a start/end event for the many tags nothing reads (weapon,
+# physics, connections, ownership, ...) — those elements are still built into the tree
+# (filtering doesn't affect tree construction, only which events reach this loop), so
+# buffered subtree walks and elem.clear() on an ancestor still see/free everything.
+# Keep this in sync with any new elif tag == '...' branch added to this file or to
+# ResourceHandler; a tag left out here never reaches its handler.
+_DISPATCHED_TAGS = (
+    'game', 'component',
+    'resourceareas', 'player', 'account', 'faction', 'relations', 'relation',
+    'booster', 'log', 'stat', 'entry', 'removed', 'object', 'aidirector',
+    'vars', 'value', 'order', 'param', 'trade',
+    'area', 'wares', 'yields', 'ware', 'recharge', 'yield',
+)
+
+
 class Scanner:
     """Single-pass save file coordinator.
 
@@ -67,7 +85,7 @@ class Scanner:
             # None=streaming (elements cleared); int=buffer depth (child elements kept in memory)
             buffer_depth: int | None = None
 
-            for event, elem in lxml_iterparse(f, events=('start', 'end')):
+            for event, elem in lxml_iterparse(f, events=('start', 'end'), tag=_DISPATCHED_TAGS):
                 tag = elem.tag
 
                 # ── Save metadata (line ~5 of every save file) ────────────
