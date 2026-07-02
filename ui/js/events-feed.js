@@ -33,11 +33,30 @@
 
     let _events = {};   // {category: [rows]} straight from the export
     let _stats  = {};   // {stat_id: value}
+    let _byId   = {};   // object_id → {label, row} for component= tooltip joins
+    let _repByFaction = {};   // stripped faction name → reputation row
     let _filter = 'all';
 
-    function setData(events, stats) {
+    // reputation rows carry the tagged display name ("[TEL] Teladi Company");
+    // event faction_name is the bare name resolved from the save's {page,id}
+    // ref ("Teladi Company"). Strip the tag the same way trends.js's
+    // _factionShort does, so an event's faction joins the reputation table.
+    const _bareName = n => (n || '').replace(/^\[[^\]]+\]\s*/, '');
+
+    function setData(events, stats, entities) {
       _events = events || {};
       _stats  = stats  || {};
+      // Index every scanned entity by object_id so an event's component= link
+      // resolves to the thing it points at. NPC ships go in first: if an id
+      // ever appeared twice, the player-asset row is the one worth showing.
+      const ent = entities || {};
+      _byId = {};
+      for (const s of ent.npcShips || []) _byId[s.object_id] = { label: 'NPC Ship',     row: s };
+      for (const s of ent.ships    || []) _byId[s.object_id] = { label: 'Your Ship',    row: s };
+      for (const s of ent.stations || []) _byId[s.object_id] = { label: 'Your Station', row: s };
+
+      _repByFaction = {};
+      for (const r of ent.rep || []) _repByFaction[_bareName(r.faction_name)] = r;
     }
 
     function setFilter(cat) { _filter = cat; render(); }
@@ -50,6 +69,20 @@
       if (s < 3600)  return Math.floor(s / 60) + 'm';
       if (s < 86400) return Math.floor(s / 3600) + 'h ' + String(Math.floor((s % 3600) / 60)).padStart(2, '0') + 'm';
       return Math.floor(s / 86400) + 'd ' + Math.floor((s % 86400) / 3600) + 'h';
+    }
+
+    // Absolute in-game clock (elapsed since save start), as "Day N · HH:MM".
+    // The row/chip only ever show the "ago" tier, which is coarse and
+    // relative to THIS scan — two events both reading "4h" could be minutes
+    // or hours apart. game_time_s is a fixed reference every event shares, so
+    // this is what actually lets you place two events on the same timeline.
+    function _absTime(gameTimeS) {
+      if (gameTimeS == null) return '';
+      const day = Math.floor(gameTimeS / 86400) + 1;
+      const rem = gameTimeS % 86400;
+      const hh  = String(Math.floor(rem / 3600)).padStart(2, '0');
+      const mm  = String(Math.floor((rem % 3600) / 60)).padStart(2, '0');
+      return `Day ${day} · ${hh}:${mm}`;
     }
 
     function _rows() {
@@ -74,21 +107,80 @@
       return `<div class="events-stats">${cells}</div>`;
     }
 
+    // What the event's component= link resolves to. The log line only says
+    // something happened to an object — this answers "which one, and how does
+    // it look now?" (current hull/shield from THIS scan, not event time).
+    // Unresolvable ids (destroyed/despawned/unscanned) just render nothing.
+    function _entityTipSection(id) {
+      const hit = id ? _byId[id] : null;
+      if (!hit) return '';
+      const r = hit.row;
+      const name = r.display_name || r.name || r.type_name || r.code || '?';
+      const sub  = [
+        r.code !== name ? r.code : null,
+        r.owner_name || null,
+        r.role || null,
+        r.sector ? `<i class="ti ti-map-pin"></i> ${r.sector}` : null,
+      ].filter(Boolean).join(' · ');
+      // hullBar/shieldBar are the shared formatters the fleet table uses —
+      // same thresholds and look. Their % normally shows via their own hover
+      // tip, which can't fire inside this popover, so label each bar in text.
+      // NPC rows carry no hull fields, so no bars.
+      const barRow = (lbl, barHtml, pct) => `
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <span style="font-family:var(--font-label);font-size:0.85rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-secondary);width:4.2rem">${lbl}</span>
+          ${barHtml}
+          <span style="font-family:var(--font-data);font-size:1rem;color:var(--text-secondary)">${pct != null ? Math.round(pct) + '%' : '—'}</span>
+        </div>`;
+      const bars = (r.hull_pct != null || r.shield_pct != null)
+        ? `<div style="display:flex;flex-direction:column;gap:0.3rem;margin-top:0.4rem">
+             ${barRow('Hull',   hullBar(r.hull_pct, r.hull_hp, r.hull_max),         r.hull_pct)}
+             ${barRow('Shield', shieldBar(r.shield_pct, r.shield_hp, r.shield_max), r.shield_pct)}
+           </div>` : '';
+      return `<div style="margin-top:0.6rem;padding-top:0.4rem;border-top:1px solid var(--outline)">
+          <div style="font-size:0.85rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-brand);margin-bottom:0.3rem">${hit.label}</div>
+          <div style="color:var(--text-primary)">${name}</div>
+          ${sub ? `<div style="color:var(--text-secondary);font-size:1.1rem;margin-top:0.15rem">${sub}</div>` : ''}
+          ${bars}
+        </div>`;
+    }
+
+    // Faction line, upgraded with the faction's CURRENT standing (tier badge +
+    // score + rep bar) when the export's reputation table has it — the event
+    // text only ever shows the score AT EVENT TIME, so this is genuinely new:
+    // "current reputation: 21" (then) next to "Friendly +24.3" (now). Falls
+    // back to a plain name for factions the export has no rep row for (minor/
+    // unranked factions).
+    function _factionLine(factionName) {
+      if (!factionName) return '';
+      const r = _repByFaction[_bareName(factionName)];
+      if (!r) return `<div style="margin-top:0.4rem;color:var(--text-brand);font-size:1.1rem">${factionName}</div>`;
+      return `<div style="margin-top:0.4rem">
+          <div style="display:flex;align-items:center;gap:0.6rem">
+            <span style="color:var(--text-brand);font-size:1.1rem">${factionName}</span>
+            ${tierBadge(r.tier)}
+            <span class="mono" style="color:var(--text-secondary);font-size:1.05rem">${sign(r.value)} now</span>
+          </div>
+          <div style="margin-top:0.25rem">${repBar(r.value)}</div>
+        </div>`;
+    }
+
     // Full tooltip for one row: category header, then the complete event text
     // with its real line breaks — the feed row itself clamps to one line.
     // Same layout idiom as the trends/cashflow tips: bordered header, then body.
     function _tipHtml(e, m) {
       const head = `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.6rem;margin-bottom:0.4rem;padding-bottom:0.4rem;border-bottom:1px solid var(--outline)">
           <span style="color:${m.colour};font-family:var(--font-label);font-size:1.1rem;letter-spacing:0.08em;text-transform:uppercase"><i class="ti ${m.icon}"></i> ${m.label}</span>
-          <span style="color:var(--text-secondary);font-family:var(--font-data);font-size:1.05rem">${_ago(e.time_ago_s)} ago</span>
+          <span style="text-align:right">
+            <span style="display:block;color:var(--text-secondary);font-family:var(--font-data);font-size:1.05rem">${_ago(e.time_ago_s)} ago</span>
+            <span style="display:block;color:var(--text-brand);font-family:var(--font-data);font-size:0.95rem">${_absTime(e.game_time_s)}</span>
+          </span>
         </div>`;
       const title = e.title ? `<div style="color:var(--text-primary)">${e.title}</div>` : '';
       const text  = e.text && e.text !== e.title
         ? `<div style="color:var(--text-secondary);font-size:1.2rem;margin-top:0.2rem;white-space:pre-line">${e.text}</div>` : '';
-      const faction = e.faction_name
-        ? `<div style="margin-top:0.4rem;color:var(--text-brand);font-size:1.1rem">${e.faction_name}</div>` : '';
       // max-width so a long single line wraps instead of spanning the screen.
-      return `<div style="max-width:42rem">${head}${title}${text}${faction}</div>`;
+      return `<div style="max-width:42rem">${head}${title}${text}${_factionLine(e.faction_name)}${_entityTipSection(e.component_id)}</div>`;
     }
 
     function render() {

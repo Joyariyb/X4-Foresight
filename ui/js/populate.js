@@ -93,7 +93,11 @@
 
     // Captains Log data — the feed renders on tab open (and re-renders here in
     // case the Events tab is the one currently visible during a re-scan).
-    EventsFeed.setData(data.events, data.player_stats);
+    // The entity arrays let the feed resolve an event's component= link to the
+    // ship/station it points at (their .sector is already resolved above);
+    // rep lets it show a faction's CURRENT standing next to a past rep event.
+    EventsFeed.setData(data.events, data.player_stats,
+                       { ships: playerShips, stations, npcShips: npcList, rep });
     EventsFeed.render();
 
     document.getElementById("ov-pilot").textContent  = player.name || "—";
