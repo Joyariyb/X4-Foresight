@@ -1,0 +1,46 @@
+# Core role: Project metadata + dependency manifest (the repo runs in place; installing is optional).
+#
+# Quick start without installing:  pip install lxml            (pipeline/CLI only)
+#                                  pip install lxml PyQt6 PyQt6-WebEngine   (desktop UI)
+# Or as an editable install:       pip install -e .[desktop,dev]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "x4-foresight"
+version = "0.1.0"
+description = "Save-file scanner and Empire Intelligence dashboard for X4: Foundations"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "lxml>=5.0",
+]
+
+[project.optional-dependencies]
+# PyQt6-WebEngine is a separate PyPI package from PyQt6 — both are needed for ui/main_ui.py.
+desktop = [
+    "PyQt6>=6.6",
+    "PyQt6-WebEngine>=6.6",
+]
+dev = [
+    "pytest>=8",
+]
+
+# Explicit package list because the repo root holds several top-level packages plus
+# non-package folders (ui/, assets/, docs) — setuptools auto-discovery would refuse to guess.
+[tool.setuptools]
+packages = [
+    "scanner",
+    "scanner.handlers",
+    "db",
+    "export",
+    "data",
+    "gamefiles",
+    "pyweb",
+]
+py-modules = ["display", "x4_save_scanner"]
+
+[tool.setuptools.package-data]
+db = ["schema.sql"]

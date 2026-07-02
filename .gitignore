@@ -37,10 +37,9 @@ Thumbs.db
 scratch/
 .claude/
 
-# Graphify knowledge graph artifacts
+# Graphify knowledge graph artifacts (regenerable — the graph itself stays local)
 graphify-out/
 .graphifyignore
-CLAUDE.md
 
 # Design-sync converter artifacts (regenerated each run; state anchored by uploaded _ds_sync.json)
 .ds-sync/
@@ -51,10 +50,3 @@ ds-bundle/
 # Design system (React lib — lives outside the main app's git history)
 design-system/
 
-# Personal dev notes / standards (local reference, not part of the shipped program)
-TODO.md
-COMMENT_STYLE.md
-UI_STANDARDS.md
-
-# Package init files in db/
-db/__init__.py
