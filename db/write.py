@@ -70,6 +70,7 @@ def write_scan(conn: sqlite3.Connection, ctx) -> int:
     _write_stations(cur, scan_id, ctx)
     _write_ships(cur, scan_id, ctx)
     _write_npc_ships(cur, scan_id, ctx)
+    _write_in_progress_deliveries(cur, scan_id, ctx)
     _write_crew(cur, scan_id, ctx)
     _write_active(cur, scan_id, ctx)
     _write_ledger(cur, scan_id, ctx)
@@ -224,6 +225,19 @@ def _write_npc_ships(cur, scan_id, ctx) -> None:
         ))
     cur.executemany(
         "INSERT INTO npc_ships VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
+
+
+def _write_in_progress_deliveries(cur, scan_id, ctx) -> None:
+    """One row per pending courier pickup (built by TradePostProcessor)."""
+    rows = [
+        (scan_id, d.ship_id, d.ship_code, d.ship_name,
+         d.ware_id, d.ware_name, d.amount,
+         d.from_station_id, d.from_station_code, d.from_station_name,
+         d.dest_station_id, d.dest_station_name, d.time_ago_s)
+        for d in ctx.in_progress_deliveries
+    ]
+    cur.executemany(
+        "INSERT INTO in_progress_deliveries VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
 
 
 def _write_crew(cur, scan_id, ctx) -> None:

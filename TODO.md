@@ -5,7 +5,11 @@ Backlog of intentionally-deferred items. The core pipeline
 
 ## Near-term, well-scoped
 
-- [ ] **Deepen NPC intel — current order for station-sector NPC ships.**
+- [x] **Deepen NPC intel — current order for station-sector NPC ships.**
+      Done (discovered already-implemented 2026-07-02): `ShipHandler.on_npc_order`
+      captures active/default order labels via `_ORDER_LABELS` (incl. "Attacking",
+      "Patrolling"), `_write_npc_ships` stores it as `npc_ships.ship_order`
+      (defaulting "Idle"), and the export carries it. Original notes:
       We already export the 297 NPC ships in player-station sectors (identity,
       role, faction, sector, mid-delivery destination). Add each ship's **current
       order** ("Attacking" / "Patrolling" / "Trading" / …) so threat reads are
@@ -17,9 +21,24 @@ Backlog of intentionally-deferred items. The core pipeline
       then attach it in `db/write.py::_write_npc_ships` (+ an `order` column on
       the `npc_ships` table and the export row). No buffering, ~cheap.
 
-- [ ] **Assemble `in_progress_deliveries`** in the export. We already have
-      `ctx.delivery_dest_index` (ships mid-delivery); currently the export key is
-      `[]`. Build the list (ship + ware + destination station).
+- [x] **Assemble `in_progress_deliveries`** in the export. Done 2026-07-02 —
+      the post-processor's pending-pickup suppression was the missing half of
+      the picture: a suppressed BUY leg already names ship/ware/amount/source,
+      and `ctx.delivery_dest_index` adds the destination. New
+      `InProgressDelivery` entity + `in_progress_deliveries` table + export
+      rows (tested). Note: ware comes from the BUY leg, not the save's order
+      params — the DockAt/aidirector data carries no ware id. UI rendering is
+      tracked as its own item below.
+
+- [ ] **Render `in_progress_deliveries` in the dashboard.** The export now
+      carries one row per in-flight courier delivery (ship, ware, amount,
+      loading station, destination station, seconds since pickup) but no tab
+      shows it. Natural home: the station economy area — an "In transit"
+      strip on the loading station's card next to its trade history, and/or
+      the fleet row's Order cell ("Delivering 300 Silicon Wafers → TEL Solar
+      Power Plant II" instead of bare "Docking"). Wire-up starts in
+      populate.js (`data.in_progress_deliveries`); per UI_STANDARDS §11 any
+      new file needs a shell-manifest.js entry.
 
 - [ ] **NPC-ship homebase (Middleman `supplier` param)** for the resolver's
       Step 3. Small coverage gain on the inferred tail; the streaming extractor
@@ -94,13 +113,12 @@ Backlog of intentionally-deferred items. The core pipeline
       `npc_ships` table + export. Low priority — investigation showed the visiting
       ships at the HQ were player-associated story ships, not routine visitors.
 
-- [ ] **Tooltip builders use raw palette vars, not semantic tokens.** The
-      `*TipHtml()` builders in `ui/js/tooltips.js` predate the token discipline in
-      [`UI_STANDARDS.md`](UI_STANDARDS.md) — they hard-reference palette vars
-      (`var(--text-faint)`, `var(--border)`, `var(--red)`, `var(--text-dim)`, …)
-      instead of the semantic tier (`--text-secondary`, `--outline`,
-      `--color-negative`, etc.) that §1 mandates. Migrate them so tooltips theme
-      with everything else. Polish only — they render fine today.
+- [x] **Tooltip builders use raw palette vars, not semantic tokens.** Done
+      2026-07-02 — mostly already fixed by the time it was picked up: the
+      builders had migrated into their feature files with semantic tokens
+      along the way. The last stragglers were eight `var(--text)` refs
+      (populate.js, designs-builder.js, resource-library.js), now
+      `var(--text-primary)`. `ui/js` + `ui/css` grep clean of palette vars.
 - [ ] **Cluster names** — `scanner/handlers/sector.py` leaves `cluster_name`
       as a TODO (sector names resolve; cluster names don't yet).
 - [ ] **Ship cargo contents** — `Ship.cargo_m3` / `cargo_max_m3` not extracted

@@ -78,11 +78,13 @@ A ~250-line synthetic save. What it covers:
   connection name instead of `"destination"`.
 - Two sectors with `knownto="player"`, one 9.00-format `<resourceareas>`
   subtree (multiple areas per ware — amounts sum, best yield wins).
-- An economy log exercising four post-processor paths: a courier BUY+SELL
-  leg pair (`courier` resolution + suppressed pickup), an NPC ship resolved
-  via same-ware `visit` evidence, a despawned seller declared in
-  `<economylog><removed>` (plain-decimal id `853` → `[0x355]` via
-  `norm_id`), and a `selloffer` row that must be skipped.
+- An economy log exercising five post-processor paths: a courier BUY+SELL
+  leg pair (`courier` resolution + suppressed pickup), a *pending* BUY leg
+  with no SELL (becomes an `in_progress_deliveries` row, destination via the
+  hauler's DockAt order), an NPC ship resolved via same-ware `visit`
+  evidence, a despawned seller declared in `<economylog><removed>`
+  (plain-decimal id `853` → `[0x355]` via `norm_id`), and a `selloffer` row
+  that must be skipped.
 
 Deliberately omitted (out of scope for these tests):
 

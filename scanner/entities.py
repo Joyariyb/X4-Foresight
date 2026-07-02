@@ -359,6 +359,35 @@ class TradeHistoryInternal:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+#  IN-PROGRESS DELIVERIES  (courier loaded, commercial SELL leg not logged yet)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@dataclass
+class InProgressDelivery:
+    """A player-courier delivery still in flight at save time.
+
+    The BUY leg (player station loads its own ship at internal price) is in the
+    economy log, but the commercial SELL leg hasn't landed — the ware is
+    physically on the ship. TradePostProcessor suppresses that BUY leg from
+    trade history and records it here instead, so it surfaces as a delivery
+    rather than vanishing.
+    """
+    scan_id:           int
+    ship_id:           str          # FK → ships.object_id (the loaded courier)
+    ship_code:         str          # display code e.g. "HAU-001"
+    ship_name:         str          # display name e.g. "Hauler One"
+    ware_id:           str          # raw ware ID e.g. "siliconwafers"
+    ware_name:         str          # display name e.g. "Silicon Wafers"
+    amount:            int          # units on board
+    from_station_id:   str          # FK → stations.object_id (loading station)
+    from_station_code: str
+    from_station_name: str
+    dest_station_id:   str | None   # active DockAt/aidirector destination; None if unknown
+    dest_station_name: str | None
+    time_ago_s:        float        # seconds since pickup
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 #  ACTIVE TRADES  (live TradePerform orders at player stations)
 # ─────────────────────────────────────────────────────────────────────────────
 

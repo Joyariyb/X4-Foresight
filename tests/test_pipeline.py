@@ -250,8 +250,8 @@ class TestGalaxy:
 
 class TestTrades:
     def test_raw_log_harvest(self, ctx):
-        # 5 trade rows; the selloffer row (no buyer/seller) must be skipped.
-        assert len(ctx.trade_log) == 5
+        # 6 trade rows; the selloffer row (no buyer/seller) must be skipped.
+        assert len(ctx.trade_log) == 6
         # The despawned seller's plain-decimal id is normalised to hex form.
         assert ctx.trade_log[0]['seller'] == '[0x355]'
 
@@ -259,14 +259,31 @@ class TestTrades:
         assert ctx.removed_codes == {'[0x355]': 'Old Heron [OLD-123]'}
 
     def test_postprocess_stats(self, trade_stats):
-        # One row per provenance path the fixture exercises; the courier BUY
-        # leg is suppressed as an in-progress pickup, not emitted as history.
+        # One row per provenance path the fixture exercises. Two suppressed
+        # pickups: the completed courier's BUY leg (paired to its SELL) and the
+        # pending siliconwafers pickup (which becomes an in-progress delivery).
         assert dict(trade_stats) == {
             'commercial:courier':   1,
             'commercial:visit':     1,
             'commercial:despawned': 1,
-            'in-progress (suppressed)': 1,
+            'in-progress (suppressed)': 2,
         }
+
+    def test_pending_pickup_becomes_in_progress_delivery(self, ctx):
+        # The siliconwafers BUY leg has no later SELL leg, so it must surface
+        # as an in-progress delivery instead of vanishing with the suppression.
+        assert len(ctx.in_progress_deliveries) == 1
+        d = ctx.in_progress_deliveries[0]
+        assert d.ship_id   == '[0x3000]'
+        assert d.ship_code == 'HAU-001'
+        assert d.ware_id   == 'siliconwafers'
+        assert d.ware_name == 'Silicon Wafers'
+        assert d.amount    == 300
+        assert d.from_station_id == '[0x1000]'
+        # Destination resolved through the hauler's active DockAt order.
+        assert d.dest_station_id   == '[0x2000]'
+        assert d.dest_station_name == 'TEL Solar Power Plant II (TRD-042)'
+        assert d.time_ago_s == 800.0
 
     def test_courier_sell_leg_attributed_to_station(self, ctx):
         rows = [t for t in ctx.trade_history if t.resolution == 'courier']

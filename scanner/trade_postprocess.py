@@ -6,7 +6,9 @@ are kept strictly separate to avoid conflating them — a classic bug.
 from __future__ import annotations
 from collections import Counter, defaultdict
 from data.wares import WARE_NAMES
-from .entities import TradeHistory, TradeHistoryInternal, TradeHistoryMining
+from .entities import (
+    InProgressDelivery, TradeHistory, TradeHistoryInternal, TradeHistoryMining,
+)
 from .ship_names import ship_display_name
 
 
@@ -279,7 +281,8 @@ class TradePostProcessor:
             best['_courier_pickup']    = True
 
     def _suppress_pending_pickups(self, rows) -> None:
-        """BUY leg with no later SELL leg = picked up but not delivered → suppress."""
+        """BUY leg with no later SELL leg = picked up but not delivered →
+        suppress from history and record as an in-progress delivery instead."""
         min_sell: dict = {}
         for e in rows:
             if (not e['player_ship_is_seller']
@@ -296,6 +299,32 @@ class TradePostProcessor:
             k = (e['buyer'], e['ware'])
             if e['time_ago_s'] < min_sell.get(k, float('inf')):
                 e['_courier_pickup'] = True
+                self._emit_in_progress(e)
+
+    def _emit_in_progress(self, e) -> None:
+        """The pending BUY leg IS the in-progress delivery: it names the ship,
+        ware, amount, and loading station. The destination — known only when
+        the ship has an active DockAt order or aidirector assignment — comes
+        from delivery_dest_index, so it can legitimately be None."""
+        ship_id, ship_code, ship_name = self._resolve_ship(e['buyer'])
+        st = self.pstn_by_id.get(e['seller'])  # caller's flags guarantee a player station
+        dest_id = self.delivery.get(ship_id) or None
+        dest    = self._as_station(dest_id) if dest_id else None
+        self.ctx.in_progress_deliveries.append(InProgressDelivery(
+            scan_id           = self.ctx.scan_id,
+            ship_id           = ship_id,
+            ship_code         = ship_code,
+            ship_name         = ship_name,
+            ware_id           = e['ware'],
+            ware_name         = _ware_name(e['ware']),
+            amount            = e['amount'],
+            from_station_id   = e['seller'],
+            from_station_code = st.code if st else '',
+            from_station_name = st.name if st else '',
+            dest_station_id   = dest_id,
+            dest_station_name = dest[1] if dest else None,
+            time_ago_s        = e['time_ago_s'],
+        ))
 
     # ──────────────────────────────────────────────────────────────────────────
     #  Per-row classify → resolve → emit

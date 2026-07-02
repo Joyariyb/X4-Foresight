@@ -685,7 +685,15 @@ def to_export(conn: sqlite3.Connection, scan_id: int | None = None) -> dict:
         'changes':               compute_changes(conn, scan_id),
         # TradeHandler not implemented yet — kept for shape stability.
         'active_trades':         [],
-        'in_progress_deliveries': [],
+        # Courier deliveries in flight: BUY leg logged, SELL leg not yet — the
+        # ware is on the ship. Built by TradePostProcessor, one row per pickup.
+        'in_progress_deliveries': [
+            _drop(d, 'scan_id') for d in _rows(
+                conn,
+                "SELECT * FROM in_progress_deliveries WHERE scan_id=? "
+                "ORDER BY time_ago_s",
+                (scan_id,))
+        ],
         # Static game price bands — min/average/max per ware ID.
         # Read from the ware_prices DB table (populated at connection time from
         # data/ware_prices.py) so no Python dict import is needed here.

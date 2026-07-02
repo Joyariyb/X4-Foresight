@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from .entities import (
     Station, NpcStation, Ship, CrewMember, ReputationEntry, Sector, Gate,
     SectorResource, FactionRelationEntry,
-    ActiveTrade, ActiveAutoTrade,
+    ActiveTrade, ActiveAutoTrade, InProgressDelivery,
     TradeHistory, TradeHistoryMining, TradeHistoryInternal,
 )
 
@@ -81,6 +81,7 @@ class ScanContext:
     trade_history:          list[TradeHistory]          = field(default_factory=list)
     trade_history_mining:   list[TradeHistoryMining]    = field(default_factory=list)
     trade_history_internal: list[TradeHistoryInternal]  = field(default_factory=list)
+    in_progress_deliveries: list[InProgressDelivery]    = field(default_factory=list)
 
     # ── Combat tallies (CombatHandler) ────────────────────────────────────────
     # Lifetime player kill counter from <stats>; None until the stat is seen so a

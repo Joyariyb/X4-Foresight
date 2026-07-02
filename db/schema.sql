@@ -253,6 +253,26 @@ CREATE TABLE IF NOT EXISTS active_auto_trades (
 );
 
 
+-- Player-courier deliveries in flight at save time: the BUY leg is in the
+-- economy log but the commercial SELL leg hasn't landed, so the ware is on the
+-- ship. One row per pending pickup (TradePostProcessor._suppress_pending_pickups).
+CREATE TABLE IF NOT EXISTS in_progress_deliveries (
+    scan_id           INTEGER NOT NULL REFERENCES scans(scan_id) ON DELETE CASCADE,
+    ship_id           TEXT,
+    ship_code         TEXT,
+    ship_name         TEXT,
+    ware_id           TEXT,
+    ware_name         TEXT,
+    amount            INTEGER,
+    from_station_id   TEXT,         -- player station that loaded the ship
+    from_station_code TEXT,
+    from_station_name TEXT,
+    dest_station_id   TEXT,         -- NULL when no active destination is known
+    dest_station_name TEXT,
+    time_ago_s        REAL          -- seconds since pickup
+);
+
+
 -- ══ LEDGER (cumulative, dedup'd across scans) ════════════════════════════════
 -- Completed trades (once per trade, dedup'd by game_time_s). INSERT OR IGNORE on trade_key
 -- since overlapping log windows show the same trade in consecutive scans.

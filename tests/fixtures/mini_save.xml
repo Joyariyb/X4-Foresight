@@ -252,6 +252,10 @@
         <!-- Courier SELL leg: hauler sells at the TEL station (commercial price).
              Attributed back to STA-001 with resolution 'courier'. -->
         <log type="trade" time="999000" ware="energycells" v="1000" price="1700" seller="[0x3000]" buyer="[0x2000]"/>
+        <!-- Pending courier BUY leg: loaded but no SELL leg follows — must be
+             suppressed from history and surfaced as an in-progress delivery,
+             destination resolved via the hauler's active DockAt order. -->
+        <log type="trade" time="999200" ware="siliconwafers" v="300" price="4800" seller="[0x1000]" buyer="[0x3000]"/>
         <!-- Offer row: no buyer/seller pair — must be skipped by the harvester. -->
         <log type="selloffer" time="999500" ware="energycells" v="800" price="1650" owner="[0x2000]"/>
       </entries>

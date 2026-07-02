@@ -708,5 +708,20 @@
   },
   "changes": [],
   "active_trades": [],
-  "in_progress_deliveries": []
+  "in_progress_deliveries": [
+    {
+      "ship_id": "[0x3000]",
+      "ship_code": "HAU-001",
+      "ship_name": "Hauler One",
+      "ware_id": "siliconwafers",
+      "ware_name": "Silicon Wafers",
+      "amount": 300,
+      "from_station_id": "[0x1000]",
+      "from_station_code": "STA-001",
+      "from_station_name": "Test Energy Plant",
+      "dest_station_id": "[0x2000]",
+      "dest_station_name": "TEL Solar Power Plant II (TRD-042)",
+      "time_ago_s": 800.0
+    }
+  ]
 }
