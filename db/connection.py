@@ -8,6 +8,31 @@ SCHEMA_PATH = Path(__file__).parent / 'schema.sql'
 # Default location — project root alongside the JSON export.
 DEFAULT_DB_PATH = Path(__file__).resolve().parents[1] / 'x4_foresight.db'
 
+# Current schema version, stamped into the DB via PRAGMA user_version so
+# migrations run once per database instead of being re-probed on every
+# connection. To evolve the schema: add the column/table to schema.sql (for
+# fresh DBs), append a (version, [statements]) entry to MIGRATIONS (for
+# existing DBs), and bump this to that same number.
+SCHEMA_VERSION = 1
+
+# Numbered migrations for databases older than SCHEMA_VERSION. Append-only —
+# never edit a shipped entry, since DBs past that version will not re-run it.
+# Example entry:
+#   (2, ["ALTER TABLE ships ADD COLUMN cargo_m3 REAL"]),
+# ALTER TABLE appends at the table's physical end, so any table touched here
+# must be written with an explicit-column INSERT in write.py — positional
+# VALUES(?) would misalign fresh vs. migrated databases.
+MIGRATIONS: list[tuple[int, list[str]]] = []
+
+# Database paths whose schema this process has already applied. apply_schema()
+# is idempotent but not free (26 CREATEs, version check, two bulk INSERT OR
+# IGNOREs), and the bridges open a fresh connection per page call — without
+# this cache all of that re-ran on every dashboard interaction. Trade-off: if
+# the DB *file* is deleted mid-process, the next connect would recreate it
+# empty and skip the schema; nothing in the app deletes the file (deletes are
+# row-level), so that stays theoretical.
+_schema_ready: set[str] = set()
+
 
 def get_connection(db_path: str | Path | None = None) -> sqlite3.Connection:
     """
@@ -21,15 +46,21 @@ def get_connection(db_path: str | Path | None = None) -> sqlite3.Connection:
     path = Path(db_path) if db_path else DEFAULT_DB_PATH
     conn = sqlite3.connect(str(path))
     conn.row_factory = sqlite3.Row
+    # Pragmas are per-connection (unlike the schema), so they always run.
     conn.execute('PRAGMA foreign_keys = ON')
     conn.execute('PRAGMA journal_mode = WAL')
-    apply_schema(conn)
+
+    key = str(path.resolve())
+    if key not in _schema_ready:
+        apply_schema(conn)
+        _schema_ready.add(key)
     return conn
 
 
 def apply_schema(conn: sqlite3.Connection) -> None:
-    """Run schema.sql. Every statement is CREATE ... IF NOT EXISTS, so this is
-    idempotent and safe to call on every connection."""
+    """Run schema.sql + migrations + static-data population. Every statement is
+    idempotent (CREATE IF NOT EXISTS / INSERT OR IGNORE / version-gated), but
+    get_connection() still only calls this once per database path per process."""
     conn.executescript(SCHEMA_PATH.read_text(encoding='utf-8'))
     _migrate(conn)
     _populate_ware_metadata(conn)
@@ -38,7 +69,34 @@ def apply_schema(conn: sqlite3.Connection) -> None:
 
 
 def _migrate(conn: sqlite3.Connection) -> None:
-    """Apply additive migrations that schema.sql's CREATE IF NOT EXISTS can't handle."""
+    """Bring an existing database up to SCHEMA_VERSION.
+
+    Version 0 is ambiguous: it's both "brand-new DB" and "any DB from before
+    versioning existed", because the early column migrations shipped without a
+    version stamp. _legacy_bootstrap() resolves that by probing table_info —
+    a fresh DB simply no-ops through the probes. From version 1 onward no
+    probing is needed: new migrations are numbered statement lists in
+    MIGRATIONS, applied in order and stamped.
+    """
+    version = conn.execute('PRAGMA user_version').fetchone()[0]
+    if version >= SCHEMA_VERSION:
+        return
+
+    if version == 0:
+        _legacy_bootstrap(conn)
+
+    for target, statements in MIGRATIONS:
+        if version < target:
+            for stmt in statements:
+                conn.execute(stmt)
+
+    conn.execute(f'PRAGMA user_version = {SCHEMA_VERSION}')
+
+
+def _legacy_bootstrap(conn: sqlite3.Connection) -> None:
+    """The pre-versioning migrations, frozen. Runs only for version-0 databases
+    (fresh ones no-op through the probes). Do NOT add new migrations here —
+    append a numbered entry to MIGRATIONS instead."""
     existing = {row[1] for row in conn.execute('PRAGMA table_info(station_inventory)')}
     if 'volume_m3' not in existing:
         conn.execute('ALTER TABLE station_inventory ADD COLUMN volume_m3 REAL')
