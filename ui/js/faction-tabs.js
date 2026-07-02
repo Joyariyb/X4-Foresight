@@ -97,17 +97,17 @@
       return 0;
     });
     tbody.innerHTML = sorted.map(s => {
-      const sCol  = SIZE_COLOURS[s.size]   || 'var(--text-secondary)';
-      const oCol  = ORDER_COLOURS[s.order] || 'var(--text-secondary)';
-      const oIcon = ORDER_ICONS[s.order]   || 'ti-circle';
+      const sCol  = SIZE_COLOURS[s.size]        || 'var(--text-secondary)';
+      const oCol  = ORDER_COLOURS[s.ship_order] || 'var(--text-secondary)';
+      const oIcon = ORDER_ICONS[s.ship_order]   || 'ti-circle';
       return `<tr data-code="${s.code}">
         <td style="white-space:nowrap;height:34px">
           <span class="ship-name">${s.name || '—'}</span>
           <span class="mono" style="color:var(--color-highlight);font-size:11px;margin-left:8px">${s.code}</span>
         </td>
         <td class="mono" style="color:${sCol}">${s.size}</td>
-        <td style="white-space:nowrap">${hullBadge(s.hull_origin)}<i class="ti ${ROLE_ICONS[s.role]||'ti-rocket'}" style="font-size:12px;vertical-align:-2px;margin-left:5px;margin-right:3px;color:var(--text-brand)"></i>${s.role}</td>
-        <td><i class="ti ${oIcon}" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:${oCol}"></i><span style="color:${oCol}">${s.order}</span></td>
+        <td style="white-space:nowrap">${hullBadge(s.hull_origin_name)}<i class="ti ${ROLE_ICONS[s.role]||'ti-rocket'}" style="font-size:12px;vertical-align:-2px;margin-left:5px;margin-right:3px;color:var(--text-brand)"></i>${s.role}</td>
+        <td><i class="ti ${oIcon}" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:${oCol}"></i><span style="color:${oCol}">${s.ship_order}</span></td>
         <td style="color:var(--text-secondary)"><i class="ti ti-map-pin" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:var(--text-brand)"></i>${s.sector}</td>
       </tr>`;
     }).join('');

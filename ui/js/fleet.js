@@ -22,6 +22,8 @@
     // Unassigned ships (null homebase_code) sort to the bottom — same null-push
     // logic as other keys, handled by the null checks in renderFleet's sort().
     if (key === 'station') return ship.homebase_code ? ship.homebase_code.toLowerCase() : null;
+    // 'order' is the column's UI key; the export field it sorts is ship_order.
+    if (key === 'order')   return (ship.ship_order || '').toString().toLowerCase();
     return (ship[key] || '').toString().toLowerCase();
   }
 
@@ -42,9 +44,9 @@
     });
 
     document.querySelector("#fleet-table tbody").innerHTML = sorted.map(s => {
-      const oCol    = ORDER_COLOURS[s.order] || "var(--text-secondary)";
-      const sCol    = SIZE_COLOURS[s.size]   || "var(--text-secondary)";
-      const oIcon   = ORDER_ICONS[s.order]   || "ti-circle";
+      const oCol    = ORDER_COLOURS[s.ship_order] || "var(--text-secondary)";
+      const sCol    = SIZE_COLOURS[s.size]        || "var(--text-secondary)";
+      const oIcon   = ORDER_ICONS[s.ship_order]   || "ti-circle";
       const nameStr = s.display_name || s.name || "—";
       // Gate the Hull Type cell's click-through on the hull actually being
       // catalogued — a few rare hulls (escape pods, etc.) have no HULL_CATALOG entry.
@@ -109,14 +111,14 @@
           <span class="mono" style="color:var(--color-highlight);font-size:11px;margin-left:8px">${s.code}</span>
         </td>
         <td class="mono" style="color:${sCol}">${s.size}</td>
-        <td style="white-space:nowrap">${hasHullPage ? `<span class="hull-type-link" data-hull-macro="${s.macro}">` : ''}${hullBadge(s.hull_origin)}<i class="ti ${ROLE_ICONS[s.role]||'ti-rocket'}" style="font-size:12px;vertical-align:-2px;margin-left:5px;margin-right:3px;color:var(--text-brand)"></i>${s.role}${hasHullPage ? '</span>' : ''}</td>
+        <td style="white-space:nowrap">${hasHullPage ? `<span class="hull-type-link" data-hull-macro="${s.macro}">` : ''}${hullBadge(s.hull_origin_name)}<i class="ti ${ROLE_ICONS[s.role]||'ti-rocket'}" style="font-size:12px;vertical-align:-2px;margin-left:5px;margin-right:3px;color:var(--text-brand)"></i>${s.role}${hasHullPage ? '</span>' : ''}</td>
         <td>
           <div style="display:flex;flex-direction:column;gap:3px">
-            ${hullBar(s.hull_pct, s.hull_hp, s.max_hull)}
+            ${hullBar(s.hull_pct, s.hull_hp, s.hull_max)}
             ${shieldBar(s.shield_pct, s.shield_hp, s.shield_max)}
           </div>
         </td>
-        <td><i class="ti ${oIcon}" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:${oCol}"></i><span style="color:${oCol}">${s.order}</span></td>
+        <td><i class="ti ${oIcon}" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:${oCol}"></i><span style="color:${oCol}">${s.ship_order}</span></td>
         <td style="color:var(--text-secondary)">${s.sector_macro ? `<span class="sector-link" data-sector-macro="${s.sector_macro}">` : ''}<i class="ti ti-map-pin" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:var(--text-brand)"></i>${s.sector}${s.sector_macro ? '</span>' : ''}</td>
         <td style="white-space:nowrap">${stationEl}</td>
         <td style="color:var(--text-brand);white-space:nowrap"><i class="ti ti-user" style="font-size:12px;vertical-align:-2px;margin-right:4px"></i>${pilotEl}</td>

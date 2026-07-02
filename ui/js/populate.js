@@ -1,9 +1,10 @@
   // Core role: Ingests scanner JSON export, adapts field names to UI conventions, and populates all tab data models.
 
   function populate(data) {
-    // The scanner export uses suffixed/flat field names (ship_order, hull_origin_name, sector_macro, skill_piloting, …).
-    // Rather than rename every read site, we augment each record IN PLACE with the alias fields the rendering code expects.
-    // Originals are left intact.
+    // Rendering code reads the export's own field names (ship_order,
+    // hull_origin_name, hull_max, owner_id, …) directly. What populate() adds
+    // IN PLACE is only *derived* data the export doesn't carry: resolved
+    // sector names, nested crew skills, and the ship→pilot join.
 
     // Equipment/hull catalog (Designs tab + Resource Library) is loaded
     // independently by scan-loader.js's loadResourceLibrary() — it's static,
@@ -43,10 +44,7 @@
     });
 
     const normShip = s => {
-      s.order       = s.ship_order;
-      s.hull_origin = s.hull_origin_name;
-      s.max_hull    = s.hull_max;
-      s.sector      = resolveSector(s);
+      s.sector = resolveSector(s);
     };
 
     const playerShips = data.ships || [];
@@ -57,7 +55,7 @@
     });
 
     const npcList = data.npc_ships || [];
-    npcList.forEach(s => { normShip(s); s.owner = s.owner_id; });
+    npcList.forEach(normShip);
 
     // Stations only need the resolved sector name here; the deeper economy /
     // storage / production fields are a separate wiring pass (the card handles
@@ -81,8 +79,8 @@
     document.getElementById("ov-pilot").textContent  = player.name || "—";
     document.getElementById("nav-ships").textContent = fleet.total || "—";
 
-    const hostile  = players.filter(s => HOSTILE_ORIGINS.has(s.hull_origin));
-    const waiting  = players.filter(s => s.order === "Waiting");
+    const hostile  = players.filter(s => HOSTILE_ORIGINS.has(s.hull_origin_name));
+    const waiting  = players.filter(s => s.ship_order === "Waiting");
     const alertCount = (hostile.length > 0 ? 1 : 0) + (waiting.length > 0 ? 1 : 0);
     document.getElementById("nav-alerts").textContent = alertCount;
 
@@ -148,7 +146,7 @@
     // Build NPC faction sub-tabs and panels, sorted by ship count descending.
     const npcShips = ships.npc_ships || [];
     const byFaction = {};
-    npcShips.forEach(s => { (byFaction[s.owner] = byFaction[s.owner] || []).push(s); });
+    npcShips.forEach(s => { (byFaction[s.owner_id] = byFaction[s.owner_id] || []).push(s); });
     const sortedFactions = Object.entries(byFaction).sort((a, b) => b[1].length - a[1].length);
 
     // Supplement the hardcoded tag map with any tags found in the live rep data,
@@ -531,7 +529,7 @@
       // Stat cell builder — each cell is its own slightly lighter box.
       // Label colour follows the two-state rule via attnColor().
       // tipAttr is an optional extra attribute string e.g. 'data-storage-tip="..."'
-      const sc = (lbl, val, col = 'var(--text)', last = false, tipAttr = '', icon = '') =>
+      const sc = (lbl, val, col = 'var(--text-primary)', last = false, tipAttr = '', icon = '') =>
         `<div style="padding:1rem 1.2rem;text-align:center;background:var(--surface-2);border-radius:0.3rem${tipAttr ? ';cursor:default' : ''}" ${tipAttr}>
            ${icon ? `<div style="font-size:1.5rem;color:${attnColor(col)};margin-bottom:0.3rem"><i class="ti ${icon}"></i></div>` : ''}
            <div style="font-family:var(--font-data);font-size:0.9rem;letter-spacing:0.1em;text-transform:uppercase;color:${attnColor(col)};margin-bottom:0.5rem">${lbl}</div>
@@ -598,7 +596,7 @@
             const stockLabel = Math.round(inv.amount ?? 0).toLocaleString();
             const consLabel  = consHr > 0 ? Math.round(consHr).toLocaleString() + '/hr' : '';
             // Double shadow punches the text out of the bright fill behind it.
-            const barTextStyle = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-data);font-size:0.9rem;color:var(--text);text-shadow:0 0 3px rgba(2,8,14,0.95),0 0 3px rgba(2,8,14,0.95);pointer-events:none';
+            const barTextStyle = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-data);font-size:0.9rem;color:var(--text-primary);text-shadow:0 0 3px rgba(2,8,14,0.95),0 0 3px rgba(2,8,14,0.95);pointer-events:none';
 
             // Runtime label: time until this ware's production stops due to a depleted
             // input. null minutes = no inputs needed (e.g. energy cells) → show nothing.
@@ -673,7 +671,7 @@
             const shipName      = matched ? (matched.name || ds.macro) : ds.macro;
             const cls           = ds.class ? ds.class.replace('ship_', '').toUpperCase() : '?';
             // Determine which fleet subtab to navigate to on click.
-            const shipFaction   = matchedNpc ? matchedNpc.owner : 'player';
+            const shipFaction   = matchedNpc ? matchedNpc.owner_id : 'player';
             const clickable     = !!matched && !ds.under_construction;
             return `<div class="${clickable ? 'docked-ship-row' : ''}"
                          style="display:flex;align-items:center;gap:1rem;padding:0.6rem 1.4rem;border-bottom:1px solid var(--outline);${clickable ? 'cursor:pointer' : ''}"
@@ -866,7 +864,7 @@
         </div>
         <!-- Stats row: Modules | Crew | Ships | Storage -->
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.4rem;padding:0.4rem;background:var(--surface-1);border-bottom:1px solid var(--outline)">
-          ${sc('Modules', modCount, 'var(--text)',                                      false, moduleTipAttr, 'ti-building-community')}
+          ${sc('Modules', modCount, 'var(--text-primary)',                                      false, moduleTipAttr, 'ti-building-community')}
           ${sc('Crew',    '—',      'var(--text-brand)',                               false, '',             'ti-users')}
           ${sc('Ships',   afTotal,   afColor,                                             false, afTipAttr,  'ti-ship')}
           ${sc('Storage', storageStr, storageColor,                                   true,  storageTipAttr, 'ti-box')}
@@ -916,7 +914,7 @@
 
     if (hostile.length > 0) {
       const byOrigin = {};
-      hostile.forEach(s => { byOrigin[s.hull_origin] = (byOrigin[s.hull_origin]||0)+1; });
+      hostile.forEach(s => { byOrigin[s.hull_origin_name] = (byOrigin[s.hull_origin_name]||0)+1; });
       const summary = Object.entries(byOrigin).map(([o,c])=>`${o} x${c}`).join(", ");
       alerts.push({ msg:`${hostile.length} ships with hostile-faction hulls: ${summary}`, cls:"red", icon:"ti-alert-triangle" });
     }

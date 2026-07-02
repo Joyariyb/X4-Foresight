@@ -160,7 +160,7 @@
   function designsPopulateFactionOptions(ships) {
     const sel = document.getElementById('designs-faction-select');
     if (!sel) return;
-    const factions = [...new Set(ships.map(s => s.hull_origin).filter(Boolean))].sort();
+    const factions = [...new Set(ships.map(s => s.hull_origin_name).filter(Boolean))].sort();
     const key = factions.join('|');
     if (key === _designsFactionOptionsKey) return;
     _designsFactionOptionsKey = key;
@@ -217,7 +217,7 @@
 
     let ships = allShips;
     if (designsFilter.size !== 'all') ships = ships.filter(s => s.size === designsFilter.size);
-    if (designsFilter.faction !== 'all') ships = ships.filter(s => s.hull_origin === designsFilter.faction);
+    if (designsFilter.faction !== 'all') ships = ships.filter(s => s.hull_origin_name === designsFilter.faction);
 
     if (!ships.length) {
       grid.innerHTML = '';
@@ -247,7 +247,7 @@
       if (!groups.has(sig))
         groups.set(sig, {
           sig, type: s.type_name || s.macro, loadout: s.loadout, ships: [],
-          hullFaction: s.hull_origin, hullMax: s.hull_max, hullPrice: s.hull_price,
+          hullFaction: s.hull_origin_name, hullMax: s.hull_max, hullPrice: s.hull_price,
           hullSize: s.size, hardpoints: s.hardpoints, role: s.role,
         });
       groups.get(sig).ships.push(s);
@@ -904,7 +904,7 @@
       }
 
       return `<div style="min-width:21.5rem;max-width:28rem;padding:0.2rem 0">
-        <div style="font-size:1.3rem;font-weight:600;color:var(--text);margin-bottom:0.2rem">${e.name}${e.mk ? ` Mk${e.mk}` : ''}</div>
+        <div style="font-size:1.3rem;font-weight:600;color:var(--text-primary);margin-bottom:0.2rem">${e.name}${e.mk ? ` Mk${e.mk}` : ''}</div>
         ${row('Compatibility', compat)}
         ${row('Storage Capacity', e.storage_capacity != null ? fmt(e.storage_capacity) : null)}
         ${row('Price', e.price_min != null ? `${fmt(e.price_min)}–${fmt(e.price_max)} Cr` : (e.price != null ? `${fmt(e.price)} Cr` : null))}
@@ -945,7 +945,7 @@
          </span></div>`;
 
       return `<div style="min-width:21.5rem;max-width:28rem;padding:0.2rem 0">
-        <div style="font-size:1.3rem;font-weight:600;color:var(--text);margin-bottom:0.2rem">${e.name}${e.mk ? ` Mk${e.mk}` : ''}</div>
+        <div style="font-size:1.3rem;font-weight:600;color:var(--text-primary);margin-bottom:0.2rem">${e.name}${e.mk ? ` Mk${e.mk}` : ''}</div>
         ${row('Compatibility', compat)}
         ${row('Price', e.price_min != null ? `${fmt(e.price_min)}–${fmt(e.price_max)} Cr` : (e.price != null ? `${fmt(e.price)} Cr` : null))}
         ${section('ti-shield', 'var(--color-primary)', 'Shield Output', chargeRows)}
@@ -984,7 +984,7 @@
       const integRows = row('Hull Integrity', e.hull_max != null ? `${fmt(e.hull_max)} MJ` : null);
 
       return `<div style="min-width:21.5rem;max-width:28rem;padding:0.2rem 0">
-        <div style="font-size:1.3rem;font-weight:600;color:var(--text);margin-bottom:0.2rem">${e.name}${e.mk ? ` Mk${e.mk}` : ''}</div>
+        <div style="font-size:1.3rem;font-weight:600;color:var(--text-primary);margin-bottom:0.2rem">${e.name}${e.mk ? ` Mk${e.mk}` : ''}</div>
         ${row('Compatibility', compat)}
         ${row('Price', e.price_min != null ? `${fmt(e.price_min)}–${fmt(e.price_max)} Cr` : (e.price != null ? `${fmt(e.price)} Cr` : null))}
         ${section('ti-engine', 'var(--color-primary)', 'Thrust', thrustRows)}

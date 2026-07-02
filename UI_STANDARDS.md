@@ -166,6 +166,32 @@ this exception is for supporting/axis chrome only.
 - Hover/focus/active via `--state-*`
 - Missing a value? Add it to the **semantic** tier of `base.css` first, then use it.
 
+## 11. JS files — one global per file
+
+`ui/js` scripts are classic scripts sharing one global scope (about two
+thousand top-level bindings and counting). There is no module system on
+purpose: the desktop shell loads over `file://` in QtWebEngine, where ES-module
+imports don't resolve, and the project has no build step.
+
+To keep that livable:
+
+- **A new JS file exposes exactly one global** — a namespace object named
+  after the file, with everything else private inside an IIFE:
+
+  ```js
+  window.NpcStations = (function () {
+    function render() { … }
+    function openInspector() { … }
+    return { render, openInspector };
+  })();
+  ```
+
+- Existing files migrate **opportunistically** — when a file is already being
+  edited for other reasons, never as a bulk sweep.
+- Load order lives in [`js/shell-manifest.js`](ui/js/shell-manifest.js),
+  shared by both shells. New files are added there — never to `ui.html` or
+  `ui/web/index.html` directly.
+
 ## Adding a colour or theme
 
 - **New colour:** add `--x`, `--x-dim`, `--x-line` to the palette block, then expose

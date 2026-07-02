@@ -360,7 +360,7 @@
         return `<span style="margin-right:1rem;white-space:nowrap"><i class="ti ${m.icon}" style="color:${m.color};font-size:1.2rem;vertical-align:-1px;margin-right:0.2rem"></i>${total}</span>`;
       }).join('');
       return `<tr style="cursor:pointer" onclick="reslibShowHullInspector('${r.macro}')">
-        <td style="color:var(--text)">${r.name}</td>
+        <td style="color:var(--text-primary)">${r.name}</td>
         <td>${designBadge(r.faction)}</td>
         <td style="color:${tint.c}">${SIZE_WORD[r.size] || (r.size||'').toUpperCase()}</td>
         <td class="mono">${r.max_hull != null ? designCr(r.max_hull) : '—'}</td>
@@ -406,7 +406,7 @@
         return `<td class="mono">${v != null ? fmt(v) : '—'}</td>`;
       }).join('');
       return `<tr${tipAttr}>
-        <td style="color:var(--text)">${e.name}${mk}${missileTag}</td>
+        <td style="color:var(--text-primary)">${e.name}${mk}${missileTag}</td>
         <td>${designBadge(e.race)}</td>
         <td style="color:${tint.c}">${e.size ? e.size.toUpperCase() : '—'}</td>
         ${cells}
