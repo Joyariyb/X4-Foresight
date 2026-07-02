@@ -110,7 +110,7 @@ async function hasCompatibleSaves(dirHandle) {
   return false;
 }
 
-// Mirrors x4_save_scanner.py's _find_game_saves_dir()'s steamid-agnostic
+// Mirrors pipeline.py's find_game_saves_dir()'s steamid-agnostic
 // search: tries every immediate child directory of an "X4" folder for a
 // "save" subfolder.
 async function findSaveUnderX4(x4Handle) {

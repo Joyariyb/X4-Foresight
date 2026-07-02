@@ -1,45 +1,26 @@
-"""Core role: Command-line entry point (select save → scan → resolve → write DB → write JSON)."""
+"""Core role: Command-line entry point (select save -> run the shared pipeline -> print the console report)."""
 from __future__ import annotations
 import sys
 import time
 from pathlib import Path
 from datetime import datetime
-from typing import Callable
 
 ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scanner.scanner import Scanner
-from scanner.trade_postprocess import TradePostProcessor
-from db.connection import get_connection
-from db.write import write_scan
-from export.jsonexport import write_export
+from pipeline import (
+    LANG_FILE, DB_PATH, JSON_PATH, ROOT_SAVE,
+    find_game_saves_dir, run_pipeline,
+)
 from display import display_report
-
-# Outputs and inputs live in the project root.
-LANG_FILE = ROOT / '0001-l044.xml'
-DB_PATH   = ROOT / 'x4_foresight.db'
-JSON_PATH = ROOT / 'x4_empire_state.json'
-ROOT_SAVE = ROOT / 'save_001.xml'
 
 
 # ── Save selection (.gz + root fallback) ───────────────────────────────────────
 
-def _find_game_saves_dir() -> Path | None:
-    """Locate the X4 save directory under Documents\\Egosoft\\X4\\{steamid}\\save."""
-    x4_base = Path.home() / "Documents" / "Egosoft" / "X4"
-    if x4_base.exists():
-        for d in sorted(x4_base.iterdir()):
-            candidate = d / "save"
-            if candidate.is_dir():
-                return candidate
-    return None
-
-
 def select_save_file() -> Path:
     """List available saves and prompt for one. Falls back to the root save_001.xml."""
-    saves_dir = _find_game_saves_dir()
+    saves_dir = find_game_saves_dir()
     manual = auto = []
     if saves_dir:
         manual = sorted(saves_dir.glob("save_*.xml.gz"),     key=lambda p: p.name)
@@ -79,85 +60,19 @@ def select_save_file() -> Path:
         print("  Invalid selection, try again.")
 
 
-# ── Pipeline ───────────────────────────────────────────────────────────────────
+# ── CLI run ────────────────────────────────────────────────────────────────────
 
-def resolve_ship_homebases(ctx) -> None:
-    """Resolve homebase_id to a player station object_id for all player ships.
+def run(save_path: Path) -> None:
+    """Scan via the shared pipeline, then print the console report + footer.
 
-    Both _parse_homebase() (traders) and _parse_commander() (all other types)
-    return sub-component connection references, NOT the station's own object_id.
-    For example, a freighter's TradeRoutine `range` param gives [0x1b6f8], and
-    its commander connection gives [0x1ca1f] — both are connection elements on
-    the station, not the station root.
-
-    dockingbay_index maps every sub-element id on a player station → that
-    station's object_id (now built from elem.iter() so <connection> elements
-    are included alongside <component> elements).  We resolve both homebase_id
-    and commander_id through this index:
-
-      1. If homebase_id is already set (from _parse_homebase) but is a
-         sub-component ref rather than a station object_id, resolve it.
-      2. If homebase_id is unset, try commander_id (miners, fighters, etc.).
-
-    The player_station_ids guard ensures we only accept player stations —
-    ships commanded by NPC stations or capital ships are left unresolved.
+    The pipeline phases live in pipeline.py (shared with the desktop UI and the
+    web build); this wrapper adds only what the CLI wants on top — the printed
+    report and the timing footer. json_path keeps the on-disk JSON fresh for
+    the AI consumer + the no-bridge browser dev fallback.
     """
-    player_stations = ctx.player_station_ids
-    for ship in ctx.ships:
-        # Already a direct station object_id — nothing to do.
-        if ship.homebase_id in player_stations:
-            continue
-
-        # Try each candidate ref in priority order:
-        #   1. homebase_id set by _parse_homebase (TradeRoutine range / Middleman supplier)
-        #   2. commander_id set by _parse_commander (miners, fighters, etc.)
-        # Both are sub-component connection refs, so we look each up in
-        # dockingbay_index which maps every sub-element id → parent station id.
-        # We try homebase_id first so traders get the most-specific attribution;
-        # if that lookup fails we fall through to commander_id as a fallback.
-        for ref in (ship.homebase_id, ship.commander_id):
-            if not ref:
-                continue
-            resolved = ctx.dockingbay_index.get(ref)
-            if resolved and resolved in player_stations:
-                ship.homebase_id = resolved
-                break
-
-
-def run(save_path: Path, progress: Callable[[str], None] | None = None) -> None:
-    """Run the full pipeline: scan -> resolve trades -> write DB -> write JSON.
-
-    `progress`, when supplied, is called with a short status string at the start
-    of each phase. The GUI uses it to update its scan dialog; the CLI passes
-    None and relies on printed output instead. The single-pass scan can't be
-    subdivided, so it's reported as one (long) phase.
-    """
-    def step(msg: str) -> None:
-        if progress is not None:
-            progress(msg)
-
     print(f"\n  Scanning {save_path.name} ...")
     t0 = time.perf_counter()
-
-    step("Scanning save — extracting empire (this is the long part)…")
-    scanner = Scanner(lang_path=LANG_FILE)
-    ctx = scanner.scan(save_path, scan_id=1)   # scan_id is reassigned by the DB
-
-    step("Resolving trade counterparties…")
-    TradePostProcessor().run(ctx)
-
-    step("Resolving ship homebases…")
-    resolve_ship_homebases(ctx)
-
-    step("Writing database…")
-    conn = get_connection(DB_PATH)
-    scan_id = write_scan(conn, ctx)
-
-    step("Writing JSON export…")
-    write_export(conn, JSON_PATH)
-    conn.close()
-
-    step("Finalising…")
+    ctx, scan_id = run_pipeline(save_path, json_path=JSON_PATH)
     elapsed = time.perf_counter() - t0
     display_report(ctx)
     _footer(ctx, scan_id, elapsed)

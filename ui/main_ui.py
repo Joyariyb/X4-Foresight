@@ -42,7 +42,7 @@ from PyQt6.QtWidgets import (
 
 # ── Path setup — works as source and (later) as a PyInstaller bundle ──────────
 # In source mode the repo root is one level above ui/; we add it to sys.path so
-# `import x4_save_scanner` (and the scanner packages it pulls in) resolves.
+# `import pipeline` (and the scanner packages it pulls in) resolves.
 if getattr(sys, 'frozen', False):
     ROOT      = Path(sys.executable).parent
     HTML_PATH = Path(sys._MEIPASS) / "ui" / "ui.html"
@@ -52,13 +52,12 @@ else:
         sys.path.insert(0, str(ROOT))
     HTML_PATH = Path(__file__).resolve().parent / "ui.html"
 
-# The scanner module owns the canonical paths + the run() pipeline. Reusing its
+# pipeline.py owns the canonical paths + the run_pipeline() phases. Reusing its
 # constants means the UI and the CLI always read/write the same files.
-import x4_save_scanner as scanner
-from x4_save_scanner import DB_PATH, JSON_PATH, ROOT_SAVE, _find_game_saves_dir
+from pipeline import DB_PATH, JSON_PATH, ROOT_SAVE, find_game_saves_dir, run_pipeline
 
 # The bridge serves the dashboard straight from the SQLite DB rather than the
-# on-disk JSON (scanner.run() still writes the JSON for the AI consumer + dev
+# on-disk JSON (a scan still writes the JSON for the AI consumer + dev
 # browser fallback). The DB-read implementations live in export/bridge_api.py,
 # shared with the web build's pyweb/web_entry.py so the two shells can't drift.
 from export import bridge_api
@@ -69,10 +68,10 @@ from export import bridge_api
 def find_saves() -> list[Path]:
     """All X4 saves (manual then autosaves, each sorted by slot name).
 
-    Reuses the scanner's save-directory locator so the UI and CLI agree on where
-    saves live.
+    Reuses the pipeline's save-directory locator so the UI and CLI agree on
+    where saves live.
     """
-    saves_dir = _find_game_saves_dir()
+    saves_dir = find_game_saves_dir()
     if not saves_dir:
         return []
     manual = sorted(saves_dir.glob("save_*.xml.gz"),     key=lambda p: p.name)
@@ -133,9 +132,9 @@ class SaveSelectDialog(QDialog):
 class ScanWorker(QThread):
     """Runs the full scan pipeline off the UI thread.
 
-    No data is carried on `finished`: run() writes x4_empire_state.json, and the
-    bridge reads that file from disk — so the UI always sees the canonical export
-    shape rather than a separately-marshalled object.
+    No data is carried on `finished`: the pipeline writes the DB and the bridge
+    re-reads it on the page's next get_empire_data call. json_path additionally
+    keeps the on-disk JSON fresh for the AI consumer + no-bridge dev fallback.
     """
 
     progress = pyqtSignal(str)
@@ -149,8 +148,10 @@ class ScanWorker(QThread):
     def run(self):
         try:
             # progress.emit is thread-safe (queued to the UI thread), so the
-            # scanner can call it directly from this worker thread.
-            scanner.run(self._save_path, progress=self.progress.emit)
+            # pipeline can call it directly from this worker thread. The stage
+            # index goes unused here — the dialog shows the label text.
+            run_pipeline(self._save_path, json_path=JSON_PATH,
+                         progress=lambda _stage, msg: self.progress.emit(msg))
             self.finished.emit()
         except Exception as e:
             self.error.emit(f"{e}\n\n{traceback.format_exc()}")

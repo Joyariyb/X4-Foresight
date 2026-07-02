@@ -15,9 +15,9 @@
   "db/schema.sql",
   "db/trends.py",
   "db/write.py",
-  "display.py",
   "export/bridge_api.py",
   "export/jsonexport.py",
+  "pipeline.py",
   "pyweb/web_entry.py",
   "scanner/budget.py",
   "scanner/context.py",
@@ -37,6 +37,5 @@
   "scanner/scanner.py",
   "scanner/ship_names.py",
   "scanner/trade_postprocess.py",
-  "scanner/xml_utils.py",
-  "x4_save_scanner.py"
+  "scanner/xml_utils.py"
 ]

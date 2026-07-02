@@ -15,7 +15,7 @@ import pytest
 
 from scanner.scanner import Scanner
 from scanner.trade_postprocess import TradePostProcessor
-from x4_save_scanner import resolve_ship_homebases
+from pipeline import resolve_ship_homebases
 
 FIXTURES  = TESTS_DIR / 'fixtures'
 MINI_SAVE = FIXTURES / 'mini_save.xml'

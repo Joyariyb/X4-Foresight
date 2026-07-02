@@ -1,21 +1,15 @@
 """Core role: web-build entry points called from scan-worker.js via Pyodide.
 
 Exposes the same operations as EmpireBridge's QWebChannel slots in
-ui/main_ui.py. The scan entry point drives the same pipeline as
-x4_save_scanner.run() (scan -> resolve trades -> resolve homebases -> write DB)
-minus its JSON-file-writing tail; everything else delegates to
-export/bridge_api.py, the one implementation shared with the desktop bridge.
+ui/main_ui.py: the scan entry point calls the shared run_pipeline()
+(pipeline.py) against Pyodide's MEMFS database, and everything else delegates
+to export/bridge_api.py — both implementations shared with the desktop shell.
 """
 from __future__ import annotations
 import json
 import traceback
-from pathlib import Path
 
-from scanner.scanner import Scanner
-from scanner.trade_postprocess import TradePostProcessor
-from x4_save_scanner import resolve_ship_homebases
-from db.connection import get_connection
-from db.write import write_scan
+from pipeline import run_pipeline
 from export import bridge_api
 
 # MEMFS path inside Pyodide - this is a fresh, in-memory-per-session database
@@ -25,43 +19,24 @@ DB_PATH = "/home/pyodide/x4_foresight.db"
 
 
 def run_scan_from_staged(save_path: str, lang_path: str, progress=None) -> str:
-    """Run the full scan pipeline against an already-staged save file and
+    """Run the shared pipeline against an already-staged save file and
     language asset (both written into Pyodide's MEMFS by the caller).
 
-    `progress`, when supplied, is called with a stage index (0-3) at the
-    start of each phase - mirrors x4_save_scanner.run()'s progress callback,
-    but with a plain index instead of a status string since the caller here
-    is JS (scan-worker.js), which already owns its own display labels and
-    just needs to know which stage is current.
+    `progress`, when supplied, is called with a plain stage index (0-3) at the
+    start of each phase - scan-worker.js owns its own display labels and just
+    needs to know which stage is current, so run_pipeline's label argument is
+    dropped here. No json_path: the web build reads the DB only.
 
     Returns JSON {"ok": true, "scan_id": N} or {"ok": false, "error": "..."}.
     """
-    def step(stage: int) -> None:
-        if progress is not None:
-            progress(stage)
-
     try:
-        # load_language_root() calls .exists() directly on lang_path, so it
-        # must be a real Path - JS strings cross the Pyodide boundary as
-        # plain Python str, not Path, even though Scanner's lang_path
-        # parameter is typed Path | None.
-        step(0)
-        scanner = Scanner(lang_path=Path(lang_path))
-        ctx = scanner.scan(save_path, scan_id=1)   # scan_id reassigned by the DB
-
-        step(1)
-        TradePostProcessor().run(ctx)
-
-        step(2)
-        resolve_ship_homebases(ctx)
-
-        step(3)
-        conn = get_connection(DB_PATH)
-        try:
-            scan_id = write_scan(conn, ctx)
-        finally:
-            conn.close()
-
+        _ctx, scan_id = run_pipeline(
+            save_path,
+            lang_path=lang_path,
+            db_path=DB_PATH,
+            progress=(lambda stage, _msg: progress(stage))
+                     if progress is not None else None,
+        )
         return json.dumps({"ok": True, "scan_id": scan_id})
     except Exception as e:
         return json.dumps({

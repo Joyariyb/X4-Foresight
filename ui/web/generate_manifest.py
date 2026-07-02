@@ -20,15 +20,13 @@ OUT_PATH = Path(__file__).resolve().parent / "py-manifest.json"
 PACKAGE_DIRS = ["scanner", "data", "db", "export", "pyweb"]
 
 # Top-level modules (not inside one of the package dirs above) the web
-# pipeline also needs. x4_save_scanner.py's run() is what pyweb/web_entry.py
-# mirrors; only its function *definitions* matter here (module-level Path
-# construction at import time is harmless even though those paths are
-# meaningless inside Pyodide's sandboxed filesystem - nothing calls the
-# functions that would actually touch them, like select_save_file()).
-# display.py is pulled in unconditionally by x4_save_scanner.py's own
-# `from display import display_report` - even though nothing in the web
-# path calls display_report(), the import itself still has to resolve.
-TOP_LEVEL_MODULES = ["x4_save_scanner.py", "display.py"]
+# pipeline also needs. pipeline.py is the shared scan pipeline web_entry.py
+# calls; its module-level path constants are harmless inside Pyodide's
+# sandboxed filesystem (web_entry passes explicit MEMFS paths instead).
+# x4_save_scanner.py and display.py are no longer staged: the CLI shell and
+# its console report became desktop-only once web_entry stopped importing
+# them (they used to ride along just to satisfy an import chain).
+TOP_LEVEL_MODULES = ["pipeline.py"]
 
 
 def main():

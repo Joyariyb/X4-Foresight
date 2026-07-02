@@ -40,7 +40,7 @@ packages = [
     "gamefiles",
     "pyweb",
 ]
-py-modules = ["display", "x4_save_scanner"]
+py-modules = ["display", "pipeline", "x4_save_scanner"]
 
 [tool.setuptools.package-data]
 db = ["schema.sql"]

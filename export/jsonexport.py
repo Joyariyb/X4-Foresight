@@ -40,7 +40,7 @@ def _fleet_by_station(conn, scan_id) -> dict[str, dict]:
     """Returns {station_id: {total, traders, miners, combat, other}} for this scan.
 
     homebase_id in the ships table is set by resolve_ship_homebases() in
-    x4_save_scanner.py after the full parse.  That function resolves both the
+    pipeline.py after the full parse.  That function resolves both the
     TradeRoutine `range` param (traders) and the commander connection ref (all
     other ship types) through dockingbay_index, so homebase_id is a reliable
     player-station object_id for every assigned ship type by DB write time.
