@@ -1,9 +1,16 @@
 # Core role: Language file parsing and text reference resolution for names and descriptions.
 
 import contextlib
-import gzip
 import pathlib
 import re
+
+try:
+    # isal.igzip is a drop-in gzip.open() replacement backed by ISA-L —
+    # meaningfully faster decompression of the compressed save file. Optional:
+    # falls back to stdlib gzip where the wheel isn't available (e.g. Pyodide).
+    from isal import igzip as gzip
+except ImportError:
+    import gzip
 
 from lxml import etree as ET
 from data.station_names import WARE_FACTORY_NAMES

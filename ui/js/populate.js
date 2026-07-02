@@ -95,9 +95,12 @@
     // case the Events tab is the one currently visible during a re-scan).
     // The entity arrays let the feed resolve an event's component= link to the
     // ship/station it points at (their .sector is already resolved above);
-    // rep lets it show a faction's CURRENT standing next to a past rep event.
+    // rep lets it show a faction's CURRENT standing next to a past rep event;
+    // sectors is the full discovered-galaxy list, used to validate a sector
+    // name parsed out of event prose (see events-feed.js's _extractSector).
     EventsFeed.setData(data.events, data.player_stats,
-                       { ships: playerShips, stations, npcShips: npcList, rep });
+                       { ships: playerShips, stations, npcShips: npcList, rep,
+                         sectors: data.sectors || [] });
     EventsFeed.render();
 
     document.getElementById("ov-pilot").textContent  = player.name || "—";

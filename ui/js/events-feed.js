@@ -35,6 +35,8 @@
     let _stats  = {};   // {stat_id: value}
     let _byId   = {};   // object_id → {label, row} for component= tooltip joins
     let _repByFaction = {};   // stripped faction name → reputation row
+    let _knownSectors = new Set();          // discovered sector_name values
+    let _assetsBySector = {};               // sector_name → {ships:[], stations:[]}
     let _filter = 'all';
 
     // reputation rows carry the tagged display name ("[TEL] Teladi Company");
@@ -57,6 +59,12 @@
 
       _repByFaction = {};
       for (const r of ent.rep || []) _repByFaction[_bareName(r.faction_name)] = r;
+
+      _knownSectors = new Set((ent.sectors || []).map(s => s.sector_name).filter(Boolean));
+      _assetsBySector = {};
+      const bucket = name => _assetsBySector[name] || (_assetsBySector[name] = { ships: [], stations: [] });
+      for (const s of ent.ships    || []) if (s.sector) bucket(s.sector).ships.push(s);
+      for (const s of ent.stations || []) if (s.sector) bucket(s.sector).stations.push(s);
     }
 
     function setFilter(cat) { _filter = cat; render(); }
@@ -105,6 +113,50 @@
           </div>`).join('');
       if (!cells) return '';
       return `<div class="events-stats">${cells}</div>`;
+    }
+
+    // Pulls a sector name out of event prose, when the game put one there.
+    //
+    // Reliable path: many alert-shaped events (SCA sightings, ship-under-attack,
+    // ship-destroyed) carry a dedicated "Location: <sector>" line — trusted as
+    // written since it's a clearly delimited field, no validation needed.
+    //
+    // Fallback path: 'news' war-update rows have no Location: line — the sector
+    // is embedded in free prose ("Argon Federation mounting defence in True
+    // Sight"). Restricted to category 'news' AND required to exactly match a
+    // sector_name from the export's full discovered-galaxy list before it's
+    // trusted — this is the fragile half of the extraction (a trailing "in
+    // <words>" could just as easily be part of the sentence), so anything
+    // that doesn't resolve to a real sector is dropped rather than guessed at.
+    function _extractSector(e) {
+      const text = e.text || '';
+      const loc = text.match(/^Location: (.+)$/m);
+      if (loc) return loc[1].trim();
+      if (e.category === 'news') {
+        const tail = text.match(/ in ([^.]+)$/);
+        if (tail && _knownSectors.has(tail[1].trim())) return tail[1].trim();
+      }
+      return null;
+    }
+
+    // What of the player's is actually in that sector — the triage payoff:
+    // "pirate sighted in Black Hole Sun IV" only matters if you have ships or
+    // stations there. Renders even at zero, so a hover can also tell you
+    // there's nothing to worry about.
+    function _sectorTipSection(sectorName) {
+      if (!sectorName) return '';
+      const a = _assetsBySector[sectorName] || { ships: [], stations: [] };
+      const parts = [
+        a.ships.length    ? `${a.ships.length} ship${a.ships.length       !== 1 ? 's' : ''}`    : null,
+        a.stations.length ? `${a.stations.length} station${a.stations.length !== 1 ? 's' : ''}` : null,
+      ].filter(Boolean);
+      const line = parts.length
+        ? `<span style="color:var(--color-warning)">${parts.join(', ')} of yours here</span>`
+        : `<span style="color:var(--text-secondary)">No assets of yours in this sector</span>`;
+      return `<div style="margin-top:0.6rem;padding-top:0.4rem;border-top:1px solid var(--outline)">
+          <div style="font-size:0.85rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-brand);margin-bottom:0.2rem"><i class="ti ti-map-pin"></i> ${sectorName}</div>
+          <div style="font-size:1.1rem">${line}</div>
+        </div>`;
     }
 
     // What the event's component= link resolves to. The log line only says
@@ -180,7 +232,7 @@
       const text  = e.text && e.text !== e.title
         ? `<div style="color:var(--text-secondary);font-size:1.2rem;margin-top:0.2rem;white-space:pre-line">${e.text}</div>` : '';
       // max-width so a long single line wraps instead of spanning the screen.
-      return `<div style="max-width:42rem">${head}${title}${text}${_factionLine(e.faction_name)}${_entityTipSection(e.component_id)}</div>`;
+      return `<div style="max-width:42rem">${head}${title}${text}${_factionLine(e.faction_name)}${_sectorTipSection(_extractSector(e))}${_entityTipSection(e.component_id)}</div>`;
     }
 
     function render() {
