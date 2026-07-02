@@ -38,5 +38,6 @@
   "scanner/scanner.py",
   "scanner/ship_names.py",
   "scanner/trade_postprocess.py",
-  "scanner/xml_utils.py"
+  "scanner/xml_utils.py",
+  "scanner/handlers/events.py"
 ]
