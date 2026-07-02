@@ -1,8 +1,9 @@
-# Python bytecode
+# Python bytecode + packaging metadata
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.egg-info/
 
 # Virtual environment
 .venv/

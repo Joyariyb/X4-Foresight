@@ -45,11 +45,14 @@ python x4_save_scanner.py
 
 | Path | Purpose |
 |------|---------|
+| `pipeline.py` | Shared scan pipeline — every entry point calls `run_pipeline()` |
 | `scanner/` | Streaming save-file parser |
 | `db/` | Builds the in-memory database from resolved data |
-| `export/` | JSON export (`jsonexport.py`) |
+| `export/` | JSON export + the bridge API shared by desktop and web shells |
 | `ui/` | Dashboard front-end (shared between desktop and web builds) |
 | `ui/web/` | Web build entry point (Pyodide + Web Worker) |
+| `tests/` | Regression suite (pytest; runs on a synthetic mini-save, no game needed) |
+| `docs/` | Developer docs — [setup](docs/dev-setup.md), [save-format notes](docs/save-format.md) |
 | `index.html` | Landing page served by GitHub Pages |
 
 See [`TODO.md`](TODO.md) for deferred work and the roadmap.

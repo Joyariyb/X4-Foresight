@@ -1,0 +1,26 @@
+# Core role: CI — run the pipeline regression suite on every push and pull request.
+#
+# Ubuntu only: the scan pipeline is pure Python + lxml (no Qt), so one fast
+# runner covers it. 3.12 is the floor pyproject.toml declares; 3.14 is what
+# the dev machine runs.
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install (pipeline deps + pytest, no desktop extra)
+        run: pip install -e .[dev]
+      - name: Run tests
+        run: python -m pytest tests/ -v
