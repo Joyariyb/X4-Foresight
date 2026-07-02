@@ -57,12 +57,11 @@ else:
 import x4_save_scanner as scanner
 from x4_save_scanner import DB_PATH, JSON_PATH, ROOT_SAVE, _find_game_saves_dir
 
-# The bridge now serves the dashboard straight from the SQLite DB rather than the
-# on-disk JSON: to_export() is already a pure DB-read that produces the exact
-# export shape the page consumes, so the file is no longer in the UI's read path.
-# (scanner.run() still writes the JSON for the AI consumer + dev browser fallback.)
-from db.connection import get_connection
-from export.jsonexport import to_export, resource_library_export
+# The bridge serves the dashboard straight from the SQLite DB rather than the
+# on-disk JSON (scanner.run() still writes the JSON for the AI consumer + dev
+# browser fallback). The DB-read implementations live in export/bridge_api.py,
+# shared with the web build's pyweb/web_entry.py so the two shells can't drift.
+from export import bridge_api
 
 
 # ── Save discovery + selector ─────────────────────────────────────────────────
@@ -197,12 +196,11 @@ class ScanProgressDialog(QDialog):
 class EmpireBridge(QObject):
     """The single object the page reaches through QWebChannel.
 
-    Builds the export FROM the database on each call (via to_export), so a re-scan
-    — or switching to an older scan_id — is reflected without restarting and
-    without touching the JSON file. A fresh read-only connection is opened per
-    call: WAL mode lets these reads run alongside a concurrent scan write, and
-    sqlite connections aren't safe to share across the threads Qt may dispatch
-    slots on. The page owns the parse.
+    Builds the export FROM the database on each call, so a re-scan — or
+    switching to an older scan_id — is reflected without restarting and without
+    touching the JSON file. The page owns the parse. Everything except
+    trigger_scan delegates to export/bridge_api.py (shared with the web build);
+    the per-call-connection rationale lives there.
     """
 
     def __init__(self, window=None):
@@ -224,77 +222,27 @@ class EmpireBridge(QObject):
     def get_resource_library(self) -> str:
         """Static equipment/hull catalog — no DB or scan required, so the
         Resource Library tab works before any scan has ever been run."""
-        try:
-            return json.dumps(resource_library_export(), ensure_ascii=False)
-        except Exception as e:
-            return json.dumps({"error": f"Could not build resource library: {e}"})
+        return bridge_api.get_resource_library()
 
     @pyqtSlot(int, result=str)
     def get_empire_data(self, scan_id: int = -1) -> str:
         """Return the export JSON for `scan_id`; -1 (the JS default) = latest scan."""
-        try:
-            conn = get_connection(DB_PATH)
-            try:
-                data = to_export(conn, None if scan_id < 0 else scan_id)
-            finally:
-                conn.close()
-            return json.dumps(data, ensure_ascii=False)
-        except Exception as e:
-            return json.dumps({"error": f"Could not read empire data from DB: {e}"})
+        return bridge_api.get_empire_data(DB_PATH, scan_id)
 
     @pyqtSlot(result=str)
     def list_scans(self) -> str:
-        """Scan history for the picker: newest first, as a JSON array of
-        {scan_id, scanned_at, save_file, game_time_s}. Empty array if none."""
-        try:
-            conn = get_connection(DB_PATH)
-            try:
-                rows = conn.execute(
-                    "SELECT scan_id, scanned_at, save_file, game_time_s "
-                    "FROM scans ORDER BY scan_id DESC"
-                ).fetchall()
-            finally:
-                conn.close()
-            return json.dumps([dict(r) for r in rows])
-        except Exception as e:
-            return json.dumps({"error": f"Could not list scans: {e}"})
+        """Scan history for the picker, newest first."""
+        return bridge_api.list_scans(DB_PATH)
 
     @pyqtSlot(int, result=str)
     def delete_scan(self, scan_id: int) -> str:
-        """Delete a scan and all its cascaded child rows (foreign_keys = ON handles cascade).
-        Returns JSON {"ok": true} on success or {"error": "..."} on failure."""
-        try:
-            conn = get_connection(DB_PATH)
-            try:
-                conn.execute("DELETE FROM scans WHERE scan_id = ?", (scan_id,))
-                # If the table is now empty, reset the AUTOINCREMENT counter so
-                # the next scan starts from 1 again instead of continuing from
-                # the highest ever-used id.
-                remaining = conn.execute("SELECT COUNT(*) FROM scans").fetchone()[0]
-                if remaining == 0:
-                    conn.execute("DELETE FROM sqlite_sequence WHERE name = 'scans'")
-                conn.commit()
-            finally:
-                conn.close()
-            return json.dumps({"ok": True})
-        except Exception as e:
-            return json.dumps({"error": f"Could not delete scan: {e}"})
+        """Delete a scan and all its cascaded child rows."""
+        return bridge_api.delete_scan(DB_PATH, scan_id)
 
     @pyqtSlot(result=str)
     def delete_all_scans(self) -> str:
-        """Delete every scan (and cascaded child rows). Returns JSON
-        {"ok": true} on success or {"error": "..."} on failure."""
-        try:
-            conn = get_connection(DB_PATH)
-            try:
-                conn.execute("DELETE FROM scans")
-                conn.execute("DELETE FROM sqlite_sequence WHERE name = 'scans'")
-                conn.commit()
-            finally:
-                conn.close()
-            return json.dumps({"ok": True})
-        except Exception as e:
-            return json.dumps({"error": f"Could not delete all scans: {e}"})
+        """Delete every scan (and cascaded child rows)."""
+        return bridge_api.delete_all_scans(DB_PATH)
 
 
 # ── Main window ───────────────────────────────────────────────────────────────

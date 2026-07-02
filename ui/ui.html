@@ -34,35 +34,10 @@
 <div id="app-root"></div>
 
 <script src="js/shell-loader.js"></script>
+<script src="js/shell-manifest.js"></script>
 <script>
-  loadShell('body.html', [
-    'js/constants.js',
-    'js/tip-registry.js',
-    'js/economy-chart.js',
-    'js/economy-logs.js',
-    'js/cashflow-chart.js',
-    'js/trends.js',
-    'js/formatters.js',
-    'js/fleet.js',
-    'js/hull-wireframes.js',
-    'js/designs-builder.js',
-    'js/resource-library.js',
-    'js/hull-comparison.js',
-    'js/equipment-comparison.js',
-    'js/tooltips.js',
-    'js/faction-tabs.js',
-    'js/navigation.js',
-    'js/crew.js',
-    'js/station-helpers.js',
-    'js/populate.js',
-    'js/npc-stations.js',
-    'js/npc-station-inspector.js',
-    'js/universe-map.js',
-    'js/sectors.js',
-    'js/scan-sound.js',
-    'js/scan-loader.js',
-    'js/init.js'
-  ]);
+  // Script order lives in js/shell-manifest.js (shared with the web shell).
+  loadShell('body.html', shellScripts(''));
 </script>
 </body>
 </html>

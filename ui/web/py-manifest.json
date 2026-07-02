@@ -16,6 +16,7 @@
   "db/trends.py",
   "db/write.py",
   "display.py",
+  "export/bridge_api.py",
   "export/jsonexport.py",
   "pyweb/web_entry.py",
   "scanner/budget.py",

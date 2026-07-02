@@ -45,42 +45,19 @@
 <div id="app-root"></div>
 
 <script src="../js/shell-loader.js"></script>
+<script src="../js/shell-manifest.js"></script>
 <script>
-  loadShell('../body.html', [
-    '../js/constants.js',
-    '../js/tip-registry.js',
-    '../js/economy-chart.js',
-    '../js/economy-logs.js',
-    '../js/cashflow-chart.js',
-    '../js/trends.js',
-    '../js/formatters.js',
-    '../js/fleet.js',
-    '../js/hull-wireframes.js',
-    '../js/designs-builder.js',
-    '../js/resource-library.js',
-    '../js/hull-comparison.js',
-    '../js/equipment-comparison.js',
-    '../js/tooltips.js',
-    '../js/faction-tabs.js',
-    '../js/navigation.js',
-    '../js/crew.js',
-    '../js/station-helpers.js',
-    '../js/populate.js',
-    '../js/npc-stations.js',
-    '../js/npc-station-inspector.js',
-    '../js/universe-map.js',
-    '../js/sectors.js',
-    // Web-build bridge: sets window._bridge before scan-loader.js runs its
-    // bridge-detection check, so the QWebChannel/file-fallback branches there
-    // never get reached. Order matters: save-picker-dialog.js and
-    // fs-access.js define globals pyodide-bridge.js calls.
+  // Shared script order lives in ../js/shell-manifest.js. Only the web-build
+  // bridge trio is listed here: it sets window._bridge before scan-loader.js
+  // (in the manifest tail) runs its bridge-detection check, so the
+  // QWebChannel/file-fallback branches there never get reached. Order matters
+  // within the trio too: save-picker-dialog.js and fs-access.js define globals
+  // pyodide-bridge.js calls.
+  loadShell('../body.html', shellScripts('../', [
     'js/save-picker-dialog.js',
     'js/fs-access.js',
     'js/pyodide-bridge.js',
-    '../js/scan-sound.js',
-    '../js/scan-loader.js',
-    '../js/init.js'
-  ]);
+  ]));
 </script>
 </body>
 </html>

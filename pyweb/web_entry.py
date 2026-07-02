@@ -1,10 +1,10 @@
 """Core role: web-build entry points called from scan-worker.js via Pyodide.
 
-Mirrors EmpireBridge's four QWebChannel slots in ui/main_ui.py, built on the
-same pipeline x4_save_scanner.run() drives (scan -> resolve trades -> resolve
-homebases -> write DB) minus its JSON-file-writing tail - get_empire_data
-reads straight from the DB instead, same as the desktop bridge already does
-for every call after the first.
+Exposes the same operations as EmpireBridge's QWebChannel slots in
+ui/main_ui.py. The scan entry point drives the same pipeline as
+x4_save_scanner.run() (scan -> resolve trades -> resolve homebases -> write DB)
+minus its JSON-file-writing tail; everything else delegates to
+export/bridge_api.py, the one implementation shared with the desktop bridge.
 """
 from __future__ import annotations
 import json
@@ -16,7 +16,7 @@ from scanner.trade_postprocess import TradePostProcessor
 from x4_save_scanner import resolve_ship_homebases
 from db.connection import get_connection
 from db.write import write_scan
-from export.jsonexport import to_export, resource_library_export
+from export import bridge_api
 
 # MEMFS path inside Pyodide - this is a fresh, in-memory-per-session database
 # (not the desktop app's on-disk file), so cross-reload history isn't
@@ -72,73 +72,25 @@ def run_scan_from_staged(save_path: str, lang_path: str, progress=None) -> str:
 
 
 def get_resource_library() -> str:
-    """Static equipment/hull catalog — no DB or scan required, so the
-    Resource Library tab works before any scan has ever been run."""
-    try:
-        return json.dumps(resource_library_export(), ensure_ascii=False)
-    except Exception as e:
-        return json.dumps({"error": f"Could not build resource library: {e}"})
+    """Static equipment/hull catalog — see export/bridge_api.py."""
+    return bridge_api.get_resource_library()
 
 
 def get_empire_data(scan_id: int = -1) -> str:
     """Return the export JSON for `scan_id`; -1 = latest scan."""
-    try:
-        conn = get_connection(DB_PATH)
-        try:
-            data = to_export(conn, None if scan_id < 0 else scan_id)
-        finally:
-            conn.close()
-        return json.dumps(data, ensure_ascii=False)
-    except Exception as e:
-        return json.dumps({"error": f"Could not read empire data from DB: {e}"})
+    return bridge_api.get_empire_data(DB_PATH, scan_id)
 
 
 def list_scans() -> str:
-    """Scan history for the picker: newest first, as a JSON array of
-    {scan_id, scanned_at, save_file, game_time_s}. Empty array if none."""
-    try:
-        conn = get_connection(DB_PATH)
-        try:
-            rows = conn.execute(
-                "SELECT scan_id, scanned_at, save_file, game_time_s "
-                "FROM scans ORDER BY scan_id DESC"
-            ).fetchall()
-        finally:
-            conn.close()
-        return json.dumps([dict(r) for r in rows])
-    except Exception as e:
-        return json.dumps({"error": f"Could not list scans: {e}"})
+    """Scan history for the picker, newest first."""
+    return bridge_api.list_scans(DB_PATH)
 
 
 def delete_scan(scan_id: int) -> str:
-    """Delete a scan and all its cascaded child rows (foreign_keys = ON
-    handles cascade). Returns JSON {"ok": true} or {"error": "..."}."""
-    try:
-        conn = get_connection(DB_PATH)
-        try:
-            conn.execute("DELETE FROM scans WHERE scan_id = ?", (scan_id,))
-            remaining = conn.execute("SELECT COUNT(*) FROM scans").fetchone()[0]
-            if remaining == 0:
-                conn.execute("DELETE FROM sqlite_sequence WHERE name = 'scans'")
-            conn.commit()
-        finally:
-            conn.close()
-        return json.dumps({"ok": True})
-    except Exception as e:
-        return json.dumps({"error": f"Could not delete scan: {e}"})
+    """Delete a scan and all its cascaded child rows."""
+    return bridge_api.delete_scan(DB_PATH, scan_id)
 
 
 def delete_all_scans() -> str:
-    """Delete every scan (and cascaded child rows). Returns JSON
-    {"ok": true} or {"error": "..."}."""
-    try:
-        conn = get_connection(DB_PATH)
-        try:
-            conn.execute("DELETE FROM scans")
-            conn.execute("DELETE FROM sqlite_sequence WHERE name = 'scans'")
-            conn.commit()
-        finally:
-            conn.close()
-        return json.dumps({"ok": True})
-    except Exception as e:
-        return json.dumps({"error": f"Could not delete all scans: {e}"})
+    """Delete every scan (and cascaded child rows)."""
+    return bridge_api.delete_all_scans(DB_PATH)
