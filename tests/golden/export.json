@@ -644,7 +644,7 @@
         1
       ],
       "ships_destroyed": [
-        null
+        0
       ],
       "ships_lost": [
         0
@@ -707,6 +707,44 @@
     }
   },
   "changes": [],
+  "events": {
+    "alerts": [
+      {
+        "title": "Station under attack",
+        "text": "Test Energy Plant is under attack by Teladi Company.",
+        "faction_name": "Teladi Company",
+        "component_id": "[0x1000]",
+        "game_time_s": 998500.0,
+        "time_ago_s": 1500.0
+      }
+    ],
+    "upkeep": [
+      {
+        "title": "Assigned Individual Test Pilot to Hauler One",
+        "text": "",
+        "faction_name": "",
+        "component_id": "[0x3000]",
+        "game_time_s": 997500.0,
+        "time_ago_s": 2500.0
+      }
+    ],
+    "uncategorised": [
+      {
+        "title": "Note without category",
+        "text": "Rows missing category= must not be dropped.",
+        "faction_name": "",
+        "component_id": null,
+        "game_time_s": 996000.0,
+        "time_ago_s": 4000.0
+      }
+    ]
+  },
+  "player_stats": {
+    "fight_score": 715,
+    "ships_destroyed": 7,
+    "trade_rank": 16,
+    "trade_score": 38448
+  },
   "active_trades": [],
   "in_progress_deliveries": [
     {

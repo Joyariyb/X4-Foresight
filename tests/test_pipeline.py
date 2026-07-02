@@ -350,3 +350,38 @@ class TestNoLanguageFile:
         assert ctx.stations[0].sector_macro == ''
         # Player location degrades to the raw language-reference id.
         assert ctx.player_sector == 'Sector 10011'
+
+
+class TestEventLog:
+    def test_player_stats_captured(self, ctx):
+        assert ctx.player_stats == {
+            'trade_score':     38448,
+            'trade_rank':      16,
+            'fight_score':     715,
+            'ships_destroyed': 7,
+        }
+
+    def test_combat_counter_fed_by_same_stat_row(self, ctx):
+        # <stat id="ships_destroyed"> feeds CombatHandler and EventLogHandler
+        # from the same dispatch — both must see it.
+        assert ctx.combat_ships_destroyed == 7
+
+    def test_events_captured_with_refs_resolved(self, ctx):
+        assert len(ctx.player_events) == 3
+        ev = next(e for e in ctx.player_events if e.category == 'alerts')
+        assert ev.title == 'Station under attack'
+        # The {20203,101} ref embedded mid-sentence resolves via mini_lang.
+        assert ev.text == 'Test Energy Plant is under attack by Teladi Company.'
+        assert ev.faction_name == 'Teladi Company'
+        assert ev.component_id == '[0x1000]'
+        assert ev.time_ago_s == 1500.0
+
+    def test_missing_category_buckets_uncategorised(self, ctx):
+        assert sorted(e.category for e in ctx.player_events) == [
+            'alerts', 'uncategorised', 'upkeep']
+
+    def test_construction_entries_not_captured(self, ctx):
+        # Station construction sequences reuse the <entry> tag
+        # (<entry index= macro=>) — they carry no title/text and must never
+        # surface as events. Every captured event in the fixture has a title.
+        assert all(e.title for e in ctx.player_events)

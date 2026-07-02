@@ -105,6 +105,11 @@
         <span class="sb-item-label"><i class="ti ti-alert-triangle"></i> Economic</span>
       </div>
       <div class="sb-divider"></div>
+      <div class="sb-heading">Captains Log</div>
+      <div class="sb-item" onclick="switchTab('events', null); EventsFeed.render()">
+        <span class="sb-item-label"><i class="ti ti-notebook"></i> Events</span>
+      </div>
+      <div class="sb-divider"></div>
       <div class="sb-heading">JSON Exports <span style="color:var(--color-negative)">&mdash; WIP</span></div>
       <div class="sb-item">
         <span class="sb-item-label"><i class="ti ti-database-export"></i> Economy</span>
@@ -554,6 +559,14 @@
       <div class="tab-panel" id="tab-alerts">
         <div class="sec-header"><div class="sec-title">Alerts</div><div class="sec-line"></div></div>
         <div id="alerts-list"></div>
+      </div>
+
+      <!-- CAPTAINS LOG · EVENTS TAB — player notification feed + career stats,
+           rendered by js/events-feed.js from the export's `events` /
+           `player_stats` sections. -->
+      <div class="tab-panel" id="tab-events">
+        <div class="sec-header"><div class="sec-title">Events</div><div class="sec-line"></div></div>
+        <div id="events-root"></div>
       </div>
 
     </div>

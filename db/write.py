@@ -9,6 +9,7 @@ player-owned ships go into the history `ships` table.
 """
 from __future__ import annotations
 import sqlite3
+from collections import defaultdict
 from datetime import datetime, timezone
 
 from data.wares import WARE_NAMES
@@ -71,6 +72,8 @@ def write_scan(conn: sqlite3.Connection, ctx) -> int:
     _write_ships(cur, scan_id, ctx)
     _write_npc_ships(cur, scan_id, ctx)
     _write_in_progress_deliveries(cur, scan_id, ctx)
+    _write_player_events(cur, scan_id, ctx)
+    _write_player_stats(cur, scan_id, ctx)
     _write_crew(cur, scan_id, ctx)
     _write_active(cur, scan_id, ctx)
     _write_ledger(cur, scan_id, ctx)
@@ -238,6 +241,36 @@ def _write_in_progress_deliveries(cur, scan_id, ctx) -> None:
     ]
     cur.executemany(
         "INSERT INTO in_progress_deliveries VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
+
+
+# The save's event log holds thousands of rows; keeping only the newest slice
+# of each category gives a useful "recent events" feed without growing the
+# HISTORY class by megabytes on every scan. alerts/upkeep get the same cap as
+# the noisier news/uncategorised buckets — the categories self-limit.
+EVENTS_PER_CATEGORY = 50
+
+
+def _write_player_events(cur, scan_id, ctx) -> None:
+    """Most recent EVENTS_PER_CATEGORY event rows per category."""
+    by_cat = defaultdict(list)
+    for ev in ctx.player_events:
+        by_cat[ev.category].append(ev)
+    rows = []
+    for evs in by_cat.values():
+        evs.sort(key=lambda e: e.game_time_s, reverse=True)
+        rows.extend(
+            (scan_id, e.category, e.title, e.text, e.faction_name,
+             e.component_id, e.game_time_s, e.time_ago_s)
+            for e in evs[:EVENTS_PER_CATEGORY]
+        )
+    cur.executemany("INSERT INTO player_events VALUES(?,?,?,?,?,?,?,?)", rows)
+
+
+def _write_player_stats(cur, scan_id, ctx) -> None:
+    """One row per career stat (trade_score, fight_rank, …) for cross-scan trends."""
+    cur.executemany(
+        "INSERT INTO player_stats VALUES(?,?,?)",
+        [(scan_id, sid, val) for sid, val in sorted(ctx.player_stats.items())])
 
 
 def _write_crew(cur, scan_id, ctx) -> None:

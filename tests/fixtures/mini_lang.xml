@@ -20,4 +20,8 @@
     <t id="10011">{20003,10002}(Testora Prime)</t>
     <t id="20011">{20003,20002}(Testora Rim)</t>
   </page>
+  <!-- Faction names — resolves the {20203,N} refs event-log entries carry. -->
+  <page id="20203" title="Factions">
+    <t id="101">Teladi Company</t>
+  </page>
 </language>

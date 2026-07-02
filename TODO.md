@@ -44,7 +44,15 @@ Backlog of intentionally-deferred items. The core pipeline
 
 ## Bigger pieces
 
-- [ ] **Player event log + career stats — NEW data source, not yet parsed.**
+- [x] **Player event log + career stats.** Done 2026-07-02 —
+      `scanner/handlers/events.py` (EventLogHandler) captures every event row
+      (content-gated: time + title/text, so construction `<entry index=>` rows
+      no-op) and every numeric `<stat>`; embedded `{page,id}` refs resolve
+      against the loaded pages. DB caps at 50 rows/category
+      (`db/write.py EVENTS_PER_CATEGORY`); export gains `events` (grouped by
+      category, newest first) and `player_stats`. UI feed not rendered yet —
+      same data-first pattern as deliveries. Original research notes moved to
+      `docs/save-format.md`. Historical notes:
       The save holds the player's in-game notification/event log AND career
       stats. Neither is extracted today. High value as a "recent events" feed for
       the AI advisor (reputation changes, mission updates, combat ALERTS, crew

@@ -614,6 +614,19 @@ def _hull_catalog() -> dict:
     return out
 
 
+def _events(conn, scan_id) -> dict:
+    """{category: [event rows…]} newest first — the "recent events" feed.
+
+    Grouped here rather than in the UI so the AI consumer of the JSON gets the
+    same ready-to-use shape (alerts first concern, news last)."""
+    out: dict[str, list[dict]] = {}
+    for r in _rows(conn,
+                   "SELECT * FROM player_events WHERE scan_id=? "
+                   "ORDER BY game_time_s DESC", (scan_id,)):
+        out.setdefault(r['category'], []).append(_drop(r, 'scan_id', 'category'))
+    return out
+
+
 # ── Top-level assembly ─────────────────────────────────────────────────────────
 
 def resource_library_export() -> dict:
@@ -683,6 +696,17 @@ def to_export(conn: sqlite3.Connection, scan_id: int | None = None) -> dict:
         # get a 1-point series and an empty changes list.
         'trends':                compute_trends(conn, scan_id),
         'changes':               compute_changes(conn, scan_id),
+        # Player notification feed grouped by category, newest first (capped
+        # per category at DB-write time), + career stats from the <stats> block.
+        'events':                _events(conn, scan_id),
+        'player_stats': {
+            r['stat_id']: (int(r['value'])
+                           if isinstance(r['value'], float) and r['value'].is_integer()
+                           else r['value'])
+            for r in conn.execute(
+                "SELECT stat_id, value FROM player_stats WHERE scan_id=?",
+                (scan_id,))
+        },
         # TradeHandler not implemented yet — kept for shape stability.
         'active_trades':         [],
         # Courier deliveries in flight: BUY leg logged, SELL leg not yet — the

@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from .entities import (
     Station, NpcStation, Ship, CrewMember, ReputationEntry, Sector, Gate,
     SectorResource, FactionRelationEntry,
-    ActiveTrade, ActiveAutoTrade, InProgressDelivery,
+    ActiveTrade, ActiveAutoTrade, InProgressDelivery, PlayerEvent,
     TradeHistory, TradeHistoryMining, TradeHistoryInternal,
 )
 
@@ -91,6 +91,14 @@ class ScanContext:
     # the raw display name for factions absent from FACTION_NAMES). Each value is
     # {faction_id, faction_name, kills} — see CombatHandler.on_entry.
     combat_kills: dict[str, dict] = field(default_factory=dict)
+
+    # ── Player event log + career stats (EventLogHandler) ────────────────────
+    # Every event row harvested from the notification <log>; the DB writer caps
+    # what it keeps per category (see db/write.py EVENTS_PER_CATEGORY).
+    player_events: list[PlayerEvent] = field(default_factory=list)
+    # Career stats from the <stats> block: stat id → numeric value
+    # (trade_score, fight_rank, …). First occurrence wins.
+    player_stats: dict[str, float] = field(default_factory=dict)
 
 
     # ── Cross-handler reference data ──────────────────────────────────────────

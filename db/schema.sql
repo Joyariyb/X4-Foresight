@@ -273,6 +273,29 @@ CREATE TABLE IF NOT EXISTS in_progress_deliveries (
 );
 
 
+-- Player notification/event log, most recent rows per category. The save holds
+-- thousands of rows; write.py caps what it keeps (EVENTS_PER_CATEGORY there).
+CREATE TABLE IF NOT EXISTS player_events (
+    scan_id      INTEGER NOT NULL REFERENCES scans(scan_id) ON DELETE CASCADE,
+    category     TEXT,          -- alerts | upkeep | missions | news | diplomacy | tips | uncategorised
+    title        TEXT,
+    text         TEXT,
+    faction_name TEXT,          -- resolved faction= language ref, '' if none
+    component_id TEXT,          -- ship/station object_id the event points at
+    game_time_s  REAL,
+    time_ago_s   REAL
+);
+
+-- Career stats from the savegame <stats> block (trade_score, fight_rank, …).
+-- One row per stat per scan so ranks and scores can be trended across scans.
+CREATE TABLE IF NOT EXISTS player_stats (
+    scan_id  INTEGER NOT NULL REFERENCES scans(scan_id) ON DELETE CASCADE,
+    stat_id  TEXT    NOT NULL,
+    value    REAL,
+    PRIMARY KEY (scan_id, stat_id)
+);
+
+
 -- ══ LEDGER (cumulative, dedup'd across scans) ════════════════════════════════
 -- Completed trades (once per trade, dedup'd by game_time_s). INSERT OR IGNORE on trade_key
 -- since overlapping log windows show the same trade in consecutive scans.

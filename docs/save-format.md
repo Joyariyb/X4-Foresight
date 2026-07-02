@@ -62,11 +62,16 @@ what the save *contains* and how it behaves.
 - `<resourceareas>` (9.00+ format) nests per-area ware yields; amounts sum
   across areas, best yield wins (`scanner/handlers/resource.py`).
 
-## Player event log + career stats — NOT YET PARSED (researched 2026-06)
+## Player event log + career stats (researched 2026-06; parsed since 2026-07-02)
 
-The save holds the player's in-game notification/event log AND career stats.
-High value as a "recent events" feed (reputation changes, mission updates,
-combat alerts, crew assignments, news).
+The save holds the player's in-game notification/event log AND career stats —
+a "recent events" feed (reputation changes, mission updates, combat alerts,
+crew assignments, news). Parsed by `scanner/handlers/events.py`
+(EventLogHandler): entries are content-gated on `time=` + `title=`/`text=`
+(station construction sequences reuse the `<entry>` tag with `index=`/`macro=`
+and neither), every numeric `<stat>` is kept, and the DB stores the newest 50
+rows per category (`db/write.py EVENTS_PER_CATEGORY`). Export keys: `events`
+(grouped by category) and `player_stats`.
 
 WHERE (`save_001.xml`): a `<log>` element wrapping ~4,000 `<entry>` rows,
 immediately AFTER a `<stats>` block, near the trade economy log

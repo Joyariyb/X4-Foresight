@@ -359,6 +359,28 @@ class TradeHistoryInternal:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+#  PLAYER EVENTS  (rows of the in-game notification/event log)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@dataclass
+class PlayerEvent:
+    """One row of the player's in-game notification log.
+
+    component_id ties the event to a ship/station object we already scan.
+    category comes straight from the save (alerts/upkeep/missions/news/
+    diplomacy/tips); rows that carry none bucket as 'uncategorised'.
+    """
+    scan_id:      int
+    category:     str
+    title:        str           # language refs resolved where the page is loaded
+    text:         str
+    faction_name: str           # resolved faction= ref, '' if the entry has none
+    component_id: str | None    # ship/station object_id the event points at
+    game_time_s:  float
+    time_ago_s:   float
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 #  IN-PROGRESS DELIVERIES  (courier loaded, commercial SELL leg not logged yet)
 # ─────────────────────────────────────────────────────────────────────────────
 

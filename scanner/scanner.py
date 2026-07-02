@@ -16,6 +16,7 @@ from .handlers.sector      import SectorHandler
 from .handlers.gate        import GateHandler
 from .handlers.resource    import ResourceHandler
 from .handlers.combat      import CombatHandler
+from .handlers.events      import EventLogHandler
 
 
 class Scanner:
@@ -48,6 +49,7 @@ class Scanner:
         self._gate    = GateHandler()
         self._resource = ResourceHandler()
         self._combat  = CombatHandler(texts)
+        self._events  = EventLogHandler(texts)
 
         # Stored for handlers that need them during scan (ship, station).
         self._sector_names = sector_names
@@ -240,14 +242,17 @@ class Scanner:
 
         elif tag == 'stat':
             # Savegame statistics row (<stats><stat id="..." value="..."/>).
-            # CombatHandler keeps only ships_destroyed; all other ids no-op.
+            # CombatHandler keeps ships_destroyed for the Trends chart;
+            # EventLogHandler keeps every numeric stat as a career stat.
             self._combat.on_stat(elem, ctx)
+            self._events.on_stat(elem, ctx)
 
         elif tag == 'entry':
             # Player event-log row. CombatHandler tallies the "Destroyed Enemy"
-            # reputation entries by faction; the many other entries (news, missions,
-            # tips) fail its cheap text check and no-op.
+            # reputation entries by faction; EventLogHandler records the row
+            # itself (news, missions, alerts, upkeep, …) as a PlayerEvent.
             self._combat.on_entry(elem, ctx)
+            self._events.on_entry(elem, ctx)
 
         elif tag == 'removed':
             # Open an <economylog><removed> block — despawned objects whose ids

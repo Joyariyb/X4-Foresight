@@ -91,6 +91,11 @@
     const allMining = data.mining_deliveries || [];
     warePrices      = data.ware_prices    || {};
 
+    // Captains Log data — the feed renders on tab open (and re-renders here in
+    // case the Events tab is the one currently visible during a re-scan).
+    EventsFeed.setData(data.events, data.player_stats);
+    EventsFeed.render();
+
     document.getElementById("ov-pilot").textContent  = player.name || "—";
     document.getElementById("nav-ships").textContent = fleet.total || "—";
 
