@@ -48,10 +48,25 @@
     };
 
     const playerShips = data.ships || [];
+
+    // Courier deliveries in flight, indexed for the two render sites: the
+    // loading station's trade-log panel (deliveriesByStation, keyed by station
+    // display code, read from economy-logs.js) and the courier's own fleet row
+    // (s.delivery, read from fleet.js).
+    const allDeliveries = data.in_progress_deliveries || [];
+    deliveriesByStation = {};
+    const deliveryByShip = {};
+    allDeliveries.forEach(d => {
+      (deliveriesByStation[d.from_station_code] =
+        deliveriesByStation[d.from_station_code] || []).push(d);
+      if (d.ship_id) deliveryByShip[d.ship_id] = d;
+    });
+
     playerShips.forEach(s => {
       normShip(s);
       const p = s.pilot_id ? crewById[s.pilot_id] : null;
       s.pilot = p ? { name: p.name, skills: p.skills } : null;
+      s.delivery = deliveryByShip[s.object_id] || null;
     });
 
     const npcList = data.npc_ships || [];

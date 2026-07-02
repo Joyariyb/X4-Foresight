@@ -13,7 +13,7 @@
   // Semantic tier only — these feed inline style="color:…" (faction-tabs.js,
   // fleet.js, populate.js), which is the JS equivalent of body.html, so §1's
   // "never reference the palette tier outside base.css" applies here too.
-  const ORDER_COLOURS = { Trading:"var(--color-positive)", Mining:"var(--color-warning)", Escorting:"var(--color-primary)", Waiting:"var(--text-brand)" };
+  const ORDER_COLOURS = { Trading:"var(--color-positive)", Delivering:"var(--color-positive)", Mining:"var(--color-warning)", Escorting:"var(--color-primary)", Waiting:"var(--text-brand)" };
   const SIZE_COLOURS  = { XL:"var(--color-special)", L:"var(--color-warning)", M:"var(--color-primary)", S:"var(--text-secondary)" };
 
   // ── Chart series palette ──────────────────────────────────────────────────

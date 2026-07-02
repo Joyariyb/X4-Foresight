@@ -517,6 +517,28 @@
   // Entry point — called by populate.js when it builds a station card, and
   // again internally on every mode/direction toggle. Rebuilds and caches.
   //
+  // Courier cargo loaded at this station but not sold yet — rows the trade log
+  // cannot show (the SELL leg hasn't been logged). deliveriesByStation is
+  // built by populate() from the export's in_progress_deliveries section,
+  // keyed by the loading station's display code.
+  function _inTransitHtml(stationCode) {
+    const rows = (typeof deliveriesByStation !== 'undefined'
+                  && deliveriesByStation[stationCode]) || [];
+    if (!rows.length) return '';
+    const lines = rows.map(d => `
+      <div style="display:flex;align-items:center;gap:0.6rem;padding:0.25rem 0.6rem 0.35rem">
+        <i class="ti ti-package-export" style="color:var(--color-positive)"></i>
+        <span class="mono">${d.amount.toLocaleString()} ${d.ware_name}</span>
+        <span style="color:var(--text-secondary)">→ ${d.dest_station_name || 'destination unknown'}</span>
+        <span class="mono" style="color:var(--text-secondary);margin-left:auto">${d.ship_name} [${d.ship_code}] · ${_tradeLogAgo(d.time_ago_s)}</span>
+      </div>`).join('');
+    return `
+      <div style="border:1px solid var(--color-positive-line);background:var(--color-positive-dim);border-radius:var(--radius-md);margin-bottom:0.625cqw">
+        <div style="font-family:var(--font-label);color:var(--text-label);text-transform:uppercase;letter-spacing:0.08em;padding:0.35rem 0.6rem 0">In transit</div>
+        ${lines}
+      </div>`;
+  }
+
   // Wrapped in the same .econ-row/.econ-pie/.econ-graph structure as the
   // Breakdown panel (pie left, graph right) so the row's flex-split — and
   // therefore each side's width at any window size — comes out identical.
@@ -557,7 +579,7 @@
             <button class="cf-toggle-btn ${mode === 'mining' ? 'active' : ''}" onclick="setEconLogMode('${safeCode}','mining')"><i class="ti ti-triangle"></i> Mining Log</button>
           </div>
           ${mode === 'trade'
-            ? _tradeLogHtml(safeCode, stationCode, allTrades)
+            ? _inTransitHtml(stationCode) + _tradeLogHtml(safeCode, stationCode, allTrades)
             : _miningLogHtml(safeCode, stationCode, allMining)}
           ${hasLogs ? _logScrubberHtml(safeCode) : ''}
         </div>

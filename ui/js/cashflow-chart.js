@@ -1420,6 +1420,7 @@
 
   const ORDER_ICONS = {
     "Trading":   "ti-arrows-exchange",
+    "Delivering": "ti-package-export",
     "Mining":    "ti-shovel",
     "Escorting": "ti-shield",
     "Waiting":   "ti-clock",

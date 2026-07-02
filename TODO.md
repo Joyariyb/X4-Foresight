@@ -30,15 +30,13 @@ Backlog of intentionally-deferred items. The core pipeline
       params — the DockAt/aidirector data carries no ware id. UI rendering is
       tracked as its own item below.
 
-- [ ] **Render `in_progress_deliveries` in the dashboard.** The export now
-      carries one row per in-flight courier delivery (ship, ware, amount,
-      loading station, destination station, seconds since pickup) but no tab
-      shows it. Natural home: the station economy area — an "In transit"
-      strip on the loading station's card next to its trade history, and/or
-      the fleet row's Order cell ("Delivering 300 Silicon Wafers → TEL Solar
-      Power Plant II" instead of bare "Docking"). Wire-up starts in
-      populate.js (`data.in_progress_deliveries`); per UI_STANDARDS §11 any
-      new file needs a shell-manifest.js entry.
+- [x] **Render `in_progress_deliveries` in the dashboard.** Done 2026-07-02 —
+      both render sites: an "In transit" strip (positive-trio callout) above
+      the station's Trade Log panel (economy-logs.js `_inTransitHtml`, fed by
+      `deliveriesByStation` built in populate.js), and the fleet row's Order
+      cell now reads "Delivering 300 Silicon Wafers → TEL Solar Power Plant
+      II" via `s.delivery` (fleet.js; "Delivering" added to ORDER_COLOURS /
+      ORDER_ICONS with ti-package-export).
 
 - [ ] **NPC-ship homebase (Middleman `supplier` param)** for the resolver's
       Step 3. Small coverage gain on the inferred tail; the streaming extractor
