@@ -407,6 +407,56 @@
             Widen the trade range, or none of your reachable neighbours are on trading terms yet.
           </div>
         </div>
+
+        <!-- STATION INSPECTOR — swaps in place of the table panel above when
+             an NPC row is clicked (openNpcStationInspector() in
+             npc-station-inspector.js), same in-place trick as the Resource
+             Library's Hull Inspector. The sec-header and filter controls stay
+             untouched while it's open; filter changes made meanwhile apply to
+             the list on the way back. Same max-height as the table panel so
+             the tab's footprint doesn't shift on open. -->
+        <div class="panel" id="npc-station-inspector" style="display:none; overflow:auto; max-height: calc(100vh - 26rem);">
+          <div class="npc-insp-back"><i class="ti ti-chevron-left"></i> Back to stations</div>
+
+          <div class="npc-insp-header">
+            <div class="npc-insp-icon"><i class="ti" id="npc-insp-icon"></i></div>
+            <div>
+              <div class="npc-insp-name" id="npc-insp-name"></div>
+              <div class="npc-insp-code" id="npc-insp-code"></div>
+            </div>
+            <div class="npc-insp-badges" id="npc-insp-badges"></div>
+          </div>
+
+          <div class="npc-insp-cols">
+            <div class="npc-insp-section">
+              <div class="npc-insp-label">Location</div>
+              <div class="npc-insp-location">
+                <span class="sector-link" id="npc-insp-sector"></span>
+                <span class="npc-insp-jumps" id="npc-insp-jumps"></span>
+              </div>
+            </div>
+
+            <div class="npc-insp-section">
+              <div class="npc-insp-section-hd">
+                <div class="npc-insp-label">Wares</div>
+                <div id="npc-insp-ware-pill"></div>
+              </div>
+              <div id="npc-insp-wares" class="npc-insp-wares"></div>
+            </div>
+          </div>
+
+          <div class="npc-insp-section">
+            <div class="npc-insp-label">Trade history with this station</div>
+            <div class="npc-insp-trades-box">
+              <table class="data-table">
+                <thead>
+                  <tr><th>Time</th><th>Dir</th><th>Ware</th><th>Qty</th><th>Ship</th><th>Station</th></tr>
+                </thead>
+                <tbody id="npc-insp-trades-rows"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- CREW TAB -->
@@ -574,50 +624,3 @@
 </div>
 
 <div id="u-hover-panel"></div>
-
-<!-- NPC STATION INSPECTOR -->
-<!-- Opened by openNpcStationInspector() in npc-station-inspector.js (row click
-     in the Stations -> NPC table). Sits outside #shell, like #u-hover-panel
-     above, so it isn't subject to any one tab's display:none. -->
-<div id="npc-inspector-overlay" style="display:none">
-  <div id="npc-inspector-panel">
-    <div class="npc-insp-header">
-      <div class="npc-insp-icon"><i class="ti" id="npc-insp-icon"></i></div>
-      <div>
-        <div class="npc-insp-name" id="npc-insp-name"></div>
-        <div class="npc-insp-code" id="npc-insp-code"></div>
-      </div>
-      <button class="npc-insp-close" aria-label="Close" onclick="closeNpcStationInspector()"><i class="ti ti-x"></i></button>
-    </div>
-
-    <div class="npc-insp-badges" id="npc-insp-badges"></div>
-
-    <div class="npc-insp-section">
-      <div class="npc-insp-label">Location</div>
-      <div class="npc-insp-location">
-        <span class="sector-link" id="npc-insp-sector"></span>
-        <span class="npc-insp-jumps" id="npc-insp-jumps"></span>
-      </div>
-    </div>
-
-    <div class="npc-insp-section">
-      <div class="npc-insp-label">Wares</div>
-      <div id="npc-insp-wares" class="npc-insp-wares"></div>
-    </div>
-
-    <div class="npc-insp-section">
-      <div class="npc-insp-label">Trade history with this station</div>
-      <!-- Fixed-height + internal scroll: an active trading partner can log
-           far more rows than would fit, and the popup itself must not grow
-           to accommodate them. -->
-      <div class="npc-insp-trades-box">
-        <table class="data-table">
-          <thead>
-            <tr><th>Time</th><th>Dir</th><th>Ware</th><th>Qty</th><th>Ship</th><th>Station</th></tr>
-          </thead>
-          <tbody id="npc-insp-trades-rows"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>

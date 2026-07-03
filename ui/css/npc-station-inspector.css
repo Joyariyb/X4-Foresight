@@ -1,19 +1,28 @@
-    /* Core role: Styles for the NPC Station Inspector popup (Stations -> NPC row click-through). */
+    /* Core role: Styles for the inline Station Inspector on Stations -> NPC (swaps in place of the table on row click). */
 
-    #npc-inspector-overlay {
-      position: fixed; inset: 0; z-index: 9999;
-      background: rgba(0,0,0,0.6);
-      display: flex; align-items: center; justify-content: center;
+    /* The panel shell (background/border/radius) comes from .panel in
+       shared-ui.css, same as the table panel it replaces — only the inner
+       layout is defined here. */
+
+    /* Back link — the inspector isn't a subtab, so this strip is the one way
+       back to the list (plus Escape). Styled like a label, not a button:
+       it's navigation chrome, not an action. */
+    .npc-insp-back {
+      display: flex; align-items: center; gap: 0.4rem;
+      padding: 0.9rem 1.6rem; border-bottom: 1px solid var(--outline);
+      font-family: var(--font-label); font-size: 1.15rem; letter-spacing: 0.04em;
+      color: var(--text-secondary); cursor: pointer; user-select: none;
+      transition: color var(--duration-short) var(--ease-standard);
     }
+    .npc-insp-back:hover { color: var(--text-primary); }
+    .npc-insp-back i { font-size: 1.4rem; }
 
-    #npc-inspector-panel {
-      width: 62rem; max-width: 90vw; max-height: 85vh; overflow: auto;
-      background: var(--surface-1); border: 1px solid var(--outline); border-radius: var(--radius-lg);
-    }
-
+    /* No background of its own — the .panel shell is already surface-2, so
+       the surface-2 header strip the old popup had would blend invisibly
+       here; the border rows do the sectioning instead. */
     .npc-insp-header {
       display: flex; align-items: flex-start; gap: 1rem; padding: 1.4rem 1.6rem;
-      background: var(--surface-2); border-bottom: 1px solid var(--outline);
+      border-bottom: 1px solid var(--outline);
     }
     .npc-insp-icon {
       width: 3.6rem; height: 3.6rem; border-radius: var(--radius-md); flex-shrink: 0;
@@ -21,17 +30,22 @@
       display: flex; align-items: center; justify-content: center;
     }
     .npc-insp-icon i { font-size: 2rem; color: var(--color-primary); }
-    .npc-insp-header > div:nth-child(2) { flex: 1; }
     .npc-insp-name { font-size: 1.7rem; font-weight: 600; color: var(--text-primary); line-height: 1.25; }
     .npc-insp-code { font-family: var(--font-data); font-size: 1.15rem; color: var(--text-secondary); margin-top: 0.2rem; }
-    .npc-insp-close {
-      background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.2rem;
-      transition: color var(--duration-short) var(--ease-standard);
-    }
-    .npc-insp-close:hover { color: var(--text-primary); }
-    .npc-insp-close i { font-size: 2rem; }
 
-    .npc-insp-badges { display: flex; flex-wrap: wrap; gap: 0.6rem; padding: 1.2rem 1.6rem; border-bottom: 1px solid var(--outline); }
+    /* Badges share the header line now that the panel is full-width — pushed
+       to the right edge, wrapping toward the name if a station somehow
+       collects too many. */
+    .npc-insp-badges {
+      display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: flex-end;
+      margin-left: auto; align-self: center;
+    }
+
+    /* Location | Wares side by side — the popup stacked them because it was
+       narrow; inline there's width to spare and the two sections are short. */
+    .npc-insp-cols { display: grid; grid-template-columns: 26rem 1fr; border-bottom: 1px solid var(--outline); }
+    .npc-insp-cols .npc-insp-section { border-bottom: none; }
+    .npc-insp-cols .npc-insp-section:first-child { border-right: 1px solid var(--outline); }
 
     .npc-insp-section { padding: 1.4rem 1.6rem; border-bottom: 1px solid var(--outline); }
     .npc-insp-section:last-child { border-bottom: none; }
@@ -40,17 +54,29 @@
       color: var(--text-label); margin-bottom: 0.7rem;
     }
 
-    .npc-insp-location { display: flex; align-items: center; justify-content: space-between; font-size: 1.4rem; }
+    /* Section label + the ware direction pill on one line — only Wares uses
+       this today, but it's a general "label row with a control" layout
+       rather than a wares-specific class. */
+    .npc-insp-section-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.7rem; }
+    .npc-insp-section-hd .npc-insp-label { margin-bottom: 0; }
+
+    /* Stacked, not space-between — in a 26rem column the sector name and the
+       jump count would collide on one line for longer sector names. */
+    .npc-insp-location { display: flex; flex-direction: column; gap: 0.4rem; font-size: 1.4rem; }
     .npc-insp-jumps { font-family: var(--font-data); font-size: 1.15rem; color: var(--text-secondary); }
 
     /* Plain coloured text list — no chip background/border, the colour alone
-       carries the ware identity (same convention as economy-logs.js's table). */
-    .npc-insp-wares { display: flex; flex-direction: column; gap: 0.4rem; font-family: var(--font-data); font-size: 1.3rem; }
-    .npc-insp-wares > div { display: flex; align-items: baseline; gap: 0.6rem; }
+       carries the ware identity (same convention as economy-logs.js's table).
+       CSS columns rather than one long stack: a trading station can list
+       20+ wares, and the full panel width would otherwise sit empty. */
+    .npc-insp-wares { columns: 30rem; column-gap: 3rem; font-family: var(--font-data); font-size: 1.3rem; }
+    .npc-insp-wares > div { display: flex; align-items: baseline; gap: 0.6rem; break-inside: avoid; margin-bottom: 0.4rem; }
 
-    /* Buying/Selling tag — plain text, no chip, same "colour is the only cue"
-       convention as the ware name itself. */
-    .npc-insp-ware-dir { font-size: 1.1rem; font-family: var(--font-label); }
+    /* Fixed-width glyph slot ahead of the ware name — a station can trade a
+       ware both ways (both arrows show) or, for Format-A pirate/black-market
+       bases, neither (empty) — reserving the width either way keeps every
+       ware name starting in the same column regardless of arrow count. */
+    .npc-insp-ware-arrows { display: inline-flex; gap: 0.1rem; width: 1.6rem; font-size: 1.1rem; flex-shrink: 0; }
 
     /* Price trails the row, right-aligned by flushing the gap via margin-left:auto. */
     .npc-insp-ware-price { margin-left: auto; font-size: 1.2rem; color: var(--text-secondary); }
@@ -63,9 +89,11 @@
 
     .npc-insp-placeholder { font-size: 1.2rem; color: var(--text-secondary); }
 
-    /* Fixed height regardless of row count — the popup's own height must stay
-       put, so overflow scrolls inside this box instead of the section growing
-       past it. Header stays sticky so a long scroll doesn't lose the columns. */
-    .npc-insp-trades-box { max-height: 20rem; overflow-y: auto; border: 1px solid var(--outline); border-radius: var(--radius-md); }
+    /* No inner scrollbox any more — the inspector panel itself scrolls (same
+       max-height as the table panel it replaces), and a scroll-within-a-scroll
+       read poorly. The sticky header now pins against the panel viewport, so
+       a long history keeps its columns; surface-2 to match the .panel shell
+       the rows scroll under. */
+    .npc-insp-trades-box { border: 1px solid var(--outline); border-radius: var(--radius-md); }
     .npc-insp-trades-box .data-table { margin: 0; }
-    .npc-insp-trades-box thead th { position: sticky; top: 0; background: var(--surface-1); }
+    .npc-insp-trades-box thead th { position: sticky; top: 0; background: var(--surface-2); }

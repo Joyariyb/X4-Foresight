@@ -6,7 +6,7 @@
 
   let allNpcTradePartners = [];
   // Full station_trades ledger (same array populate.js's economy logs read),
-  // captured here so the Inspector popup can filter it by counterparty_id
+  // captured here so the Station Inspector can filter it by counterparty_id
   // without needing its own copy of the render pipeline's `data`.
   let npcStationTrades    = [];
   let npcRangeMin         = 0;
@@ -241,8 +241,13 @@
       return 0;
     });
 
-    document.getElementById('npc-stations-panel').style.display = npcSortedRows.length ? '' : 'none';
-    document.getElementById('npc-stations-empty').style.display = npcSortedRows.length ? 'none' : 'flex';
+    // While the inline Station Inspector has replaced the list, filter changes
+    // must not resurface the table (or the empty state) underneath it — the
+    // count label above still tracks live, and closeNpcStationInspector()
+    // re-runs this render once the inspector is gone.
+    const inspecting = npcInspectorOpen();
+    document.getElementById('npc-stations-panel').style.display = (npcSortedRows.length && !inspecting) ? '' : 'none';
+    document.getElementById('npc-stations-empty').style.display = (npcSortedRows.length || inspecting) ? 'none' : 'flex';
 
     // The filtered/sorted set just changed shape, so any previous scroll
     // position no longer lines up with anything — start the window fresh.
