@@ -445,6 +445,22 @@
             </div>
           </div>
 
+          <!-- Nearest OTHER station (yours or another faction's) that trades
+               each ware this station does — see renderNpcInspAlternatives()
+               in npc-station-inspector.js for how "yours" is matched (production/
+               consumption analytics, since player stations don't expose posted
+               trade offers the way NPC stations do). -->
+          <div class="npc-insp-section">
+            <div class="npc-insp-label">Nearby Alternatives</div>
+            <div class="npc-insp-alt-note">Closest other place trading the same ware — yours by what it produces/consumes, others by their live offers.</div>
+            <table class="data-table">
+              <thead>
+                <tr><th>Ware</th><th></th><th>Station</th><th>Jumps</th></tr>
+              </thead>
+              <tbody id="npc-insp-alt-rows"></tbody>
+            </table>
+          </div>
+
           <div class="npc-insp-section">
             <div class="npc-insp-label">Trade history with this station</div>
             <div class="npc-insp-trades-box">

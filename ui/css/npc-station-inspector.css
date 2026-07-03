@@ -89,6 +89,18 @@
 
     .npc-insp-placeholder { font-size: 1.2rem; color: var(--text-secondary); }
 
+    /* Nearby Alternatives — the caveat line explaining what a "your station"
+       match actually means (production/consumption, not a posted offer),
+       styled quiet since it's read once and then ignored, not a stat. */
+    .npc-insp-alt-note { font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 0.8rem; max-width: 60rem; line-height: 1.5; }
+
+    /* An NPC alternative's station name — clicking swaps the inspector to
+       that station (npcJumpToAltStation()), same affordance as .ship-link/
+       .sector-link elsewhere in this file. Your-own-station matches use the
+       plain .badge instead (no navigation target on this tab). */
+    .npc-alt-link { cursor: pointer; }
+    .npc-alt-link:hover { color: var(--color-warning); text-decoration: underline; }
+
     /* No inner scrollbox any more — the inspector panel itself scrolls (same
        max-height as the table panel it replaces), and a scroll-within-a-scroll
        read poorly. The sticky header now pins against the panel viewport, so

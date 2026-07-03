@@ -9,6 +9,12 @@
   // captured here so the Station Inspector can filter it by counterparty_id
   // without needing its own copy of the render pipeline's `data`.
   let npcStationTrades    = [];
+  // Player stations + galaxy jump distances, captured here for the same
+  // reason as npcStationTrades above — the Station Inspector's "Nearby
+  // Alternatives" section (npc-station-inspector.js) needs both but only
+  // renderNpcStations() gets handed the raw `data` object.
+  let allPlayerStations   = [];
+  let distancesFromPlayer = {};
   let npcRangeMin         = 0;
   let npcRangeMax         = NPC_RANGE_MAX;
   let npcStationSortKey   = 'jumps';
@@ -200,6 +206,8 @@
   function renderNpcStations(data) {
     allNpcTradePartners = data.npc_trade_partners || [];
     npcStationTrades     = data.station_trades || [];
+    allPlayerStations    = data.stations || [];
+    distancesFromPlayer  = (data.galaxy_map && data.galaxy_map.distances_from_player) || {};
     renderNpcStationsTable();
   }
 

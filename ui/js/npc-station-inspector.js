@@ -123,6 +123,95 @@
     </tr>`;
   }
 
+  // ── NEARBY ALTERNATIVES ──────────────────────────────────────────────────
+  // For each ware this station trades, the nearest OTHER station — yours or
+  // another faction's — that trades it the same direction: "is there
+  // somewhere closer to get/sell this instead of coming all the way out
+  // here". "Nearest" reuses the same jumps-from-player metric the rest of
+  // this tab already shows (an NPC alternative's own .jumps field; your own
+  // stations via galaxy_map.distances_from_player) rather than distance from
+  // THIS station specifically, so "jumps" means the same thing everywhere it
+  // appears in the tab, and a player station's own sector — 0 jumps from
+  // your empire by definition — surfaces correctly as "you already make/use
+  // this at home".
+  //
+  // Your-station matches are a proxy, not a confirmed trade offer: the
+  // scanner doesn't read a player station's own posted buy/sell prices (only
+  // NPC stations expose that), so a match here means the station PRODUCES
+  // (sell side) or CONSUMES (buy side) the ware per its production
+  // analytics — worth knowing about even without a live sell order on it.
+  //
+  // Rebuilt fresh on every open rather than cached — a large empire's trade
+  // partner list can run into the hundreds, but this is one pass over wares
+  // already in memory (no new fetch), and correctness after a scan refresh
+  // matters more than shaving a rebuild that only runs on a row click.
+  function npcBuildWareAltIndex(excludeObjectId) {
+    const sellers = new Map(); // ware_name -> { jumps, html }
+    const buyers  = new Map();
+    const keepBest = (map, wareName, jumps, html) => {
+      const cur = map.get(wareName);
+      if (!cur || jumps < cur.jumps) map.set(wareName, { jumps, html });
+    };
+
+    for (const st of allNpcTradePartners) {
+      if (st.object_id === excludeObjectId) continue;
+      const html = `<span class="npc-alt-link" onclick="npcJumpToAltStation('${st.object_id}')">${npcOwnerBadge(st)} ${st.name}</span>`;
+      for (const w of (st.wares || [])) {
+        if (w.is_selling) keepBest(sellers, w.ware_name, st.jumps, html);
+        if (w.is_buying)  keepBest(buyers,  w.ware_name, st.jumps, html);
+      }
+    }
+
+    for (const st of allPlayerStations) {
+      const jumps = distancesFromPlayer[st.sector_macro];
+      if (jumps == null) continue; // sector unreachable from any player asset — shouldn't happen for your own station, but no distance means no claim
+      const html = `<span class="badge neutral">${st.name || st.code}</span>`;
+      for (const [wareName, rate] of Object.entries(st.production_rates  || {})) if (rate > 0) keepBest(sellers, wareName, jumps, html);
+      for (const [wareName, rate] of Object.entries(st.consumption_rates || {})) if (rate > 0) keepBest(buyers,  wareName, jumps, html);
+    }
+
+    return { sellers, buyers };
+  }
+
+  // Re-opens the inspector on a different NPC station straight from its
+  // Nearby Alternatives row — same lookup npcStationRow()'s click handler
+  // uses (npc-stations.js), just keyed here instead of by a table row's
+  // dataset since the alternative link carries no DOM row of its own.
+  function npcJumpToAltStation(objectId) {
+    const st = allNpcTradePartners.find(s => s.object_id === objectId);
+    if (st) openNpcStationInspector(st);
+  }
+
+  function npcAltRow(entry) {
+    const arrow = entry.dir === 'sell'
+      ? `<span style="color:${CHART_ACCENT}">▲</span>`
+      : `<span style="color:${CHART_LOSS}">▼</span>`;
+    return `<tr>
+      <td style="color:${WARE_COLOURS[entry.ware.ware_name] || CHART_LINE}">${entry.ware.ware_name}</td>
+      <td>${arrow}</td>
+      <td>${entry.alt.html}</td>
+      <td class="mono">${entry.alt.jumps} jump${entry.alt.jumps === 1 ? '' : 's'}</td>
+    </tr>`;
+  }
+
+  // wares is this station's own list (npcInspWares) — every ware it trades
+  // gets checked against the index built above, one lookup per direction the
+  // ware actually carries, closest match first so the most actionable rows
+  // sit at the top of what can be a long table.
+  function renderNpcInspAlternatives(wares, excludeObjectId) {
+    const { sellers, buyers } = npcBuildWareAltIndex(excludeObjectId);
+    const rows = [];
+    for (const w of wares) {
+      if (w.is_selling) { const alt = sellers.get(w.ware_name); if (alt) rows.push({ ware: w, dir: 'sell', alt }); }
+      if (w.is_buying)  { const alt = buyers.get(w.ware_name);  if (alt) rows.push({ ware: w, dir: 'buy',  alt }); }
+    }
+    rows.sort((a, b) => a.alt.jumps - b.alt.jumps);
+
+    document.getElementById('npc-insp-alt-rows').innerHTML = rows.length
+      ? rows.map(npcAltRow).join('')
+      : '<tr><td colspan="4" class="npc-insp-placeholder">No closer alternatives found.</td></tr>';
+  }
+
   // Open/closed is read straight off the panel's display style rather than a
   // shared flag — renderNpcStationsTable() (npc-stations.js) also needs the
   // answer, and the DOM is the one place both files already agree on.
@@ -157,6 +246,7 @@
     npcInspWareFilter = 'all';
     document.getElementById('npc-insp-ware-pill').innerHTML = npcWareDirPillHtml();
     renderNpcInspWares();
+    renderNpcInspAlternatives(npcInspWares, s.object_id);
 
     // Most-recent-first, same ordering _tradeLogHtml() uses in economy-logs.js.
     const trades = npcStationTrades
