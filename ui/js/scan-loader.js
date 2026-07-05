@@ -1,10 +1,21 @@
   function loadFromJsonFile() {
     fetch('../x4_empire_state.json')
       .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(populate)
+      .then(data => {
+        // write_export() embeds the static catalogs in the file because this
+        // path has no bridge to fetch them from; adopt them before populate()
+        // so the Resource Library and universe overlay aren't left empty.
+        EQUIPMENT_CATALOG = data.equipment_catalog || EQUIPMENT_CATALOG;
+        HULL_CATALOG      = data.hull_catalog      || HULL_CATALOG;
+        SECTOR_CATALOG    = data.sector_catalog    || SECTOR_CATALOG;
+        populate(data);
+      })
       .catch(e => {
         document.getElementById("loading").textContent =
           "No Qt bridge and could not load x4_empire_state.json: " + e;
+        // No data will ever arrive on this path — show the static galaxy
+        // skeleton so the Universe tab isn't just blank.
+        renderUniverseMap({});
       });
   }
 
@@ -298,11 +309,12 @@
     });
   }
 
-  // Equipment/hull catalog is static (shipped with the program, not derived
-  // from any save) — fetched once via its own scan-independent bridge call so
-  // Resource Library works even before a scan has ever been run. Scan
-  // payloads no longer carry this data (see populate.js), so this is the
-  // sole writer of EQUIPMENT_CATALOG/HULL_CATALOG.
+  // Equipment/hull/sector catalogs are static (shipped with the program, not
+  // derived from any save) — fetched once via its own scan-independent bridge
+  // call so Resource Library and the universe map's interactive overlay work
+  // even before a scan has ever been run. Scan payloads no longer carry this
+  // data (see populate.js), so this is the sole writer of EQUIPMENT_CATALOG/
+  // HULL_CATALOG/SECTOR_CATALOG.
   function loadResourceLibrary() {
     if (!_bridge) return;
     _bridge.get_resource_library(function(jsonStr) {
@@ -310,8 +322,26 @@
         const data = JSON.parse(jsonStr);
         EQUIPMENT_CATALOG = data.equipment_catalog || {};
         HULL_CATALOG = data.hull_catalog || {};
+        SECTOR_CATALOG = data.sector_catalog || {};
+        // This callback races the list_scans one: if the empty-DB skeleton
+        // map already rendered without the catalog, re-render so the static
+        // sectors appear. Never rerun a render that had real scan data.
+        if (_uLastMapData && !(_uLastMapData.sectors || []).length) {
+          renderUniverseMap(_uLastMapData);
+        }
       } catch(e) { /* Resource Library stays empty */ }
     });
+  }
+
+  // Shared list_scans callback for both bridge branches. When the DB is empty,
+  // loadScan(-1) has nothing to render and populate() never runs — draw the
+  // static galaxy skeleton so the Universe tab isn't blank (it opens on the
+  // interactive overlay in that state; see universe-map.js).
+  function initScanPicker(jsonStr) {
+    let scans = null;
+    try { scans = JSON.parse(jsonStr); } catch(e) { /* picker stays hidden */ }
+    if (scans) populateScanPicker(scans);
+    if (scans && !scans.length) renderUniverseMap({});
   }
 
   if (window._bridge) {
@@ -321,18 +351,14 @@
     // startup sequence as the QWebChannel branch below.
     _bridge = window._bridge;
     loadResourceLibrary();
-    _bridge.list_scans(function(jsonStr) {
-      try { populateScanPicker(JSON.parse(jsonStr)); } catch(e) { /* picker stays hidden */ }
-    });
+    _bridge.list_scans(initScanPicker);
     loadScan(-1);
   } else if (typeof qt !== 'undefined' && qt.webChannelTransport) {
     new QWebChannel(qt.webChannelTransport, function(channel) {
       _bridge = channel.objects.bridge;
       loadResourceLibrary();
       // Build the history picker, then render the latest scan.
-      _bridge.list_scans(function(jsonStr) {
-        try { populateScanPicker(JSON.parse(jsonStr)); } catch(e) { /* picker stays hidden */ }
-      });
+      _bridge.list_scans(initScanPicker);
       loadScan(-1);
     });
   } else {

@@ -12,8 +12,10 @@ from scanner import galaxy_map as gm
 from scanner.ship_names import ship_display_name, resolve_ship_type
 from db.trends import compute_trends, compute_changes
 from data.equipment_stats import EQUIPMENT_STATS, EQUIPMENT_ALIASES
+from data.sector_stats import SECTOR_NAMES, SECTOR_RESOURCES, SECTOR_SUNLIGHT
 from data.ship_stats import SHIP_STATS
 from data.station_stats import STATION_STATS
+from data.wares import WARE_NAMES
 
 # Stat fields copied onto loadout entries; price drives cost calculations
 _EQUIP_STAT_KEYS = (
@@ -629,15 +631,40 @@ def _events(conn, scan_id) -> dict:
 
 # ── Top-level assembly ─────────────────────────────────────────────────────────
 
+def _sector_catalog() -> dict:
+    """Every sector's fixed properties (name, sunlight, mineable resources),
+    keyed by macro. Resource entries carry the same field names as the save-
+    derived _sector_resources() rows so the universe map's hover panel renders
+    both without caring which source it got.
+    """
+    return {
+        macro: {
+            'name':     SECTOR_NAMES[macro],
+            # Scanner behaviour for macros missing from the table is a 1.0
+            # multiplier, so the pre-scan map shows the same value a scan would.
+            'sunlight': SECTOR_SUNLIGHT.get(macro, 1.0),
+            'resources': [
+                {'ware': ware,
+                 'ware_name': WARE_NAMES.get(ware, ware.title()),
+                 'yield_level': level}
+                for ware, level in SECTOR_RESOURCES.get(macro, [])
+            ],
+        }
+        for macro in SECTOR_NAMES
+    }
+
+
 def resource_library_export() -> dict:
-    """Equipment/hull catalog (macro -> stats), independent of any scan or DB —
-    both come straight from the static, pre-generated SHIP_STATS/EQUIPMENT_STATS
-    data files. Used by the bridge's standalone get_resource_library() call so
-    the Resource Library tab works before any scan has ever been run.
+    """Equipment/hull/sector catalogs (macro -> stats), independent of any scan
+    or DB — all come straight from the static, pre-generated data files. Used by
+    the bridge's standalone get_resource_library() call so the Resource Library
+    tab and the universe map's interactive overlay work before any scan has
+    ever been run.
     """
     return {
         'equipment_catalog': dict(EQUIPMENT_STATS),
         'hull_catalog': _hull_catalog(),
+        'sector_catalog': _sector_catalog(),
     }
 
 

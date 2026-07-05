@@ -570,7 +570,13 @@
           <i class="ti ti-filter" style="font-size:1.4rem"></i>
           <span>Overlays</span>
           <span style="color:var(--outline);margin:0 0.4rem">·</span>
-          <span style="font-size:1rem;color:var(--text-label);text-transform:none;letter-spacing:0">coming soon</span>
+          <!-- Two map states: the interactive reference map (fog-of-war lifted,
+               sunlight/yield hover) and the save's own discovered view. Active
+               state is kept in sync by _uSyncOverlayButtons on every render. -->
+          <button type="button" class="u-overlay-btn active" id="u-ov-btn-interactive"
+                  onclick="setUniverseOverlay('interactive')">Interactive Map</button>
+          <button type="button" class="u-overlay-btn" id="u-ov-btn-save"
+                  onclick="setUniverseOverlay('save')">Save Specific</button>
         </div>
         <div id="universe-map-wrap">
           <!-- zoom-layer is an HTML div on purpose: browsers GPU-composite CSS

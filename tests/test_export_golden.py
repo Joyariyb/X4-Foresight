@@ -106,6 +106,8 @@ def test_resource_library_catalogs():
     lib = resource_library_export()
     assert lib.get('equipment_catalog'), 'equipment_catalog missing or empty'
     assert lib.get('hull_catalog'), 'hull_catalog missing or empty'
+    # Losing this one would blank the universe map's pre-scan interactive overlay.
+    assert lib.get('sector_catalog'), 'sector_catalog missing or empty'
 
 
 def test_export_matches_golden(export):

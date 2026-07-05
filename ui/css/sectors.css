@@ -79,13 +79,14 @@
     .sd-res-amt { font-family: var(--font-data); font-size: 1.3rem; color: var(--text-primary); text-align: right; white-space: nowrap; }
     /* Abundance heat-ramp using brand colours — red (poor) → orange → yellow →
        green (rich). Prefix match covers the whole X4 yield ladder; verylow and
-       veryhigh are pinned to the extremes. Applies to both the detail table
-       (.sd-res-yield) and the list sort value (.sr-metric-yield). */
-    .sd-res-yield[data-yield="verylow"],  .sr-metric-yield[data-yield="verylow"]  { color: var(--color-negative); }
-    .sd-res-yield[data-yield^="low"],     .sr-metric-yield[data-yield^="low"]     { color: #f0883e; }
-    .sd-res-yield[data-yield^="med"],     .sr-metric-yield[data-yield^="med"]     { color: var(--color-highlight); }
-    .sd-res-yield[data-yield^="high"],    .sr-metric-yield[data-yield^="high"]    { color: var(--color-positive); }
-    .sd-res-yield[data-yield="veryhigh"], .sr-metric-yield[data-yield="veryhigh"] { color: #56d364; }
+       veryhigh are pinned to the extremes. Applies to the detail table
+       (.sd-res-yield), the list sort value (.sr-metric-yield), and the universe
+       map's interactive-overlay hover panel (.uhp-ryield). */
+    .sd-res-yield[data-yield="verylow"],  .sr-metric-yield[data-yield="verylow"],  .uhp-ryield[data-yield="verylow"]  { color: var(--color-negative); }
+    .sd-res-yield[data-yield^="low"],     .sr-metric-yield[data-yield^="low"],     .uhp-ryield[data-yield^="low"]     { color: #f0883e; }
+    .sd-res-yield[data-yield^="med"],     .sr-metric-yield[data-yield^="med"],     .uhp-ryield[data-yield^="med"]     { color: var(--color-highlight); }
+    .sd-res-yield[data-yield^="high"],    .sr-metric-yield[data-yield^="high"],    .uhp-ryield[data-yield^="high"]    { color: var(--color-positive); }
+    .sd-res-yield[data-yield="veryhigh"], .sr-metric-yield[data-yield="veryhigh"], .uhp-ryield[data-yield="veryhigh"] { color: #56d364; }
 
     /* The player's own stations in a sector — clickable to the station card. */
     .sd-sta-row { display: flex; align-items: center; gap: 0.8rem; padding: 0.4rem 0; font-family: var(--font-label); font-size: 1.3rem; color: var(--text-primary); cursor: pointer; }

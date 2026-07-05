@@ -348,6 +348,19 @@
   let _distFromEmpire    = {}; // sector_macro → jumps from empire
   let _sectorAdj      = {}; // sector_macro → [{macro, cost}]
 
+  // Overlay state (Universe tab filter bar). 'interactive' lifts fog-of-war and
+  // turns the hover panel into a static reference card (sunlight + yields);
+  // 'save' shows only what this save's pilot has actually discovered.
+  // Starts on 'interactive' so the pre-scan skeleton map has a sensible mode;
+  // the first scan load flips it to 'save' unless the user already chose.
+  let _uOverlayMode    = 'interactive'; // 'interactive' | 'save'
+  let _uOverlayUserSet = false;
+  let _uLastMapData    = null; // last render payload, so toggling re-renders without refetching
+  // Static per-sector reference data (name / sunlight / mineable yields).
+  // Set by scan-loader.js's loadResourceLibrary(); lets the interactive
+  // overlay draw sector sub-hexes and the hover panel before any scan exists.
+  let SECTOR_CATALOG   = {};
+
   // Fit all clusters inside the map container, called on first tab open when
   // the element has real dimensions (deferred via requestAnimationFrame).
   function initUniverseView() {
@@ -476,10 +489,42 @@
     }
   }
 
+  // Sector rows shaped like the export's data.sectors, built from the static
+  // catalog. Sorted by display name to mirror the export's ordering, so a
+  // cluster's sub-hex slot assignment doesn't shuffle when a scan loads.
+  function _uStaticSectorRows() {
+    return Object.entries(SECTOR_CATALOG).map(([macro, s]) => ({
+      sector_macro:  macro,
+      sector_name:   s.name || macro,
+      cluster_macro: macro.replace(/_sector\d+_macro$/i, '_macro'),
+      cluster_name:  null,
+      owner_id:      null,
+      owner_name:    '',
+      sunlight:      s.sunlight,
+      is_discovered: false,
+      resources:     s.resources || [],
+    })).sort((a, b) => a.sector_name.localeCompare(b.sector_name));
+  }
+
   function renderUniverseMap(data) {
     const SVG_NS = 'http://www.w3.org/2000/svg';
     const vp     = document.getElementById('universe-viewport');
     if (!vp) return;
+
+    _uLastMapData = data;
+    // A loaded scan defaults to the save's own fog-of-war view; only an explicit
+    // click on the toggle overrides that for the rest of the session.
+    if (!_uOverlayUserSet && (data.sectors || []).length) _uOverlayMode = 'save';
+    const revealAll = _uOverlayMode === 'interactive';
+    _uSyncOverlayButtons();
+
+    // Pre-scan the export has no sector rows, but the interactive overlay is a
+    // reference map — synthesise rows from the static catalog so sub-hexes,
+    // labels and the sunlight/yield hover panel still render. The 'save' view
+    // keeps the empty list: with no scan, nothing has been discovered.
+    const sectorRows = ((data.sectors || []).length || !revealAll)
+      ? (data.sectors || [])
+      : _uStaticSectorRows();
 
     const BASE_HEX   = 48;
     // Sub-hexes are sized relative to the *drawn* cluster body (BASE_HEX - 1.5
@@ -512,7 +557,7 @@
 
     // ── Build cluster metadata from sector data ───────────────────────────────
     const clusterInfo = {}; // macro → { name, owners:{id→count}, sectors[], anyDiscovered }
-    (data.sectors || []).forEach(s => {
+    sectorRows.forEach(s => {
       if (!s.cluster_macro) return;
       const ci = clusterInfo[s.cluster_macro] ||
                  (clusterInfo[s.cluster_macro] = { name: null, owners: {}, sectors: [], anyDiscovered: false });
@@ -521,7 +566,9 @@
       // Fog-of-war: only DISCOVERED sectors contribute to the cluster's
       // dominant-faction colour — you don't know who owns space you haven't
       // explored. A cluster with no discovered sectors falls through to gray.
-      if (s.owner_id && s.is_discovered) ci.owners[s.owner_id] = (ci.owners[s.owner_id] || 0) + 1;
+      // The interactive overlay lifts this: it's a reference map, not a record
+      // of what this pilot has seen.
+      if (s.owner_id && (s.is_discovered || revealAll)) ci.owners[s.owner_id] = (ci.owners[s.owner_id] || 0) + 1;
       // Use cluster_name only when it's a real display name, not the raw macro.
       if (s.cluster_name && s.cluster_name !== s.cluster_macro && !ci.name)
         ci.name = s.cluster_name;
@@ -579,7 +626,7 @@
           // cluster's sub-hex radius (which varies with sector count).
           gateScale: (_lay.r * HEX_BODY) / 300,
           color: FACTION_COLOURS[sec.owner_id] || '#6e7681',
-          discovered: !!sec.is_discovered,
+          discovered: !!sec.is_discovered || revealAll,
         };
       });
     }
@@ -721,8 +768,9 @@
       // Must use the same layout/position formulas as the sectorPos loop above
       // so gate connection line endpoints match the drawn hexes exactly.
       // Sub-hexes only render for clusters with at least one discovered sector;
-      // an entirely-undiscovered cluster shows nothing when zoomed in.
-      if (sectors.length > 0 && (clusterInfo[macro] || {}).anyDiscovered) {
+      // an entirely-undiscovered cluster shows nothing when zoomed in. The
+      // interactive overlay renders every cluster's sectors regardless.
+      if (sectors.length > 0 && ((clusterInfo[macro] || {}).anyDiscovered || revealAll)) {
         const layout = SECTOR_LAYOUTS[Math.min(sectors.length, SECTOR_LAYOUTS.length) - 1];
         const subR   = layout.r * HEX_BODY;
         const sg     = el('g', { class: 'u-sector-hex' });
@@ -731,9 +779,9 @@
           const [ox, oy] = layout.offs[i] || [0, 0];
           const sx = cx + ox * HEX_BODY;
           const sy = cy + oy * HEX_BODY;
-          const discovered = !!sec.is_discovered;
-          const sc = discovered ? (FACTION_COLOURS[sec.owner_id] || '#6e7681')
-                                : UNDISCOVERED_COLOUR;
+          const revealed = !!sec.is_discovered || revealAll;
+          const sc = revealed ? (FACTION_COLOURS[sec.owner_id] || '#6e7681')
+                              : UNDISCOVERED_COLOUR;
 
           sg.appendChild(el('polygon', {
             points:         hexPoints(sx, sy, subR - 0.5),
@@ -749,7 +797,7 @@
             const sl = document.createElement('span');
             sl.className = 'u-sector-label';
             sl.style.color = sc;
-            sl.textContent = discovered ? (sec.sector_name || sec.sector_macro) : 'Undiscovered';
+            sl.textContent = revealed ? (sec.sector_name || sec.sector_macro) : 'Undiscovered';
             labelsEl.appendChild(sl);
             _uSecLabelEls.push({ el: sl, wx: sx, wy: sy });
           }
@@ -765,7 +813,7 @@
 
     // ── Hover panel data (rebuilt every render in case data changes) ──────────
     _sectorInfoMap = {};
-    for (const s of (data.sectors || [])) _sectorInfoMap[s.sector_macro] = s;
+    for (const s of sectorRows) _sectorInfoMap[s.sector_macro] = s;
 
     _npcBySector = data.npc_stations_by_sector || {};
 
@@ -938,24 +986,40 @@
     let html = `<div class="uhp-name">${secName}</div>
 <div class="uhp-owner" style="color:${ownColor}">${ownName}</div>`;
 
-    if (near) {
-      const jLabel = near.jumps === 0 ? 'here' : `${near.jumps} jump${near.jumps !== 1 ? 's' : ''}`;
+    // The interactive overlay is a reference map, so its panel shows the
+    // sector's fixed properties (sunlight, mineable yields) instead of the
+    // save-specific empire readout below (nearest station, ship presence).
+    if (_uOverlayMode === 'interactive') {
+      const sunPct = sec?.sunlight != null ? Math.round(sec.sunlight * 100) + '%' : '—';
       html += `<div class="uhp-sep"></div>
+<div class="uhp-stat"><span>Sunlight</span><span class="uhp-sun">${sunPct}</span></div>`;
+      const res = sec?.resources || [];
+      html += res.length
+        ? res.map(r =>
+            `<div class="uhp-stat"><span>${r.ware_name || r.ware}</span>` +
+            `<span class="uhp-ryield" data-yield="${r.yield_level || ''}">${_yieldLabel(r.yield_level || '')}</span></div>`
+          ).join('')
+        : `<div class="uhp-none">No mineable resources</div>`;
+    } else {
+      if (near) {
+        const jLabel = near.jumps === 0 ? 'here' : `${near.jumps} jump${near.jumps !== 1 ? 's' : ''}`;
+        html += `<div class="uhp-sep"></div>
 <div class="uhp-nearest"><span class="uhp-stname">${near.name}</span><span class="uhp-jumps">${jLabel}</span></div>`;
-    }
+      }
 
-    if (facs.length) {
-      const rows = facs.map(f => {
-        const m     = f.owner_name.match(/^\[(\w+)\]/);
-        const short = m ? m[1] : f.owner_name.slice(0, 3).toUpperCase();
-        const color = FACTION_COLOURS[f.owner_id] || '#6e7681';
-        return `<div class="uhp-faction-row">
+      if (facs.length) {
+        const rows = facs.map(f => {
+          const m     = f.owner_name.match(/^\[(\w+)\]/);
+          const short = m ? m[1] : f.owner_name.slice(0, 3).toUpperCase();
+          const color = FACTION_COLOURS[f.owner_id] || '#6e7681';
+          return `<div class="uhp-faction-row">
   <span class="uhp-fdot" style="background:${color}"></span>
   <span class="uhp-fcode">${short}</span>
   <span class="uhp-fcount">${f.count}</span>
 </div>`;
-      }).join('');
-      html += `<div class="uhp-sep"></div><div>${rows}</div>`;
+        }).join('');
+        html += `<div class="uhp-sep"></div><div>${rows}</div>`;
+      }
     }
 
     panel.innerHTML = html;
@@ -971,5 +1035,21 @@
 
   function _hideUHoverPanel() {
     document.getElementById('u-hover-panel')?.classList.remove('visible');
+  }
+
+  // Filter-bar toggle handler (buttons in body.html). Re-renders from the
+  // stored payload so switching overlays never needs a bridge round-trip.
+  function setUniverseOverlay(mode) {
+    _uOverlayUserSet = true;
+    if (mode === _uOverlayMode) return;
+    _uOverlayMode = mode;
+    renderUniverseMap(_uLastMapData || {});
+  }
+
+  function _uSyncOverlayButtons() {
+    document.getElementById('u-ov-btn-interactive')
+      ?.classList.toggle('active', _uOverlayMode === 'interactive');
+    document.getElementById('u-ov-btn-save')
+      ?.classList.toggle('active', _uOverlayMode === 'save');
   }
 
