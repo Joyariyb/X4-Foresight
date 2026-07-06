@@ -17,8 +17,14 @@
     .adv-stat-value { font-family: var(--font-data); font-size: 1.6rem; color: var(--text-primary); }
 
     /* ── TYPE FILTER ── */
-    .adv-filter { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+    .adv-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin-bottom: 1rem; }
     .adv-filter-count { font-family: var(--font-data); opacity: 0.7; margin-left: 0.5rem; }
+
+    /* Help button — pinned to the far end of the same row as the type chips
+       via margin-left:auto, so it reads as "about this tab" rather than a
+       fifth filter option. */
+    .adv-help-btn { margin-left: auto; display: flex; align-items: center; justify-content: center; width: 2.4rem; height: 2.4rem; padding: 0; background: transparent; border: 1px solid var(--outline); border-radius: var(--radius-md); color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; transition: background var(--duration-short) var(--ease-standard); }
+    .adv-help-btn:hover { background: var(--state-hover); color: var(--text-primary); }
 
     /* ── ADVICE CARDS ── */
     .adv-list { display: flex; flex-direction: column; gap: 0.8rem; }
@@ -74,6 +80,23 @@
     .adv--special  .adv-rail { background: var(--color-special-dim); }
     .adv--special  .adv-rail-fill { background: var(--color-special); }
     .adv--special  .adv-icon, .adv--special .adv-type { color: var(--color-special); }
+
+    /* ── HELP TAB ── */
+    /* Same card/rail shell as the advice cards (tab-advisors-help in
+       body.html) so the explainer visually matches what it's explaining —
+       static text only, no click/expand affordances. */
+    /* Intro note above the per-type cards — explains the priority rail, which
+       is common to all four types rather than repeated in each card. */
+    .adv-help-note { display: flex; align-items: flex-start; gap: 0.8rem; padding: 1rem 1.4rem; background: var(--surface-1); border: 1px solid var(--outline); border-radius: var(--radius-md); margin-bottom: 1.2rem; }
+    .adv-help-note .ti { font-size: 1.6rem; color: var(--text-secondary); flex: none; margin-top: 0.2rem; }
+    .adv-help-note p { font-family: var(--font-body); font-size: 1.35rem; color: var(--text-primary); line-height: 1.5; margin: 0; }
+    .adv-help-note strong { color: var(--text-primary); }
+
+    .adv-help-list { display: flex; flex-direction: column; gap: 0.8rem; }
+    .adv-help-card { display: flex; background: var(--surface-2); border: 1px solid var(--outline); border-radius: var(--radius-md); overflow: hidden; }
+    .adv-help-body { flex: 1; min-width: 0; padding: 1rem 1.4rem; }
+    .adv-help-head { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.5rem; }
+    .adv-help-body p { font-family: var(--font-body); font-size: 1.35rem; color: var(--text-primary); line-height: 1.5; margin: 0; }
 
     /* ── EMPTY STATE ── */
     .adv-empty { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; padding: 4rem 1rem; color: var(--text-secondary); font-family: var(--font-body); font-size: 1.4rem; }

@@ -61,6 +61,15 @@
       render();
     }
 
+    // Opens the standalone Help tab explaining the 4 finding types. Recorded
+    // as a jump (not a plain switchTab) so the Back button in the sidebar
+    // returns here — same trail mechanism as the station/sector jump links.
+    function openHelp() {
+      _navRecord();
+      switchTab('advisors-help', null);
+      _navAfterJump();
+    }
+
     const _meta = f => TYPE_META[f.type] || FALLBACK_META;
     const _rows = () => _filter === 'all'
       ? _findings
@@ -157,6 +166,10 @@
           .filter(t => count(t))
           .map(t => chip(t, TYPE_META[t].label, count(t))))
         .join('');
+      // Right-justified in the same row as the type chips — one flex row,
+      // help pushed to the far end via margin-left:auto (adv-help-btn in
+      // advisors.css), rather than a second row that'd waste vertical space.
+      const helpBtn = `<button class="adv-help-btn" onclick="AdvisorsFeed.openHelp()" title="What do these findings mean?"><i class="ti ti-help-circle"></i></button>`;
 
       // Findings arrive pre-sorted by priority; rank is the position in the
       // FULL list so #3 stays #3 when a filter hides #1 and #2.
@@ -168,9 +181,9 @@
 
       root.innerHTML = `
         ${_briefingHtml()}
-        <div class="adv-filter">${chips}</div>
+        <div class="adv-filter">${chips}${helpBtn}</div>
         <div class="adv-list">${cards}</div>`;
     }
 
-    return { setData, setFilter, toggle, render };
+    return { setData, setFilter, toggle, render, openHelp };
   })();

@@ -122,6 +122,11 @@
       <div class="sb-item">
         <span class="sb-item-label"><i class="ti ti-database-export"></i> Station</span>
       </div>
+      <div class="sb-divider"></div>
+      <div class="sb-heading">Other</div>
+      <div class="sb-item" onclick="switchTab('advisors-help', null)">
+        <span class="sb-item-label"><i class="ti ti-help-circle"></i> Help</span>
+      </div>
     </div>
 
     <div id="content">
@@ -648,6 +653,72 @@
       <div class="tab-panel" id="tab-advisors-economic">
         <div class="sec-header"><div class="sec-title">Economic Advisor</div><div class="sec-line"></div></div>
         <div id="advisors-root"></div>
+      </div>
+
+      <!-- HELP TAB — static explainer for the 4 Economic Advisor finding
+           types. Reachable via the "?" button on that tab (records a Back
+           trail, js/advisors-feed.js openHelp()) or the Other > Help sidebar
+           link (plain switchTab, no Back trail). -->
+      <div class="tab-panel" id="tab-advisors-help">
+        <div class="sec-header"><div class="sec-title">Economic Advisor · Help</div><div class="sec-line"></div></div>
+        <div class="adv-help-note">
+          <i class="ti ti-info-circle"></i>
+          <p>The coloured bar on the left of each card is the <strong>priority rail</strong>.
+            Its fill height is that finding's priority score relative to the single
+            highest-scoring finding in the current scan — so a full rail is the most
+            urgent thing found, and a short rail is comparatively minor. The rail
+            stays fixed to the full findings list even when you filter by type, so a
+            card's height never shifts just because you switched tabs. Sort order and
+            rail height always agree: read top-to-bottom for rank, or glance at the
+            rails for how big the gap is between one finding and the next.</p>
+        </div>
+        <div class="adv-help-list">
+          <div class="adv-help-card adv--warning">
+            <div class="adv-rail"><div class="adv-rail-fill" style="height:100%"></div></div>
+            <div class="adv-help-body">
+              <div class="adv-help-head"><i class="ti ti-stack-2 adv-icon"></i><span class="adv-type">Overflow Risk</span></div>
+              <p>Flags a station whose production surplus will fill its cargo bay within 24
+                in-game hours. If a station makes more of something than it consumes or
+                ships out, that surplus piles up in storage — once it caps, the excess
+                production is simply wasted (nothing more can be stored). Priority is
+                weighted by both the value being produced and how soon it caps, so an
+                urgent, high-value overflow ranks above a slow, low-value one.</p>
+            </div>
+          </div>
+          <div class="adv-help-card adv--positive">
+            <div class="adv-rail"><div class="adv-rail-fill" style="height:100%"></div></div>
+            <div class="adv-help-body">
+              <div class="adv-help-head"><i class="ti ti-trending-up adv-icon"></i><span class="adv-type">Market Opportunity</span></div>
+              <p>Matches a surplus ware at one of your stations against a nearby NPC station
+                that genuinely wants more of it (its buy offer's desired stock target
+                exceeds what it currently has — not just "willing to buy," but "actively
+                short"). Ranked by estimated credits/hour, discounted by how many jumps
+                away the buyer is — a big opportunity three jumps out scores lower than a
+                smaller one next door.</p>
+            </div>
+          </div>
+          <div class="adv-help-card adv--info">
+            <div class="adv-rail"><div class="adv-rail-fill" style="height:100%"></div></div>
+            <div class="adv-help-body">
+              <div class="adv-help-head"><i class="ti ti-scale adv-icon"></i><span class="adv-type">Pricing Gap</span></div>
+              <p>Compares what you're currently charging on your own posted sell offers
+                against what a reachable NPC station is paying for the same ware. If
+                someone nearby pays more than your listed price, this flags the gap and
+                estimates the one-time gain if you rerouted your current stock there
+                instead.</p>
+            </div>
+          </div>
+          <div class="adv-help-card adv--special">
+            <div class="adv-rail"><div class="adv-rail-fill" style="height:100%"></div></div>
+            <div class="adv-help-body">
+              <div class="adv-help-head"><i class="ti ti-anchor adv-icon"></i><span class="adv-type">Idle Hauler</span></div>
+              <p>Catches a Freighter/Transport sitting nearly empty (under 15% cargo fill)
+                while its home station is actively overproducing something. The ship has
+                capacity, the station has product — the mismatch is the finding. Priority
+                scales with how much capacity is sitting unused.</p>
+            </div>
+          </div>
+        </div>
       </div>
 
     </div>
