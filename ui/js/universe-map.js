@@ -498,8 +498,11 @@
       sector_name:   s.name || macro,
       cluster_macro: macro.replace(/_sector\d+_macro$/i, '_macro'),
       cluster_name:  null,
-      owner_id:      null,
-      owner_name:    '',
+      // Game-start ownership from the catalog (derived from god.xml), so the
+      // interactive overlay shows faction colours before any scan exists.
+      // Unclaimed sectors have no owner_id and stay neutral gray.
+      owner_id:      s.owner_id   || null,
+      owner_name:    s.owner_name || '',
       sunlight:      s.sunlight,
       is_discovered: false,
       resources:     s.resources || [],

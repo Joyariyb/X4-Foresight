@@ -945,6 +945,73 @@ _SECTOR_NAME_PAREN_RE = re.compile(r'\(([^)]+)\)\s*$')
 # <area yieldid="..."> uses, so the static table matches what a scan would find.
 _RESOURCEAREA_RE = re.compile(r'^sphere_[a-z]+_([a-z]+)_([a-z]+)_[a-z]+$')
 
+# god.xml station locations are sector OR zone macros; zone macros embed the
+# sector ("zone001_cluster_14_sector001_macro"), so one search covers both.
+_GOD_SECTOR_RE = re.compile(r'(cluster_\d+_sector\d+)', re.IGNORECASE)
+
+# Owners whose god.xml stations never claim the sector they sit in:
+# player (HQ plot), khaak (hives are infestations, not territory), civilian
+# (background flavour stations), ownerless (literally nobody). Without this
+# filter Kha'ak hives would "own" Pious Mists IV and the player plot would
+# own Grand Exchange I.
+_GOD_NONCLAIM_FACTIONS = {"player", "khaak", "civilian", "ownerless"}
+
+
+def load_god_sector_owners(idx: CatalogIndex) -> dict[str, str]:
+    """lowercase sector macro → game-start owner faction id, from god.xml.
+
+    mapdefaults.xml has no ownership info — at game start a sector belongs to
+    whoever god.xml seeds with an administration-capable station there. The
+    stations tagged [defence] in their <select> ARE the game's sector-claim
+    markers, so a defence station outvotes any number of other stations
+    (Sacred Relic: paranid defence station vs alliance shipyard → paranid,
+    matching the in-game map). Sectors with no claiming station are simply
+    absent — genuinely unclaimed space stays unowned.
+    """
+    root = ET.fromstring(idx.read("libraries/god.xml"))
+    for vp in idx.find("extensions/*/libraries/god.xml"):
+        dlc_root = ET.fromstring(idx.read(vp))
+        if dlc_root.tag == "diff":
+            apply_diff(root, dlc_root, source=vp)
+        else:
+            # Non-diff DLC (none today, but mapdefaults handles this case too):
+            # merge its stations into the base <stations> block.
+            dst = root.find("stations")
+            src = dlc_root.find("stations")
+            if dst is not None and src is not None:
+                for st in src.findall("station"):
+                    dst.append(st)
+
+    # Only the galaxy-wide <stations> block counts — <gamestart> blocks carry
+    # their own scenario-specific station lists that don't exist in every game.
+    stations_el = root.find("stations")
+    if stations_el is None:
+        return {}
+
+    # sector → owner → [defence stations, all stations]
+    tally: dict[str, dict[str, list[int]]] = {}
+    for st in stations_el.findall("station"):
+        owner = (st.get("owner") or "").lower()
+        loc   = st.find("location")
+        if not owner or owner in _GOD_NONCLAIM_FACTIONS or loc is None:
+            continue
+        m = _GOD_SECTOR_RE.search((loc.get("macro") or "").lower())
+        if not m:
+            continue  # galaxy/cluster-level placement — no sector to credit
+        sel = st.find("station/select")
+        is_defence = "defence" in (sel.get("tags") or "") if sel is not None else False
+        counts = tally.setdefault(m.group(1) + "_macro", {}).setdefault(owner, [0, 0])
+        counts[0] += 1 if is_defence else 0
+        counts[1] += 1
+
+    owners: dict[str, str] = {}
+    for sector, facs in tally.items():
+        # Most defence stations wins, then most stations overall; the trailing
+        # faction id makes a true tie deterministic across regenerations.
+        best = min(facs.items(), key=lambda kv: (-kv[1][0], -kv[1][1], kv[0]))
+        owners[sector] = best[0]
+    return owners
+
 
 def _sector_display_name(sector_macro: str, texts_20004: dict) -> str:
     """Resolve a lowercase sector macro to its human-readable display name.
@@ -965,8 +1032,8 @@ def _sector_display_name(sector_macro: str, texts_20004: dict) -> str:
 
 def gen_sector_stats_py(idx: CatalogIndex, texts_20004: dict) -> str:
     """
-    Generates SECTOR_SUNLIGHT, SECTOR_NAMES and SECTOR_RESOURCES, all keyed by
-    lowercase sector macro.
+    Generates SECTOR_SUNLIGHT, SECTOR_NAMES, SECTOR_RESOURCES and
+    SECTOR_OWNERS, all keyed by lowercase sector macro.
 
     Reads libraries/mapdefaults.xml (base + DLC). DLCs that ship a <diff>
     patch are applied in catalog order; additive DLCs have their <dataset>
@@ -1084,6 +1151,14 @@ def gen_sector_stats_py(idx: CatalogIndex, texts_20004: dict) -> str:
         lines.append(f"{_key(sm)} [{pairs}],{comment}")
     lines.append("}")
 
+    owners = load_god_sector_owners(idx)
+    lines += ["", "SECTOR_OWNERS: dict[str, str] = {"]
+    for sm, owner in sorted(owners.items()):
+        name    = names.get(sm) or _sector_display_name(sm, texts_20004)
+        comment = f"  # {name}" if name else ""
+        lines.append(f"{_key(sm)} {repr(owner)},{comment}")
+    lines.append("}")
+
     return (
         "# Core role: Auto-generated sector metadata "
         "(macro → sunlight / display name / mineable resources).\n"
@@ -1100,7 +1175,13 @@ def gen_sector_stats_py(idx: CatalogIndex, texts_20004: dict) -> str:
         "#\n"
         "# SECTOR_RESOURCES — mineable wares as (ware_id, yield_level), richest\n"
         "# first. Authored sector defaults; a save's actual fields can drift\n"
-        "# slightly, so scan data still wins whenever a scan is loaded.\n" +
+        "# slightly, so scan data still wins whenever a scan is loaded.\n"
+        "#\n"
+        "# SECTOR_OWNERS — game-start owner faction id, derived from god.xml\n"
+        "# station seeding (defence stations are the claim markers). Lets the\n"
+        "# universe map colour sectors before any scan; a real save's ownership\n"
+        "# can differ once factions start losing/taking sectors, so scan data\n"
+        "# wins whenever a scan is loaded. Unclaimed sectors are absent.\n" +
         "\n".join(lines) + "\n"
     )
 

@@ -13,6 +13,12 @@
 # SECTOR_RESOURCES — mineable wares as (ware_id, yield_level), richest
 # first. Authored sector defaults; a save's actual fields can drift
 # slightly, so scan data still wins whenever a scan is loaded.
+#
+# SECTOR_OWNERS — game-start owner faction id, derived from god.xml
+# station seeding (defence stations are the claim markers). Lets the
+# universe map colour sectors before any scan; a real save's ownership
+# can differ once factions start losing/taking sectors, so scan data
+# wins whenever a scan is loaded. Unclaimed sectors are absent.
 SECTOR_SUNLIGHT: dict[str, float] = {
     "cluster_01_sector001_macro":  1.23,  # Grand Exchange I
     "cluster_01_sector002_macro":  1.35,  # Grand Exchange III
@@ -434,4 +440,138 @@ SECTOR_RESOURCES: dict[str, list[tuple[str, str]]] = {
     "cluster_725_sector001_macro": [('ore', 'high'), ('silicon', 'high'), ('helium', 'medium'), ('hydrogen', 'medium'), ('methane', 'medium'), ('nividium', 'verylow')],  # Void of Opportunity
     "cluster_730_sector001_macro": [('ice', 'medium'), ('methane', 'medium'), ('ore', 'low'), ('nividium', 'verylow')],  # Third Redemption
     "cluster_740_sector001_macro": [('ore', 'high'), ('helium', 'low'), ('rawscrap', 'low')],  # Scarlet Star
+}
+
+SECTOR_OWNERS: dict[str, str] = {
+    "cluster_01_sector001_macro":  'teladi',  # Grand Exchange I
+    "cluster_01_sector002_macro":  'teladi',  # Grand Exchange III
+    "cluster_01_sector003_macro":  'teladi',  # Grand Exchange IV
+    "cluster_02_sector001_macro":  'teladi',  # Eighteen Billion
+    "cluster_03_sector001_macro":  'teladi',  # Memory of Profit IX
+    "cluster_05_sector001_macro":  'teladi',  # Path to Profit
+    "cluster_06_sector001_macro":  'argon',  # Black Hole Sun IV
+    "cluster_06_sector002_macro":  'argon',  # Black Hole Sun V
+    "cluster_07_sector001_macro":  'argon',  # The Reach
+    "cluster_08_sector001_macro":  'argon',  # Silent Witness I
+    "cluster_09_sector001_macro":  'teladi',  # Bright Promise
+    "cluster_100_sector001_macro": 'terran',  # Asteroid Belt
+    "cluster_101_sector001_macro": 'terran',  # Mars
+    "cluster_102_sector001_macro": 'terran',  # Venus
+    "cluster_104_sector001_macro": 'terran',  # Earth
+    "cluster_104_sector002_macro": 'terran',  # The Moon
+    "cluster_106_sector001_macro": 'terran',  # Mercury
+    "cluster_107_sector001_macro": 'terran',  # Jupiter
+    "cluster_108_sector001_macro": 'terran',  # Saturn Alpha
+    "cluster_108_sector002_macro": 'terran',  # Titan
+    "cluster_108_sector003_macro": 'terran',  # Saturn Beta
+    "cluster_109_sector001_macro": 'terran',  # Uranus
+    "cluster_10_sector001_macro":  'paranid',  # Unholy Retribution
+    "cluster_110_sector001_macro": 'terran',  # Neptune
+    "cluster_111_sector001_macro": 'terran',  # Pluto
+    "cluster_112_sector001_macro": 'xenon',  # Savage Spur I
+    "cluster_112_sector002_macro": 'xenon',  # Savage Spur II
+    "cluster_113_sector001_macro": 'pioneers',  # Segaris
+    "cluster_114_sector001_macro": 'pioneers',  # Gaian Prophecy
+    "cluster_115_sector001_macro": 'pioneers',  # Brennan's Triumph
+    "cluster_116_sector001_macro": 'terran',  # Oort Cloud
+    "cluster_11_sector001_macro":  'holyorder',  # Pontifex's Claim
+    "cluster_12_sector001_macro":  'holyorder',  # True Sight
+    "cluster_13_sector001_macro":  'antigone',  # Second Contact II Flashpoint
+    "cluster_14_sector001_macro":  'argon',  # Argon Prime
+    "cluster_15_sector001_macro":  'teladi',  # Ianamus Zura IV
+    "cluster_15_sector002_macro":  'teladi',  # Ianamus Zura VII
+    "cluster_16_sector001_macro":  'xenon',  # Matrix #451
+    "cluster_17_sector001_macro":  'xenon',  # Matrix #9
+    "cluster_18_sector001_macro":  'paranid',  # Trinity Sanctum III
+    "cluster_19_sector001_macro":  'teladi',  # Hewa's Twin I
+    "cluster_19_sector002_macro":  'teladi',  # Hewa's Twin II
+    "cluster_20_sector001_macro":  'teladi',  # Company Regard
+    "cluster_21_sector001_macro":  'xenon',  # Scale Plate Green I
+    "cluster_21_sector002_macro":  'xenon',  # Scale Plate Green VII
+    "cluster_22_sector001_macro":  'paranid',  # Pious Mists II
+    "cluster_23_sector001_macro":  'paranid',  # Sacred Relic
+    "cluster_24_sector001_macro":  'holyorder',  # Holy Vision
+    "cluster_25_sector001_macro":  'xenon',  # Faulty Logic I
+    "cluster_25_sector002_macro":  'xenon',  # Faulty Logic VII
+    "cluster_26_sector001_macro":  'xenon',  # Atiya's Misfortune I
+    "cluster_26_sector002_macro":  'xenon',  # Atiya's Misfortune III
+    "cluster_27_sector001_macro":  'antigone',  # The Void
+    "cluster_28_sector001_macro":  'antigone',  # Antigone Memorial
+    "cluster_29_sector001_macro":  'hatikvah',  # Hatikvah's Choice I
+    "cluster_29_sector002_macro":  'argon',  # Hatikvah's Choice III
+    "cluster_30_sector001_macro":  'argon',  # Morning Star III
+    "cluster_31_sector001_macro":  'hatikvah',  # Heretic's End
+    "cluster_32_sector001_macro":  'xenon',  # Tharka's Cascade XV
+    "cluster_32_sector002_macro":  'xenon',  # Tharka's Cascade XVII
+    "cluster_33_sector001_macro":  'xenon',  # Matrix #79B
+    "cluster_34_sector001_macro":  'teladi',  # Profit Center Alpha
+    "cluster_35_sector001_macro":  'holyorder',  # Lasting Vengeance
+    "cluster_36_sector001_macro":  'holyorder',  # Cardinal's Redress
+    "cluster_37_sector001_macro":  'paranid',  # Pious Mists IV
+    "cluster_38_sector001_macro":  'paranid',  # Pious Mists XI
+    "cluster_39_sector001_macro":  'teladi',  # Memory of Profit X
+    "cluster_400_sector001_macro": 'split',  # Wretched Skies IV Family Valka
+    "cluster_401_sector001_macro": 'split',  # Family Zhin
+    "cluster_402_sector001_macro": 'split',  # Family Kritt
+    "cluster_403_sector001_macro": 'split',  # Wretched Skies V Family Phi
+    "cluster_404_sector001_macro": 'split',  # Zyarth's Dominion I
+    "cluster_405_sector001_macro": 'split',  # Zyarth's Dominion IV
+    "cluster_406_sector001_macro": 'split',  # Zyarth's Dominion X
+    "cluster_407_sector001_macro": 'freesplit',  # Family Tkr
+    "cluster_408_sector001_macro": 'freesplit',  # Thuruk's Demise III
+    "cluster_408_sector002_macro": 'freesplit',  # Thuruk's Demise II First Impact
+    "cluster_409_sector001_macro": 'freesplit',  # Tharka's Ravine IV Tharka's Fall
+    "cluster_40_sector001_macro":  'antigone',  # Second Contact VII
+    "cluster_410_sector001_macro": 'freesplit',  # Tharka's Ravine VIII
+    "cluster_411_sector001_macro": 'freesplit',  # Heart of Acrimony II
+    "cluster_412_sector001_macro": 'freesplit',  # Tharka's Ravine XVI
+    "cluster_413_sector001_macro": 'xenon',  # Tharka's Ravine XXIV
+    "cluster_414_sector001_macro": 'xenon',  # Rhy's Defiance
+    "cluster_415_sector001_macro": 'xenon',  # Matrix #598
+    "cluster_416_sector001_macro": 'argon',  # Guiding Star V
+    "cluster_416_sector002_macro": 'argon',  # Guiding Star VII
+    "cluster_417_sector001_macro": 'argon',  # Eleventh Hour
+    "cluster_418_sector001_macro": 'split',  # Family Nhuut
+    "cluster_419_sector001_macro": 'teladi',  # Open Market
+    "cluster_41_sector001_macro":  'antigone',  # Second Contact XI
+    "cluster_420_sector001_macro": 'teladi',  # Two Grand
+    "cluster_421_sector001_macro": 'freesplit',  # Fires of Defeat
+    "cluster_422_sector001_macro": 'paranid',  # Wretched Skies X
+    "cluster_423_sector001_macro": 'paranid',  # Litany of Fury IX
+    "cluster_423_sector002_macro": 'paranid',  # Litany of Fury XII
+    "cluster_424_sector001_macro": 'xenon',  # Emperor's Pride IV
+    "cluster_424_sector002_macro": 'xenon',  # Emperor's Pride VI
+    "cluster_42_sector001_macro":  'teladi',  # Hewa's Twin III
+    "cluster_42_sector002_macro":  'scaleplate',  # Hewa's Twin IV The Cove
+    "cluster_43_sector001_macro":  'teladi',  # Hewa's Twin V
+    "cluster_44_sector001_macro":  'hatikvah',  # Silent Witness XI
+    "cluster_45_sector001_macro":  'scaleplate',  # Silent Witness XII
+    "cluster_46_sector001_macro":  'argon',  # Morning Star IV
+    "cluster_47_sector001_macro":  'paranid',  # Trinity Sanctum VII
+    "cluster_500_sector001_macro": 'scavenger',  # Avarice I
+    "cluster_500_sector002_macro": 'scavenger',  # Avarice V Dead End
+    "cluster_500_sector003_macro": 'scavenger',  # Avarice IV
+    "cluster_501_sector001_macro": 'loanshark',  # Windfall I Union Summit
+    "cluster_502_sector001_macro": 'loanshark',  # Windfall III The Hoard
+    "cluster_503_sector001_macro": 'loanshark',  # Windfall IV Aurora's Dream
+    "cluster_602_sector001_macro": 'boron',  # Barren Shores
+    "cluster_603_sector001_macro": 'boron',  # Great Reef
+    "cluster_604_sector001_macro": 'boron',  # Ocean of Fantasy
+    "cluster_606_sector001_macro": 'boron',  # Kingdom End I
+    "cluster_606_sector002_macro": 'boron',  # Reflected Stars
+    "cluster_606_sector003_macro": 'boron',  # Towering Wave
+    "cluster_607_sector001_macro": 'boron',  # Rolk's Demise
+    "cluster_608_sector001_macro": 'boron',  # Atreus' Clouds
+    "cluster_609_sector001_macro": 'boron',  # Menelaus' Oasis
+    "cluster_701_sector001_macro": 'kaori',  # Mitsuno's Revelation
+    "cluster_702_sector001_macro": 'kaori',  # Mitsuno's Defiance
+    "cluster_703_sector001_macro": 'kaori',  # Mitsuno's Sacrifice
+    "cluster_704_sector001_macro": 'argon',  # President's End
+    "cluster_705_sector001_macro": 'scaleplate',  # Nopileos' Memorial
+    "cluster_708_sector001_macro": 'xenon',  # Matrix #101
+    "cluster_709_sector001_macro": 'paranid',  # Cardinal's Domain
+    "cluster_712_sector001_macro": 'scaleplate',  # Loomanckstrat's Legacy
+    "cluster_713_sector001_macro": 'teladi',  # CEO's Doubt
+    "cluster_714_sector001_macro": 'teladi',  # Freedom's Reach
+    "cluster_725_sector001_macro": 'xenon',  # Void of Opportunity
 }

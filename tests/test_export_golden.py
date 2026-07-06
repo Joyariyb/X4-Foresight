@@ -108,6 +108,11 @@ def test_resource_library_catalogs():
     assert lib.get('hull_catalog'), 'hull_catalog missing or empty'
     # Losing this one would blank the universe map's pre-scan interactive overlay.
     assert lib.get('sector_catalog'), 'sector_catalog missing or empty'
+    # Game-start ownership colours the pre-scan map; Argon Prime's owner is
+    # stable across game versions, so it's a safe canary for the whole table.
+    argon_prime = lib['sector_catalog'].get('cluster_14_sector001_macro', {})
+    assert argon_prime.get('owner_id') == 'argon', \
+        'sector_catalog missing game-start owners'
 
 
 def test_export_matches_golden(export):

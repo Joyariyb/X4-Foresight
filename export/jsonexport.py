@@ -12,7 +12,9 @@ from scanner import galaxy_map as gm
 from scanner.ship_names import ship_display_name, resolve_ship_type
 from db.trends import compute_trends, compute_changes
 from data.equipment_stats import EQUIPMENT_STATS, EQUIPMENT_ALIASES
-from data.sector_stats import SECTOR_NAMES, SECTOR_RESOURCES, SECTOR_SUNLIGHT
+from data.factions import FACTION_NAMES
+from data.sector_stats import (SECTOR_NAMES, SECTOR_OWNERS, SECTOR_RESOURCES,
+                               SECTOR_SUNLIGHT)
 from data.ship_stats import SHIP_STATS
 from data.station_stats import STATION_STATS
 from data.wares import WARE_NAMES
@@ -640,6 +642,14 @@ def _sector_catalog() -> dict:
     return {
         macro: {
             'name':     SECTOR_NAMES[macro],
+            # Game-start owner so the pre-scan map can colour sectors; None
+            # for unclaimed space. The .title() fallback mirrors the scanner's
+            # own owner_name handling for factions outside FACTION_NAMES
+            # (kaori, scavenger, ...), so both overlays label them alike.
+            'owner_id':   SECTOR_OWNERS.get(macro),
+            'owner_name': (FACTION_NAMES.get(SECTOR_OWNERS[macro],
+                                             SECTOR_OWNERS[macro].title())
+                           if macro in SECTOR_OWNERS else ''),
             # Scanner behaviour for macros missing from the table is a 1.0
             # multiplier, so the pre-scan map shows the same value a scan would.
             'sunlight': SECTOR_SUNLIGHT.get(macro, 1.0),
