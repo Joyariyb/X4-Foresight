@@ -171,6 +171,9 @@ class Station:
     budget_sunlight: float | None   # sunlight multiplier used in budget calculation
     modules:         list[StationModule] = field(default_factory=list)
     inventory:       dict[str, tuple[int, float]] = field(default_factory=dict)  # ware_id → (units, volume_m3)
+    # Posted buy/sell listings from <trade><offers> — same record shape as NPC
+    # stations, so the advisor can match player supply against NPC demand.
+    offers:          list['NpcStationWare'] = field(default_factory=list)
     # Per-ware supply-budget breakdown from estimate_station_budget()['lines'];
     # each dict carries ware, ware_name, amount, price, value, basis. Drives the
     # station Economy pie in the UI.
@@ -181,6 +184,7 @@ class Station:
     production_analytics: list[dict] = field(default_factory=list)
     # inventory             → own table: station_inventory             (scan_id, station_id, ware_id, ware_name, amount, volume_m3)
     # modules               → own table: station_modules               (scan_id, station_id, macro, category, produces)
+    # offers                → own table: station_offers                (scan_id, station_id, ware_id, ware_name, is_buying, is_selling, price, amount, desired, illegal)
     # budget_lines          → own table: station_budget_lines          (scan_id, station_id, ware_id, ware_name, amount, price, value, basis)
     # production_analytics  → own table: station_production_analytics  (scan_id, station_id, ware_id, ...)
 
@@ -198,8 +202,14 @@ class NpcStationWare:
     # no direction in the save file at all — both flags stay False for those.
     is_buying:  bool = False
     is_selling: bool = False
-    price:      int | None = None   # current offer price, credits
+    # Current offer price in CENTS, like the trade log (verified against real
+    # saves: values land exactly 100× the wares.xml credit band). Divide by 100
+    # before any credits math.
+    price:      int | None = None
     amount:     int | None = None   # sellers: current stock; buyers: desired quantity
+    # Buy offers only: the full quantity the station wants. amount/desired is
+    # the demand depth — how far below its target stock the station has fallen.
+    desired:    int | None = None
     illegal:    bool = False        # 'shady' flag — restricted black-market good
 
 
@@ -215,7 +225,7 @@ class NpcStation:
     owner_id:     str    # faction ID e.g. "teladi"
     owner_name:   str    # faction display name e.g. "Teladi Company"
     wares:        list[NpcStationWare] = field(default_factory=list)
-    # wares → own table: npc_station_wares (station_id, ware_id, ware_name, is_buying, is_selling, price, amount, illegal)
+    # wares → own table: npc_station_wares (station_id, ware_id, ware_name, is_buying, is_selling, price, amount, desired, illegal)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -271,7 +281,7 @@ class Ship:
     shield_hp:          float | None
     shield_max:         float | None
     shield_pct:         float | None
-    cargo_m3:           float | None   # current cargo load — not yet extracted
+    cargo_m3:           float | None   # current cargo load (buffered player ships only; None = no cargo bay)
     cargo_max_m3:       float | None   # maximum cargo capacity
     pilot_id:           str | None     # FK → crew.object_id, None for NPC ships
     # Installed equipment as [(slot, macro), ...] — one entry per physical item,

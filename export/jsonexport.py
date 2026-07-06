@@ -11,6 +11,7 @@ from pathlib import Path
 from scanner import galaxy_map as gm
 from scanner.ship_names import ship_display_name, resolve_ship_type
 from db.trends import compute_trends, compute_changes
+from db.advisors import compute_advisors
 from data.equipment_stats import EQUIPMENT_STATS, EQUIPMENT_ALIASES
 from data.factions import FACTION_NAMES
 from data.sector_stats import (SECTOR_NAMES, SECTOR_OWNERS, SECTOR_RESOURCES,
@@ -137,6 +138,25 @@ def _stations(conn, scan_id) -> list[dict]:
             conn,
             "SELECT macro, category, produces FROM station_modules "
             "WHERE scan_id=? AND station_id=?", (scan_id, sid))
+        # Posted buy/sell listings — same shape as npc_trade_partners wares
+        # (plus ware_id, the robust join key for advisor supply/demand matching).
+        d['offers'] = [
+            {
+                'ware_id':    r['ware_id'],
+                'ware_name':  r['ware_name'],
+                'is_buying':  bool(r['is_buying']),
+                'is_selling': bool(r['is_selling']),
+                'price':      r['price'],
+                'amount':     r['amount'],
+                'desired':    r['desired'],
+                'illegal':    bool(r['illegal']),
+            }
+            for r in conn.execute(
+                "SELECT ware_id, ware_name, is_buying, is_selling, price, "
+                "amount, desired, illegal FROM station_offers "
+                "WHERE scan_id=? AND station_id=? ORDER BY ware_name",
+                (scan_id, sid))
+        ]
         # display_name from the static game catalog, not stored in the DB —
         # same approach as ship_display_name() below, keyed by macro only
         # since modules (unlike ships) have no per-instance custom name.
@@ -360,7 +380,8 @@ def _npc_station_wares(conn) -> dict[str, list[dict]]:
     which the save file never gives a trade direction for at all.
     """
     rows = conn.execute(
-        "SELECT station_id, ware_name, is_buying, is_selling, price, amount, illegal "
+        "SELECT station_id, ware_name, is_buying, is_selling, price, amount, "
+        "desired, illegal "
         "FROM npc_station_wares ORDER BY ware_name")
     out: dict[str, list[dict]] = {}
     for r in rows:
@@ -370,6 +391,7 @@ def _npc_station_wares(conn) -> dict[str, list[dict]]:
             'is_selling': bool(r['is_selling']),
             'price':      r['price'],
             'amount':     r['amount'],
+            'desired':    r['desired'],
             'illegal':    bool(r['illegal']),
         })
     return out
@@ -449,11 +471,15 @@ def _galaxy_map(conn, scan_id) -> dict:
     jump distance from the NEAREST player-asset sector to every reachable sector
     (0-1 BFS: gate/accelerator hops cost 1, intra-cluster superhighways cost 0).
 
-    Consumers get three things:
+    Consumers get four things:
       - player_sectors: sectors that currently hold a player station
       - edges:          the full topology [sector_a, sector_b, cost], so a client
                         can recompute any distance it likes (per-station, etc.)
       - distances_from_player: {sector_macro: jumps} — min over all player sectors
+      - distances_from_current: {sector_macro: jumps} — from where the player is
+                        standing right now. Advice is player-relative: "nearest
+                        buyer" means nearest to the PLAYER, which asset-sector
+                        distances can't answer once the empire has spread out.
     Sector names are not duplicated here; join sector_macro to the `sectors` key.
     """
     edge_rows = conn.execute(
@@ -472,11 +498,25 @@ def _galaxy_map(conn, scan_id) -> dict:
     ]
     distances = gm.distances_from(graph, player_sectors) if player_sectors else {}
 
+    # The scan stores the player's location as a display NAME; the graph is
+    # keyed by macro, so join through sectors to seed the BFS. An unresolvable
+    # name (undiscovered / renamed sector) degrades to an empty dict rather
+    # than guessing.
+    current_row = conn.execute(
+        "SELECT s.sector_macro FROM scans sc "
+        "JOIN sectors s ON s.sector_name = sc.player_sector "
+        "WHERE sc.scan_id = ?", (scan_id,)).fetchone()
+    distances_current = (
+        gm.distances_from(graph, [current_row['sector_macro']])
+        if current_row else {}
+    )
+
     return {
-        'player_sectors':        player_sectors,
-        'edges':                 [[r['sector_a'], r['sector_b'], r['cost']]
-                                  for r in edge_rows],
-        'distances_from_player': distances,
+        'player_sectors':          player_sectors,
+        'edges':                   [[r['sector_a'], r['sector_b'], r['cost']]
+                                    for r in edge_rows],
+        'distances_from_player':   distances,
+        'distances_from_current':  distances_current,
     }
 
 
@@ -733,6 +773,11 @@ def to_export(conn: sqlite3.Connection, scan_id: int | None = None) -> dict:
         # get a 1-point series and an empty changes list.
         'trends':                compute_trends(conn, scan_id),
         'changes':               compute_changes(conn, scan_id),
+        # Rule-based recommendations (economy/logistics), player-relative —
+        # see db/advisors.py. Reuses this scan's galaxy_map BFS rather than
+        # rebuilding it, same convention as npc_trade_partners above.
+        'advisors':              compute_advisors(
+            conn, scan_id, galaxy_map['distances_from_current']),
         # Player notification feed grouped by category, newest first (capped
         # per category at DB-write time), + career stats from the <stats> block.
         'events':                _events(conn, scan_id),

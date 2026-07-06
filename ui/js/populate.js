@@ -103,6 +103,11 @@
                          sectors: data.sectors || [] });
     EventsFeed.render();
 
+    // Economic Advisor findings — same hand-off pattern as EventsFeed: data
+    // in now, the sidebar's Advisors > Economic item re-renders on open.
+    AdvisorsFeed.setData(data.advisors);
+    AdvisorsFeed.render();
+
     document.getElementById("ov-pilot").textContent  = player.name || "—";
     document.getElementById("nav-ships").textContent = fleet.total || "—";
 

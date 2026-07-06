@@ -4,6 +4,7 @@ import re
 from data.factions   import FACTION_NAMES
 from data.ship_stats  import SHIP_STATS    # macro → {max_hull: N}
 from data.station_stats import STATION_STATS  # macro → {max_shield: N} — same table for ship shields
+from data.wares      import WARE_VOLUME    # ware_id → m³ per unit
 from ..entities      import Ship, CrewMember
 from ..xml_utils     import iter_station_components
 # Ship naming/classification now lives in one shared module. Imported with the
@@ -595,6 +596,41 @@ def _extract_docked_ships(
         _append_player_docked_ship(child, sector_macro, carrier_elem.get("id"), ctx)
 
 
+def _parse_cargo(elem, macro: str) -> tuple[float | None, float | None]:
+    """Current cargo load and capacity in m³ for a buffered ship subtree.
+
+    Capacity is static per hull (SHIP_STATS cargo_max, resolved from the
+    hull's cargo-bay macro at data-generation time). Current load is summed
+    from <cargo><ware> rows under the ship's storage component — the save
+    stores unit counts only, so WARE_VOLUME converts them to m³ (verified
+    shape: ship_* → storage → cargo → ware). iter_station_components skips
+    nested ship_* subtrees, so a carrier never counts its docked ships' cargo
+    as its own.
+
+    Returns (None, None) for hulls with no cargo bay (most fighters), so the
+    UI can tell "no bay" apart from "empty bay" (0.0).
+    """
+    cargo_max = SHIP_STATS.get(macro, {}).get('cargo_max')
+    if cargo_max is None:
+        return None, None
+
+    total_m3 = 0.0
+    for comp in iter_station_components(elem):
+        if comp.get('class') != 'storage':
+            continue
+        cargo_elem = comp.find('cargo')
+        if cargo_elem is None:
+            continue
+        for ware_elem in cargo_elem.findall('ware'):
+            ware_id = ware_elem.get('ware', '')
+            try:
+                amount = float(ware_elem.get('amount', 0))
+            except (ValueError, TypeError):
+                amount = 0.0
+            total_m3 += amount * WARE_VOLUME.get(ware_id, 1.0)
+    return total_m3, float(cargo_max)
+
+
 def _append_player_docked_ship(child, sector_macro: str, docked_at_id: str, ctx) -> None:
     """Build the full player Ship entity for one ship docked inside a buffered
     subtree, and append it to ctx.
@@ -620,6 +656,7 @@ def _append_player_docked_ship(child, sector_macro: str, docked_at_id: str, ctx)
 
     hull_hp, hull_max, hull_pct    = _parse_hull(macro, child)
     shield_hp, shield_max, shd_pct = _parse_shields(child)
+    cargo_m3, cargo_max_m3         = _parse_cargo(child, macro)
     order     = _parse_order(child)
     commander = _parse_commander(child)
     homebase  = _parse_homebase(child)
@@ -650,8 +687,8 @@ def _append_player_docked_ship(child, sector_macro: str, docked_at_id: str, ctx)
         shield_hp        = shield_hp,
         shield_max       = shield_max,
         shield_pct       = shd_pct,
-        cargo_m3         = None,   # not yet extracted
-        cargo_max_m3     = None,
+        cargo_m3         = cargo_m3,
+        cargo_max_m3     = cargo_max_m3,
         pilot_id         = pilot_id,
         loadout          = _parse_loadout(child),
     )
@@ -964,6 +1001,7 @@ class ShipHandler:
 
         hull_hp, hull_max, hull_pct        = _parse_hull(macro, elem)
         shield_hp, shield_max, shield_pct  = _parse_shields(elem)
+        cargo_m3, cargo_max_m3             = _parse_cargo(elem, macro)
         order     = _parse_order(elem)
         homebase  = _parse_homebase(elem)
         commander = _parse_commander(elem)
@@ -997,8 +1035,8 @@ class ShipHandler:
             shield_hp        = shield_hp,
             shield_max       = shield_max,
             shield_pct       = shield_pct,
-            cargo_m3         = None,   # not yet extracted (requires ware volume table)
-            cargo_max_m3     = None,
+            cargo_m3         = cargo_m3,
+            cargo_max_m3     = cargo_max_m3,
             pilot_id         = pilot_id,
             loadout          = _parse_loadout(elem),
         )

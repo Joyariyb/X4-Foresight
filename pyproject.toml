@@ -48,3 +48,8 @@ py-modules = ["display", "pipeline", "x4_save_scanner"]
 
 [tool.setuptools.package-data]
 db = ["schema.sql"]
+
+# Bare `pytest` otherwise collects scratch/*.py experiments (anything matching
+# test-file naming), which aren't maintained and break collection.
+[tool.pytest.ini_options]
+testpaths = ["tests"]

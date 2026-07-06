@@ -1,0 +1,81 @@
+    /* Core role: Styles for the Advisors > Economic tab — briefing strip, type
+       filter, and the ranked advice cards. Class-based + semantic tokens, same
+       approach as events.css/trends.css.
+
+       Two looks are deliberately NEW here (headline feature, per maintainer):
+       the vertical priority rail (relative score as fill height, so ranking is
+       visible without reading numbers) and the expandable evidence drawer
+       (advice must be auditable). Everything is built from the semantic token
+       tiers — no literals (UI_STANDARDS §1). */
+
+    /* ── BRIEFING STRIP ── */
+    /* Same shape as the Events career-stats strip so the two feed tabs read
+       as siblings. */
+    .adv-stats { display: flex; flex-wrap: wrap; gap: 2.4rem; padding: 1rem 1.2rem; background: var(--surface-1); border: 1px solid var(--outline); border-radius: var(--radius-md); margin-bottom: 1.2rem; }
+    .adv-stat { display: flex; flex-direction: column; gap: 0.2rem; }
+    .adv-stat-label { font-family: var(--font-label); font-size: 1.1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-label); }
+    .adv-stat-value { font-family: var(--font-data); font-size: 1.6rem; color: var(--text-primary); }
+
+    /* ── TYPE FILTER ── */
+    .adv-filter { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+    .adv-filter-count { font-family: var(--font-data); opacity: 0.7; margin-left: 0.5rem; }
+
+    /* ── ADVICE CARDS ── */
+    .adv-list { display: flex; flex-direction: column; gap: 0.8rem; }
+    .adv-card { display: flex; background: var(--surface-2); border: 1px solid var(--outline); border-radius: var(--radius-md); overflow: hidden; }
+    .adv-card-main { flex: 1; min-width: 0; padding: 0.8rem 1.2rem; cursor: pointer; }
+    .adv-card-main:hover { background: var(--state-hover); }
+
+    /* Priority rail — fill height is set inline by advisors-feed.js as the
+       score relative to the top finding. Track uses the tone's -dim fill so
+       the unfilled part still hints the card's meaning. */
+    .adv-rail { flex: none; width: 0.5rem; position: relative; }
+    .adv-rail-fill { position: absolute; bottom: 0; left: 0; right: 0; }
+
+    .adv-card-head { display: flex; align-items: center; gap: 0.8rem; }
+    /* Rank is FULL-LIST position (stable under filtering) — mono so a two-digit
+       rank doesn't shift the row. */
+    .adv-rank { font-family: var(--font-data); font-size: 1.2rem; color: var(--text-secondary); min-width: 2.2rem; }
+    .adv-icon { font-size: 1.6rem; flex: none; }
+    .adv-type { font-family: var(--font-label); font-size: 1.2rem; letter-spacing: 0.08em; text-transform: uppercase; }
+    /* Domain chip: neutral outline pill — the tone colour already carries the
+       card's meaning, a second colour here would just be noise. */
+    .adv-domain { font-family: var(--font-label); font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-secondary); border: 1px solid var(--outline); border-radius: var(--radius-sm); padding: 0.1rem 0.6rem; margin-left: auto; }
+    .adv-chev { font-size: 1.3rem; color: var(--text-secondary); transition: transform var(--duration-short) var(--ease-standard); }
+    .adv-card.open .adv-chev { transform: rotate(180deg); }
+
+    /* Body is a rendered sentence → --font-body (§3). */
+    .adv-card-body { font-family: var(--font-body); font-size: 1.35rem; color: var(--text-primary); margin-top: 0.5rem; line-height: 1.45; }
+
+    /* ── EVIDENCE DRAWER ── */
+    /* Collapsed by default; .open reveals it. max-height (not height) so the
+       transition works without measuring content — 24rem comfortably fits the
+       largest evidence grid a current rule emits. */
+    .adv-drawer { max-height: 0; overflow: hidden; transition: max-height var(--duration-medium) var(--ease-standard); }
+    .adv-card.open .adv-drawer { max-height: 24rem; }
+    .adv-evidence { display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1.6rem; margin-top: 0.8rem; padding: 0.8rem 1rem; background: var(--surface-1); border: 1px solid var(--outline); border-radius: var(--radius-sm); }
+    .adv-ev-key { font-family: var(--font-label); font-size: 1.05rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-label); }
+    .adv-ev-val { font-family: var(--font-data); font-size: 1.15rem; color: var(--text-primary); overflow-wrap: anywhere; }
+
+    /* ── TONE MODIFIERS ── */
+    /* One class per semantic meaning wires the trio (solid/dim) into the
+       rail, icon, and type label. Cards keep the neutral --outline border —
+       the rail carries the colour, a full tinted border on every card would
+       shout across a 20-row list. */
+    .adv--warning  .adv-rail { background: var(--color-warning-dim); }
+    .adv--warning  .adv-rail-fill { background: var(--color-warning); }
+    .adv--warning  .adv-icon, .adv--warning .adv-type { color: var(--color-warning); }
+    .adv--positive .adv-rail { background: var(--color-positive-dim); }
+    .adv--positive .adv-rail-fill { background: var(--color-positive); }
+    .adv--positive .adv-icon, .adv--positive .adv-type { color: var(--color-positive); }
+    .adv--info     .adv-rail { background: var(--color-info-dim); }
+    .adv--info     .adv-rail-fill { background: var(--color-info); }
+    .adv--info     .adv-icon, .adv--info .adv-type { color: var(--color-info); }
+    .adv--special  .adv-rail { background: var(--color-special-dim); }
+    .adv--special  .adv-rail-fill { background: var(--color-special); }
+    .adv--special  .adv-icon, .adv--special .adv-type { color: var(--color-special); }
+
+    /* ── EMPTY STATE ── */
+    .adv-empty { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; padding: 4rem 1rem; color: var(--text-secondary); font-family: var(--font-body); font-size: 1.4rem; }
+    .adv-empty .ti { font-size: 3rem; color: var(--text-label); }
+    .adv-empty-sub { font-size: 1.2rem; max-width: 46rem; text-align: center; }

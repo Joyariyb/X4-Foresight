@@ -4,11 +4,7 @@ import json
 import os
 from pathlib import Path
 
-import pytest
-
-from db.connection import get_connection
-from db.write import write_scan
-from export.jsonexport import to_export, resource_library_export
+from export.jsonexport import resource_library_export
 
 GOLDEN_PATH = Path(__file__).resolve().parent / 'golden' / 'export.json'
 
@@ -77,18 +73,6 @@ def _first_diff(a, b, path='$'):
     if a != b:
         return f'{path}: {a!r} != {b!r}'
     return None
-
-
-@pytest.fixture(scope='module')
-def export(ctx, tmp_path_factory):
-    """to_export() result from a fresh throwaway DB holding exactly one scan."""
-    db_path = tmp_path_factory.mktemp('db') / 'x4_test.db'
-    conn = get_connection(db_path)
-    try:
-        scan_id = write_scan(conn, ctx)
-        return to_export(conn, scan_id)
-    finally:
-        conn.close()
 
 
 def test_static_sections_present(export):

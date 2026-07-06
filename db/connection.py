@@ -13,16 +13,17 @@ DEFAULT_DB_PATH = Path(__file__).resolve().parents[1] / 'x4_foresight.db'
 # connection. To evolve the schema: add the column/table to schema.sql (for
 # fresh DBs), append a (version, [statements]) entry to MIGRATIONS (for
 # existing DBs), and bump this to that same number.
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 # Numbered migrations for databases older than SCHEMA_VERSION. Append-only —
 # never edit a shipped entry, since DBs past that version will not re-run it.
-# Example entry:
-#   (2, ["ALTER TABLE ships ADD COLUMN cargo_m3 REAL"]),
 # ALTER TABLE appends at the table's physical end, so any table touched here
 # must be written with an explicit-column INSERT in write.py — positional
 # VALUES(?) would misalign fresh vs. migrated databases.
-MIGRATIONS: list[tuple[int, list[str]]] = []
+MIGRATIONS: list[tuple[int, list[str]]] = [
+    # desired= from NPC buy offers (demand depth for the advisor: amount/desired).
+    (2, ["ALTER TABLE npc_station_wares ADD COLUMN desired INTEGER"]),
+]
 
 # Database paths whose schema this process has already applied. apply_schema()
 # is idempotent but not free (26 CREATEs, version check, two bulk INSERT OR
@@ -61,8 +62,17 @@ def apply_schema(conn: sqlite3.Connection) -> None:
     """Run schema.sql + migrations + static-data population. Every statement is
     idempotent (CREATE IF NOT EXISTS / INSERT OR IGNORE / version-gated), but
     get_connection() still only calls this once per database path per process."""
+    # A brand-new database gets the CURRENT schema straight from schema.sql, so
+    # it must be stamped at SCHEMA_VERSION without running MIGRATIONS — those
+    # ALTERs would re-add columns schema.sql just created ("duplicate column").
+    # Freshness must be probed BEFORE executescript, which creates the tables.
+    fresh = conn.execute(
+        "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table'").fetchone()[0] == 0
     conn.executescript(SCHEMA_PATH.read_text(encoding='utf-8'))
-    _migrate(conn)
+    if fresh:
+        conn.execute(f'PRAGMA user_version = {SCHEMA_VERSION}')
+    else:
+        _migrate(conn)
     _populate_ware_metadata(conn)
     _populate_ware_prices(conn)
     conn.commit()

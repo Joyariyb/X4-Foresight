@@ -27,6 +27,7 @@
     'js/crew.js',
     'js/station-helpers.js',
     'js/events-feed.js',
+    'js/advisors-feed.js',
     'js/populate.js',
     'js/npc-stations.js',
     'js/npc-station-inspector.js',

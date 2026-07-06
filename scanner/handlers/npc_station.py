@@ -24,6 +24,48 @@ _FACTION_SHORT: dict[str, str] = {
 }
 
 
+def parse_trade_offers(trade_elem) -> list[NpcStationWare]:
+    """Walk the individual <trade ware="..."> offer rows under a <trade> element.
+
+    This is the "Format B" offer shape, shared by god-production NPC stations
+    and player stations (player stations additionally keep <reservation> rows
+    under the same <trade> element — those are a different tag, so this walk
+    never touches them):
+
+        <trade>
+          <offers><production>
+            <trade ware="advancedelectronics" seller="[own id]" amount="810" price="..."/>
+            <trade ware="energycells" buyer="[own id]" amount="2607" desired="2607" price="..." flags="...|shady"/>
+          </production></offers>
+        </trade>
+
+    buyer=/seller= holds the station's own component id — its PRESENCE (not its
+    value) is what marks the direction of that trade offer. desired= appears on
+    buy offers only: the target stock, so amount/desired is the demand depth.
+    One station can list the same ware in more than one offer (rare), so rows
+    merge by ware_id rather than emitting duplicates.
+    """
+    by_ware: dict[str, NpcStationWare] = {}
+    for t in trade_elem.findall('.//trade'):
+        ware_id = t.get('ware', '')
+        if not ware_id:
+            continue
+        w = by_ware.setdefault(ware_id, NpcStationWare(ware_id=ware_id))
+        if t.get('buyer'):
+            w.is_buying = True
+        if t.get('seller'):
+            w.is_selling = True
+        if (price := t.get('price')):
+            w.price = int(price)
+        if (amount := t.get('amount')):
+            w.amount = int(amount)
+        if (desired := t.get('desired')):
+            w.desired = int(desired)
+        if 'shady' in (t.get('flags') or ''):
+            w.illegal = True
+    return sorted(by_ware.values(), key=lambda w: w.ware_id)
+
+
 class NpcStationHandler:
     """
     Extracts NPC-owned station data from buffered station subtrees.
@@ -140,20 +182,11 @@ class NpcStationHandler:
         #   <trade wares="majadust spacefuel spaceweed">
         #   No buy/sell direction is given at all — these are undirected.
         #
-        # Format B — god-production stations (no summary attribute):
-        #   <trade>
-        #     <offers><production>
-        #       <trade ware="advancedelectronics" seller="[own id]" amount="810" price="..."/>
-        #       <trade ware="energycells" buyer="[own id]" amount="2607" desired="2607" price="..." flags="...|shady"/>
-        #     </production></offers>
-        #   </trade>
-        # buyer=/seller= holds the station's own component id — its presence
-        # (not its value) is what marks the direction of that trade offer.
+        # Format B — individual offer rows (god-production stations, and the
+        #   same shape player stations use): see parse_trade_offers().
         #
         # We try Format A first; if wares is empty, walk the individual
-        # <trade ware="..."> elements inside the offers — this is the same
-        # subtree walk that used to just collect ware IDs, so reading the
-        # extra attributes here costs nothing extra (no second traversal).
+        # <trade ware="..."> elements inside the offers.
         trade_elem = elem.find('trade')
         wares: list[NpcStationWare] = []
 
@@ -163,25 +196,7 @@ class NpcStationHandler:
                 # Format A — direction unknown, so leave is_buying/is_selling False
                 wares = [NpcStationWare(ware_id=w) for w in wares_str.split()]
             else:
-                # Format B — one station can list the same ware in more than one
-                # offer (rare), so merge by ware_id rather than emitting duplicates.
-                by_ware: dict[str, NpcStationWare] = {}
-                for t in trade_elem.findall('.//trade'):
-                    ware_id = t.get('ware', '')
-                    if not ware_id:
-                        continue
-                    w = by_ware.setdefault(ware_id, NpcStationWare(ware_id=ware_id))
-                    if t.get('buyer'):
-                        w.is_buying = True
-                    if t.get('seller'):
-                        w.is_selling = True
-                    if (price := t.get('price')):
-                        w.price = int(price)
-                    if (amount := t.get('amount')):
-                        w.amount = int(amount)
-                    if 'shady' in (t.get('flags') or ''):
-                        w.illegal = True
-                wares = sorted(by_ware.values(), key=lambda w: w.ware_id)
+                wares = parse_trade_offers(trade_elem)
 
         # ── Build and register ────────────────────────────────────────────────
         station = NpcStation(

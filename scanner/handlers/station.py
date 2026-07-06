@@ -15,6 +15,7 @@ from ..language import (
 )
 from ..budget import estimate_station_budget
 from ..xml_utils import iter_station_components
+from .npc_station import parse_trade_offers
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -95,6 +96,13 @@ class StationHandler:
         cargo_container, cargo_solid, cargo_liquid, cargo_total, inventory = \
             self._parse_storage(elem)
 
+        # ── Posted trade offers ───────────────────────────────────────────────
+        # The station's own buy/sell listings (ware, direction, price, amount,
+        # desired) — the same Format B shape NPC stations use. Distinct from
+        # <reservations>, which are commitments already matched to a trade.
+        trade_elem = elem.find('trade')
+        offers = parse_trade_offers(trade_elem) if trade_elem is not None else []
+
         # ── Station account ───────────────────────────────────────────────────
         # own="1" = station cash (other <account> elements are trade escrow)
         acct_elem      = elem.find('account[@own="1"]')
@@ -138,6 +146,7 @@ class StationHandler:
             budget_lines     = budget['lines'],
             modules          = modules,
             inventory        = inventory,
+            offers           = offers,
             production_analytics = production_analytics_from_modules(
                 modules, inventory, self._sector_macro,
                 # Pass per-type cargo storage so time_to_cap_hours can be

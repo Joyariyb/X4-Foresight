@@ -73,7 +73,8 @@ class TestReputation:
 
 class TestPlayerStation:
     def test_station_core_fields(self, ctx):
-        assert len(ctx.stations) == 1
+        # Test Energy Plant + the minimal Overflow Test Station (see fixture).
+        assert len(ctx.stations) == 2
         st = ctx.stations[0]
         assert st.object_id == '[0x1000]'
         assert st.code == 'STA-001'
@@ -118,6 +119,21 @@ class TestPlayerStation:
         for sub_id in ('[0x1001]', '[0x1002]', '[0x1005]', '[0x1006]'):
             assert ctx.dockingbay_index[sub_id] == '[0x1000]'
 
+    def test_posted_offers(self, ctx):
+        # The offer walk shares parse_trade_offers() with NPC Format B, and
+        # must skip the sibling <reservation> rows (energycells appears in
+        # both — the reservation's amount=1000 must not leak into the offer).
+        offers = {o.ware_id: o for o in ctx.stations[0].offers}
+        assert set(offers) == {'energycells', 'siliconwafers'}
+
+        sell = offers['energycells']
+        assert (sell.is_selling, sell.is_buying) == (True, False)
+        assert (sell.price, sell.amount, sell.desired) == (20, 4200, None)
+
+        buy = offers['siliconwafers']
+        assert (buy.is_buying, buy.is_selling) == (True, False)
+        assert (buy.price, buy.amount, buy.desired) == (120, 800, 1000)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  NPC station
@@ -125,9 +141,9 @@ class TestPlayerStation:
 
 class TestNpcStation:
     def test_npc_station_resolved(self, ctx):
-        assert len(ctx.npc_stations) == 1
-        n = ctx.npc_stations[0]
-        assert n.object_id == '[0x2000]'
+        # One Format A station + one Format B station in the fixture.
+        assert len(ctx.npc_stations) == 2
+        n = next(s for s in ctx.npc_stations if s.object_id == '[0x2000]')
         # Name assembled as {FactionShort} {TypeFromProdMacro} {Roman} ({Code}):
         # the energycells production module maps to "Solar Power Plant" and
         # nameindex="2" becomes "II".
@@ -137,6 +153,31 @@ class TestNpcStation:
         # the NPC-station trade-details feature; the id list is the stable part.
         assert [w.ware_id for w in n.wares] == ['energycells', 'siliconwafers']
         assert ctx.npc_station_index['[0x2000]'] is n
+
+    def test_npc_station_format_b_offers(self, ctx):
+        # Format A gives a bare ware list; only Format B carries direction,
+        # price, amount, and flags — so those fields are asserted here, on the
+        # god-production station, not above.
+        b = next(s for s in ctx.npc_stations if s.object_id == '[0x2200]')
+        wares = {w.ware_id: w for w in b.wares}
+        assert set(wares) == {'advancedelectronics', 'energycells', 'spacefuel'}
+
+        sell = wares['advancedelectronics']
+        assert (sell.is_selling, sell.is_buying) == (True, False)
+        assert (sell.price, sell.amount) == (1200, 810)
+
+        buy = wares['energycells']
+        assert (buy.is_buying, buy.is_selling) == (True, False)
+        # Priced above the player station's own energycells sell offer (20) —
+        # deliberate, see fixture comment (exercises Advisors pricing_gap).
+        assert (buy.price, buy.amount) == (35, 2607)
+        # desired only appears on buy offers — amount/desired is demand depth.
+        assert buy.desired == 3000
+        assert sell.desired is None
+
+        # 'shady' inside a multi-token flags= string marks black-market goods.
+        assert wares['spacefuel'].illegal is True
+        assert wares['energycells'].illegal is False
 
     def test_npc_docked_ship_recorded_shallow(self, ctx):
         # Ships inside an NPC station subtree never reach ctx.ships; they only
@@ -152,9 +193,11 @@ class TestNpcStation:
 
 class TestShips:
     def test_ship_counts(self, ctx):
-        # 3 player ships (docked fighter, hauler, escort) + 1 streamed NPC ship.
-        assert len(ctx.ships) == 4
-        assert ctx.player_ship_ids == {'[0x1100]', '[0x3000]', '[0x3100]'}
+        # 4 player ships (docked fighter, hauler, idle hauler, escort) + 1
+        # streamed NPC ship.
+        assert len(ctx.ships) == 5
+        assert ctx.player_ship_ids == {
+            '[0x1100]', '[0x3000]', '[0x3100]', '[0x6100]'}
 
     def test_hauler_full_extraction(self, ctx):
         hauler = _ship(ctx, '[0x3000]')
@@ -177,6 +220,17 @@ class TestShips:
         assert [p.name for p in pilots] == ['Rex Calder']
         service = [c for c in ctx.crew if c.role == 'service']
         assert [c.assigned_code for c in service] == ['HAU-001']
+        # Cargo: units × WARE_VOLUME summed from the nested storage component
+        # (500 energycells × 1.0 + 300 siliconwafers × 18.0); capacity is the
+        # hull's static cargo_max from SHIP_STATS, not read from the save.
+        assert (hauler.cargo_m3, hauler.cargo_max_m3) == (5900.0, 8200.0)
+
+    def test_cargo_empty_bay_vs_no_bay(self, ctx):
+        # The escort fighter has a (small) cargo bay but no storage element in
+        # the save — that must read as an EMPTY bay (0.0), not None. None is
+        # reserved for hulls with no bay at all, so the UI can tell them apart.
+        escort = _ship(ctx, '[0x3100]')
+        assert (escort.cargo_m3, escort.cargo_max_m3) == (0.0, 240.0)
 
     def test_homebase_resolved_via_traderoutine_range(self, ctx):
         # The raw range param points at the station's subordinates CONNECTION
@@ -348,8 +402,8 @@ class TestNoLanguageFile:
         # loses its sector attribution. Entities themselves still parse.
         assert ctx.sectors == []
         assert ctx.gates == []
-        assert len(ctx.stations) == 1
-        assert ctx.stations[0].sector_macro == ''
+        assert len(ctx.stations) == 2
+        assert all(s.sector_macro == '' for s in ctx.stations)
         # Player location degrades to the raw language-reference id.
         assert ctx.player_sector == 'Sector 10011'
 

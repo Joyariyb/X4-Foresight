@@ -140,6 +140,13 @@ def _write_stations(cur, scan_id, ctx) -> None:
             "INSERT INTO station_inventory VALUES(?,?,?,?,?,?)",
             [(scan_id, s.object_id, w, _ware_name(w), a, v) for w, (a, v) in s.inventory.items()],
         )
+        cur.executemany(
+            "INSERT INTO station_offers VALUES(?,?,?,?,?,?,?,?,?,?)",
+            [(scan_id, s.object_id, o.ware_id, _ware_name(o.ware_id),
+              int(o.is_buying), int(o.is_selling), o.price, o.amount, o.desired,
+              int(o.illegal))
+             for o in s.offers],
+        )
         # Per-ware budget breakdown (drives the station Economy pie). The line's
         # 'ware' id maps to the table's ware_id column.
         cur.executemany(
@@ -390,13 +397,15 @@ def _write_reference(cur, scan_id, ctx) -> None:
     )
     ware_rows = [
         (n.object_id, w.ware_id, _ware_name(w.ware_id),
-         int(w.is_buying), int(w.is_selling), w.price, w.amount, int(w.illegal))
+         int(w.is_buying), int(w.is_selling), w.price, w.amount, w.desired,
+         int(w.illegal))
         for n in ctx.npc_stations for w in n.wares
     ]
     cur.executemany(
         "INSERT OR REPLACE INTO npc_station_wares"
-        "(station_id, ware_id, ware_name, is_buying, is_selling, price, amount, illegal)"
-        " VALUES(?,?,?,?,?,?,?,?)", ware_rows,
+        "(station_id, ware_id, ware_name, is_buying, is_selling, price, amount,"
+        " desired, illegal)"
+        " VALUES(?,?,?,?,?,?,?,?,?)", ware_rows,
     )
 
     # Galaxy connectivity graph. The topology is one coherent graph re-derived

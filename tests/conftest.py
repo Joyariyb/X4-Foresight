@@ -16,6 +16,9 @@ import pytest
 from scanner.scanner import Scanner
 from scanner.trade_postprocess import TradePostProcessor
 from pipeline import resolve_ship_homebases
+from db.connection import get_connection
+from db.write import write_scan
+from export.jsonexport import to_export
 
 FIXTURES  = TESTS_DIR / 'fixtures'
 MINI_SAVE = FIXTURES / 'mini_save.xml'
@@ -48,3 +51,19 @@ def ctx(pipeline):
 @pytest.fixture(scope='session')
 def trade_stats(pipeline):
     return pipeline[1]
+
+
+@pytest.fixture(scope='module')
+def export(ctx, tmp_path_factory):
+    """to_export() result from a fresh throwaway DB holding exactly one scan.
+
+    Shared across test modules (golden export, advisors) so each gets its own
+    DB build but nobody re-derives the fixture's DB-write step.
+    """
+    db_path = tmp_path_factory.mktemp('db') / 'x4_test.db'
+    conn = get_connection(db_path)
+    try:
+        scan_id = write_scan(conn, ctx)
+        return to_export(conn, scan_id)
+    finally:
+        conn.close()

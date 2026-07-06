@@ -101,8 +101,10 @@
       <div class="sb-item" id="sb-miners">
         <span class="sb-item-label"><i class="ti ti-shovel"></i> Miners</span>
       </div>
-      <div class="sb-item" id="sb-hostile">
-        <span class="sb-item-label"><i class="ti ti-alert-triangle"></i> Economic</span>
+      <!-- The one live advisor so far — renders the export's `advisors`
+           findings (js/advisors-feed.js). The three above are still WIP. -->
+      <div class="sb-item" id="sb-economic" onclick="switchTab('advisors-economic', null); AdvisorsFeed.render()">
+        <span class="sb-item-label"><i class="ti ti-report-money"></i> Economic</span>
       </div>
       <div class="sb-divider"></div>
       <div class="sb-heading">Captains Log</div>
@@ -639,6 +641,13 @@
       <div class="tab-panel" id="tab-events">
         <div class="sec-header"><div class="sec-title">Events</div><div class="sec-line"></div></div>
         <div id="events-root"></div>
+      </div>
+
+      <!-- ADVISORS · ECONOMIC TAB — ranked rule-based findings from the
+           export's `advisors` section, rendered by js/advisors-feed.js. -->
+      <div class="tab-panel" id="tab-advisors-economic">
+        <div class="sec-header"><div class="sec-title">Economic Advisor</div><div class="sec-line"></div></div>
+        <div id="advisors-root"></div>
       </div>
 
     </div>

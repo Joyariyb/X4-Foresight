@@ -123,6 +123,23 @@ CREATE TABLE IF NOT EXISTS station_inventory (
     PRIMARY KEY (scan_id, station_id, ware_id)
 );
 
+-- The station's own posted buy/sell listings from <trade><offers> — same
+-- record shape as npc_station_wares, but per-scan like the other station_*
+-- tables (prices move; the advisor wants history, not latest-only).
+CREATE TABLE IF NOT EXISTS station_offers (
+    scan_id     INTEGER NOT NULL REFERENCES scans(scan_id) ON DELETE CASCADE,
+    station_id  TEXT    NOT NULL,
+    ware_id     TEXT    NOT NULL,
+    ware_name   TEXT,
+    is_buying   INTEGER NOT NULL DEFAULT 0,
+    is_selling  INTEGER NOT NULL DEFAULT 0,
+    price       INTEGER,
+    amount      INTEGER,
+    desired     INTEGER,                          -- buy offers only: target stock
+    illegal     INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (scan_id, station_id, ware_id)
+);
+
 CREATE TABLE IF NOT EXISTS station_budget_lines (
     scan_id     INTEGER NOT NULL REFERENCES scans(scan_id) ON DELETE CASCADE,
     station_id  TEXT    NOT NULL,
@@ -418,6 +435,9 @@ CREATE TABLE IF NOT EXISTS npc_station_wares (
     is_selling   INTEGER NOT NULL DEFAULT 0,
     price        INTEGER,
     amount       INTEGER,
+    -- Buy offers only: target stock. Migrated DBs have this at the table's
+    -- physical end (v2 ALTER) — write.py's explicit-column INSERT copes.
+    desired      INTEGER,
     illegal      INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (station_id, ware_id)
 );

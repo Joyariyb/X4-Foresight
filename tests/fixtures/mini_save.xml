@@ -100,6 +100,15 @@
               <!-- own="1" marks the station wallet (others are trade escrow). -->
               <account id="[0x1003]" amount="2000000" own="1"/>
               <trade>
+                <!-- Posted offers use the same Format B rows as NPC stations;
+                     the <reservation> sibling below must NOT be picked up by
+                     the offer walk (different tag). -->
+                <offers>
+                  <production>
+                    <trade ware="energycells" seller="[0x1000]" amount="4200" price="20"/>
+                    <trade ware="siliconwafers" buyer="[0x1000]" amount="800" desired="1000" price="120"/>
+                  </production>
+                </offers>
                 <reservations>
                   <!-- buy-type reservation: +1000 m3 of inbound cargo space. -->
                   <reservation ware="energycells" amount="1000" flags="sellermoneyvirtual|buyermoneyvirtual"/>
@@ -125,6 +134,21 @@
               </component>
             </component>
 
+            <!-- Second player station, deliberately minimal: exercises the
+                 Advisors overflow_risk rule. A single prod_gen_energycells_macro
+                 module vastly outproduces the SMALL container storage's 50000 m3
+                 cap (see storage_arg_s_container_01_macro in STATION_STATS), so
+                 time_to_cap_hours comes out well under the 24h threshold with no
+                 need to hand-tune an implausible initial cargo amount. -->
+            <component class="station" macro="station_gen_factory_01_macro" name="Overflow Test Station" owner="player" id="[0x6000]" code="STA-002">
+              <component class="production" macro="prod_gen_energycells_macro" id="[0x6001]"/>
+              <component class="storage" macro="storage_arg_s_container_01_macro" id="[0x6002]"/>
+              <component class="dockingbay" macro="dockingbay_arg_m_01_macro" id="[0x6003]"/>
+              <connections>
+                <connection connection="subordinates" id="[0x6005]"/>
+              </connections>
+            </component>
+
             <!-- Free-flying player freighter (buffered). Homebase comes from the
                  TradeRoutine range param; the temp DockAt marks an in-progress
                  commercial delivery to the NPC station. -->
@@ -138,6 +162,15 @@
               </component>
               <component class="shieldgenerator" macro="shield_arg_m_standard_01_mk1_macro" id="[0x3003]"/>
               <component class="engine" macro="engine_arg_m_allround_01_mk1_macro" id="[0x3004]"/>
+              <!-- Cargo hold: real saves nest a storage component inside the
+                   ship, same as stations. 500×1.0 + 300×18.0 = 5900 m³ against
+                   the hull's static 8200 m³ cargo_max in SHIP_STATS. -->
+              <component class="storage" macro="storage_arg_m_trans_container_01_a_macro" id="[0x3005]">
+                <cargo>
+                  <ware ware="energycells" amount="500"/>
+                  <ware ware="siliconwafers" amount="300"/>
+                </cargo>
+              </component>
               <orders>
                 <order id="[0x30]" order="TradeRoutine" default="1" state="started">
                   <param name="range" type="component" value="[0x1005]"/>
@@ -162,6 +195,19 @@
                   <skills engineering="3" morale="2" piloting="1"/>
                 </person>
               </people>
+            </component>
+
+            <!-- Idle hauler (buffered): homed to the Overflow Test Station (a
+                 surplus producer) but carries NO storage component at all, so
+                 _parse_cargo reads it as an EMPTY bay (0.0 / 8200 m3) — exercises
+                 the Advisors idle_hauler rule (0% fill on a surplus station's
+                 own freighter). -->
+            <component class="ship_m" macro="ship_arg_m_trans_container_01_a_macro" name="Idle Hauler" owner="player" id="[0x6100]" code="HAU-002">
+              <orders>
+                <order id="[0x60]" order="TradeRoutine" default="1" state="started">
+                  <param name="range" type="component" value="[0x6005]"/>
+                </order>
+              </orders>
             </component>
 
             <!-- Free-flying player fighter: no trade order, so homebase must be
@@ -212,6 +258,28 @@
               <component class="ship_m" macro="ship_tel_m_trans_container_01_a_macro" owner="teladi" id="[0x2100]" code="TLV-100"/>
               <!-- Format A ware summary attribute. -->
               <trade wares="energycells siliconwafers"/>
+            </component>
+
+            <!-- Format B god-production station: no wares= summary, individual
+                 <trade ware=...> offers instead. Direction comes from the
+                 PRESENCE of buyer=/seller= (their value is the station's own
+                 id), buy offers carry desired= (demand depth), and the shady
+                 flag marks black-market goods. No name attribute: the type
+                 must resolve from the production macro. -->
+            <component class="station" macro="station_tel_factory_l_macro" owner="teladi" id="[0x2200]" code="CYS-158" nameindex="1">
+              <component class="production" macro="prod_gen_advancedelectronics_macro" id="[0x2201]"/>
+              <trade>
+                <offers>
+                  <production>
+                    <trade ware="advancedelectronics" seller="[0x2200]" amount="810" price="1200"/>
+                    <!-- Partially-stocked buy offer: amount < desired, priced
+                         ABOVE the player station's own energycells sell offer
+                         (20) — exercises the Advisors pricing_gap rule. -->
+                    <trade ware="energycells" buyer="[0x2200]" amount="2607" desired="3000" price="35"/>
+                    <trade ware="spacefuel" buyer="[0x2200]" amount="120" desired="200" price="250" flags="tradeonly|shady"/>
+                  </production>
+                </offers>
+              </trade>
             </component>
 
             <!-- Gate endpoint B: pair connection named after the route, not
