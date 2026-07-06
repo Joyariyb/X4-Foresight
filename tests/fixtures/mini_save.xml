@@ -227,8 +227,15 @@
             </component>
 
             <!-- NPC ship: streamed, never buffered. Order label is captured from
-                 the <order> elements streaming past. -->
-            <component class="ship_m" macro="ship_tel_m_trans_container_01_a_macro" owner="teladi" id="[0x4000]" code="TLV-042">
+                 the <order> elements streaming past, and equipment components
+                 are captured the same way (on_npc_equipment) — including a
+                 duplicated shield (kept as two entries) and the thruster from
+                 the opening-tag attribute. -->
+            <component class="ship_m" macro="ship_tel_m_trans_container_01_a_macro" owner="teladi" id="[0x4000]" code="TLV-042" thruster="thruster_gen_m_allround_01_mk1_macro">
+              <component class="shieldgenerator" macro="shield_tel_m_standard_01_mk1_macro" id="[0x4002]"/>
+              <component class="shieldgenerator" macro="shield_tel_m_standard_01_mk1_macro" id="[0x4003]"/>
+              <component class="engine" macro="engine_tel_m_allround_01_mk1_macro" id="[0x4004]"/>
+              <component class="turret" macro="turret_tel_m_shotgun_01_mk1_macro" id="[0x4005]"/>
               <orders>
                 <order id="[0x40]" order="TradeRoutine" default="1" state="started"/>
               </orders>
@@ -239,6 +246,7 @@
                  the macro's "fighter" token maps to a combat role — exercises
                  the Advisors hostile_presence rule. -->
             <component class="ship_m" macro="ship_xen_m_fighter_01_a_macro" owner="xenon" id="[0x7000]" code="XEN-001">
+              <component class="weapon" macro="weapon_xen_m_beam_01_mk1_macro" id="[0x7002]"/>
               <orders>
                 <order id="[0x70]" order="Attack" default="1" state="started"/>
               </orders>

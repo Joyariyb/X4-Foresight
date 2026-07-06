@@ -679,7 +679,64 @@
       "sector_macro": "cluster_1_sector001_macro",
       "sector_name": "Testora Prime",
       "destination": null,
-      "ship_order": "Trading"
+      "ship_order": "Trading",
+      "loadout": [
+        {
+          "slot": "engine",
+          "macro": "engine_tel_m_allround_01_mk1_macro",
+          "count": 1,
+          "name": "All-round Engine",
+          "mk": 1,
+          "race": "teladi",
+          "size": "m",
+          "thrust_forward": 940,
+          "thrust_reverse": 1034,
+          "travel_thrust": 8.7,
+          "boost_thrust": 4.5,
+          "price": 13064
+        },
+        {
+          "slot": "shield",
+          "macro": "shield_tel_m_standard_01_mk1_macro",
+          "count": 2,
+          "name": "Shield Generator",
+          "mk": 1,
+          "race": "teladi",
+          "size": "m",
+          "capacity": 6500,
+          "recharge_rate": 83,
+          "recharge_delay": 13.9,
+          "price": 17117
+        },
+        {
+          "slot": "thruster",
+          "macro": "thruster_gen_m_allround_01_mk1_macro",
+          "count": 1,
+          "name": "All-round Thrusters",
+          "mk": 1,
+          "race": null,
+          "size": "m",
+          "strafe": 1010,
+          "pitch": 223,
+          "yaw": 223,
+          "roll": 350,
+          "price": 13019
+        },
+        {
+          "slot": "turret",
+          "macro": "turret_tel_m_shotgun_01_mk1_macro",
+          "count": 1,
+          "name": "Muon Blaster Turret",
+          "mk": 1,
+          "race": "teladi",
+          "size": "m",
+          "damage_hull": 114,
+          "damage_shield": 190,
+          "reload_rate": 0.885,
+          "range_m": 4025,
+          "price": 49018
+        }
+      ]
     },
     {
       "object_id": "[0x7000]",
@@ -694,7 +751,23 @@
       "sector_macro": "cluster_1_sector001_macro",
       "sector_name": "Testora Prime",
       "destination": null,
-      "ship_order": "Attacking"
+      "ship_order": "Attacking",
+      "loadout": [
+        {
+          "slot": "weapon",
+          "macro": "weapon_xen_m_beam_01_mk1_macro",
+          "count": 1,
+          "name": "Plasma Cutter Beam",
+          "mk": 1,
+          "race": "xenon",
+          "size": "m",
+          "damage_hull": 620,
+          "damage_shield": 620,
+          "reload_rate": 0.167,
+          "range_m": 2700,
+          "price": 38846
+        }
+      ]
     }
   ],
   "npc_presence": {

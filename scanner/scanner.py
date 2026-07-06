@@ -7,7 +7,7 @@ from lxml.etree import iterparse as lxml_iterparse
 from .context import ScanContext, ComponentFrame, STATION_CLASSES, SHIP_CLASSES
 from .language import open_save, load_language_root, load_sector_names, load_text_pages, resolve_sector_from_location
 from .handlers.station     import StationHandler
-from .handlers.ship        import ShipHandler
+from .handlers.ship        import ShipHandler, EQUIPMENT_CLASSES
 from .handlers.reputation  import ReputationHandler
 from .handlers.trade       import TradeHandler
 from .handlers.economy     import EconomyHandler
@@ -184,6 +184,12 @@ class Scanner:
         elif frame.cls == 'buildstorage' and frame.owner == 'player':
             # Buildstorages tracked separately from stations to avoid misclassifying NPC purchases
             ctx.player_buildstorage_ids.add(frame.object_id)
+
+        elif frame.cls in EQUIPMENT_CLASSES:
+            # Streaming NPC-ship equipment. Only reachable for non-buffered ships
+            # (player ship/station equipment is inside a buffer, never dispatched),
+            # so this can't double-count with _parse_loadout()'s buffered walk.
+            self._ship.on_npc_equipment(frame, ctx)
 
     def _on_buffered_end(
         self, frame: ComponentFrame | None, elem, ctx: ScanContext

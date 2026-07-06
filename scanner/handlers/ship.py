@@ -171,6 +171,11 @@ _EQUIP_SLOTS = {
     "engine":          "engine",
 }
 
+# Exported for the scanner's dispatch loop: equipment component classes that
+# should reach on_npc_equipment() while streaming. Same key set as _EQUIP_SLOTS
+# — kept as a frozenset because the dispatcher tests membership per component.
+EQUIPMENT_CLASSES = frozenset(_EQUIP_SLOTS)
+
 # Deployables excluded from ship designs (empty loadout → never in DB/export).
 # "mine" deliberately absent (would match "miner").
 _DEPLOYABLE_RE = re.compile(r'lasertower|satellite|beacon|resourceprobe|navsat', re.I)
@@ -754,6 +759,18 @@ class ShipHandler:
         self._npc_order_active:  str = ""   # first started non-temp order label
         self._npc_order_default: str = ""   # default="1" order label (fallback)
 
+        # ── Streaming equipment capture for non-buffered NPC ships ─────────────
+        # Equipment (weapon/turret/shieldgenerator/engine) components stream past
+        # as ordinary component start-events inside a non-buffered NPC ship, so
+        # a subtree walk isn't needed to read them — on_npc_equipment() appends
+        # each one to its owning ship's loadout as it flows by. Keyed by
+        # object_id (not just "the current ship") because a fighter docked
+        # inside an NPC carrier opens its own component mid-carrier: its guns
+        # must attribute to the fighter, then the carrier's remaining equipment
+        # to the carrier. Deployables are never registered here, mirroring
+        # _parse_loadout()'s empty-loadout rule for them.
+        self._npc_ships_by_id: dict[str, 'Ship'] = {}
+
     # ── Dispatcher entry points ───────────────────────────────────────────────
 
     def extract_npc_docked_ships(self, station_elem, station_id: str, ctx) -> None:
@@ -811,10 +828,12 @@ class ShipHandler:
         """
         Fires for every ship component (player and NPC) when its opening tag is seen.
 
-        NPC ships: the entire extraction happens here — full name, role, size,
+        NPC ships: identity extraction happens here — full name, role, size,
         owner, sector. Hull/shield/pilot data is not extracted because doing so
-        would require buffering thousands of NPC ships — they are only needed
-        for the high-level fleet overview and trade name resolution.
+        would require buffering thousands of NPC ships. Equipment IS captured,
+        but without buffering: each item streams past as its own component
+        start-event and on_npc_equipment() appends it to the ship registered
+        here (thrusters are an opening-tag attribute, so they're seeded now).
 
         Player ships: only the sector_macro is captured here. on_end() does
         the full extraction once the subtree is in memory.
@@ -885,6 +904,17 @@ class ShipHandler:
         ctx.ships.append(ship)
         self._current_npc_ship = ship
 
+        # Arm streaming equipment capture — but not for deployables, which must
+        # keep an empty loadout (same rule _parse_loadout() applies to player
+        # ships, so laser towers etc. stay out of designs downstream).
+        if not _DEPLOYABLE_RE.search(macro):
+            self._npc_ships_by_id[obj_id] = ship
+            # Thrusters aren't components — they're an attribute on the ship's
+            # opening tag, so this is the only chance to read one while streaming.
+            thruster = elem.get("thruster")
+            if thruster:
+                ship.loadout.append(("thruster", thruster))
+
         # Register code → display name for trade record name resolution.
         # Trade history entries identify ships by their code (e.g. "WYX-052"),
         # not by object ID. This index lets the trade handler look up names fast.
@@ -945,6 +975,37 @@ class ShipHandler:
         elif elem.get("default") == "1" and not self._npc_order_active:
             self._npc_order_default = label
             self._current_npc_ship.order = label
+
+    def on_npc_equipment(self, frame, ctx) -> None:
+        """
+        Fires on every streaming equipment component start (weapon / turret /
+        shieldgenerator / engine — the scanner filters on EQUIPMENT_CLASSES).
+
+        Only NPC ship equipment ever reaches here: player ships and stations
+        are buffered, and the scanner suppresses dispatch inside buffers, so
+        their equipment can never double-count with the buffered-path
+        _parse_loadout() extraction.
+
+        The owning ship is the innermost ship-class frame on the stack — NOT
+        simply frame_at(1), because equipment can sit under intermediate
+        component levels, and a fighter docked inside an NPC carrier must
+        receive its own guns rather than donate them to the carrier (the
+        streaming equivalent of iter_station_components() skipping nested
+        ship subtrees). Deployables and player ships are absent from
+        _npc_ships_by_id, so their equipment is dropped by the lookup.
+        """
+        slot = _EQUIP_SLOTS.get(frame.cls)
+        if slot is None or not frame.macro:
+            return
+        # frame_at(0) is the equipment component itself; scan upward for the
+        # ship that contains it.
+        for i in range(1, ctx.depth):
+            f = ctx.frame_at(i)
+            if f.cls in SIZE_LABELS:
+                ship = self._npc_ships_by_id.get(f.object_id)
+                if ship is not None:
+                    ship.loadout.append((slot, frame.macro))
+                return
 
     def on_npc_param(self, elem, ctx) -> None:
         """

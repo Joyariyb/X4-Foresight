@@ -183,9 +183,10 @@ CREATE TABLE IF NOT EXISTS ships (
     PRIMARY KEY (scan_id, object_id)
 );
 
--- Player ship equipment (weapons, turrets, shields, engines, thrusters).
+-- Ship equipment (weapons, turrets, shields, engines, thrusters).
 -- Dedup source for ship "designs"; macros resolve to stats via equipment_stats.py at export time.
--- Player ships only (NPC subtrees aren't buffered).
+-- Player ships (buffered subtree walk) + the npc_ships subset (streamed capture,
+-- bounded to player-station sectors); ship_id joins to ships OR npc_ships.
 CREATE TABLE IF NOT EXISTS ship_equipment (
     scan_id   INTEGER NOT NULL REFERENCES scans(scan_id) ON DELETE CASCADE,
     ship_id   TEXT    NOT NULL,            -- FK → ships.object_id

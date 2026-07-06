@@ -12,6 +12,11 @@
   // on the last hull you looked at instead of nothing.
   let reslibHullView     = 'list';   // 'list' | 'inspect'
   let reslibInspectMacro = null;
+  // Optional ship context for the Inspector: when set (jumpToNpcHull), each
+  // hardpoint card leads with the equipment actually fitted on that ship and
+  // the full compatible-equipment catalog stays in the collapsed section
+  // below. Null when reached from the Hull List (plain hull browsing).
+  let reslibInspectShip  = null;
   let reslibHullFilters  = { faction: '', size: '', type: '' };
 
   // Equipment categories (weapon/turret/shield/engine/thruster) now mirror the
@@ -137,7 +142,7 @@
 
     const tabs = `<div class="fleet-subtabs">
       <div class="fleet-subtab ${reslibHullView === 'list' ? 'active' : ''}" onclick="reslibShowHullList()"><i class="ti ti-list"></i> Hull List</div>
-      <div class="fleet-subtab ${reslibHullView === 'inspect' ? 'active' : ''} ${reslibInspectMacro ? '' : 'disabled'}" onclick="reslibInspectMacro && reslibShowHullInspector(reslibInspectMacro)"><i class="ti ti-zoom-in"></i> Hull Inspector</div>
+      <div class="fleet-subtab ${reslibHullView === 'inspect' ? 'active' : ''} ${reslibInspectMacro ? '' : 'disabled'}" onclick="reslibInspectMacro && reslibShowHullInspector(reslibInspectMacro, reslibInspectShip)"><i class="ti ti-zoom-in"></i> Hull Inspector</div>
       <div class="fleet-subtab ${reslibHullView === 'compare' ? 'active' : ''}" onclick="reslibShowHullCompare()"><i class="ti ti-arrows-left-right"></i> Hull Comparison</div>
     </div>`;
 
@@ -232,9 +237,12 @@
     renderResLib();
   }
 
-  function reslibShowHullInspector(macro) {
+  function reslibShowHullInspector(macro, ship) {
     reslibHullView     = 'inspect';
     reslibInspectMacro = macro;
+    // Undefined (a Hull List row click) clears any previous ship context, so
+    // plain browsing never inherits a stale fitted view.
+    reslibInspectShip  = ship || null;
     renderResLibHeader();
     renderResLib();
   }
@@ -501,6 +509,12 @@
       [0,1,2,3].map(i => `<span class="dhd">${defs[i] ? defs[i][1] : ''}</span>`).join('') +
       `<span class="dhd">Cost</span></div>`;
 
+    // Fitted equipment for the inspected ship (jumpToNpcHull), if any. Raw
+    // unresolved macros are dropped — same rule as loadoutTipHtml — so a
+    // modded item without a catalog entry never shows an internal id.
+    const fittedAll = (reslibInspectShip && reslibInspectShip.loadout || [])
+      .filter(e => e.name && !e.name.endsWith('_macro'));
+
     let sections = '';
     for (const [slot, label] of DESIGN_SLOTS) {
       // Thruster isn't a component hardpoint — it's one implicit slot at the
@@ -525,6 +539,40 @@
           .filter(([, e]) => e.slot === slot && (e.size || '').toLowerCase() === sz)
           .map(([eMacro, e]) => ({ macro: eMacro, ...e }))
           .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+        // ── Fitted block (ship context only) ─────────────────────────────
+        // What's actually mounted on THIS ship, always visible above the
+        // collapsed catalog. Same .drow/.dsub-box markup as the rows below —
+        // the export already flattened catalog stats onto each entry, so the
+        // stat columns read identically to the catalog list.
+        let fittedBlock = '';
+        let fittedCount = 0;
+        if (reslibInspectShip) {
+          const fitted = fittedAll.filter(e =>
+            e.slot === slot && (e.size || '').toLowerCase() === sz);
+          fittedCount = fitted.reduce((a, e) => a + (e.count || 1), 0);
+          if (fitted.length) {
+            const rows = fitted.map(e => {
+              const mk = e.mk ? ` Mk${e.mk}` : '';
+              const n  = (e.count || 1) > 1 ? ` ×${e.count}` : '';
+              const tipAttr = wantsTip ? ` data-weapon-tip="${encodeURIComponent(JSON.stringify({ ...e, _shipHeatFactor: h.weapon_heat_factor || 1 }))}"` : '';
+              return `<div class="drow"${tipAttr}>
+                <span></span>${designBadge(e.race)}
+                <span class="dnm">${e.name}${mk}${n}</span>
+                ${statCells(e, defs)}
+                <span class="dcost">${e.price != null ? designCr(e.price) : '—'}</span>
+              </div>`;
+            }).join('');
+            fittedBlock = `<div class="dsub-box reslib-hpcard" style="border-color:${hexA(box.hex,0.3)};background:${box.bg}">
+              <div class="dsub-hd">
+                <span class="dsub-badge" style="color:${box.hex};background:${box.bg};border-color:${box.hex}">${sz.toUpperCase()}</span>
+                <span class="reslib-hp-title">Fitted · ${fittedCount} / ${cap[sz]}</span>
+              </div>
+              ${headerRow(defs)}${rows}
+            </div>`;
+          }
+        }
+
         const title = `${cap[sz]} ${SIZE_WORD[sz] || sz.toUpperCase()} ${SLOT_SINGULAR[slot] || label} Hardpoint${cap[sz] > 1 ? 's' : ''}`;
         const inner = compat.length
           ? headerRow(defs) + compat.map(e => {
@@ -538,7 +586,7 @@
               </div>`;
             }).join('')
           : `<div style="padding:0.6rem 0.2rem;color:var(--text-brand);font-size:1.1rem">No catalogued ${label.toLowerCase()} fit this size yet.</div>`;
-        return `<details class="dsub-box reslib-hpcard" style="border-color:${hexA(box.hex,0.3)};background:${box.bg}">
+        return fittedBlock + `<details class="dsub-box reslib-hpcard" style="border-color:${hexA(box.hex,0.3)};background:${box.bg}">
           <summary class="dsub-hd">
             <span class="dsub-badge" style="color:${box.hex};background:${box.bg};border-color:${box.hex}">${sz.toUpperCase()}</span>
             <span class="reslib-hp-title">${title}</span>
@@ -558,7 +606,19 @@
     }
     if (!sections) sections = `<div style="padding:3rem 1rem;text-align:center;color:var(--text-secondary);font-size:1.2rem">This hull has no equipment hardpoints.</div>`;
 
+    // When inspecting a specific ship, say so up front — the Fitted blocks
+    // below show that spawn's actual gear, not the hull's baseline catalog.
+    const shipLine = reslibInspectShip
+      ? `<div style="display:flex;align-items:baseline;gap:0.8rem;margin-bottom:1rem">
+          ${designBadge(reslibInspectShip.owner_id)}
+          <span style="font-size:1.3rem;color:var(--text-primary)">${reslibInspectShip.name || '—'}</span>
+          <span class="mono" style="color:var(--color-highlight);font-size:1.1rem">${reslibInspectShip.code || ''}</span>
+          <span style="font-size:1.1rem;color:var(--text-secondary)">— current fitted loadout</span>
+        </div>`
+      : '';
+
     panel.innerHTML = `
+      ${shipLine}
       ${badges ? `<div style="margin-bottom:1rem">${badges}</div>` : ''}
       ${description}
       <div style="display:flex;gap:1.6rem;flex-wrap:wrap;align-items:flex-start">

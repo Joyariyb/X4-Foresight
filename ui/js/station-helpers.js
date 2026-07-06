@@ -200,6 +200,21 @@
     reslibShowHullInspector(macro);
   }
 
+  // Jump from an NPC ship's name (Naval → Ships faction tabs) to the Hull
+  // Inspector, carrying the ship itself so the inspector shows the equipment
+  // actually fitted on that spawn (NPC loadouts are randomized per spawn, so
+  // two ships of the same hull can differ). Same cross-tab pattern as
+  // jumpToHull(), which lands on the bare hull instead.
+  function jumpToNpcHull(code, factionId) {
+    const ship = (npcShipsCache[factionId] || []).find(s => s.code === code);
+    if (!ship || !HULL_CATALOG[ship.macro]) return;
+    _navRecord();
+    switchTab('reslib', document.getElementById('nav-naval'));
+    _navAfterJump();
+    switchResLibCat('hull');
+    reslibShowHullInspector(ship.macro, ship);
+  }
+
   function stationTypeLabel(s) {
     const wares = s.production ? s.production.split(',').filter(w => w.trim()) : [];
     if (wares.length === 0) return 'Defence Platform';

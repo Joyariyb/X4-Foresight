@@ -293,10 +293,18 @@ def _fleet_summary(ships: list[dict]) -> dict:
 
 def _npc_ships(conn, scan_id) -> list[dict]:
     """NPC ships in the player's station sectors (situational awareness)."""
-    return [_drop(dict(r), 'scan_id')
-            for r in conn.execute(
-                "SELECT * FROM npc_ships WHERE scan_id=? "
-                "ORDER BY sector_name, owner_name, role", (scan_id,))]
+    # _ship_loadouts covers every ship_equipment row for the scan (player and
+    # NPC alike — the ids are disjoint), so NPC fitted equipment resolves
+    # through the exact same catalog lookup the player fleet uses.
+    loadouts = _ship_loadouts(conn, scan_id)
+    out = []
+    for r in conn.execute(
+            "SELECT * FROM npc_ships WHERE scan_id=? "
+            "ORDER BY sector_name, owner_name, role", (scan_id,)):
+        d = _drop(dict(r), 'scan_id')
+        d['loadout'] = loadouts.get(d.get('object_id'), [])
+        out.append(d)
+    return out
 
 
 def _npc_presence(npc_ships: list[dict]) -> dict:

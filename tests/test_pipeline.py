@@ -263,6 +263,22 @@ class TestShips:
         assert npc.hull_hp is None
         assert '[0x4000]' not in ctx.player_ship_ids
 
+    def test_npc_ship_loadout_streamed(self, ctx):
+        # Equipment components stream past as start-events and are captured
+        # without buffering (on_npc_equipment); the thruster is seeded from
+        # the opening-tag attribute so it lands first, and the duplicated
+        # shield is kept as two entries (the UI counts them).
+        npc = _ship(ctx, '[0x4000]')
+        assert sorted(npc.loadout) == [
+            ('engine',   'engine_tel_m_allround_01_mk1_macro'),
+            ('shield',   'shield_tel_m_standard_01_mk1_macro'),
+            ('shield',   'shield_tel_m_standard_01_mk1_macro'),
+            ('thruster', 'thruster_gen_m_allround_01_mk1_macro'),
+            ('turret',   'turret_tel_m_shotgun_01_mk1_macro'),
+        ]
+        assert _ship(ctx, '[0x7000]').loadout == [
+            ('weapon', 'weapon_xen_m_beam_01_mk1_macro')]
+
     def test_delivery_destination_from_temp_dockat(self, ctx):
         # destination + trading="1" on the temp DockAt marks a live delivery.
         assert ctx.delivery_dest_index == {'[0x3000]': '[0x2000]'}

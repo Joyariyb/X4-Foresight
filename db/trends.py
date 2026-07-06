@@ -51,7 +51,13 @@ def _ship_asset_value(conn, scan_id) -> tuple[dict[int, float], dict[int, float]
         hull[r['scan_id']] = hull.get(r['scan_id'], 0) + price
 
     equip: dict[int, float] = {}
-    for r in conn.execute("SELECT scan_id, macro, count FROM ship_equipment WHERE scan_id <= ?",
+    # JOIN ships (player-only table) rather than reading ship_equipment raw:
+    # the table also carries fitted equipment for the npc_ships subset, and NPC
+    # gear must not inflate the player's net worth.
+    for r in conn.execute(
+        "SELECT se.scan_id, se.macro, se.count FROM ship_equipment se "
+        "JOIN ships s ON s.scan_id = se.scan_id AND s.object_id = se.ship_id "
+        "WHERE se.scan_id <= ?",
                           (scan_id,)):
         macro = r['macro'] or ''
         stat = EQUIPMENT_STATS.get(macro) or EQUIPMENT_STATS.get(EQUIPMENT_ALIASES.get(macro, ''), {})

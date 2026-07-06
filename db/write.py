@@ -5,7 +5,9 @@
 
 NPC ships are deliberately NOT persisted per-scan: there are ~12k of them, they
 are transient context, and trade rows already carry resolved ship names. Only
-player-owned ships go into the history `ships` table.
+player-owned ships go into the history `ships` table. The bounded exception is
+npc_ships (ships in player-station sectors, for threat awareness), which also
+gets its fitted equipment written into ship_equipment.
 """
 from __future__ import annotations
 import sqlite3
@@ -196,12 +198,21 @@ def _write_ships(cur, scan_id, ctx) -> None:
     for sh in ctx.ships:
         if sh.owner_id != 'player' or not sh.loadout:
             continue
-        counts: dict[tuple[str, str], int] = {}
-        for slot, macro in sh.loadout:
-            counts[(slot, macro)] = counts.get((slot, macro), 0) + 1
-        for (slot, macro), n in counts.items():
-            equip_rows.append((scan_id, sh.object_id, slot, macro, n))
+        equip_rows.extend(_equipment_rows(scan_id, sh))
     cur.executemany("INSERT INTO ship_equipment VALUES(?,?,?,?,?)", equip_rows)
+
+
+def _equipment_rows(scan_id, sh) -> list[tuple]:
+    """One ship's loadout as aggregated ship_equipment rows.
+
+    Shared by the player path above and _write_npc_ships below so both owners'
+    equipment lands in the same table with identical (slot, macro) → count shape.
+    """
+    counts: dict[tuple[str, str], int] = {}
+    for slot, macro in sh.loadout:
+        counts[(slot, macro)] = counts.get((slot, macro), 0) + 1
+    return [(scan_id, sh.object_id, slot, macro, n)
+            for (slot, macro), n in counts.items()]
 
 
 def _write_npc_ships(cur, scan_id, ctx) -> None:
@@ -219,6 +230,7 @@ def _write_npc_ships(cur, scan_id, ctx) -> None:
     sect_name = {sec.sector_macro: sec.sector_name for sec in ctx.sectors}
 
     rows = []
+    equip_rows = []
     for s in ctx.ships:
         if s.owner_id == 'player' or s.sector_macro not in pstn_sectors:
             continue
@@ -234,8 +246,15 @@ def _write_npc_ships(cur, scan_id, ctx) -> None:
             s.sector_macro, sect_name.get(s.sector_macro), dest,
             s.order or "Idle",
         ))
+        # Fitted equipment (streamed capture) for this bounded subset only —
+        # persisting all ~12k NPC ships' loadouts would triple the table for
+        # ships the UI never shows. Same shape as the player rows, so the
+        # export's _ship_loadouts() resolves both without special-casing.
+        if s.loadout:
+            equip_rows.extend(_equipment_rows(scan_id, s))
     cur.executemany(
         "INSERT INTO npc_ships VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
+    cur.executemany("INSERT INTO ship_equipment VALUES(?,?,?,?,?)", equip_rows)
 
 
 def _write_in_progress_deliveries(cur, scan_id, ctx) -> None:

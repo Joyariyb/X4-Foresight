@@ -286,7 +286,9 @@ class Ship:
     pilot_id:           str | None     # FK → crew.object_id, None for NPC ships
     # Installed equipment as [(slot, macro), ...] — one entry per physical item,
     # duplicates kept so identical loadouts can be deduped into "designs".
-    # Player ships only; NPC ships aren't buffered, so this stays empty for them.
+    # Player ships fill this from the buffered subtree (_parse_loadout); NPC
+    # ships fill it via streaming capture (ShipHandler.on_npc_equipment) since
+    # their subtrees are never buffered.
     loadout:            list = field(default_factory=list)
 
 

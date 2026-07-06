@@ -100,9 +100,16 @@
       const sCol  = SIZE_COLOURS[s.size]        || 'var(--text-secondary)';
       const oCol  = ORDER_COLOURS[s.ship_order] || 'var(--text-secondary)';
       const oIcon = ORDER_ICONS[s.ship_order]   || 'ti-circle';
+      // Clicking the ship name opens this specific ship in the Hull Inspector,
+      // fitted loadout and all. Gated on the hull being catalogued, same as
+      // the player table's Hull Type link (escape pods etc. have no page).
+      const canInspect = s.macro && HULL_CATALOG[s.macro];
+      const nameAttr = canInspect
+        ? ` onclick="jumpToNpcHull('${s.code}','${factionId}')" style="cursor:pointer"`
+        : '';
       return `<tr data-code="${s.code}">
         <td style="white-space:nowrap;height:34px">
-          <span class="ship-name">${s.name || '—'}</span>
+          <span class="ship-name"${nameAttr}>${s.name || '—'}</span>
           <span class="mono" style="color:var(--color-highlight);font-size:11px;margin-left:8px">${s.code}</span>
         </td>
         <td class="mono" style="color:${sCol}">${s.size}</td>
