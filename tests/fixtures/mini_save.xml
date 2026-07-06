@@ -213,9 +213,14 @@
             <!-- Free-flying player fighter: no trade order, so homebase must be
                  resolved from the commander connection ref instead. Damaged
                  (1600 / 3100 hull) and undocked — exercises the Advisors
-                 damaged_fleet rule (combat role below the hull threshold). -->
+                 damaged_fleet rule (combat role below the hull threshold).
+                 Armed (pulse laser + shield) so the hostile_presence force
+                 comparison has one ASSESSED defender; the docked FGT-001
+                 stays bare, exercising the unassessed-defender path. -->
             <component class="ship_s" macro="ship_arg_s_fighter_01_a_macro" owner="player" id="[0x3100]" code="FGT-002">
               <hull value="1600"/>
+              <component class="weapon" macro="weapon_gen_s_laser_01_mk1_macro" id="[0x3102]"/>
+              <component class="shieldgenerator" macro="shield_arg_s_standard_01_mk1_macro" id="[0x3103]"/>
               <orders>
                 <order id="[0x32]" order="Escort" default="1"/>
               </orders>

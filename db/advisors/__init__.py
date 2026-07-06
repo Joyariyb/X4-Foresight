@@ -37,13 +37,18 @@ def compute_advisors(conn: sqlite3.Connection, scan_id: int | None = None,
     distances_from_current = distances_from_current or {}
     avg_prices = ware_avg_prices(conn)
     demand_by_ware = npc_demand_by_ware(conn, scan_id, distances_from_current)
+    # Shared by the three force-based military rules — same convention as
+    # demand_by_ware above (compute the expensive lookup once, pass it in).
+    forces = military.threat_forces(conn, scan_id)
 
     findings: list[dict] = []
     findings += economy.overflow_risk_findings(conn, scan_id, avg_prices)
     findings += economy.market_opportunity_findings(conn, scan_id, demand_by_ware)
     findings += economy.pricing_gap_findings(conn, scan_id, demand_by_ware)
     findings += logistics.idle_hauler_findings(conn, scan_id)
-    findings += military.hostile_presence_findings(conn, scan_id, distances_from_current)
+    findings += military.hostile_presence_findings(conn, scan_id, distances_from_current, forces)
+    findings += military.composition_gap_findings(conn, scan_id, distances_from_current, forces)
+    findings += military.outranged_findings(conn, scan_id, distances_from_current, forces)
     findings += military.damaged_fleet_findings(conn, scan_id)
 
     findings.sort(key=lambda f: -f['priority_score'])

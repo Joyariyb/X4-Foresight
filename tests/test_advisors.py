@@ -1,6 +1,11 @@
 # Core role: Regression tests for the Advisors findings engine (db/advisors/) against the mini save.
 from __future__ import annotations
 
+import pytest
+
+from db.connection import get_connection
+from db.advisors import military
+
 
 def _finding(export, ftype, id_):
     findings = [f for f in export['advisors']['findings']
@@ -66,7 +71,136 @@ def test_hostile_presence(export):
     # Both player fighters (docked FGT-001, escort FGT-002) count as
     # defenders present in the threatened sector.
     assert f['evidence']['defender_count'] == 2
-    assert f['priority_score'] > 0
+
+    # Force comparison (batch 2): the Xenon M fighter's beam (72.619 dmg/s
+    # sustained, 10,000 catalog hull) against the armed escort's pulse laser
+    # (78.266 dmg/s) plus both fighters' hulls (3,100 catalog + 1,600 actual)
+    # and FGT-002's 1,196 shield. TTKs land within 2× of each other, so the
+    # verdict is Contested — and must render into whichever template variant
+    # was picked.
+    assert f['slots']['verdict'] == 'Contested'
+    assert 'Contested' in f['body']
+    assert f['evidence']['their_dps'] == 73
+    assert f['evidence']['our_dps'] == 78
+    assert f['evidence']['their_ehp'] == 10000
+    assert f['evidence']['our_ehp'] == 5896
+    assert f['evidence']['ttk_they_break_us_s'] == 162
+    assert f['evidence']['ttk_we_break_them_s'] == 256
+    # FGT-001 carries no equipment in the fixture — the defender side must
+    # report the gap, not silently read it as an unarmed ship.
+    assert f['evidence']['unassessed_count'] == 0          # hostile side
+    # Verdict multiplier ×2 (Contested) on v1's weighted presence score:
+    # 1 combat ship × 4 weight × 100 scale × 2 / (1 + 0 jumps).
+    assert f['priority_score'] == 800.0
+
+
+def test_no_force_gap_findings_in_fixture(export):
+    # The mini save must NOT trigger the batch-3 rules: one hostile M fighter
+    # is below the 4-strike-craft swarm floor, there are no hostile capitals,
+    # and the escort's pulse laser tracks fighters fine. If either type shows
+    # up here, a gate regressed.
+    types = {f['type'] for f in export['advisors']['findings']}
+    assert 'composition_gap' not in types
+    assert 'outranged' not in types
+
+
+# ── composition_gap / outranged: direct-DB scenario ──────────────────────────
+# The mini save deliberately can't trigger these (above), so the positive
+# paths get their own throwaway DB, same style as test_force.py: real catalog
+# macros, golden numbers copied from the catalogs.
+
+@pytest.fixture()
+def threat_db(tmp_path):
+    """One sector, one player destroyer armed ONLY with L plasma (can't track
+    fighters, 7,200 m reach) against a 5-fighter Xenon swarm plus one beam-
+    armed capital (11,000 m reach) — both batch-3 rules should fire."""
+    conn = get_connection(tmp_path / 'threat_test.db')
+    conn.execute("INSERT INTO scans (scan_id, scanned_at, save_file, game_time_s) "
+                 "VALUES (1, '2026-01-01T00:00:00', 'test.xml', 0)")
+    conn.execute("INSERT INTO reputation (scan_id, faction_id, faction_name, value) "
+                 "VALUES (1, 'xenon', 'Xenon', -30)")
+
+    npc = [(f'[0xC{i}]', 'ship_xen_s_fighter_01_a_macro', 'S') for i in range(5)]
+    npc.append(('[0xC5]', 'ship_arg_l_destroyer_01_a_macro', 'L'))
+    conn.executemany(
+        "INSERT INTO npc_ships (scan_id, object_id, macro, size, owner_id, "
+        "owner_name, sector_macro, sector_name) "
+        "VALUES (1,?,?,?,'xenon','Xenon','sec_a','Contested Reach')", npc)
+
+    conn.execute(
+        "INSERT INTO ships (scan_id, object_id, macro, size, role, "
+        "sector_macro, owner_id, under_construction) "
+        "VALUES (1,'[0xD1]','ship_arg_l_destroyer_01_a_macro','L','Destroyer',"
+        "'sec_a','player',0)")
+
+    equipment = [(f'[0xC{i}]', 'weapon', 'weapon_xen_s_gatling_01_mk1_macro', 1)
+                 for i in range(5)]
+    equipment += [
+        ('[0xC5]', 'weapon', 'weapon_bor_l_beam_01_mk1_macro', 1),
+        ('[0xD1]', 'turret', 'turret_arg_l_plasma_01_mk1_macro', 2),
+    ]
+    conn.executemany(
+        "INSERT INTO ship_equipment (scan_id, ship_id, slot_type, macro, count) "
+        "VALUES (1,?,?,?,?)", equipment)
+    conn.commit()
+    yield conn
+    conn.close()
+
+
+def test_composition_gap(threat_db):
+    forces = military.threat_forces(threat_db, 1)
+    findings = military.composition_gap_findings(
+        threat_db, 1, {'sec_a': 0}, forces)
+    assert len(findings) == 1
+    f = findings[0]
+    assert f['id'] == 'compgap:sec_a'
+    # 5 of 6 hostiles are strike craft (83% ≥ 60% share, ≥ 4 floor); the
+    # plasma-only defence tracks 0% of them (< 25% threshold).
+    assert f['slots']['small_count'] == 5
+    assert f['slots']['ship_count'] == 6
+    assert f['slots']['anti_small_pct'] == 0
+    assert f['slots']['faction_name'] == 'Xenon'   # single faction, no suffix
+    assert f['slots']['sector_name'] == 'Contested Reach'
+    # 5 smalls × 4 combat weight × 100 scale × (1 − 0 tracked share) / (1+0).
+    assert f['priority_score'] == 2000.0
+    assert 'Contested Reach' in f['body']
+
+
+def test_composition_gap_silent_when_flak_fitted(threat_db):
+    # Refit the defender with flak (tracks fighters fully) — the same swarm
+    # must no longer produce a finding: the gap is about the DEFENCE mix,
+    # not the hostile composition alone.
+    threat_db.execute(
+        "UPDATE ship_equipment SET macro = 'turret_arg_m_flak_01_mk1_macro' "
+        "WHERE ship_id = '[0xD1]'")
+    forces = military.threat_forces(threat_db, 1)
+    assert military.composition_gap_findings(
+        threat_db, 1, {'sec_a': 0}, forces) == []
+
+
+def test_outranged(threat_db):
+    forces = military.threat_forces(threat_db, 1)
+    findings = military.outranged_findings(threat_db, 1, {'sec_a': 0}, forces)
+    assert len(findings) == 1
+    f = findings[0]
+    assert f['id'] == 'outranged:sec_a'
+    # The capital's beam reaches 11,000 m vs the plasma's 7,200 m — past the
+    # 1.25× margin. Fighters' Needlers (3,360 m) must not count as "reach".
+    assert f['slots']['their_range_km'] == 11.0
+    assert f['slots']['our_range_km'] == 7.2
+    assert f['slots']['capital_count'] == 1
+    assert f['evidence']['their_range_m'] == 11000
+    # 3.8 km standoff gap × 1 capital × 100 scale / (1+0 jumps).
+    assert f['priority_score'] == 380.0
+
+
+def test_outranged_needs_a_capital(threat_db):
+    # Same range picture but the long-reach gun sits on a fighter: no L/XL
+    # hull to hold standoff, so no finding — a fighter has to close anyway.
+    threat_db.execute(
+        "UPDATE npc_ships SET size = 'S' WHERE object_id = '[0xC5]'")
+    forces = military.threat_forces(threat_db, 1)
+    assert military.outranged_findings(threat_db, 1, {'sec_a': 0}, forces) == []
 
 
 def test_damaged_fleet(export):

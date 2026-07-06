@@ -581,9 +581,9 @@
       "hull_hp": 1600.0,
       "hull_max": 3100.0,
       "hull_pct": 51.61290322580645,
-      "shield_hp": null,
-      "shield_max": null,
-      "shield_pct": null,
+      "shield_hp": 1196.0,
+      "shield_max": 1196.0,
+      "shield_pct": 100.0,
       "cargo_m3": 0.0,
       "cargo_max_m3": 240.0,
       "pilot_id": null,
@@ -602,7 +602,35 @@
           "s": 3
         }
       },
-      "loadout": []
+      "loadout": [
+        {
+          "slot": "shield",
+          "macro": "shield_arg_s_standard_01_mk1_macro",
+          "count": 1,
+          "name": "Shield Generator",
+          "mk": 1,
+          "race": "argon",
+          "size": "s",
+          "capacity": 1196,
+          "recharge_rate": 50,
+          "recharge_delay": 15.0,
+          "price": 1354
+        },
+        {
+          "slot": "weapon",
+          "macro": "weapon_gen_s_laser_01_mk1_macro",
+          "count": 1,
+          "name": "Pulse Laser",
+          "mk": 1,
+          "race": null,
+          "size": "s",
+          "damage_hull": 36,
+          "damage_shield": 36,
+          "reload_rate": 2.903,
+          "range_m": 3500,
+          "price": 13564
+        }
+      ]
     },
     {
       "object_id": "[0x6100]",
@@ -954,10 +982,10 @@
         610650
       ],
       "ship_equip_value": [
-        60327
+        75245
       ],
       "net_worth": [
-        126127766
+        126142684
       ],
       "fleet_by_role": {
         "traders": [
@@ -1120,8 +1148,44 @@
           "code": "FGT-002",
           "hull_hp": 1600.0,
           "hull_max": 3100.0,
-          "shield_pct": null,
+          "shield_pct": 100.0,
           "sector_macro": "cluster_1_sector001_macro"
+        }
+      },
+      {
+        "id": "hostile:cluster_1_sector001_macro:xenon",
+        "domain": "military",
+        "type": "hostile_presence",
+        "priority_score": 800.0,
+        "body": "Testora Prime (0 jump(s) out): 1 [XEN] Xenon vessel(s), bringing ~73 dmg/s sustained against your 2 defender(s)' ~78 — assessment: Contested. The engagement could go either way — reinforcements would tip it.",
+        "template_id": "hostile_presence",
+        "variant": 1,
+        "slots": {
+          "verdict": "Contested",
+          "faction_name": "[XEN] Xenon",
+          "sector_name": "Testora Prime",
+          "ship_count": 1,
+          "combat_count": 1,
+          "jumps": 0,
+          "force_clause": "bringing ~73 dmg/s sustained against your 2 defender(s)' ~78",
+          "advice": "The engagement could go either way — reinforcements would tip it."
+        },
+        "evidence": {
+          "sector_macro": "cluster_1_sector001_macro",
+          "faction_id": "xenon",
+          "reputation": -25.05,
+          "combat_count": 1,
+          "noncombat_count": 0,
+          "unassessed_count": 0,
+          "defender_count": 2,
+          "their_dps": 73,
+          "our_dps": 78,
+          "their_ehp": 10000,
+          "our_ehp": 5896,
+          "ttk_they_break_us_s": 162,
+          "ttk_we_break_them_s": 256,
+          "hostile_fleet_value_cr": 117466,
+          "jumps": 0
         }
       },
       {
@@ -1149,31 +1213,6 @@
           "npc_station_id": "[0x2200]",
           "jumps": 1,
           "amount": 4200
-        }
-      },
-      {
-        "id": "hostile:cluster_1_sector001_macro:xenon",
-        "domain": "military",
-        "type": "hostile_presence",
-        "priority_score": 400.0,
-        "body": "Hostile activity: 1 combat ship(s) among 1 [XEN] Xenon vessel(s) spotted in Testora Prime, 0 jump(s) away from you.",
-        "template_id": "hostile_presence",
-        "variant": 1,
-        "slots": {
-          "faction_name": "[XEN] Xenon",
-          "sector_name": "Testora Prime",
-          "ship_count": 1,
-          "combat_count": 1,
-          "jumps": 0
-        },
-        "evidence": {
-          "sector_macro": "cluster_1_sector001_macro",
-          "faction_id": "xenon",
-          "reputation": -25.05,
-          "combat_count": 1,
-          "noncombat_count": 0,
-          "defender_count": 2,
-          "jumps": 0
         }
       }
     ]

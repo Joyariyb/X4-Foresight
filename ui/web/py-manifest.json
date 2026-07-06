@@ -13,6 +13,7 @@
   "data/wares.py",
   "db/advisors/advisors.py",
   "db/advisors/economy.py",
+  "db/advisors/force.py",
   "db/advisors/logistics.py",
   "db/advisors/military.py",
   "db/connection.py",

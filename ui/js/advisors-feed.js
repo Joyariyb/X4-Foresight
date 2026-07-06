@@ -33,6 +33,8 @@
       pricing_gap:        { label: 'Pricing Gap',        icon: 'ti-scale',        tone: 'info'     },
       idle_hauler:        { label: 'Idle Hauler',        icon: 'ti-anchor',       tone: 'special'  },
       hostile_presence:   { label: 'Hostile Presence',   icon: 'ti-alert-triangle', tone: 'negative' },
+      composition_gap:    { label: 'Tracking Mismatch',  icon: 'ti-crosshair',    tone: 'warning'  },
+      outranged:          { label: 'Outranged',          icon: 'ti-ruler-2',      tone: 'warning'  },
       damaged_fleet:      { label: 'Damaged Ship',       icon: 'ti-tool',         tone: 'warning'  },
     };
     const FALLBACK_META = { label: 'Finding', icon: 'ti-clipboard-list', tone: 'info' };
@@ -66,6 +68,20 @@
       hull_hp:            'Hull HP',
       hull_max:           'Hull Max HP',
       shield_pct:         'Shield %',
+      unassessed_count:   'Ships Unassessed',
+      their_dps:          'Their Damage /s',
+      our_dps:            'Your Damage /s',
+      their_ehp:          'Their Hull+Shield HP',
+      our_ehp:            'Your Hull+Shield HP',
+      ttk_they_break_us_s: 'They Break You In (s)',
+      ttk_we_break_them_s: 'You Break Them In (s)',
+      hostile_fleet_value_cr: 'Hostile Fleet Value Cr',
+      small_count:        'Hostile Strike Craft',
+      hostile_ship_count: 'Hostile Ships Total',
+      our_anti_small_dps: 'Your Anti-Fighter Damage /s',
+      their_range_m:      'Their Max Range (m)',
+      our_range_m:        'Your Max Range (m)',
+      capital_count:      'Hostile Capitals',
     };
 
     let _findings = [];
@@ -118,12 +134,17 @@
       const idleCap  = sum(['idle_hauler'], 'cargo_max');
       const hostile  = sum(['hostile_presence'], 'ship_count');
       const damaged  = vf.filter(f => f.type === 'damaged_fleet').length;
+      // Sectors where the force comparison says the defence loses (or does
+      // not exist) — the strongest single number on the military briefing.
+      const losing   = vf.filter(f => f.type === 'hostile_presence'
+        && (f.slots.verdict === 'Outmatched' || f.slots.verdict === 'Undefended')).length;
       const cells = [
         ['Findings', vf.length.toLocaleString()],
         perHour ? ['Cr/hr at Stake', perHour.toLocaleString()] : null,
         oneTime ? ['One-Time Gains Cr', oneTime.toLocaleString()] : null,
         idleCap ? ['Idle Capacity m³', idleCap.toLocaleString()] : null,
         hostile ? ['Hostile Ships Nearby', hostile.toLocaleString()] : null,
+        losing  ? ['Sectors Outmatched', losing.toLocaleString()] : null,
         damaged ? ['Ships Needing Repair', damaged.toLocaleString()] : null,
       ].filter(Boolean);
       return `<div class="adv-stats">${cells.map(([label, value]) => `
