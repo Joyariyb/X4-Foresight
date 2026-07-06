@@ -49,6 +49,10 @@
     .adv-domain { font-family: var(--font-label); font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-secondary); border: 1px solid var(--outline); border-radius: var(--radius-sm); padding: 0.1rem 0.6rem; margin-left: auto; }
     .adv-chev { font-size: 1.3rem; color: var(--text-secondary); transition: transform var(--duration-short) var(--ease-standard); }
     .adv-card.open .adv-chev { transform: rotate(180deg); }
+    /* Counter-advice hover marker (military cards). cursor:help signals
+       "hover me" without competing with the whole card's expand-click. */
+    .adv-counter { font-size: 1.4rem; color: var(--text-label); cursor: help; transition: color var(--duration-short); }
+    .adv-counter:hover { color: var(--color-warning); }
 
     /* Body is a rendered sentence → --font-body (§3). */
     .adv-card-body { font-family: var(--font-body); font-size: 1.35rem; color: var(--text-primary); margin-top: 0.5rem; line-height: 1.45; }

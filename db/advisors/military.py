@@ -1,4 +1,4 @@
-"""Core role: Military-domain advisor rules (hostile presence near the player, damaged combat ships).
+"""Core role: Military-domain advisor rules (hostile presence, force gaps, build-up trends, damaged ships).
 
 See advisors.py for the shared _finding() renderer, and __init__.py's
 compute_advisors() for how these rules combine with other domains into one
@@ -69,6 +69,22 @@ MIN_SMALL_CRAFT = 4                # fewer strike craft than this isn't a swarm
 # destroyer parks at max range and pounds ("standoff bombardment").
 OUTRANGE_MARGIN = 1.25             # their reach ÷ ours before it's a finding
 
+# Above this share of their eHP sitting in shields, shield-stripping (ion)
+# weapons earn a counter-advice mention; below it they waste a slot. 0.35 is
+# a first-pass guess like the other tuning constants.
+SHIELD_HEAVY_SHARE = 0.35
+
+# buildup gates. Three nonzero points (two rising intervals) is the minimum
+# that separates "growing" from merely "more than last time"; the 2× floor
+# keeps ordinary patrol rotation (one ship swapped for a pricier one) below
+# the bar. The 4-scan window bounds both the claim and the cost: a passing
+# raid arrives, fights and leaves, so it can't stay monotonically rising
+# across 4 snapshots — and every extra scan in the window is one more full
+# re-read of that scan's equipment table (see hostile_strength_history).
+BUILDUP_WINDOW = 4       # scans considered, including the current one
+BUILDUP_MIN_SCANS = 3    # nonzero, rising data points before it's a pattern
+BUILDUP_GROWTH = 2.0     # newest ÷ oldest strength before it's a finding
+
 # A combat ship under this hull percentage, flying around undocked, should
 # see a repair dock before its next engagement. Shields regenerate on their
 # own, so hull is the signal that persists between fights.
@@ -109,6 +125,21 @@ TEMPLATES: dict[str, list[str]] = {
         "{anti_small_pct}% of its damage tracks strike craft, while "
         "{faction_name} fields {small_count} of them {jumps} jump(s) from "
         "you. Rebalance toward flak or escorts.",
+    ],
+    'buildup': [
+        "{faction_name} strength in {sector_name} has grown {growth}× over "
+        "your last {scan_count} scans — ~{from_cr} Cr of hardware then, "
+        "~{to_cr} Cr now ({ship_count} ship(s) on station). Sustained "
+        "build-up like this reads as invasion staging, not a raid — "
+        "reinforce before it commits.",
+        "Build-up in {sector_name}: {faction_name} force has risen every "
+        "scan for {scan_count} scans running, {growth}× overall to "
+        "{ship_count} ship(s). A raid comes and goes — steady growth like "
+        "this is staging. Bolster the sector's defence early.",
+        "Watch {sector_name} — {faction_name} hardware there has climbed "
+        "scan over scan to {growth}× what it was {scan_count} scans ago "
+        "(~{from_cr} → ~{to_cr} Cr). That pattern usually precedes an "
+        "attack, not a passing raid.",
     ],
     'outranged': [
         "{faction_name}'s capital weapons in {sector_name} reach "
@@ -249,6 +280,71 @@ def _advice(verdict: str, t_they: float | None) -> str:
     return "The engagement could go either way — reinforcements would tip it."
 
 
+def _counter_advice(theirs: dict, ours: dict) -> list[dict]:
+    """[{threat, advice}] rows for the card's counter-advice hover.
+
+    Community-consensus counters, hardcoded on purpose (like force.py's
+    tracking anchors) — each row's advice is the researched answer to the
+    archetype its gate detects:
+    - strike craft → flak / guided missiles / pulse, never plasma
+        (sources in force.py's tracking-model block);
+    - capitals → plasma L turrets (Paranid's reach furthest) or destroyer
+      main guns from standoff, torpedoes once shields drop
+        https://steamah.com/x4-foundations-weapons-turrets-comparison-guide/
+        https://steamcommunity.com/sharedfiles/filedetails/?id=2826705145
+    - shields → ion strips them fast but barely dents hull, so it's a
+      pairing weapon — and a wasted slot against a hull-heavy force
+        https://wiki.egosoft.com/X4%20Foundations%20Wiki/Manual%20and%20Guides/Objects%20in%20the%20Game%20Universe/Equipment/Ship%20Weapons/BeamGun%20Forward%20Weapons/Ion%20Blaster/
+
+    The strike-craft row also grades the player's OWN mix (same anti-small
+    share the composition_gap rule gates on) so the tip says "keep your mix"
+    or "refit" instead of generic advice the reader must self-assess.
+    """
+    tips = []
+    small = (theirs['size_counts'].get('S', 0)
+             + theirs['size_counts'].get('M', 0))
+    if small >= MIN_SMALL_CRAFT:
+        advice = ("Flak and guided missile turrets track them; pulse lasers "
+                  "for your own fighters. Plasma won't connect.")
+        our_dps = ours['dps_hull'] + ours['dps_shield']
+        if our_dps > 0:
+            pct = round(ours['dps_anti_small'] / our_dps * 100)
+            advice += (f" {pct}% of your in-sector damage tracks them — "
+                       + ("keep that mix."
+                          if pct >= ANTI_SMALL_SHARE_THRESHOLD * 100
+                          else "refit toward flak or add fighter escorts."))
+        tips.append({'threat': f"{small} strike craft (S/M)",
+                     'advice': advice})
+
+    capitals = (theirs['size_counts'].get('L', 0)
+                + theirs['size_counts'].get('XL', 0))
+    if capitals:
+        tips.append({
+            'threat': f"{capitals} capital hull(s) (L/XL)",
+            'advice': ("Plasma L turrets (Paranid's reach furthest) or "
+                       "destroyer main guns from standoff range; torpedo "
+                       "runs finish them once shields drop."),
+        })
+
+    ehp_total = theirs['ehp_hull'] + theirs['ehp_shield']
+    if ehp_total > 0:
+        pct = round(theirs['ehp_shield'] / ehp_total * 100)
+        if theirs['ehp_shield'] / ehp_total >= SHIELD_HEAVY_SHARE:
+            tips.append({
+                'threat': f"Shield-heavy force ({pct}% of eHP)",
+                'advice': ("Ion blasters strip shields fast but barely dent "
+                           "hull — pair them with hull-damage weapons or "
+                           "missiles."),
+            })
+        else:
+            tips.append({
+                'threat': f"Hull-heavy force (shields {pct}% of eHP)",
+                'advice': ("Shield-strippers (ion) waste a slot here — bring "
+                           "sustained hull damage instead."),
+            })
+    return tips
+
+
 def hostile_presence_findings(conn, scan_id, distances_from_current,
                               forces) -> list[dict]:
     """Hostile-reputation ships operating where the player has stations,
@@ -330,7 +426,8 @@ def hostile_presence_findings(conn, scan_id, distances_from_current,
         }
         findings.append(_finding(
             f"hostile:{sector_macro}:{faction_id}",
-            'military', 'hostile_presence', priority, slots, evidence, TEMPLATES))
+            'military', 'hostile_presence', priority, slots, evidence,
+            TEMPLATES, counters=_counter_advice(theirs, ours)))
     return findings
 
 
@@ -452,7 +549,115 @@ def outranged_findings(conn, scan_id, distances_from_current,
     return findings
 
 
-# ── Rule 4: damaged combat ship not docked for repairs ───────────────────────
+# ── Rule 4: hostile strength building up scan over scan ──────────────────────
+
+def hostile_strength_history(conn, scan_id, forces) -> dict[str, list[float]]:
+    """{sector_macro: [hostile strength per scan, oldest→newest]} across the
+    last BUILDUP_WINDOW scans, for the sectors in the CURRENT scan's forces.
+
+    "Strength" is the merged hostile profiles' value_cr, not DPS: unassessed
+    ships still contribute their hull's catalog price (the macro is always
+    known) but read zero DPS, so a value series stays comparable between a
+    scan that captured loadouts and one that didn't, where a DPS series would
+    saw-tooth on capture luck alone.
+
+    Derived from stored scans rather than a new history table — the DB
+    already keeps npc_ships + ship_equipment per scan (HISTORY storage
+    class), and trends.py's cross-scan sweeps set the precedent for paying
+    the re-read instead of adding persistence. Each past scan is judged by
+    its OWN reputation rows (threat_forces), so a faction that only just
+    turned hostile has no past strength here and can't fire the rule off two
+    scans of data it wasn't a threat for.
+    """
+    prev_ids = [r['scan_id'] for r in conn.execute(
+        "SELECT scan_id FROM scans WHERE scan_id < ? "
+        "ORDER BY scan_id DESC LIMIT ?", (scan_id, BUILDUP_WINDOW - 1))]
+
+    history: dict[str, list[float]] = {sec: [] for sec in forces}
+    for sid in reversed(prev_ids):          # oldest → newest
+        past = threat_forces(conn, sid)
+        for sec, series in history.items():
+            sides = past.get(sec)
+            series.append(
+                merge_profiles(sides['hostile'].values())['value_cr']
+                if sides else 0.0)
+    for sec, series in history.items():
+        series.append(merge_profiles(forces[sec]['hostile'].values())['value_cr'])
+    return history
+
+
+def buildup_findings(conn, scan_id, distances_from_current,
+                     forces) -> list[dict]:
+    """Sectors whose hostile strength has risen every scan — staging, not a
+    raid. This is the early-warning rule: a snapshot can't tell a build-up
+    from a raid, only the trend across scans can, which is also something
+    watching the in-game map can't show you.
+
+    Per sector with hostiles merged (like composition_gap — splitting a
+    staged force by owner would let each half duck under the growth floor).
+    Deliberately NOT gated by ADVISOR_MAX_JUMPS, unlike every other military
+    rule: the threat is to the station in that sector, which doesn't get
+    less threatened because the player flew away — and a multi-scan trend
+    that flickered in and out with the player's position would defeat the
+    point of a warning. Jumps still go in the evidence when known.
+    """
+    if not forces:
+        return []
+    sector_names, faction_names = _threat_names(conn, scan_id)
+    findings = []
+    for sector_macro, series in hostile_strength_history(
+            conn, scan_id, forces).items():
+        # The trailing run of scans where the sector had priced hostiles at
+        # all. Zeros never join the run: npc_ships only covers player-station
+        # sectors, so an older scan's 0 usually means "no station there yet"
+        # (no coverage), and growth measured from a coverage gap would be
+        # fiction.
+        run: list[float] = []
+        for v in reversed(series):
+            if v <= 0:
+                break
+            run.append(v)
+        run.reverse()
+        if len(run) < BUILDUP_MIN_SCANS:
+            continue
+        if any(later <= earlier for earlier, later in zip(run, run[1:])):
+            continue                        # dipped or stalled — raids do that
+        growth = run[-1] / run[0]
+        if growth < BUILDUP_GROWTH:
+            continue
+
+        theirs = merge_profiles(forces[sector_macro]['hostile'].values())
+        # Threat-point units like the other rules, but scaled by growth
+        # instead of dampened by distance — how fast it's rising IS this
+        # rule's urgency, where "how close is it" was presence's.
+        priority = theirs['ship_count'] * THREAT_SCALE * growth
+        slots = {
+            'faction_name': _dominant_faction(forces[sector_macro]['hostile'],
+                                              faction_names),
+            'sector_name':  sector_names.get(sector_macro, 'an unknown sector'),
+            'scan_count':   len(run),
+            'growth':       round(growth, 1),
+            'ship_count':   theirs['ship_count'],
+            'from_cr':      round(run[0]),
+            'to_cr':        round(run[-1]),
+        }
+        evidence = {
+            'sector_macro':       sector_macro,
+            'strength_from_cr':   round(run[0]),
+            'strength_to_cr':     round(run[-1]),
+            'growth_ratio':       round(growth, 2),
+            'scans_rising':       len(run),
+            'hostile_ship_count': theirs['ship_count'],
+            'unassessed_count':   theirs['unassessed_count'],
+            'jumps':              distances_from_current.get(sector_macro),
+        }
+        findings.append(_finding(
+            f"buildup:{sector_macro}",
+            'military', 'buildup', priority, slots, evidence, TEMPLATES))
+    return findings
+
+
+# ── Rule 5: damaged combat ship not docked for repairs ───────────────────────
 
 def damaged_fleet_findings(conn, scan_id) -> list[dict]:
     """Combat ships flying below DAMAGED_HULL_PCT hull while undocked.

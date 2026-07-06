@@ -93,6 +93,14 @@ def test_hostile_presence(export):
     # 1 combat ship × 4 weight × 100 scale × 2 / (1 + 0 jumps).
     assert f['priority_score'] == 800.0
 
+    # Counter-advice hover rows: a lone M fighter is under the 4-craft swarm
+    # floor and there are no capitals, so only the always-on shield-balance
+    # row remains — and with no shield fitted it must read hull-heavy (the
+    # "ion wastes a slot" branch), never recommend shield-stripping.
+    assert len(f['counters']) == 1
+    assert f['counters'][0]['threat'] == 'Hull-heavy force (shields 0% of eHP)'
+    assert 'ion' in f['counters'][0]['advice']
+
 
 def test_no_force_gap_findings_in_fixture(export):
     # The mini save must NOT trigger the batch-3 rules: one hostile M fighter
@@ -194,6 +202,26 @@ def test_outranged(threat_db):
     assert f['priority_score'] == 380.0
 
 
+def test_counter_advice_rows(threat_db):
+    # The full archetype spread: 5-fighter swarm + 1 capital, no shields
+    # anywhere on the hostile side, and a plasma-only defence (0% tracking).
+    forces = military.threat_forces(threat_db, 1)
+    findings = military.hostile_presence_findings(
+        threat_db, 1, {'sec_a': 0}, forces)
+    assert len(findings) == 1
+    tips = findings[0]['counters']
+    assert [t['threat'] for t in tips] == [
+        '5 strike craft (S/M)',
+        '1 capital hull(s) (L/XL)',
+        'Hull-heavy force (shields 0% of eHP)',
+    ]
+    # The swarm row grades the player's own mix: plasma tracks nothing, so
+    # it must say refit — the same 25% share line composition_gap gates on.
+    assert '0% of your in-sector damage tracks them' in tips[0]['advice']
+    assert 'refit' in tips[0]['advice']
+    assert 'Plasma L turrets' in tips[1]['advice']
+
+
 def test_outranged_needs_a_capital(threat_db):
     # Same range picture but the long-reach gun sits on a fighter: no L/XL
     # hull to hold standoff, so no finding — a fighter has to close anyway.
@@ -214,6 +242,97 @@ def test_damaged_fleet(export):
     assert f['priority_score'] == 1500.0    # missing hull HP
     assert not [x for x in export['advisors']['findings']
                 if x['type'] == 'damaged_fleet' and x['id'] == 'damaged:[0x3000]']
+
+
+# ── buildup: multi-scan direct-DB scenario ───────────────────────────────────
+# The mini save holds a single scan, so a trend rule can't fire there (see
+# test_no_buildup_on_a_single_scan). The positive path gets a throwaway DB
+# where each scan is just "how many Xenon fighters sit in sec_a" — one real
+# catalog macro, no equipment, so sector strength is fighter-count × the
+# hull's catalog price and every growth ratio below is an exact count ratio.
+
+@pytest.fixture()
+def buildup_db(tmp_path):
+    """Factory: buildup_db([1, 2, 4, 8]) builds one scan per entry with that
+    many hostile fighters in sec_a (0 = scan exists, sector empty)."""
+    made = []
+
+    def build(counts):
+        name = 'buildup_' + '_'.join(str(n) for n in counts)
+        conn = get_connection(tmp_path / f'{name}.db')
+        for sid, n in enumerate(counts, start=1):
+            conn.execute(
+                "INSERT INTO scans (scan_id, scanned_at, save_file, game_time_s) "
+                "VALUES (?, '2026-01-01T00:00:00', 'test.xml', ?)", (sid, sid))
+            conn.execute(
+                "INSERT INTO reputation (scan_id, faction_id, faction_name, value) "
+                "VALUES (?, 'xenon', 'Xenon', -30)", (sid,))
+            conn.executemany(
+                "INSERT INTO npc_ships (scan_id, object_id, macro, size, "
+                "owner_id, owner_name, sector_macro, sector_name) "
+                "VALUES (?,?,'ship_xen_s_fighter_01_a_macro','S','xenon',"
+                "'Xenon','sec_a','Getsu Fune')",
+                [(sid, f'[0xE{sid}{i}]') for i in range(n)])
+        conn.commit()
+        made.append(conn)
+        return conn
+
+    yield build
+    for conn in made:
+        conn.close()
+
+
+def test_buildup(buildup_db):
+    # Doubling every scan: strictly rising all 4 scans, 8× overall.
+    conn = buildup_db([1, 2, 4, 8])
+    forces = military.threat_forces(conn, 4)
+    findings = military.buildup_findings(conn, 4, {'sec_a': 3}, forces)
+    assert len(findings) == 1
+    f = findings[0]
+    assert f['id'] == 'buildup:sec_a'
+    assert f['slots']['scan_count'] == 4
+    assert f['slots']['growth'] == 8.0
+    assert f['slots']['faction_name'] == 'Xenon'
+    assert f['slots']['sector_name'] == 'Getsu Fune'
+    # Strength is fleet value: N × the fighter hull's catalog price (34,530).
+    assert f['evidence']['strength_from_cr'] == 34530
+    assert f['evidence']['strength_to_cr'] == 8 * 34530
+    # Unlike the other military rules, jumps is reported but NOT a gate — a
+    # build-up 3 jumps out is exactly the early warning the rule exists for.
+    assert f['evidence']['jumps'] == 3
+    # 8 ships × 100 scale × 8.0 growth; no distance dampening.
+    assert f['priority_score'] == 6400.0
+    assert 'Getsu Fune' in f['body']
+
+
+def test_buildup_a_dip_breaks_the_pattern(buildup_db):
+    # A raid profile: strength fell between scans 2 and 3. Ends 8× up overall,
+    # but "rising monotonically" is the whole claim — no finding.
+    conn = buildup_db([1, 4, 2, 8])
+    forces = military.threat_forces(conn, 4)
+    assert military.buildup_findings(conn, 4, {'sec_a': 0}, forces) == []
+
+
+def test_buildup_needs_real_growth(buildup_db):
+    # Rising every scan but only 1.6× overall — patrol churn, not staging.
+    conn = buildup_db([5, 6, 7, 8])
+    forces = military.threat_forces(conn, 4)
+    assert military.buildup_findings(conn, 4, {'sec_a': 0}, forces) == []
+
+
+def test_buildup_ignores_coverage_gaps(buildup_db):
+    # sec_a empty in the first two scans (e.g. the station wasn't built yet,
+    # so npc_ships had no coverage there). Only 2 nonzero points remain —
+    # under the 3-point floor, so growth measured from a gap can't fire.
+    conn = buildup_db([0, 0, 4, 8])
+    forces = military.threat_forces(conn, 4)
+    assert military.buildup_findings(conn, 4, {'sec_a': 0}, forces) == []
+
+
+def test_no_buildup_on_a_single_scan(export):
+    # One scan = no trend. If this fires on the mini save, the run-length
+    # floor regressed.
+    assert 'buildup' not in {f['type'] for f in export['advisors']['findings']}
 
 
 def test_findings_sorted_by_priority_descending(export):

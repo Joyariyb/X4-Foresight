@@ -37,7 +37,7 @@ def compute_advisors(conn: sqlite3.Connection, scan_id: int | None = None,
     distances_from_current = distances_from_current or {}
     avg_prices = ware_avg_prices(conn)
     demand_by_ware = npc_demand_by_ware(conn, scan_id, distances_from_current)
-    # Shared by the three force-based military rules — same convention as
+    # Shared by the four force-based military rules — same convention as
     # demand_by_ware above (compute the expensive lookup once, pass it in).
     forces = military.threat_forces(conn, scan_id)
 
@@ -49,6 +49,7 @@ def compute_advisors(conn: sqlite3.Connection, scan_id: int | None = None,
     findings += military.hostile_presence_findings(conn, scan_id, distances_from_current, forces)
     findings += military.composition_gap_findings(conn, scan_id, distances_from_current, forces)
     findings += military.outranged_findings(conn, scan_id, distances_from_current, forces)
+    findings += military.buildup_findings(conn, scan_id, distances_from_current, forces)
     findings += military.damaged_fleet_findings(conn, scan_id)
 
     findings.sort(key=lambda f: -f['priority_score'])

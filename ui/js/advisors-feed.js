@@ -35,6 +35,7 @@
       hostile_presence:   { label: 'Hostile Presence',   icon: 'ti-alert-triangle', tone: 'negative' },
       composition_gap:    { label: 'Tracking Mismatch',  icon: 'ti-crosshair',    tone: 'warning'  },
       outranged:          { label: 'Outranged',          icon: 'ti-ruler-2',      tone: 'warning'  },
+      buildup:            { label: 'Force Build-Up',     icon: 'ti-trending-up-2', tone: 'negative' },
       damaged_fleet:      { label: 'Damaged Ship',       icon: 'ti-tool',         tone: 'warning'  },
     };
     const FALLBACK_META = { label: 'Finding', icon: 'ti-clipboard-list', tone: 'info' };
@@ -82,6 +83,10 @@
       their_range_m:      'Their Max Range (m)',
       our_range_m:        'Your Max Range (m)',
       capital_count:      'Hostile Capitals',
+      strength_from_cr:   'Strength Then (Cr)',
+      strength_to_cr:     'Strength Now (Cr)',
+      growth_ratio:       'Growth ×',
+      scans_rising:       'Scans Rising',
     };
 
     let _findings = [];
@@ -138,6 +143,7 @@
       // not exist) — the strongest single number on the military briefing.
       const losing   = vf.filter(f => f.type === 'hostile_presence'
         && (f.slots.verdict === 'Outmatched' || f.slots.verdict === 'Undefended')).length;
+      const staging  = vf.filter(f => f.type === 'buildup').length;
       const cells = [
         ['Findings', vf.length.toLocaleString()],
         perHour ? ['Cr/hr at Stake', perHour.toLocaleString()] : null,
@@ -145,6 +151,7 @@
         idleCap ? ['Idle Capacity m³', idleCap.toLocaleString()] : null,
         hostile ? ['Hostile Ships Nearby', hostile.toLocaleString()] : null,
         losing  ? ['Sectors Outmatched', losing.toLocaleString()] : null,
+        staging ? ['Build-Ups Detected', staging.toLocaleString()] : null,
         damaged ? ['Ships Needing Repair', damaged.toLocaleString()] : null,
       ].filter(Boolean);
       return `<div class="adv-stats">${cells.map(([label, value]) => `
@@ -173,6 +180,20 @@
     }
 
     // ── Cards ─────────────────────────────────────────────────────────
+    // Counter-advice hover body, pre-rendered at stamp time (the trendTip
+    // pattern from UI_STANDARDS §8). Rows come from the finding's optional
+    // `counters` list — the rule already picked which archetypes apply, so
+    // this only lays them out.
+    function _counterTipHtml(f) {
+      const rows = f.counters.map(c => `
+        <div style="color:var(--color-warning);font-family:var(--font-label);font-size:1.1rem;letter-spacing:0.05em;text-transform:uppercase;margin-top:0.5rem">${c.threat}</div>
+        <div style="color:var(--text-secondary)">${c.advice}</div>`).join('');
+      return `<div style="min-width:22rem;max-width:30rem;padding:0.2rem 0">
+          <div style="font-size:1.3rem;font-weight:600;color:var(--text-primary)">Counter Advice</div>
+          ${rows}
+        </div>`;
+    }
+
     function _cardHtml(f, rank, maxScore) {
       const m = _meta(f);
       // Rail fill is score relative to the view's TOP finding (not the
@@ -180,6 +201,9 @@
       // filter does. Floored at 6% so even the weakest finding shows a tick.
       const pct  = Math.max(6, Math.round(f.priority_score / maxScore * 100));
       const open = _open.has(f.id);
+      const counters = f.counters && f.counters.length
+        ? `<i class="ti ti-swords adv-counter" data-adv-counter-tip="${encodeURIComponent(_counterTipHtml(f))}"></i>`
+        : '';
       return `
         <div class="adv-card adv--${m.tone}${open ? ' open' : ''}">
           <div class="adv-rail"><div class="adv-rail-fill" style="height:${pct}%"></div></div>
@@ -188,6 +212,7 @@
               <span class="adv-rank">${rank}</span>
               <i class="ti ${m.icon} adv-icon"></i>
               <span class="adv-type">${m.label}</span>
+              ${counters}
               <span class="adv-domain">${DOMAIN_LABELS[f.domain] || f.domain}</span>
               <i class="ti ti-chevron-down adv-chev"></i>
             </div>
@@ -231,7 +256,9 @@
       // Right-justified in the same row as the type chips — one flex row,
       // help pushed to the far end via margin-left:auto (adv-help-btn in
       // advisors.css), rather than a second row that'd waste vertical space.
-      const helpBtn = `<button class="adv-help-btn" onclick="AdvisorsFeed.openHelp()" title="What do these findings mean?"><i class="ti ti-help-circle"></i></button>`;
+      // data-text-tip, not title= — the generic plain-text handler in
+      // formatters.js routes it through the shared styled popover (§8).
+      const helpBtn = `<button class="adv-help-btn" onclick="AdvisorsFeed.openHelp()" data-text-tip="What do these findings mean?"><i class="ti ti-help-circle"></i></button>`;
 
       // Findings arrive pre-sorted by priority; rank is the position in the
       // full VIEW list so #3 stays #3 when a filter hides #1 and #2. Rank and
@@ -248,6 +275,18 @@
         <div class="adv-filter">${chips}${helpBtn}</div>
         <div class="adv-list">${cards}</div>`;
     }
+
+    // ── Tooltip registration ──────────────────────────────────────────
+    // Counter-advice hover on the military cards' swords icon: pre-rendered
+    // HTML, decoded here (trendTip pattern). Both style resets matter — the
+    // shared #hull-tip defaults to nowrap/alert-colour, which multi-line
+    // advice must override every show (another handler may have run since).
+    registerTip('advCounterTip', (el, _e, tip) => {
+      tip.innerHTML = decodeURIComponent(el.dataset.advCounterTip);
+      tip.style.color      = '';
+      tip.style.whiteSpace = 'normal';
+      return true;
+    });
 
     return { setData, setFilter, toggle, render, openHelp };
   })();

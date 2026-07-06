@@ -1186,7 +1186,13 @@
           "ttk_we_break_them_s": 256,
           "hostile_fleet_value_cr": 117466,
           "jumps": 0
-        }
+        },
+        "counters": [
+          {
+            "threat": "Hull-heavy force (shields 0% of eHP)",
+            "advice": "Shield-strippers (ion) waste a slot here — bring sustained hull damage instead."
+          }
+        ]
       },
       {
         "id": "pricing:[0x1000]:energycells:[0x2200]",

@@ -29,13 +29,18 @@ ADVISOR_MAX_JUMPS = 5
 
 
 def _finding(id: str, domain: str, ftype: str, priority_score: float,
-             slots: dict, evidence: dict, templates: dict[str, list[str]]) -> dict:
+             slots: dict, evidence: dict, templates: dict[str, list[str]],
+             counters: list[dict] | None = None) -> dict:
     """Render one finding using ``templates[ftype]``.
 
     Variant choice is a CRC32 of the finding's own id — deterministic (stable
     across runs, golden-testable) without the variety collapsing to "always
     variant 0". ``templates`` is passed in by the calling domain module (each
     domain owns its own phrasings) rather than looked up from a shared dict.
+
+    ``counters`` is an optional [{threat, advice}] list rendered by the UI as
+    a hover tooltip (military's counter-advice rows). The key is only present
+    when a rule supplies it, so findings without one keep their exact shape.
     """
     variants = templates[ftype]
     variant = zlib.crc32(id.encode()) % len(variants)
@@ -45,7 +50,7 @@ def _finding(id: str, domain: str, ftype: str, priority_score: float,
     # so exclude it explicitly.
     display = {k: (f'{v:,}' if isinstance(v, int) and not isinstance(v, bool) else v)
                for k, v in slots.items()}
-    return {
+    out = {
         'id':             id,
         'domain':         domain,
         'type':           ftype,
@@ -56,6 +61,9 @@ def _finding(id: str, domain: str, ftype: str, priority_score: float,
         'slots':          slots,
         'evidence':       evidence,
     }
+    if counters is not None:
+        out['counters'] = counters
+    return out
 
 
 # ── Shared lookups (used by more than one domain) ────────────────────────────
