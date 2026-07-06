@@ -211,8 +211,11 @@
             </component>
 
             <!-- Free-flying player fighter: no trade order, so homebase must be
-                 resolved from the commander connection ref instead. -->
+                 resolved from the commander connection ref instead. Damaged
+                 (1600 / 3100 hull) and undocked — exercises the Advisors
+                 damaged_fleet rule (combat role below the hull threshold). -->
             <component class="ship_s" macro="ship_arg_s_fighter_01_a_macro" owner="player" id="[0x3100]" code="FGT-002">
+              <hull value="1600"/>
               <orders>
                 <order id="[0x32]" order="Escort" default="1"/>
               </orders>
@@ -228,6 +231,16 @@
             <component class="ship_m" macro="ship_tel_m_trans_container_01_a_macro" owner="teladi" id="[0x4000]" code="TLV-042">
               <orders>
                 <order id="[0x40]" order="TradeRoutine" default="1" state="started"/>
+              </orders>
+            </component>
+
+            <!-- Hostile NPC ship in a player-station sector: Xenon reputation
+                 is -0.32 (scaled -32, past the -25 is_hostile threshold) and
+                 the macro's "fighter" token maps to a combat role — exercises
+                 the Advisors hostile_presence rule. -->
+            <component class="ship_m" macro="ship_xen_m_fighter_01_a_macro" owner="xenon" id="[0x7000]" code="XEN-001">
+              <orders>
+                <order id="[0x70]" order="Attack" default="1" state="started"/>
               </orders>
             </component>
 

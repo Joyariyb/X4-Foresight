@@ -80,6 +80,9 @@
     .adv--special  .adv-rail { background: var(--color-special-dim); }
     .adv--special  .adv-rail-fill { background: var(--color-special); }
     .adv--special  .adv-icon, .adv--special .adv-type { color: var(--color-special); }
+    .adv--negative .adv-rail { background: var(--color-negative-dim); }
+    .adv--negative .adv-rail-fill { background: var(--color-negative); }
+    .adv--negative .adv-icon, .adv--negative .adv-type { color: var(--color-negative); }
 
     /* ── HELP TAB ── */
     /* Same card/rail shell as the advice cards (tab-advisors-help in

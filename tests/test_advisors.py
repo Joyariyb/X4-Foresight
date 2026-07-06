@@ -1,4 +1,4 @@
-# Core role: Regression tests for the Advisors findings engine (db/advisors.py) against the mini save.
+# Core role: Regression tests for the Advisors findings engine (db/advisors/) against the mini save.
 from __future__ import annotations
 
 
@@ -51,6 +51,37 @@ def test_idle_hauler(export):
     assert f['priority_score'] > 0
 
 
+def test_hostile_presence(export):
+    # One Xenon fighter (reputation -32, past the -25 is_hostile threshold)
+    # in the player's home sector — 0 jumps from the current position.
+    f = _finding(export, 'hostile_presence',
+                 'hostile:cluster_1_sector001_macro:xenon')
+    assert f['domain'] == 'military'
+    assert f['slots']['jumps'] == 0
+    assert f['slots']['ship_count'] == 1
+    # The "fighter" macro token classifies as a combat role, so the one ship
+    # is also the one combat ship.
+    assert f['slots']['combat_count'] == 1
+    assert f['evidence']['reputation'] <= -25
+    # Both player fighters (docked FGT-001, escort FGT-002) count as
+    # defenders present in the threatened sector.
+    assert f['evidence']['defender_count'] == 2
+    assert f['priority_score'] > 0
+
+
+def test_damaged_fleet(export):
+    # The escort fighter flies at 1600/3100 hull (~52%) and is not docked;
+    # the equally damaged Hauler One (50%) must NOT fire the rule — it's a
+    # freighter, not a combat role.
+    f = _finding(export, 'damaged_fleet', 'damaged:[0x3100]')
+    assert f['domain'] == 'military'
+    assert f['slots']['hull_pct'] == 52
+    assert f['evidence']['hull_max'] == 3100.0
+    assert f['priority_score'] == 1500.0    # missing hull HP
+    assert not [x for x in export['advisors']['findings']
+                if x['type'] == 'damaged_fleet' and x['id'] == 'damaged:[0x3000]']
+
+
 def test_findings_sorted_by_priority_descending(export):
     scores = [f['priority_score'] for f in export['advisors']['findings']]
     assert scores == sorted(scores, reverse=True)
@@ -61,6 +92,6 @@ def test_all_templates_render_without_error(export):
     # here — this test instead guards against an empty/near-empty findings
     # list silently masking a broken rule (e.g. a bad JOIN returning nothing).
     findings = export['advisors']['findings']
-    assert len(findings) >= 4
+    assert len(findings) >= 6
     for f in findings:
         assert f['body'], f"finding {f['id']} rendered an empty body"

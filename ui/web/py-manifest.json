@@ -14,6 +14,7 @@
   "db/advisors/advisors.py",
   "db/advisors/economy.py",
   "db/advisors/logistics.py",
+  "db/advisors/military.py",
   "db/connection.py",
   "db/schema.sql",
   "db/trends.py",

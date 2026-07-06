@@ -92,7 +92,10 @@
       </div>
       <div class="sb-divider"></div>
       <div class="sb-heading">Advisors <span style="color:var(--color-negative)">&mdash; WIP</span></div>
-      <div class="sb-item" id="sb-military">
+      <!-- Live advisors render the export's `advisors` findings, each tab
+           filtering its own domain slice (js/advisors-feed.js render(view)).
+           Traders and Miners are still WIP. -->
+      <div class="sb-item" id="sb-military" onclick="switchTab('advisors-military', null); AdvisorsFeed.render('military')">
         <span class="sb-item-label"><i class="ti ti-sword"></i> Military</span>
       </div>
       <div class="sb-item" id="sb-traders">
@@ -101,9 +104,7 @@
       <div class="sb-item" id="sb-miners">
         <span class="sb-item-label"><i class="ti ti-shovel"></i> Miners</span>
       </div>
-      <!-- The one live advisor so far — renders the export's `advisors`
-           findings (js/advisors-feed.js). The three above are still WIP. -->
-      <div class="sb-item" id="sb-economic" onclick="switchTab('advisors-economic', null); AdvisorsFeed.render()">
+      <div class="sb-item" id="sb-economic" onclick="switchTab('advisors-economic', null); AdvisorsFeed.render('economic')">
         <span class="sb-item-label"><i class="ti ti-report-money"></i> Economic</span>
       </div>
       <div class="sb-divider"></div>
@@ -653,6 +654,13 @@
       <div class="tab-panel" id="tab-advisors-economic">
         <div class="sec-header"><div class="sec-title">Economic Advisor</div><div class="sec-line"></div></div>
         <div id="advisors-root"></div>
+      </div>
+
+      <!-- ADVISORS · MILITARY TAB — same feed renderer, filtered to the
+           military domain (AdvisorsFeed.render('military')). -->
+      <div class="tab-panel" id="tab-advisors-military">
+        <div class="sec-header"><div class="sec-title">Military Advisor</div><div class="sec-line"></div></div>
+        <div id="advisors-military-root"></div>
       </div>
 
       <!-- HELP TAB — static explainer for the 4 Economic Advisor finding

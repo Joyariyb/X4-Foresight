@@ -578,9 +578,9 @@
       "docked_at": null,
       "commander_id": "[0x1005]",
       "under_construction": 0,
-      "hull_hp": null,
+      "hull_hp": 1600.0,
       "hull_max": 3100.0,
-      "hull_pct": 100.0,
+      "hull_pct": 51.61290322580645,
       "shield_hp": null,
       "shield_max": null,
       "shield_pct": null,
@@ -680,12 +680,30 @@
       "sector_name": "Testora Prime",
       "destination": null,
       "ship_order": "Trading"
+    },
+    {
+      "object_id": "[0x7000]",
+      "code": "XEN-001",
+      "name": "P",
+      "ship_class": "ship_m",
+      "size": "M",
+      "macro": "ship_xen_m_fighter_01_a_macro",
+      "role": "Fighter",
+      "owner_id": "xenon",
+      "owner_name": "[XEN] Xenon",
+      "sector_macro": "cluster_1_sector001_macro",
+      "sector_name": "Testora Prime",
+      "destination": null,
+      "ship_order": "Attacking"
     }
   ],
   "npc_presence": {
     "Testora Prime": {
       "[TEL] Teladi Company": {
         "Freighter": 1
+      },
+      "[XEN] Xenon": {
+        "Fighter": 1
       }
     }
   },
@@ -1011,6 +1029,29 @@
         }
       },
       {
+        "id": "damaged:[0x3100]",
+        "domain": "military",
+        "type": "damaged_fleet",
+        "priority_score": 1500.0,
+        "body": "FGT-002 took a beating — 52% hull remaining, still undocked in Testora Prime. Dock it for repairs while things are quiet.",
+        "template_id": "damaged_fleet",
+        "variant": 2,
+        "slots": {
+          "ship_name": "FGT-002",
+          "role": "Fighter",
+          "hull_pct": 52,
+          "sector_name": "Testora Prime"
+        },
+        "evidence": {
+          "ship_id": "[0x3100]",
+          "code": "FGT-002",
+          "hull_hp": 1600.0,
+          "hull_max": 3100.0,
+          "shield_pct": null,
+          "sector_macro": "cluster_1_sector001_macro"
+        }
+      },
+      {
         "id": "pricing:[0x1000]:energycells:[0x2200]",
         "domain": "economy",
         "type": "pricing_gap",
@@ -1035,6 +1076,31 @@
           "npc_station_id": "[0x2200]",
           "jumps": 1,
           "amount": 4200
+        }
+      },
+      {
+        "id": "hostile:cluster_1_sector001_macro:xenon",
+        "domain": "military",
+        "type": "hostile_presence",
+        "priority_score": 400.0,
+        "body": "Hostile activity: 1 combat ship(s) among 1 [XEN] Xenon vessel(s) spotted in Testora Prime, 0 jump(s) away from you.",
+        "template_id": "hostile_presence",
+        "variant": 1,
+        "slots": {
+          "faction_name": "[XEN] Xenon",
+          "sector_name": "Testora Prime",
+          "ship_count": 1,
+          "combat_count": 1,
+          "jumps": 0
+        },
+        "evidence": {
+          "sector_macro": "cluster_1_sector001_macro",
+          "faction_id": "xenon",
+          "reputation": -25.05,
+          "combat_count": 1,
+          "noncombat_count": 0,
+          "defender_count": 2,
+          "jumps": 0
         }
       }
     ]

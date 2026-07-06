@@ -773,8 +773,8 @@ def to_export(conn: sqlite3.Connection, scan_id: int | None = None) -> dict:
         # get a 1-point series and an empty changes list.
         'trends':                compute_trends(conn, scan_id),
         'changes':               compute_changes(conn, scan_id),
-        # Rule-based recommendations (economy/logistics), player-relative —
-        # see db/advisors.py. Reuses this scan's galaxy_map BFS rather than
+        # Rule-based recommendations (economy/logistics/military), player-
+        # relative — see db/advisors/. Reuses this scan's galaxy_map BFS rather than
         # rebuilding it, same convention as npc_trade_partners above.
         'advisors':              compute_advisors(
             conn, scan_id, galaxy_map['distances_from_current']),

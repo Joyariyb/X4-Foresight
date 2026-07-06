@@ -42,6 +42,14 @@ Backlog of intentionally-deferred items. The core pipeline
       Step 3. Small coverage gain on the inferred tail; the streaming extractor
       already walks NPC order params.
 
+- [ ] **Ship speed/maneuverability in SHIP_STATS.** `data/ship_stats.py` has no
+      speed or turn-rate fields — `gamefiles/generate_data.py` would need to
+      pull them from each ship macro's physics block (related to the known
+      missile/heat gaps in `generate_equipment.py`). Prerequisite for
+      threat-aware Military advisor rules ("can that hostile fleet catch my
+      hauler?"); the shipped v1 rules (`db/advisors/military.py`) deliberately
+      scope to presence/damage-state findings so nothing guesses at speed.
+
 ## Bigger pieces
 
 - [x] **Player event log + career stats.** Done 2026-07-02 —

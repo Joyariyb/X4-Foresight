@@ -193,9 +193,9 @@ class TestNpcStation:
 
 class TestShips:
     def test_ship_counts(self, ctx):
-        # 4 player ships (docked fighter, hauler, idle hauler, escort) + 1
-        # streamed NPC ship.
-        assert len(ctx.ships) == 5
+        # 4 player ships (docked fighter, hauler, idle hauler, escort) + 2
+        # streamed NPC ships (Teladi trader, Xenon fighter).
+        assert len(ctx.ships) == 6
         assert ctx.player_ship_ids == {
             '[0x1100]', '[0x3000]', '[0x3100]', '[0x6100]'}
 
