@@ -21,8 +21,8 @@ pip install lxml
 
 | What | How |
 |------|-----|
-| CLI scan (picker) | `python x4_save_scanner.py` |
-| CLI scan (direct) | `python x4_save_scanner.py path\to\save_001.xml.gz` |
+| CLI scan (picker) | `python cli/x4_save_scanner.py` |
+| CLI scan (direct) | `python cli/x4_save_scanner.py path\to\save_001.xml.gz` |
 | Desktop UI | `python X4_Empire_Intelligence.pyw` (or `python ui/main_ui.py`) |
 | Web build | any static file server from the **repo root**, then open `/ui/web/index.html` (GitHub Pages serves it the same way) |
 
@@ -46,9 +46,9 @@ on every push (`.github/workflows/tests.yml`).
   the web build, silently.
 - **Adding a JS file** → add it to `ui/js/shell-manifest.js` (one shared,
   order-sensitive list), never to the HTML shells directly.
-- **UI work** → read [UI_STANDARDS.md](../UI_STANDARDS.md) first (token tiers,
+- **UI work** → read [UI_STANDARDS.md](UI_STANDARDS.md) first (token tiers,
   §11 one-global-per-file rule); comments follow
-  [COMMENT_STYLE.md](../COMMENT_STYLE.md).
+  [COMMENT_STYLE.md](COMMENT_STYLE.md).
 - **Navigating the code** → query the knowledge graph before grepping:
   `python -m graphify query "..."` / `explain "Symbol"` (see
   [CLAUDE.md](../CLAUDE.md)). Refresh after a chunk of work with

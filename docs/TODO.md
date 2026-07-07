@@ -1,7 +1,7 @@
 # X4 Foresight — TODO / deferred work
 
 Backlog of intentionally-deferred items. The core pipeline
-(scan → resolve → DB → JSON) is complete and runnable via `x4_save_scanner.py`.
+(scan → resolve → DB → JSON) is complete and runnable via `cli/x4_save_scanner.py`.
 
 ## Near-term, well-scoped
 

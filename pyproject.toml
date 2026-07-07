@@ -43,8 +43,11 @@ packages = [
     "data",
     "gamefiles",
     "pyweb",
+    "cli",
 ]
-py-modules = ["display", "pipeline", "x4_save_scanner"]
+# pipeline.py stays a root-level module (not in a package) because the web build
+# fetches it by that exact path — see ui/web/generate_manifest.py.
+py-modules = ["pipeline"]
 
 [tool.setuptools.package-data]
 db = ["schema.sql"]

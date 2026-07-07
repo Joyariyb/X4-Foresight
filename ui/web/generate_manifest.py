@@ -23,8 +23,8 @@ PACKAGE_DIRS = ["scanner", "data", "db", "export", "pyweb"]
 # pipeline also needs. pipeline.py is the shared scan pipeline web_entry.py
 # calls; its module-level path constants are harmless inside Pyodide's
 # sandboxed filesystem (web_entry passes explicit MEMFS paths instead).
-# x4_save_scanner.py and display.py are no longer staged: the CLI shell and
-# its console report became desktop-only once web_entry stopped importing
+# The CLI shell and its console report (cli/x4_save_scanner.py, cli/display.py)
+# are not staged: they became desktop-only once web_entry stopped importing
 # them (they used to ride along just to satisfy an import chain).
 TOP_LEVEL_MODULES = ["pipeline.py"]
 

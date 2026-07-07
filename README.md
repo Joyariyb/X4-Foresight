@@ -29,7 +29,7 @@ X4 Foresight is **read-only** — it visualizes your save, it never modifies it.
 2. **Load it** into the [web dashboard](https://joyariyb.github.io/X4-Foresight/). The scanner runs in-browser.
 3. **Read your empire** across the Overview, Naval, Universe and Alerts tabs — or export JSON.
 
-The core pipeline is **scan → resolve → DB → JSON**, runnable on the desktop via `x4_save_scanner.py` or in the browser via the same Python code under Pyodide.
+The core pipeline is **scan → resolve → DB → JSON**, runnable on the desktop via `cli/x4_save_scanner.py` or in the browser via the same Python code under Pyodide.
 
 ## Run locally (desktop build)
 
@@ -38,7 +38,7 @@ There is also a desktop build (PyQt + QtWebEngine) if you prefer to run it nativ
 ```bash
 python X4_Empire_Intelligence.pyw
 # or run just the pipeline:
-python x4_save_scanner.py
+python cli/x4_save_scanner.py
 ```
 
 ## Project layout
@@ -46,6 +46,7 @@ python x4_save_scanner.py
 | Path | Purpose |
 |------|---------|
 | `pipeline.py` | Shared scan pipeline — every entry point calls `run_pipeline()` |
+| `cli/` | Command-line entry point + console report |
 | `scanner/` | Streaming save-file parser |
 | `db/` | Builds the in-memory database from resolved data |
 | `export/` | JSON export + the bridge API shared by desktop and web shells |
@@ -55,7 +56,7 @@ python x4_save_scanner.py
 | `docs/` | Developer docs — [setup](docs/dev-setup.md), [architecture](docs/architecture.md), [web build](docs/web-build.md), [save-format notes](docs/save-format.md) |
 | `index.html` | Landing page served by GitHub Pages |
 
-See [`TODO.md`](TODO.md) for deferred work and the roadmap.
+See [`TODO.md`](docs/TODO.md) for deferred work and the roadmap.
 
 ## Contributing
 

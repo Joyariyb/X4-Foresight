@@ -32,10 +32,10 @@ mid-feature.
 
 These are the authoritative rulebooks. Follow them; don't re-derive conventions.
 
-- **[`COMMENT_STYLE.md`](COMMENT_STYLE.md)** — commenting standards. Comments explain
+- **[`COMMENT_STYLE.md`](docs/COMMENT_STYLE.md)** — commenting standards. Comments explain
   *why*, not *what*; every code file opens with a one-line `Core role:` header. Covers
   Python, JavaScript, CSS, SQL, and HTML.
-- **[`UI_STANDARDS.md`](UI_STANDARDS.md)** — the design rulebook for everything under
+- **[`UI_STANDARDS.md`](docs/UI_STANDARDS.md)** — the design rulebook for everything under
   `ui/`. Never type a colour, font, radius, duration, or coloured border as a literal —
   reference a token from `ui/css/base.css`. Covers token tiers, colour trios, type
   roles, shape, motion, and state layers.
@@ -44,12 +44,12 @@ These are the authoritative rulebooks. Follow them; don't re-derive conventions.
 
 - `ui/ui.html` renders in **QtWebEngine**. For drop shadows use the CSS
   `filter: drop-shadow(...)`, **not** SVG `<feDropShadow>` — the SVG filter silently
-  fails to render in QtWebEngine. (Also in [`UI_STANDARDS.md`](UI_STANDARDS.md) §7.)
+  fails to render in QtWebEngine. (Also in [`UI_STANDARDS.md`](docs/UI_STANDARDS.md) §7.)
 
 ## Working style
 
 - The maintainer is a junior programmer. Write comments that explain the *why* behind a
-  decision, not just what the code does — see [`COMMENT_STYLE.md`](COMMENT_STYLE.md).
+  decision, not just what the code does — see [`COMMENT_STYLE.md`](docs/COMMENT_STYLE.md).
 - Make changes in small, reviewable batches. Before removing a function parameter,
   query the graph (`python -m graphify explain "funcName"`) for all callers first.
 - The maintainer handles their own git commits — don't commit unless asked.

@@ -39,7 +39,7 @@ extracted to kill.
 
 | Shell | Entry point | Notes |
 |-------|------------|-------|
-| CLI | `x4_save_scanner.py` | also writes the on-disk JSON export |
+| CLI | `cli/x4_save_scanner.py` | also writes the on-disk JSON export |
 | Desktop | `X4_Empire_Intelligence.pyw` → `ui/main_ui.py` | PyQt6 + QtWebEngine |
 | Web | `ui/web/` → `pyweb/web_entry.py` | Pyodide — see [web-build.md](web-build.md) |
 
@@ -106,6 +106,6 @@ and it can't drift because the test enforces it.
    `export/` requires regenerating the web build's manifest:
    `python ui/web/generate_manifest.py` (see [web-build.md](web-build.md)).
 4. New JS files register in `ui/js/shell-manifest.js` and expose one global
-   ([UI_STANDARDS.md](../UI_STANDARDS.md) §11).
+   ([UI_STANDARDS.md](UI_STANDARDS.md) §11).
 5. Save-format knowledge goes in [save-format.md](save-format.md) the moment
    it's decoded — it is expensive to rediscover.

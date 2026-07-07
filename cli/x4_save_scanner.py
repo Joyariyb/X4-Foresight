@@ -5,7 +5,10 @@ import time
 from pathlib import Path
 from datetime import datetime
 
-ROOT = Path(__file__).resolve().parent
+# This file lives in cli/, so the repo root (where pipeline.py sits) is one
+# level up — it must be on sys.path for `from pipeline import ...` and
+# `from cli.display import ...` to resolve when run as a script.
+ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
@@ -13,7 +16,7 @@ from pipeline import (
     LANG_FILE, DB_PATH, JSON_PATH, ROOT_SAVE,
     find_game_saves_dir, run_pipeline,
 )
-from display import display_report
+from cli.display import display_report
 
 
 # ── Save selection (.gz + root fallback) ───────────────────────────────────────

@@ -3,7 +3,7 @@
 An append-only journal of what this project has reverse-engineered about the
 X4: Foundations save file. This knowledge is expensive to rediscover — when a
 new structure gets decoded, write it down here (date it), even if no code uses
-it yet. Feature ideas belong in [TODO.md](../TODO.md); this file is only about
+it yet. Feature ideas belong in [TODO.md](TODO.md); this file is only about
 what the save *contains* and how it behaves.
 
 ## Container
