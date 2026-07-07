@@ -107,12 +107,14 @@
       render();
     }
 
-    // Opens the standalone Help tab explaining the 4 finding types. Recorded
-    // as a jump (not a plain switchTab) so the Back button in the sidebar
+    // Opens the current view's standalone Help tab — economic and military
+    // each have their own explainer (the military one also covers verdicts
+    // and counter advice, which the economic types don't have). Recorded as
+    // a jump (not a plain switchTab) so the Back button in the sidebar
     // returns here — same trail mechanism as the station/sector jump links.
     function openHelp() {
       _navRecord();
-      switchTab('advisors-help', null);
+      switchTab(_view === 'military' ? 'advisors-military-help' : 'advisors-help', null);
       _navAfterJump();
     }
 

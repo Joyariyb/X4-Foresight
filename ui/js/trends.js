@@ -428,9 +428,34 @@
       }
       case 'milestone':
         return { icon: 'ti-trophy', color: 'var(--color-warning)', text: c.label || 'Milestone' };
+      case 'hostile_buildup':
+        return { icon: 'ti-trending-up-2', color: 'var(--color-negative)',
+                 text: `Force build-up — ${b(c.faction_name)} in ${c.sector_name || c.sector_macro || '—'} up ${c.growth}× over ${c.scan_count} scans (${c.ship_count} ship${c.ship_count === 1 ? '' : 's'})` };
       default:
         return { icon: 'ti-point', color: 'var(--text-secondary)', text: c.type };
     }
+  }
+
+  // Build-up is a cross-scan signal, so it belongs in this feed as much as in
+  // the Military advisor tab it's computed for. Rather than recompute the force
+  // trend here (that lives in db/advisors), lift the `buildup` findings already
+  // in the export and stamp them onto the LATEST scan — the scan they were
+  // detected at — so the feed's per-scan grouping drops them into the top group.
+  function _buildupEvents(data) {
+    const findings = ((data.advisors || {}).findings || [])
+      .filter(f => f.type === 'buildup');
+    const scans = ((data.trends || {}).series || {}).scans || [];
+    const latest = scans[scans.length - 1];
+    if (!findings.length || !latest) return [];
+    return findings.map(f => ({
+      type: 'hostile_buildup',
+      scan_id: latest.scan_id, scanned_at: latest.scanned_at,
+      game_time_s: latest.game_time_s,
+      faction_name: f.slots.faction_name, sector_name: f.slots.sector_name,
+      sector_macro: f.evidence.sector_macro,
+      growth: f.slots.growth, scan_count: f.slots.scan_count,
+      ship_count: f.slots.ship_count,
+    }));
   }
 
   // Group the (already newest-first) feed by detecting scan, with a header per scan.
@@ -682,7 +707,10 @@
     const trends  = data.trends  || {};
     _trendSeries  = trends.series || {};
     _trendScans   = _trendSeries.scans || [];
-    _trendChanges = data.changes  || [];
+    // Build-up events (latest scan) lead the feed: both they and data.changes
+    // are newest-first and they carry the newest scan_id, so a plain concat
+    // keeps the ordering the per-scan grouping relies on without a re-sort.
+    _trendChanges = _buildupEvents(data).concat(data.changes || []);
     const windows = trends.windows || { buckets: [] };
     const n       = _trendScans.length;
 

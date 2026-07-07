@@ -729,6 +729,110 @@
         </div>
       </div>
 
+      <!-- HELP TAB · MILITARY — static explainer for the 5 Military Advisor
+           finding types, plus the two elements unique to that tab: the
+           hostile-presence verdict bands and the counter-advice hover.
+           Reachable via the "?" button on the Military tab (openHelp() in
+           js/advisors-feed.js routes by view); the sidebar Other > Help link
+           keeps opening the economic page, which predates this one. -->
+      <div class="tab-panel" id="tab-advisors-military-help">
+        <div class="sec-header"><div class="sec-title">Military Advisor · Help</div><div class="sec-line"></div></div>
+        <div class="adv-help-note">
+          <i class="ti ti-info-circle"></i>
+          <p>The coloured bar on the left of each card is the <strong>priority rail</strong>,
+            and it works exactly as on the Economic tab — fill height is the finding's
+            score relative to the single highest-scoring military finding this scan.
+            Military scores are <strong>threat points</strong> (ship counts weighted by
+            combat role, verdict and distance), a different unit from the economy's
+            credits/hour — which is why each tab is ranked separately and rail heights
+            are never comparable across the two.</p>
+        </div>
+        <div class="adv-help-note">
+          <i class="ti ti-swords"></i>
+          <p>A card showing a <strong>swords icon</strong> carries counter advice: hover
+            it for weapon and refit suggestions matched to that particular force's
+            make-up — strike-craft swarms, capital hulls, and shield-heavy versus
+            hull-heavy fleets each get their own counsel.</p>
+        </div>
+        <div class="adv-help-verdicts">
+          <div class="adv-help-verdicts-title">Hostile Presence verdicts</div>
+          <span class="adv-verdict adv-verdict--negative">Undefended</span>
+          <p>You have nothing armed in the sector — anything you own there is exposed.</p>
+          <span class="adv-verdict adv-verdict--warning">Outmatched</span>
+          <p>Simulating the fight both ways, they break your defence at least twice as
+            fast as you could break theirs (or your ships can't hurt them at all).</p>
+          <span class="adv-verdict adv-verdict--info">Contested</span>
+          <p>The engagement could go either way. Fleets the scan couldn't assess also
+            land here — missing data is never scored as harmless.</p>
+          <span class="adv-verdict adv-verdict--positive">Covered</span>
+          <p>Your present force should hold without reinforcement.</p>
+        </div>
+        <div class="adv-help-list">
+          <div class="adv-help-card adv--negative">
+            <div class="adv-rail"><div class="adv-rail-fill" style="height:100%"></div></div>
+            <div class="adv-help-body">
+              <div class="adv-help-head"><i class="ti ti-alert-triangle adv-icon"></i><span class="adv-type">Hostile Presence</span></div>
+              <p>Flags hostile-faction ships operating in a sector where you own a station,
+                within reach of your position. Hostility is decided by reputation (−25 or
+                below), so a faction you've personally angered counts just as much as the
+                Xenon. Both sides' fitted loadouts are compared — sustained damage output
+                against hull and shield pools — to produce the verdict above. Priority
+                scales with ship count (a combat hull counts four times a freighter),
+                worsens with the verdict, and falls off with distance.</p>
+            </div>
+          </div>
+          <div class="adv-help-card adv--warning">
+            <div class="adv-rail"><div class="adv-rail-fill" style="height:100%"></div></div>
+            <div class="adv-help-body">
+              <div class="adv-help-head"><i class="ti ti-crosshair adv-icon"></i><span class="adv-type">Tracking Mismatch</span></div>
+              <p>Their force is mostly strike craft (S/M hulls), while most of your
+                defenders' firepower physically can't track targets that small — plasma
+                turrets never connect with fighters; flak, pulse and guided missiles do.
+                Fires only when the mismatch is one-sided: at least 60% of their ships
+                are small against less than 25% of your damage able to hit them, and
+                fewer than 4 craft never counts as a swarm.</p>
+            </div>
+          </div>
+          <div class="adv-help-card adv--warning">
+            <div class="adv-rail"><div class="adv-rail-fill" style="height:100%"></div></div>
+            <div class="adv-help-body">
+              <div class="adv-help-head"><i class="ti ti-ruler-2 adv-icon"></i><span class="adv-type">Outranged</span></div>
+              <p>Hostile capital ships (L/XL) out-reach every defender you have in the
+                sector by 25% or more — the standoff-bombardment setup, where your ships
+                take fire for the whole approach before they can reply. Only capital
+                hulls count on their side: a fighter with a long-range gun still has to
+                close, but a destroyer parks at maximum range and pounds. Priority is
+                the kilometres of standoff times the platforms that can exploit it.</p>
+            </div>
+          </div>
+          <div class="adv-help-card adv--negative">
+            <div class="adv-rail"><div class="adv-rail-fill" style="height:100%"></div></div>
+            <div class="adv-help-body">
+              <div class="adv-help-head"><i class="ti ti-trending-up-2 adv-icon"></i><span class="adv-type">Force Build-Up</span></div>
+              <p>Hostile hardware value in a sector has risen every scan for at least
+                three scans and at least doubled overall. A raid arrives, fights and
+                leaves — only staging climbs steadily, so this is the early warning for
+                an invasion. It's also the one military finding not gated by distance:
+                the threat is to the station in that sector, which doesn't get less
+                threatened because you flew away. Priority scales with fleet size and
+                how fast it's growing.</p>
+            </div>
+          </div>
+          <div class="adv-help-card adv--warning">
+            <div class="adv-rail"><div class="adv-rail-fill" style="height:100%"></div></div>
+            <div class="adv-help-body">
+              <div class="adv-help-head"><i class="ti ti-tool adv-icon"></i><span class="adv-type">Damaged Ship</span></div>
+              <p>A combat ship flying below 75% hull without being docked anywhere.
+                Shields regenerate on their own; hull damage persists between fights, so
+                it's the signal that a repair stop is overdue. Priority is the missing
+                hull points in absolute terms — a battered destroyer outranks a battered
+                fighter because it costs more to lose and takes longer to replace.
+                Docked damaged ships are assumed to be already handled.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>

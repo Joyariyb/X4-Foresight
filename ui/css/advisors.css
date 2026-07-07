@@ -1,6 +1,6 @@
-    /* Core role: Styles for the Advisors > Economic tab — briefing strip, type
-       filter, and the ranked advice cards. Class-based + semantic tokens, same
-       approach as events.css/trends.css.
+    /* Core role: Styles for the Advisor tabs (Economic + Military) — briefing
+       strip, type filter, and the ranked advice cards. Class-based + semantic
+       tokens, same approach as events.css/trends.css.
 
        Two looks are deliberately NEW here (headline feature, per maintainer):
        the vertical priority rail (relative score as fill height, so ranking is
@@ -88,16 +88,31 @@
     .adv--negative .adv-rail-fill { background: var(--color-negative); }
     .adv--negative .adv-icon, .adv--negative .adv-type { color: var(--color-negative); }
 
-    /* ── HELP TAB ── */
-    /* Same card/rail shell as the advice cards (tab-advisors-help in
-       body.html) so the explainer visually matches what it's explaining —
-       static text only, no click/expand affordances. */
+    /* ── HELP TABS ── */
+    /* Same card/rail shell as the advice cards (tab-advisors-help and
+       tab-advisors-military-help in body.html) so the explainers visually
+       match what they're explaining — static text only, no click/expand
+       affordances. */
     /* Intro note above the per-type cards — explains the priority rail, which
        is common to all four types rather than repeated in each card. */
     .adv-help-note { display: flex; align-items: flex-start; gap: 0.8rem; padding: 1rem 1.4rem; background: var(--surface-1); border: 1px solid var(--outline); border-radius: var(--radius-md); margin-bottom: 1.2rem; }
     .adv-help-note .ti { font-size: 1.6rem; color: var(--text-secondary); flex: none; margin-top: 0.2rem; }
     .adv-help-note p { font-family: var(--font-body); font-size: 1.35rem; color: var(--text-primary); line-height: 1.5; margin: 0; }
     .adv-help-note strong { color: var(--text-primary); }
+
+    /* Verdict legend (military help only) — hostile-presence cards lead with
+       one of these four bands, so the legend sits between the intro notes and
+       the type cards. Chips follow the §2 trio rule (solid text on -dim fill
+       inside a -line border); tones run worst→best in the same order as the
+       rule's verdict multiplier, so colour severity and score severity agree. */
+    .adv-help-verdicts { display: grid; grid-template-columns: max-content 1fr; gap: 0.7rem 1.4rem; align-items: start; padding: 1rem 1.4rem; background: var(--surface-1); border: 1px solid var(--outline); border-radius: var(--radius-md); margin-bottom: 1.2rem; }
+    .adv-help-verdicts-title { grid-column: 1 / -1; font-family: var(--font-label); font-size: 1.1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-label); }
+    .adv-verdict { justify-self: start; font-family: var(--font-label); font-size: 1.1rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.15rem 0.8rem; border: 1px solid; border-radius: var(--radius-sm); }
+    .adv-verdict--negative { color: var(--color-negative); background: var(--color-negative-dim); border-color: var(--color-negative-line); }
+    .adv-verdict--warning  { color: var(--color-warning);  background: var(--color-warning-dim);  border-color: var(--color-warning-line); }
+    .adv-verdict--info     { color: var(--color-info);     background: var(--color-info-dim);     border-color: var(--color-info-line); }
+    .adv-verdict--positive { color: var(--color-positive); background: var(--color-positive-dim); border-color: var(--color-positive-line); }
+    .adv-help-verdicts p { font-family: var(--font-body); font-size: 1.35rem; color: var(--text-primary); line-height: 1.45; margin: 0; }
 
     .adv-help-list { display: flex; flex-direction: column; gap: 0.8rem; }
     .adv-help-card { display: flex; background: var(--surface-2); border: 1px solid var(--outline); border-radius: var(--radius-md); overflow: hidden; }
