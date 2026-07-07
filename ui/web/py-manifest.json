@@ -1,5 +1,4 @@
 [
-  "data/cluster_positions.py",
   "data/equipment_stats.py",
   "data/factions.py",
   "data/production.py",
