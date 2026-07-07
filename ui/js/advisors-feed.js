@@ -83,9 +83,16 @@
       their_range_m:      'Their Max Range (m)',
       our_range_m:        'Your Max Range (m)',
       capital_count:      'Hostile Capitals',
-      strength_from_cr:   'Strength Then (Cr)',
-      strength_to_cr:     'Strength Now (Cr)',
-      growth_ratio:       'Growth ×',
+      overall_growth:     'Overall Strength Growth ×',
+      firepower_from:     'Firepower Then (dmg/s)',
+      firepower_to:       'Firepower Now (dmg/s)',
+      firepower_growth:   'Firepower Growth ×',
+      shield_from:        'Shield HP Then',
+      shield_to:          'Shield HP Now',
+      shield_growth:      'Shield Growth ×',
+      hull_from:          'Hull HP Then',
+      hull_to:            'Hull HP Now',
+      hull_growth:        'Hull Growth ×',
       scans_rising:       'Scans Rising',
     };
 
@@ -107,14 +114,14 @@
       render();
     }
 
-    // Opens the current view's standalone Help tab — economic and military
-    // each have their own explainer (the military one also covers verdicts
-    // and counter advice, which the economic types don't have). Recorded as
-    // a jump (not a plain switchTab) so the Back button in the sidebar
-    // returns here — same trail mechanism as the station/sector jump links.
+    // Deep-links into the Help hub topic for the current view — economic and
+    // military each have their own explainer (the military one also covers
+    // verdicts and counter advice, which the economic types don't have).
+    // Recorded as a jump (not a plain Help.open) so the Back button in the
+    // sidebar returns here — same trail mechanism as the station/sector links.
     function openHelp() {
       _navRecord();
-      switchTab(_view === 'military' ? 'advisors-military-help' : 'advisors-help', null);
+      Help.open(_view === 'military' ? 'help-advisors-military' : 'help-advisors-economic');
       _navAfterJump();
     }
 

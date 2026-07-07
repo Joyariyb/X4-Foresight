@@ -247,14 +247,18 @@ def test_damaged_fleet(export):
 # ── buildup: multi-scan direct-DB scenario ───────────────────────────────────
 # The mini save holds a single scan, so a trend rule can't fire there (see
 # test_no_buildup_on_a_single_scan). The positive path gets a throwaway DB
-# where each scan is just "how many Xenon fighters sit in sec_a" — one real
-# catalog macro, no equipment, so sector strength is fighter-count × the
-# hull's catalog price and every growth ratio below is an exact count ratio.
+# where each scan is "how many ARMED Xenon fighters sit in sec_a". The fighters
+# carry a real gatling (weapon_xen_s_gatling_01_mk1_macro) because strength is
+# now combat_strength, not a hull-price count — an unarmed fleet reads zero
+# firepower ⇒ zero strength and would never trigger. Every fighter is
+# identical, so firepower/hull/shield each scale linearly with the count and
+# combat_strength's geometric mean stays linear too: overall growth == the
+# exact count ratio.
 
 @pytest.fixture()
 def buildup_db(tmp_path):
     """Factory: buildup_db([1, 2, 4, 8]) builds one scan per entry with that
-    many hostile fighters in sec_a (0 = scan exists, sector empty)."""
+    many armed hostile fighters in sec_a (0 = scan exists, sector empty)."""
     made = []
 
     def build(counts):
@@ -267,12 +271,18 @@ def buildup_db(tmp_path):
             conn.execute(
                 "INSERT INTO reputation (scan_id, faction_id, faction_name, value) "
                 "VALUES (?, 'xenon', 'Xenon', -30)", (sid,))
+            ids = [f'[0xE{sid}{i}]' for i in range(n)]
             conn.executemany(
                 "INSERT INTO npc_ships (scan_id, object_id, macro, size, "
                 "owner_id, owner_name, sector_macro, sector_name) "
                 "VALUES (?,?,'ship_xen_s_fighter_01_a_macro','S','xenon',"
                 "'Xenon','sec_a','Getsu Fune')",
-                [(sid, f'[0xE{sid}{i}]') for i in range(n)])
+                [(sid, oid) for oid in ids])
+            conn.executemany(
+                "INSERT INTO ship_equipment (scan_id, ship_id, slot_type, "
+                "macro, count) VALUES (?,?,'weapon',"
+                "'weapon_xen_s_gatling_01_mk1_macro',1)",
+                [(sid, oid) for oid in ids])
         conn.commit()
         made.append(conn)
         return conn
@@ -291,15 +301,27 @@ def test_buildup(buildup_db):
     f = findings[0]
     assert f['id'] == 'buildup:sec_a'
     assert f['slots']['scan_count'] == 4
-    assert f['slots']['growth'] == 8.0
     assert f['slots']['faction_name'] == 'Xenon'
     assert f['slots']['sector_name'] == 'Getsu Fune'
-    # Strength is fleet value: N × the fighter hull's catalog price (34,530).
-    assert f['evidence']['strength_from_cr'] == 34530
-    assert f['evidence']['strength_to_cr'] == 8 * 34530
+    # Identical fighters, so every axis scales with the count: overall growth
+    # is the exact 1→8 ratio, and firepower/hull track it linearly.
+    assert f['slots']['growth'] == 8.0
+    assert f['slots']['firepower_growth'] == 8.0
+    assert f['slots']['hull_growth'] == 8.0
+    ev = f['evidence']
+    assert ev['overall_growth'] == 8.0
+    assert ev['firepower_from'] > 0                     # armed: real firepower
+    assert ev['firepower_to'] > ev['firepower_from']
+    # firepower_growth (from unrounded values) already locks the 8× linearity;
+    # hull is integer-rounded, so its then→now stays an exact multiple.
+    assert ev['hull_to'] == 8 * ev['hull_from']
+    # These fighters carry no shield component, so the shield axis is a real
+    # zero — its growth ratio is undefined (None), never a divide-by-zero.
+    assert ev['shield_from'] == 0
+    assert ev['shield_growth'] is None
     # Unlike the other military rules, jumps is reported but NOT a gate — a
     # build-up 3 jumps out is exactly the early warning the rule exists for.
-    assert f['evidence']['jumps'] == 3
+    assert ev['jumps'] == 3
     # 8 ships × 100 scale × 8.0 growth; no distance dampening.
     assert f['priority_score'] == 6400.0
     assert 'Getsu Fune' in f['body']

@@ -88,11 +88,11 @@
     .adv--negative .adv-rail-fill { background: var(--color-negative); }
     .adv--negative .adv-icon, .adv--negative .adv-type { color: var(--color-negative); }
 
-    /* ── HELP TABS ── */
-    /* Same card/rail shell as the advice cards (tab-advisors-help and
-       tab-advisors-military-help in body.html) so the explainers visually
+    /* ── HELP TOPICS ── */
+    /* Same card/rail shell as the advice cards (the advisor help-topic
+       sections inside tab-help in body.html) so the explainers visually
        match what they're explaining — static text only, no click/expand
-       affordances. */
+       affordances. Hub/TOC chrome lives in help.css. */
     /* Intro note above the per-type cards — explains the priority rail, which
        is common to all four types rather than repeated in each card. */
     .adv-help-note { display: flex; align-items: flex-start; gap: 0.8rem; padding: 1rem 1.4rem; background: var(--surface-1); border: 1px solid var(--outline); border-radius: var(--radius-md); margin-bottom: 1.2rem; }

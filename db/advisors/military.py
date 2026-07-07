@@ -19,7 +19,7 @@ is its own prerequisite batch — don't guess at synthetic speed values here.
 """
 from __future__ import annotations
 from .advisors import _finding, ADVISOR_MAX_JUMPS
-from .force import sector_forces, ttk_seconds, merge_profiles
+from .force import sector_forces, ttk_seconds, merge_profiles, combat_strength
 
 # Same combat-role taxonomy as the fleet-composition trend series, imported
 # rather than copied — trends.py already warns its own copy must stay in sync
@@ -76,14 +76,14 @@ SHIELD_HEAVY_SHARE = 0.35
 
 # buildup gates. Three nonzero points (two rising intervals) is the minimum
 # that separates "growing" from merely "more than last time"; the 2× floor
-# keeps ordinary patrol rotation (one ship swapped for a pricier one) below
+# keeps ordinary patrol rotation (one ship swapped for a stronger one) below
 # the bar. The 4-scan window bounds both the claim and the cost: a passing
 # raid arrives, fights and leaves, so it can't stay monotonically rising
 # across 4 snapshots — and every extra scan in the window is one more full
 # re-read of that scan's equipment table (see hostile_strength_history).
 BUILDUP_WINDOW = 4       # scans considered, including the current one
 BUILDUP_MIN_SCANS = 3    # nonzero, rising data points before it's a pattern
-BUILDUP_GROWTH = 2.0     # newest ÷ oldest strength before it's a finding
+BUILDUP_GROWTH = 2.0     # newest ÷ oldest combat_strength before it's a finding
 
 # A combat ship under this hull percentage, flying around undocked, should
 # see a repair dock before its next engagement. Shields regenerate on their
@@ -127,18 +127,19 @@ TEMPLATES: dict[str, list[str]] = {
         "you. Rebalance toward flak or escorts.",
     ],
     'buildup': [
-        "{faction_name} strength in {sector_name} has grown {growth}× over "
-        "your last {scan_count} scans — ~{from_cr} Cr of hardware then, "
-        "~{to_cr} Cr now ({ship_count} ship(s) on station). Sustained "
-        "build-up like this reads as invasion staging, not a raid — "
-        "reinforce before it commits.",
-        "Build-up in {sector_name}: {faction_name} force has risen every "
-        "scan for {scan_count} scans running, {growth}× overall to "
-        "{ship_count} ship(s). A raid comes and goes — steady growth like "
-        "this is staging. Bolster the sector's defence early.",
-        "Watch {sector_name} — {faction_name} hardware there has climbed "
-        "scan over scan to {growth}× what it was {scan_count} scans ago "
-        "(~{from_cr} → ~{to_cr} Cr). That pattern usually precedes an "
+        "{faction_name} combat strength in {sector_name} has grown {growth}× "
+        "over your last {scan_count} scans — firepower {firepower_growth}×, "
+        "hull {hull_growth}×, now {ship_count} ship(s) on station. Sustained "
+        "build-up like this reads as invasion staging, not a raid — reinforce "
+        "before it commits.",
+        "Build-up in {sector_name}: {faction_name} force has risen every scan "
+        "for {scan_count} scans running, {growth}× stronger overall "
+        "(firepower {firepower_growth}×) at {ship_count} ship(s). A raid comes "
+        "and goes — steady growth like this is staging. Bolster the sector's "
+        "defence early.",
+        "Watch {sector_name} — {faction_name} firepower there has climbed "
+        "scan over scan to {firepower_growth}× what it was {scan_count} scans "
+        "ago, {growth}× stronger all told. That pattern usually precedes an "
         "attack, not a passing raid.",
     ],
     'outranged': [
@@ -551,15 +552,18 @@ def outranged_findings(conn, scan_id, distances_from_current,
 
 # ── Rule 4: hostile strength building up scan over scan ──────────────────────
 
-def hostile_strength_history(conn, scan_id, forces) -> dict[str, list[float]]:
-    """{sector_macro: [hostile strength per scan, oldest→newest]} across the
-    last BUILDUP_WINDOW scans, for the sectors in the CURRENT scan's forces.
+def hostile_strength_history(conn, scan_id, forces) -> dict[str, list[dict]]:
+    """{sector_macro: [combat_strength dict per scan, oldest→newest]} across
+    the last BUILDUP_WINDOW scans, for the sectors in the CURRENT scan's
+    forces.
 
-    "Strength" is the merged hostile profiles' value_cr, not DPS: unassessed
-    ships still contribute their hull's catalog price (the macro is always
-    known) but read zero DPS, so a value series stays comparable between a
-    scan that captured loadouts and one that didn't, where a DPS series would
-    saw-tooth on capture luck alone.
+    Strength is force.py's combat_strength — firepower, shield, hull and an
+    overall index — NOT credits: the whole point of the rule is to warn about
+    fighting power massing, and a value series would rank a gunless freighter
+    convoy above a torpedo wing. A scan where a sector's hostile loadouts were
+    never captured reads as zero firepower ⇒ zero overall strength; that's a
+    coverage gap, handled as one below (the run stops at it) rather than being
+    papered over with a hull-price floor.
 
     Derived from stored scans rather than a new history table — the DB
     already keeps npc_ships + ship_equipment per scan (HISTORY storage
@@ -573,25 +577,26 @@ def hostile_strength_history(conn, scan_id, forces) -> dict[str, list[float]]:
         "SELECT scan_id FROM scans WHERE scan_id < ? "
         "ORDER BY scan_id DESC LIMIT ?", (scan_id, BUILDUP_WINDOW - 1))]
 
-    history: dict[str, list[float]] = {sec: [] for sec in forces}
+    zero = {'firepower': 0.0, 'shield': 0.0, 'hull': 0.0, 'overall': 0.0}
+    history: dict[str, list[dict]] = {sec: [] for sec in forces}
     for sid in reversed(prev_ids):          # oldest → newest
         past = threat_forces(conn, sid)
         for sec, series in history.items():
             sides = past.get(sec)
-            series.append(
-                merge_profiles(sides['hostile'].values())['value_cr']
-                if sides else 0.0)
+            series.append(combat_strength(merge_profiles(sides['hostile'].values()))
+                          if sides else dict(zero))
     for sec, series in history.items():
-        series.append(merge_profiles(forces[sec]['hostile'].values())['value_cr'])
+        series.append(combat_strength(merge_profiles(
+            forces[sec]['hostile'].values())))
     return history
 
 
 def buildup_findings(conn, scan_id, distances_from_current,
                      forces) -> list[dict]:
-    """Sectors whose hostile strength has risen every scan — staging, not a
-    raid. This is the early-warning rule: a snapshot can't tell a build-up
-    from a raid, only the trend across scans can, which is also something
-    watching the in-game map can't show you.
+    """Sectors whose hostile combat strength has risen every scan — staging,
+    not a raid. This is the early-warning rule: a snapshot can't tell a
+    build-up from a raid, only the trend across scans can, which is also
+    something watching the in-game map can't show you.
 
     Per sector with hostiles merged (like composition_gap — splitting a
     staged force by owner would let each half duck under the growth floor).
@@ -607,24 +612,32 @@ def buildup_findings(conn, scan_id, distances_from_current,
     findings = []
     for sector_macro, series in hostile_strength_history(
             conn, scan_id, forces).items():
-        # The trailing run of scans where the sector had priced hostiles at
-        # all. Zeros never join the run: npc_ships only covers player-station
-        # sectors, so an older scan's 0 usually means "no station there yet"
-        # (no coverage), and growth measured from a coverage gap would be
-        # fiction.
-        run: list[float] = []
-        for v in reversed(series):
-            if v <= 0:
+        # Trailing run of scans with real fighting strength. A zero breaks it:
+        # npc_ships only covers player-station sectors, so an older scan's 0
+        # usually means "no station there yet" (or no loadouts captured) —
+        # growth measured across that gap would be fiction.
+        run: list[dict] = []
+        for s in reversed(series):
+            if s['overall'] <= 0:
                 break
-            run.append(v)
+            run.append(s)
         run.reverse()
         if len(run) < BUILDUP_MIN_SCANS:
             continue
-        if any(later <= earlier for earlier, later in zip(run, run[1:])):
+        # The gate is the overall index; monotonic on it means every axis' mix
+        # trended up on balance, which is what "massing" looks like.
+        if any(b['overall'] <= a['overall'] for a, b in zip(run, run[1:])):
             continue                        # dipped or stalled — raids do that
-        growth = run[-1] / run[0]
+        first, last = run[0], run[-1]
+        growth = last['overall'] / first['overall']
         if growth < BUILDUP_GROWTH:
             continue
+
+        # Per-axis growth for the card. A shield pool that started at 0 has no
+        # ratio (None → "n/a" in the drawer) rather than dividing by zero; the
+        # overall run guarantees firepower and hull both started nonzero.
+        def _grow(key):
+            return round(last[key] / first[key], 1) if first[key] > 0 else None
 
         theirs = merge_profiles(forces[sector_macro]['hostile'].values())
         # Threat-point units like the other rules, but scaled by growth
@@ -637,15 +650,22 @@ def buildup_findings(conn, scan_id, distances_from_current,
             'sector_name':  sector_names.get(sector_macro, 'an unknown sector'),
             'scan_count':   len(run),
             'growth':       round(growth, 1),
+            'firepower_growth': _grow('firepower'),
+            'hull_growth':      _grow('hull'),
             'ship_count':   theirs['ship_count'],
-            'from_cr':      round(run[0]),
-            'to_cr':        round(run[-1]),
         }
         evidence = {
             'sector_macro':       sector_macro,
-            'strength_from_cr':   round(run[0]),
-            'strength_to_cr':     round(run[-1]),
-            'growth_ratio':       round(growth, 2),
+            'overall_growth':     round(growth, 2),
+            'firepower_from':     round(first['firepower'], 1),
+            'firepower_to':       round(last['firepower'], 1),
+            'firepower_growth':   _grow('firepower'),
+            'shield_from':        round(first['shield']),
+            'shield_to':          round(last['shield']),
+            'shield_growth':      _grow('shield'),
+            'hull_from':          round(first['hull']),
+            'hull_to':            round(last['hull']),
+            'hull_growth':        _grow('hull'),
             'scans_rising':       len(run),
             'hostile_ship_count': theirs['ship_count'],
             'unassessed_count':   theirs['unassessed_count'],

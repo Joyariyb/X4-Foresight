@@ -125,7 +125,7 @@
       </div>
       <div class="sb-divider"></div>
       <div class="sb-heading">Other</div>
-      <div class="sb-item" onclick="switchTab('advisors-help', null)">
+      <div class="sb-item" onclick="Help.open()">
         <span class="sb-item-label"><i class="ti ti-help-circle"></i> Help</span>
       </div>
     </div>
@@ -663,11 +663,30 @@
         <div id="advisors-military-root"></div>
       </div>
 
-      <!-- HELP TAB — static explainer for the 4 Economic Advisor finding
-           types. Reachable via the "?" button on that tab (records a Back
-           trail, js/advisors-feed.js openHelp()) or the Other > Help sidebar
-           link (plain switchTab, no Back trail). -->
-      <div class="tab-panel" id="tab-advisors-help">
+      <!-- HELP TAB — the app-wide help hub. The DOM is the topic registry:
+           every <section class="help-topic"> below is one topic, and its
+           data-help-* attributes (group / title / icon / blurb) drive both the
+           topic list and the landing card grid, built once by js/help.js.
+           Adding a topic = adding one section here — nothing else to sync.
+           Reachable via Other > Help in the sidebar (lands on the hub) or a
+           Help.open('help-…') deep link like the "?" button on the advisor
+           tabs (records a Back trail, js/advisors-feed.js openHelp()). -->
+      <div class="tab-panel" id="tab-help">
+        <div class="help-layout">
+          <nav class="help-toc" id="help-toc"></nav>
+          <div class="help-hub" id="help-hub">
+            <div class="sec-header"><div class="sec-title">Help</div><div class="sec-line"></div></div>
+            <div class="adv-help-note">
+              <i class="ti ti-help-circle"></i>
+              <p>Guides for the dashboard, one topic per page or feature. Pick a
+                card below or use the list on the left — more topics appear here
+                as the rest of the UI gets its guides written.</p>
+            </div>
+            <div class="help-hub-grid" id="help-hub-grid"></div>
+          </div>
+          <section class="help-topic" id="help-advisors-economic" data-help-group="Advisors"
+                   data-help-title="Economic Advisor" data-help-icon="ti-report-money"
+                   data-help-blurb="The four economic finding types and how the priority rail ranks them.">
         <div class="sec-header"><div class="sec-title">Economic Advisor · Help</div><div class="sec-line"></div></div>
         <div class="adv-help-note">
           <i class="ti ti-info-circle"></i>
@@ -727,15 +746,11 @@
             </div>
           </div>
         </div>
-      </div>
+          </section>
 
-      <!-- HELP TAB · MILITARY — static explainer for the 5 Military Advisor
-           finding types, plus the two elements unique to that tab: the
-           hostile-presence verdict bands and the counter-advice hover.
-           Reachable via the "?" button on the Military tab (openHelp() in
-           js/advisors-feed.js routes by view); the sidebar Other > Help link
-           keeps opening the economic page, which predates this one. -->
-      <div class="tab-panel" id="tab-advisors-military-help">
+          <section class="help-topic" id="help-advisors-military" data-help-group="Advisors"
+                   data-help-title="Military Advisor" data-help-icon="ti-sword"
+                   data-help-blurb="The five military finding types, the hostile-presence verdict bands and the counter-advice hover.">
         <div class="sec-header"><div class="sec-title">Military Advisor · Help</div><div class="sec-line"></div></div>
         <div class="adv-help-note">
           <i class="ti ti-info-circle"></i>
@@ -830,6 +845,8 @@
                 Docked damaged ships are assumed to be already handled.</p>
             </div>
           </div>
+        </div>
+          </section>
         </div>
       </div>
 

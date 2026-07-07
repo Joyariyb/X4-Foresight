@@ -1,0 +1,29 @@
+    /* Core role: Help hub chrome — topic list, landing card grid, and topic
+       show/hide inside tab-help. Topic BODIES keep the adv-help-* explainer
+       styles from advisors.css so guides look like the cards they explain. */
+
+    /* ── LAYOUT ── */
+    /* The hub and every topic section are siblings sharing the flexible
+       column; help.js shows exactly one at a time. The TOC is sticky because
+       #content is the scroll container — long topics would otherwise scroll
+       the topic list out of reach. */
+    .help-layout { display: flex; gap: 1.6rem; align-items: flex-start; }
+    .help-hub, .help-topic { flex: 1; min-width: 0; }
+    .help-topic { display: none; }
+    .help-topic.active { display: block; }
+
+    /* ── TOPIC LIST ── */
+    .help-toc { flex: none; width: 20rem; position: sticky; top: 0; display: flex; flex-direction: column; gap: 0.2rem; padding: 0.8rem; background: var(--surface-1); border: 1px solid var(--outline); border-radius: var(--radius-md); }
+    .help-toc-group { font-family: var(--font-label); font-size: 1.05rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-label); margin: 0.8rem 0 0.2rem; padding: 0 0.6rem; }
+    .help-toc-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.6rem; font-family: var(--font-body); font-size: 1.3rem; color: var(--text-secondary); border-radius: var(--radius-sm); cursor: pointer; transition: background var(--duration-short) var(--ease-standard); }
+    .help-toc-item:hover { background: var(--state-hover); color: var(--text-primary); }
+    .help-toc-item.active { background: var(--state-active); color: var(--text-primary); }
+    .help-toc-item .ti { font-size: 1.4rem; color: var(--text-label); flex: none; }
+
+    /* ── HUB CARDS ── */
+    .help-hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(26rem, 1fr)); gap: 0.8rem; }
+    .help-hub-card { padding: 1rem 1.2rem; background: var(--surface-2); border: 1px solid var(--outline); border-radius: var(--radius-md); cursor: pointer; transition: background var(--duration-short) var(--ease-standard); }
+    .help-hub-card:hover { background: var(--state-hover); }
+    .help-hub-card-head { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.4rem; font-family: var(--font-label); font-size: 1.25rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-brand); }
+    .help-hub-card-head .ti { font-size: 1.6rem; flex: none; }
+    .help-hub-card p { margin: 0; font-family: var(--font-body); font-size: 1.25rem; color: var(--text-secondary); line-height: 1.45; }

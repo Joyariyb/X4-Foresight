@@ -1,0 +1,78 @@
+<svg viewBox="0 0 680 672" xmlns="http://www.w3.org/2000/svg" role="img" font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif">
+<title>Force comparison formulas</title>
+<desc>Time-to-kill fraction, the two-direction comparison, the piecewise verdict function, and the build-up strength index.</desc>
+<style>
+  .fg { fill: #1a1a1a; }
+  .mut { fill: #6b7280; }
+  .ln { stroke: #1a1a1a; }
+  .br { stroke: #6b7280; }
+  @media (prefers-color-scheme: dark) {
+    .fg { fill: #e8e8e8; }
+    .mut { fill: #9aa3af; }
+    .ln { stroke: #e8e8e8; }
+    .br { stroke: #9aa3af; }
+  }
+</style>
+
+<text x="20" y="30" font-size="20" font-weight="500" class="fg">Force comparison</text>
+<text x="20" y="52" font-size="13" class="mut">how the advisor decides who wins, and when a force is massing over time</text>
+
+<text x="20" y="88" font-size="15" font-weight="500" class="fg">1 · time to kill — grind shields, then hull</text>
+
+<text x="20" y="126" font-size="17" class="fg">TTK(A, D)  =</text>
+<line x1="168" y1="120" x2="256" y2="120" class="ln" stroke-width="1.4"/>
+<text x="212" y="112" text-anchor="middle" font-size="16" class="fg">e<tspan font-size="11" dy="3">s</tspan><tspan font-size="16" dy="-3">(D)</tspan></text>
+<text x="212" y="139" text-anchor="middle" font-size="16" class="fg">d<tspan font-size="11" dy="3">s</tspan><tspan font-size="16" dy="-3">(A)</tspan></text>
+<text x="270" y="126" font-size="17" class="fg">+</text>
+<line x1="292" y1="120" x2="380" y2="120" class="ln" stroke-width="1.4"/>
+<text x="336" y="112" text-anchor="middle" font-size="16" class="fg">e<tspan font-size="11" dy="3">h</tspan><tspan font-size="16" dy="-3">(D)</tspan></text>
+<text x="336" y="139" text-anchor="middle" font-size="16" class="fg">d<tspan font-size="11" dy="3">h</tspan><tspan font-size="16" dy="-3">(A)</tspan></text>
+<text x="410" y="126" font-size="13" class="mut">s = shield pool</text>
+<text x="410" y="144" font-size="13" class="mut">h = hull pool</text>
+
+<text x="20" y="174" font-size="13" class="mut">each term → 0 if that pool is empty, → ∞ if the attacker has no matching DPS (can’t break through)</text>
+
+<text x="20" y="210" font-size="15" font-weight="500" class="fg">2 · run it both ways</text>
+<text x="20" y="238" font-size="16" class="fg">t<tspan font-size="11" dy="3">they</tspan><tspan font-size="16" dy="-3"> = TTK(hostile, player)</tspan>   <tspan font-size="13" class="mut">— time for them to kill us</tspan></text>
+<text x="20" y="262" font-size="16" class="fg">t<tspan font-size="11" dy="3">we</tspan><tspan font-size="16" dy="-3"> = TTK(player, hostile)</tspan>   <tspan font-size="13" class="mut">— time for us to kill them</tspan></text>
+
+<text x="20" y="298" font-size="15" font-weight="500" class="fg">3 · verdict — band the ratio (dead-band ×2)</text>
+<text x="20" y="398" font-size="16" class="fg">V(t<tspan font-size="11" dy="3">they</tspan><tspan font-size="16" dy="-3">, t</tspan><tspan font-size="11" dy="3">we</tspan><tspan font-size="16" dy="-3">) =</tspan></text>
+
+<path d="M 288 312 h -12 v 160 h 12" fill="none" class="br" stroke-width="1.4"/>
+
+<text x="304" y="324" font-size="16" font-weight="500" fill="#8e4ec6">Undefended</text>
+<text x="452" y="324" font-size="15" class="mut">if n(player) = 0</text>
+
+<text x="304" y="348" font-size="16" font-weight="500" fill="#d99000">Contested</text>
+<text x="452" y="348" font-size="15" class="mut">if a side is all-unassessed</text>
+
+<text x="304" y="372" font-size="16" font-weight="500" fill="#e5484d">Outmatched</text>
+<text x="452" y="372" font-size="15" class="mut">if t<tspan font-size="11" dy="3">we</tspan><tspan font-size="15" dy="-3"> = ∞</tspan></text>
+
+<text x="304" y="396" font-size="16" font-weight="500" fill="#30a46c">Covered</text>
+<text x="452" y="396" font-size="15" class="mut">if t<tspan font-size="11" dy="3">they</tspan><tspan font-size="15" dy="-3"> = ∞</tspan></text>
+
+<text x="304" y="420" font-size="16" font-weight="500" fill="#e5484d">Outmatched</text>
+<text x="452" y="420" font-size="15" class="mut">if t<tspan font-size="11" dy="3">we</tspan><tspan font-size="15" dy="-3"> &gt; 2 · t</tspan><tspan font-size="11" dy="3">they</tspan></text>
+
+<text x="304" y="444" font-size="16" font-weight="500" fill="#30a46c">Covered</text>
+<text x="452" y="444" font-size="15" class="mut">if t<tspan font-size="11" dy="3">they</tspan><tspan font-size="15" dy="-3"> &gt; 2 · t</tspan><tspan font-size="11" dy="3">we</tspan></text>
+
+<text x="304" y="468" font-size="16" font-weight="500" fill="#d99000">Contested</text>
+<text x="452" y="468" font-size="15" class="mut">otherwise</text>
+
+<text x="20" y="510" font-size="15" font-weight="500" class="fg">4 · build-up strength — single-force trend index</text>
+
+<text x="20" y="552" font-size="16" class="fg">strength =</text>
+<text x="128" y="558" font-size="30" class="fg">√</text>
+<line x1="150" y1="531" x2="300" y2="531" class="ln" stroke-width="1.4"/>
+<text x="225" y="552" text-anchor="middle" font-size="16" class="fg">F · (H + S)</text>
+<text x="330" y="552" font-size="13" class="mut">F = d<tspan font-size="10" dy="3">h</tspan><tspan font-size="13" dy="-3">+ d</tspan><tspan font-size="10" dy="3">s</tspan><tspan font-size="13" dy="-3"> (firepower),  H + S = e</tspan><tspan font-size="10" dy="3">h</tspan><tspan font-size="13" dy="-3">+ e</tspan><tspan font-size="10" dy="3">s</tspan><tspan font-size="13" dy="-3"> (total eHP)</tspan></text>
+
+<text x="20" y="624" font-size="16" class="fg">g =</text>
+<line x1="58" y1="618" x2="236" y2="618" class="ln" stroke-width="1.4"/>
+<text x="147" y="610" text-anchor="middle" font-size="14" class="fg">strength(latest)</text>
+<text x="147" y="636" text-anchor="middle" font-size="14" class="fg">strength(oldest)</text>
+<text x="256" y="624" font-size="16" class="fg">≥ 2   ⇒   <tspan fill="#e5484d" font-weight="500">build-up finding</tspan></text>
+</svg>

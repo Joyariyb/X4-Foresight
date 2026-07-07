@@ -12,6 +12,9 @@ stats via EQUIPMENT_STATS). Nothing in the game or community tooling computes
 force strength from the ACTUAL fitted loadouts in a save, which is exactly
 the gap this module fills.
 
+The formulas and their rationale are written up in docs/force-model.md — this
+header covers the contract, that page covers the maths.
+
 Honesty limits, stated once here so the rules can cite them: pilot skill,
 ship mods, ammo counts, and X4's simplified out-of-sector combat resolution
 are all unmodelled. Consumers must present verdicts as coarse bands
@@ -262,6 +265,40 @@ def merge_profiles(profiles) -> dict:
             out[k] += p[k]
         out['max_range_m'] = max(out['max_range_m'], p['max_range_m'])
     return out
+
+
+# ── Strength index ───────────────────────────────────────────────────────────
+
+def combat_strength(profile: dict) -> dict:
+    """A force's fighting strength, split into its three axes plus one index.
+
+    THE single strength measure for the domain: any rule that needs to rank a
+    force by one number (the build-up trend, for now) derives it here, so no
+    two rules can ever disagree about who is stronger. Deliberately NOT credits
+    — a 90 m hull with no guns costs a fortune and threatens nothing, while a
+    5 m torpedo boat is a real danger; price ranks them backwards.
+
+    - firepower = sustained hull+shield DPS (what it can dish out);
+    - shield / hull = the eHP pools that decide how long it survives to keep
+      dishing it out.
+
+    ``overall`` is the geometric mean of firepower and total eHP. Geometric,
+    not additive, for two reasons: the axes are different units (dmg/s vs HP),
+    so a sum is meaningless; and a product zeroes on a missing axis, which is
+    the behaviour we want — no firepower ⇒ no offensive threat ⇒ strength 0,
+    however much hull it carries. The square root keeps ``overall`` in the same
+    magnitude as its inputs and linear in fleet size, so "firepower doubled"
+    reads as "overall doubled" rather than quadrupling.
+    """
+    firepower = profile['dps_hull'] + profile['dps_shield']
+    shield = profile['ehp_shield']
+    hull = profile['ehp_hull']
+    return {
+        'firepower': firepower,
+        'shield': shield,
+        'hull': hull,
+        'overall': (firepower * (hull + shield)) ** 0.5,
+    }
 
 
 # ── Engagement math ──────────────────────────────────────────────────────────

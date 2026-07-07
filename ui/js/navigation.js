@@ -14,6 +14,7 @@
       fleetFaction: document.querySelector('#fleet-subtabs .fleet-subtab.active')?.dataset.faction || null,
       crewRole:     document.querySelector('#crew-subtabs .fleet-subtab.active')?.dataset.role || null,
       diploFaction: diploSelection,
+      helpTopic:    window.Help ? Help.currentTopic() : null,
     };
   }
   function _navRecord() {            // start of a jump: remember where we are now
@@ -42,6 +43,7 @@
     if (s.tab === 'fleet' && s.fleetFaction) switchFleetTab(s.fleetFaction);
     if (s.tab === 'crew'  && s.crewRole)     switchCrewRole(s.crewRole);
     if (s.tab === 'diplomacy' && s.diploFaction) switchDiploTab(s.diploFaction);
+    if (s.tab === 'help') Help.open(s.helpTopic);
     // Its table is virtualized off the panel's real (post-switch) height, so
     // a plain switchTab() here would leave it blank the same way a first-ever
     // visit would — see renderNpcStationsVisibleRows() in npc-stations.js.

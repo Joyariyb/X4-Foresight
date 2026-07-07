@@ -24,6 +24,7 @@
     'js/tooltips.js',
     'js/faction-tabs.js',
     'js/navigation.js',
+    'js/help.js',
     'js/crew.js',
     'js/station-helpers.js',
     'js/events-feed.js',

@@ -12,7 +12,7 @@ import pytest
 from data.equipment_stats import EQUIPMENT_STATS
 from db.connection import get_connection
 from db.advisors.force import (ship_power, sector_forces, tracking_factor,
-                               ttk_seconds)
+                               ttk_seconds, combat_strength)
 
 
 # ── tracking_factor: the community-calibrated anchor cases ──────────────────
@@ -102,6 +102,31 @@ def test_ship_power_resolves_equipment_aliases():
     p = ship_power('ship_xen_s_fighter_01_a_macro',
                    [('shield', 'shield_arg_m_standard_02_mk1_macro', 1)])
     assert p['ehp_shield'] == 5750
+
+
+# ── combat_strength ───────────────────────────────────────────────────────────
+
+def test_combat_strength_splits_the_axes():
+    p = {'dps_hull': 30.0, 'dps_shield': 20.0, 'ehp_hull': 800.0,
+         'ehp_shield': 200.0}
+    s = combat_strength(p)
+    assert s['firepower'] == 50.0                 # 30 + 20
+    assert s['hull'] == 800.0
+    assert s['shield'] == 200.0
+    # Geometric mean of firepower (50) and total eHP (1000): sqrt(50,000).
+    assert s['overall'] == pytest.approx((50 * 1000) ** 0.5)
+
+
+def test_combat_strength_gunless_hull_is_no_threat():
+    # The maintainer's own rule: a 90 m hull with no guns must not out-score a
+    # small gunship. Firepower gates the overall index, so no guns → zero,
+    # however much hull it carries.
+    freighter = {'dps_hull': 0.0, 'dps_shield': 0.0,
+                 'ehp_hull': 90000.0, 'ehp_shield': 40000.0}
+    gunship = {'dps_hull': 120.0, 'dps_shield': 80.0,
+               'ehp_hull': 3000.0, 'ehp_shield': 1200.0}
+    assert combat_strength(freighter)['overall'] == 0.0
+    assert combat_strength(gunship)['overall'] > 0.0
 
 
 # ── ttk_seconds ──────────────────────────────────────────────────────────────
