@@ -9,7 +9,7 @@ from __future__ import annotations
 import sqlite3
 
 from .advisors import ware_avg_prices, npc_demand_by_ware, merge_anchors
-from . import economy, logistics, military
+from . import economy, logistics, military, trader
 
 
 def compute_advisors(conn: sqlite3.Connection, scan_id: int | None = None,
@@ -57,6 +57,12 @@ def compute_advisors(conn: sqlite3.Connection, scan_id: int | None = None,
     findings += economy.market_opportunity_findings(conn, scan_id, demand_by_ware)
     findings += economy.pricing_gap_findings(conn, scan_id, demand_by_ware)
     findings += logistics.idle_hauler_findings(conn, scan_id)
+    findings += trader.station_siting_findings(
+        conn, scan_id, distances_from_player, avg_prices, demand_by_ware)
+    findings += trader.galaxy_arbitrage_findings(conn, scan_id, distances_from_player)
+    findings += trader.stranded_delivery_findings(conn, scan_id, avg_prices)
+    findings += trader.idle_trade_capital_findings(conn, scan_id)
+    findings += trader.reputation_locked_trade_findings(conn, scan_id, distances_from_player)
     findings += military.hostile_presence_findings(
         conn, scan_id, military_jumps, military_anchor, forces)
     findings += military.composition_gap_findings(

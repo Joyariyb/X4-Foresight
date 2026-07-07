@@ -94,11 +94,11 @@
       <div class="sb-heading">Advisors <span style="color:var(--color-negative)">&mdash; WIP</span></div>
       <!-- Live advisors render the export's `advisors` findings, each tab
            filtering its own domain slice (js/advisors-feed.js render(view)).
-           Traders and Miners are still WIP. -->
+           Miners are still WIP. -->
       <div class="sb-item" id="sb-military" onclick="switchTab('advisors-military', null); AdvisorsFeed.render('military')">
         <span class="sb-item-label"><i class="ti ti-sword"></i> Military</span>
       </div>
-      <div class="sb-item" id="sb-traders">
+      <div class="sb-item" id="sb-traders" onclick="switchTab('advisors-trader', null); AdvisorsFeed.render('trader')">
         <span class="sb-item-label"><i class="ti ti-package"></i> Traders</span>
       </div>
       <div class="sb-item" id="sb-miners">
@@ -663,6 +663,17 @@
         <div id="advisors-military-root"></div>
       </div>
 
+      <!-- ADVISORS · TRADER TAB — same feed renderer, filtered to the
+           trader domain (AdvisorsFeed.render('trader')). Unlike the Economic
+           tab (which reacts to a station's current surplus/cargo state),
+           these rules reason at the galaxy/fleet level — new station sites,
+           cross-sector arbitrage, stranded couriers, idle capital, and
+           reputation-locked trade. -->
+      <div class="tab-panel" id="tab-advisors-trader">
+        <div class="sec-header"><div class="sec-title">Trader Advisor</div><div class="sec-line"></div></div>
+        <div id="advisors-trader-root"></div>
+      </div>
+
       <!-- HELP TAB — the app-wide help hub. The DOM is the topic registry:
            every <section class="help-topic"> below is one topic, and its
            data-help-* attributes (group / title / icon / blurb) drive both the
@@ -843,6 +854,75 @@
                 hull points in absolute terms — a battered destroyer outranks a battered
                 fighter because it costs more to lose and takes longer to replace.
                 Docked damaged ships are assumed to be already handled.</p>
+            </div>
+          </div>
+        </div>
+          </section>
+
+          <section class="help-topic" id="help-advisors-trader" data-help-group="Advisors"
+                   data-help-title="Trader Advisor" data-help-icon="ti-package"
+                   data-help-blurb="The five galaxy/fleet-level finding types — siting, arbitrage, stranded couriers, idle capital, and reputation-locked trade.">
+        <div class="sec-header"><div class="sec-title">Trader Advisor · Help</div><div class="sec-line"></div></div>
+        <div class="adv-help-note">
+          <i class="ti ti-info-circle"></i>
+          <p>The priority rail works the same as the Economic tab — fill height is a
+            finding's score relative to the single highest-scoring trader finding this
+            scan. Unlike Economic (which reacts to one station's current surplus or
+            cargo state), these five rules reason at the galaxy or fleet level: where
+            to expand, where the biggest cross-sector spread is, and whether the fleet
+            and bank balance are actually being put to work.</p>
+        </div>
+        <div class="adv-help-list">
+          <div class="adv-help-card adv--special">
+            <div class="adv-rail"><div class="adv-rail-fill" style="height:100%"></div></div>
+            <div class="adv-help-body">
+              <div class="adv-help-head"><i class="ti ti-building adv-icon"></i><span class="adv-type">Station Siting</span></div>
+              <p>Flags a discovered sector with a mineable resource deposit and no
+                player station anywhere in it yet. Fires regardless of demand — low
+                demand for the resource is not a reason to skip the suggestion — but
+                calls out reachable unmet NPC demand explicitly when it's strong, so
+                you know when a build is backed by a ready market versus a bet on
+                future use.</p>
+            </div>
+          </div>
+          <div class="adv-help-card adv--positive">
+            <div class="adv-rail"><div class="adv-rail-fill" style="height:100%"></div></div>
+            <div class="adv-help-body">
+              <div class="adv-help-head"><i class="ti ti-arrows-exchange adv-icon"></i><span class="adv-type">Galaxy Arbitrage</span></div>
+              <p>Finds the largest reachable buy/sell spread for a ware across NPC
+                stations galaxy-wide — independent of anything you currently own or
+                stock. Both the cheap seller and the paying buyer must be within
+                reach and on speaking terms with you; priority discounts for the
+                total round-trip distance.</p>
+            </div>
+          </div>
+          <div class="adv-help-card adv--warning">
+            <div class="adv-rail"><div class="adv-rail-fill" style="height:100%"></div></div>
+            <div class="adv-help-body">
+              <div class="adv-help-head"><i class="ti ti-alert-circle adv-icon"></i><span class="adv-type">Stranded Delivery</span></div>
+              <p>A courier has been holding cargo it picked up with no resolved
+                delivery destination for an unusually long time. Priority weighs both
+                how long it's been stranded and the value of the cargo it's sitting
+                on.</p>
+            </div>
+          </div>
+          <div class="adv-help-card adv--info">
+            <div class="adv-rail"><div class="adv-rail-fill" style="height:100%"></div></div>
+            <div class="adv-help-body">
+              <div class="adv-help-head"><i class="ti ti-cash adv-icon"></i><span class="adv-type">Idle Trade Capital</span></div>
+              <p>Your banked credits are high while only a small share of your fleet
+                is doing any trading. One finding per scan, scaled by both how much
+                is banked and how low the trading share is.</p>
+            </div>
+          </div>
+          <div class="adv-help-card adv--negative">
+            <div class="adv-rail"><div class="adv-rail-fill" style="height:100%"></div></div>
+            <div class="adv-help-body">
+              <div class="adv-help-head"><i class="ti ti-lock adv-icon"></i><span class="adv-type">Reputation Locked</span></div>
+              <p>A faction's reachable territory holds a worthwhile ware trade, but
+                your reputation with them is too low to trade at all. Highlights the
+                single best-value ware per blocked faction so improving relations has
+                a concrete payoff attached.</p>
             </div>
           </div>
         </div>

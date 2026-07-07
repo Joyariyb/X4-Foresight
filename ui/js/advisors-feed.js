@@ -1,4 +1,4 @@
-  // Core role: Advisor tabs (Economic + Military) — renders the export
+  // Core role: Advisor tabs (Economic + Military + Trader) — renders the export
   // `advisors` findings as a ranked briefing (summary strip, type filter,
   // priority-railed advice cards with expandable evidence drawers).
   //
@@ -16,12 +16,15 @@
   window.AdvisorsFeed = (function () {
 
     // View → root element + which domains it shows. Economic keeps everything
-    // that isn't military (economy + logistics predate the split and share a
-    // tab); priority scores only compete WITHIN a view, so military's
-    // threat-point units never fight economy's Cr/hr for rail height.
+    // that isn't military or trader (economy + logistics predate the split
+    // and share a tab); priority scores only compete WITHIN a view, so
+    // military's threat-point units never fight economy's Cr/hr for rail
+    // height, and trader's own mixed units (Cr, Cr/hr, credits banked) never
+    // fight either of the others.
     const VIEWS = {
-      economic: { root: 'advisors-root',          match: f => f.domain !== 'military' },
+      economic: { root: 'advisors-root',          match: f => f.domain !== 'military' && f.domain !== 'trader' },
       military: { root: 'advisors-military-root', match: f => f.domain === 'military' },
+      trader:   { root: 'advisors-trader-root',   match: f => f.domain === 'trader' },
     };
 
     // Finding type → presentation. `tone` picks the semantic colour trio via
@@ -37,10 +40,15 @@
       outranged:          { label: 'Outranged',          icon: 'ti-ruler-2',      tone: 'warning'  },
       buildup:            { label: 'Force Build-Up',     icon: 'ti-trending-up-2', tone: 'negative' },
       damaged_fleet:      { label: 'Damaged Ship',       icon: 'ti-tool',         tone: 'warning'  },
+      station_siting:         { label: 'Station Siting',       icon: 'ti-building',         tone: 'special'  },
+      galaxy_arbitrage:       { label: 'Galaxy Arbitrage',     icon: 'ti-arrows-exchange',   tone: 'positive' },
+      stranded_delivery:      { label: 'Stranded Delivery',    icon: 'ti-alert-circle',      tone: 'warning'  },
+      idle_trade_capital:     { label: 'Idle Trade Capital',   icon: 'ti-cash',              tone: 'info'     },
+      reputation_locked_trade:{ label: 'Reputation Locked',    icon: 'ti-lock',              tone: 'negative' },
     };
     const FALLBACK_META = { label: 'Finding', icon: 'ti-clipboard-list', tone: 'info' };
 
-    const DOMAIN_LABELS = { economy: 'Economy', logistics: 'Logistics', military: 'Military' };
+    const DOMAIN_LABELS = { economy: 'Economy', logistics: 'Logistics', military: 'Military', trader: 'Trader' };
 
     // Evidence keys → readable labels. Anything not listed falls back to the
     // raw key with underscores spaced — a new rule's evidence still renders.
@@ -95,6 +103,23 @@
       hull_growth:        'Hull Growth ×',
       scans_rising:       'Scans Rising',
       anchor:             'Proximity Anchor',
+      recharge_max:       'Reservoir Capacity',
+      yield_level:        'Yield Level',
+      avg_price:          'Average Price Cr',
+      sell_station_id:    'Sell Station',
+      buy_station_id:     'Buy Station',
+      sell_jumps:         'Jumps to Seller',
+      buy_jumps:          'Jumps to Buyer',
+      volume:             'Tradeable Units',
+      sell_price_cents:   'Sell Price (¢)',
+      buy_price_cents:    'Buy Price (¢)',
+      time_ago_s:         'Seconds Since Pickup',
+      value_estimate:     'Estimated Value Cr',
+      player_credits:     'Credits Banked',
+      trader_ships:       'Trading Ships',
+      total_ships:        'Total Ships',
+      ratio:              'Trading Ship Ratio',
+      reputation_value:   'Reputation Value',
     };
 
     let _findings = [];
@@ -115,14 +140,18 @@
       render();
     }
 
-    // Deep-links into the Help hub topic for the current view — economic and
-    // military each have their own explainer (the military one also covers
-    // verdicts and counter advice, which the economic types don't have).
+    // Deep-links into the Help hub topic for the current view — economic,
+    // military and trader each have their own explainer (the military one
+    // also covers verdicts and counter advice, which the others don't have).
     // Recorded as a jump (not a plain Help.open) so the Back button in the
     // sidebar returns here — same trail mechanism as the station/sector links.
+    const HELP_TOPIC = {
+      military: 'help-advisors-military',
+      trader:   'help-advisors-trader',
+    };
     function openHelp() {
       _navRecord();
-      Help.open(_view === 'military' ? 'help-advisors-military' : 'help-advisors-economic');
+      Help.open(HELP_TOPIC[_view] || 'help-advisors-economic');
       _navAfterJump();
     }
 
@@ -154,6 +183,14 @@
       const losing   = vf.filter(f => f.type === 'hostile_presence'
         && (f.slots.verdict === 'Outmatched' || f.slots.verdict === 'Undefended')).length;
       const staging  = vf.filter(f => f.type === 'buildup').length;
+      // Trader-only cells: siting count (a demand-note doesn't change the
+      // count, just the card text), arbitrage/one-time Cr, stranded ships,
+      // idle credits banked, and factions currently locked out of trade.
+      const sitingCount = vf.filter(f => f.type === 'station_siting').length;
+      const arbGain     = sum(['galaxy_arbitrage'], 'gain');
+      const strandedCnt = vf.filter(f => f.type === 'stranded_delivery').length;
+      const idleCredits = sum(['idle_trade_capital'], 'credits');
+      const lockedCnt   = vf.filter(f => f.type === 'reputation_locked_trade').length;
       const cells = [
         ['Findings', vf.length.toLocaleString()],
         perHour ? ['Cr/hr at Stake', perHour.toLocaleString()] : null,
@@ -163,6 +200,11 @@
         losing  ? ['Sectors Outmatched', losing.toLocaleString()] : null,
         staging ? ['Build-Ups Detected', staging.toLocaleString()] : null,
         damaged ? ['Ships Needing Repair', damaged.toLocaleString()] : null,
+        sitingCount ? ['Siting Opportunities', sitingCount.toLocaleString()] : null,
+        arbGain     ? ['Arbitrage Cr at Stake', arbGain.toLocaleString()] : null,
+        strandedCnt ? ['Stranded Deliveries', strandedCnt.toLocaleString()] : null,
+        idleCredits ? ['Idle Credits Cr', idleCredits.toLocaleString()] : null,
+        lockedCnt   ? ['Factions Locked Out', lockedCnt.toLocaleString()] : null,
       ].filter(Boolean);
       return `<div class="adv-stats">${cells.map(([label, value]) => `
           <div class="adv-stat">
@@ -242,9 +284,12 @@
 
       const vf = _viewFindings();
       if (!vf.length) {
-        const sub = _view === 'military'
-          ? "No hostile presence near your position and no combat ships in need of repair."
-          : "Either the empire runs clean, or there's no production surplus / reachable NPC demand near your current sector yet.";
+        const EMPTY_SUB = {
+          military: "No hostile presence near your position and no combat ships in need of repair.",
+          trader:   "No unclaimed resource sectors, reachable arbitrage spread, stranded couriers, idle capital or reputation-locked trade found this scan.",
+        };
+        const sub = EMPTY_SUB[_view]
+          || "Either the empire runs clean, or there's no production surplus / reachable NPC demand near your current sector yet.";
         root.innerHTML = `<div class="adv-empty">
             <i class="ti ti-clipboard-list"></i>
             <div>No findings this scan.</div>
