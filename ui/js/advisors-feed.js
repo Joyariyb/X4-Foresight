@@ -94,6 +94,7 @@
       hull_to:            'Hull HP Now',
       hull_growth:        'Hull Growth ×',
       scans_rising:       'Scans Rising',
+      anchor:             'Proximity Anchor',
     };
 
     let _findings = [];

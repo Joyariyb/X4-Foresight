@@ -7,11 +7,18 @@ phrasings via _finding() so the feed doesn't read as copy-pasted. No LLM is
 involved — an LLM would only ever be an optional renderer sitting on top of
 these same findings.
 
-Advice is PLAYER-RELATIVE, not galaxy-wide: every rule that reaches toward an
-NPC station filters by distance from the player's CURRENT sector (not asset
-sectors — an idle scout half the map away is not "nearby" just because a
-station is there) and by faction reputation (can't usefully trade with
-someone who'll shoot you).
+Advice is PLAYER-RELATIVE, not galaxy-wide, and by faction reputation (can't
+usefully trade with someone who'll shoot you). Economy rules (a hauler flying
+station -> buyer) filter by distance from the player's STATIONS
+(distances_from_player) — the goods have a fixed origin, so the avatar's
+current position is irrelevant, and asset-relative reachability is what makes
+"nearby" mean something once the empire has spread out. Military rules
+instead need BOTH anchors: a threat sitting on a player station is a threat
+whether or not the avatar is nearby, so distances_from_player alone already
+answers the old "idle scout half the map away" objection (it's seeded ONLY
+from station sectors) — but the avatar's own position can also be in danger,
+so military merges distances_from_player with distances_from_current
+(merge_anchors() below) rather than picking one.
 
 This module holds only what's shared across domains. Domain-specific rules,
 tuning constants, and templates live in their own files (economy.py,
@@ -74,7 +81,7 @@ def ware_avg_prices(conn) -> dict[str, int]:
         "SELECT ware_id, price_avg FROM ware_prices")}
 
 
-def npc_demand_by_ware(conn, scan_id, distances_from_current,
+def npc_demand_by_ware(conn, scan_id, distances_from_player,
                         max_jumps=ADVISOR_MAX_JUMPS) -> dict[str, list[dict]]:
     """{ware_id: [reachable NPC buy offers with genuine unmet demand]}.
 
@@ -82,8 +89,13 @@ def npc_demand_by_ware(conn, scan_id, distances_from_current,
     station's own target stock) — a fully-stocked buy offer isn't an
     opportunity even though is_buying=1. Reputation gate mirrors
     ReputationEntry.can_trade (value >= -10); reachability is jumps from the
-    player's CURRENT location, capped at max_jumps, same shape as
-    jsonexport._npc_trade_partners but asset-independent.
+    NEAREST PLAYER STATION (distances_from_player), capped at max_jumps, same
+    shape as jsonexport._npc_trade_partners.
+
+    Station-relative, not avatar-relative: the hauler that would run this
+    route starts from the surplus station, not from wherever the camera
+    happens to be — so a mission deep in Xenon territory must not blank a
+    trade opportunity next to a station that hasn't moved.
     """
     rows = conn.execute(
         "SELECT ns.object_id, ns.code, ns.name AS station_name, ns.sector_macro, "
@@ -96,7 +108,7 @@ def npc_demand_by_ware(conn, scan_id, distances_from_current,
         (scan_id,))
     out: dict[str, list[dict]] = {}
     for r in rows:
-        jumps = distances_from_current.get(r['sector_macro'])
+        jumps = distances_from_player.get(r['sector_macro'])
         if jumps is None or jumps > max_jumps:
             continue
         depth = (r['desired'] or 0) - (r['amount'] or 0)
@@ -109,3 +121,37 @@ def npc_demand_by_ware(conn, scan_id, distances_from_current,
             'demand_depth': depth,
         })
     return out
+
+
+def merge_anchors(distances_from_player, distances_from_current
+                   ) -> tuple[dict[str, int], dict[str, str]]:
+    """Merge the two galaxy_map anchors into one {sector: jumps} plus a
+    parallel {sector: anchor} map recording which anchor produced that jump
+    count ('station' | 'current' | 'both' on a tie, including 0 == 0 when the
+    player is standing in a sector that also holds a station).
+
+    Military threats matter near a player STATION (the asset stays put, so it
+    is a threat regardless of where the avatar flies) AND near the avatar's
+    CURRENT position (their own ship can also be caught out). Merging into
+    one jumps dict — instead of running each rule twice, once per anchor, and
+    concatenating — is what guarantees a rule fires at most once per sector:
+    the MIN of the two distances is the only number that ever reaches the
+    ADVISOR_MAX_JUMPS gate or the priority weighting, so there is only ever
+    one candidate jump count per sector to begin with.
+    """
+    jumps: dict[str, int] = {}
+    anchor: dict[str, str] = {}
+    for sector in distances_from_player.keys() | distances_from_current.keys():
+        p = distances_from_player.get(sector)
+        c = distances_from_current.get(sector)
+        if p is None:
+            jumps[sector], anchor[sector] = c, 'current'
+        elif c is None:
+            jumps[sector], anchor[sector] = p, 'station'
+        elif p < c:
+            jumps[sector], anchor[sector] = p, 'station'
+        elif c < p:
+            jumps[sector], anchor[sector] = c, 'current'
+        else:
+            jumps[sector], anchor[sector] = p, 'both'
+    return jumps, anchor

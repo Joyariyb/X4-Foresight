@@ -1157,7 +1157,7 @@
         "domain": "military",
         "type": "hostile_presence",
         "priority_score": 800.0,
-        "body": "Testora Prime (0 jump(s) out): 1 [XEN] Xenon vessel(s), bringing ~73 dmg/s sustained against your 2 defender(s)' ~78 — assessment: Contested. The engagement could go either way — reinforcements would tip it.",
+        "body": "Testora Prime (right where you are, which is also one of your stations): 1 [XEN] Xenon vessel(s), bringing ~73 dmg/s sustained against your 2 defender(s)' ~78 — assessment: Contested. The engagement could go either way — reinforcements would tip it.",
         "template_id": "hostile_presence",
         "variant": 1,
         "slots": {
@@ -1167,6 +1167,7 @@
           "ship_count": 1,
           "combat_count": 1,
           "jumps": 0,
+          "proximity": "right where you are, which is also one of your stations",
           "force_clause": "bringing ~73 dmg/s sustained against your 2 defender(s)' ~78",
           "advice": "The engagement could go either way — reinforcements would tip it."
         },
@@ -1178,6 +1179,7 @@
           "noncombat_count": 0,
           "unassessed_count": 0,
           "defender_count": 2,
+          "anchor": "both",
           "their_dps": 73,
           "our_dps": 78,
           "their_ehp": 10000,

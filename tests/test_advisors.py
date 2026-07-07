@@ -4,7 +4,8 @@ from __future__ import annotations
 import pytest
 
 from db.connection import get_connection
-from db.advisors import military
+from db.advisors import military, compute_advisors
+from db.advisors.advisors import merge_anchors
 
 
 def _finding(export, ftype, id_):
@@ -58,11 +59,21 @@ def test_idle_hauler(export):
 
 def test_hostile_presence(export):
     # One Xenon fighter (reputation -32, past the -25 is_hostile threshold)
-    # in the player's home sector — 0 jumps from the current position.
+    # in the player's home sector — which is BOTH a player-station sector
+    # (distances_from_player == 0) AND where the avatar is currently standing
+    # (distances_from_current == 0). This is the dual-anchor acceptance case:
+    # merge_anchors() must produce a single 0-jump entry with anchor == 'both'
+    # rather than two separate results the caller would have to dedupe.
     f = _finding(export, 'hostile_presence',
                  'hostile:cluster_1_sector001_macro:xenon')
     assert f['domain'] == 'military'
     assert f['slots']['jumps'] == 0
+    assert f['evidence']['anchor'] == 'both'
+    # Exactly one finding for this sector/faction — the merge, not two
+    # separate anchor-driven rule passes, is what guarantees this.
+    assert len([x for x in export['advisors']['findings']
+                if x['type'] == 'hostile_presence'
+                and x['evidence']['sector_macro'] == 'cluster_1_sector001_macro']) == 1
     assert f['slots']['ship_count'] == 1
     # The "fighter" macro token classifies as a combat role, so the one ship
     # is also the one combat ship.
@@ -155,10 +166,41 @@ def threat_db(tmp_path):
     conn.close()
 
 
+def test_merge_anchors():
+    # Station-only, current-only, station-nearer, current-nearer, and a tie
+    # (equal distance, including the 0==0 "standing at your own station" case)
+    # must each resolve to the right winner and the right merged jump count.
+    jumps, anchor = merge_anchors(
+        distances_from_player={'a': 0, 'c': 5, 'd': 2, 'e': 3},
+        distances_from_current={'b': 4, 'c': 2, 'd': 5, 'e': 3})
+    assert jumps == {'a': 0, 'b': 4, 'c': 2, 'd': 2, 'e': 3}
+    assert anchor == {'a': 'station', 'b': 'current', 'c': 'current',
+                       'd': 'station', 'e': 'both'}
+
+
+def test_hostile_presence_survives_avatar_relocation(threat_db):
+    # Regression for the dual-anchor bug: sec_a holds a player station (so
+    # distances_from_player reaches it at 0 jumps) but the avatar is off
+    # flying a mission somewhere distances_from_current never reaches sec_a
+    # at all. Anchoring purely to the avatar's position would silently drop
+    # this finding; the merged jumps dict must still surface it via the
+    # station anchor.
+    result = compute_advisors(
+        threat_db, 1,
+        distances_from_player={'sec_a': 0},
+        distances_from_current={'far_away_sector': 1})
+    findings = [f for f in result['findings']
+                if f['type'] == 'hostile_presence' and f['id'] == 'hostile:sec_a:xenon']
+    assert len(findings) == 1
+    f = findings[0]
+    assert f['slots']['jumps'] == 0
+    assert f['evidence']['anchor'] == 'station'
+
+
 def test_composition_gap(threat_db):
     forces = military.threat_forces(threat_db, 1)
     findings = military.composition_gap_findings(
-        threat_db, 1, {'sec_a': 0}, forces)
+        threat_db, 1, {'sec_a': 0}, {'sec_a': 'station'}, forces)
     assert len(findings) == 1
     f = findings[0]
     assert f['id'] == 'compgap:sec_a'
@@ -183,12 +225,13 @@ def test_composition_gap_silent_when_flak_fitted(threat_db):
         "WHERE ship_id = '[0xD1]'")
     forces = military.threat_forces(threat_db, 1)
     assert military.composition_gap_findings(
-        threat_db, 1, {'sec_a': 0}, forces) == []
+        threat_db, 1, {'sec_a': 0}, {'sec_a': 'station'}, forces) == []
 
 
 def test_outranged(threat_db):
     forces = military.threat_forces(threat_db, 1)
-    findings = military.outranged_findings(threat_db, 1, {'sec_a': 0}, forces)
+    findings = military.outranged_findings(
+        threat_db, 1, {'sec_a': 0}, {'sec_a': 'station'}, forces)
     assert len(findings) == 1
     f = findings[0]
     assert f['id'] == 'outranged:sec_a'
@@ -207,7 +250,7 @@ def test_counter_advice_rows(threat_db):
     # anywhere on the hostile side, and a plasma-only defence (0% tracking).
     forces = military.threat_forces(threat_db, 1)
     findings = military.hostile_presence_findings(
-        threat_db, 1, {'sec_a': 0}, forces)
+        threat_db, 1, {'sec_a': 0}, {'sec_a': 'station'}, forces)
     assert len(findings) == 1
     tips = findings[0]['counters']
     assert [t['threat'] for t in tips] == [
@@ -228,7 +271,8 @@ def test_outranged_needs_a_capital(threat_db):
     threat_db.execute(
         "UPDATE npc_ships SET size = 'S' WHERE object_id = '[0xC5]'")
     forces = military.threat_forces(threat_db, 1)
-    assert military.outranged_findings(threat_db, 1, {'sec_a': 0}, forces) == []
+    assert military.outranged_findings(
+        threat_db, 1, {'sec_a': 0}, {'sec_a': 'station'}, forces) == []
 
 
 def test_damaged_fleet(export):
@@ -296,7 +340,8 @@ def test_buildup(buildup_db):
     # Doubling every scan: strictly rising all 4 scans, 8× overall.
     conn = buildup_db([1, 2, 4, 8])
     forces = military.threat_forces(conn, 4)
-    findings = military.buildup_findings(conn, 4, {'sec_a': 3}, forces)
+    findings = military.buildup_findings(
+        conn, 4, {'sec_a': 3}, {'sec_a': 'current'}, forces)
     assert len(findings) == 1
     f = findings[0]
     assert f['id'] == 'buildup:sec_a'
@@ -322,6 +367,7 @@ def test_buildup(buildup_db):
     # Unlike the other military rules, jumps is reported but NOT a gate — a
     # build-up 3 jumps out is exactly the early warning the rule exists for.
     assert ev['jumps'] == 3
+    assert ev['anchor'] == 'current'
     # 8 ships × 100 scale × 8.0 growth; no distance dampening.
     assert f['priority_score'] == 6400.0
     assert 'Getsu Fune' in f['body']
@@ -332,14 +378,14 @@ def test_buildup_a_dip_breaks_the_pattern(buildup_db):
     # but "rising monotonically" is the whole claim — no finding.
     conn = buildup_db([1, 4, 2, 8])
     forces = military.threat_forces(conn, 4)
-    assert military.buildup_findings(conn, 4, {'sec_a': 0}, forces) == []
+    assert military.buildup_findings(conn, 4, {'sec_a': 0}, {'sec_a': 'station'}, forces) == []
 
 
 def test_buildup_needs_real_growth(buildup_db):
     # Rising every scan but only 1.6× overall — patrol churn, not staging.
     conn = buildup_db([5, 6, 7, 8])
     forces = military.threat_forces(conn, 4)
-    assert military.buildup_findings(conn, 4, {'sec_a': 0}, forces) == []
+    assert military.buildup_findings(conn, 4, {'sec_a': 0}, {'sec_a': 'station'}, forces) == []
 
 
 def test_buildup_ignores_coverage_gaps(buildup_db):
@@ -348,7 +394,7 @@ def test_buildup_ignores_coverage_gaps(buildup_db):
     # under the 3-point floor, so growth measured from a gap can't fire.
     conn = buildup_db([0, 0, 4, 8])
     forces = military.threat_forces(conn, 4)
-    assert military.buildup_findings(conn, 4, {'sec_a': 0}, forces) == []
+    assert military.buildup_findings(conn, 4, {'sec_a': 0}, {'sec_a': 'station'}, forces) == []
 
 
 def test_no_buildup_on_a_single_scan(export):

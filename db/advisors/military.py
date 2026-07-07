@@ -16,10 +16,29 @@ header for what the model deliberately ignores. Still out of scope here:
 has no speed fields yet (weapon-stats gap in the project backlog). Extending
 gamefiles/generate_data.py to pull speed from the ship macros' physics block
 is its own prerequisite batch — don't guess at synthetic speed values here.
+
+Distance gating uses the MERGED station+current anchor (advisors.merge_anchors),
+not the avatar's position alone: a hostile force sitting on a player station is
+a threat whether or not the avatar is nearby, so flying off on a mission must
+not silently blank these findings. The avatar's own position is merged in too
+because their ship can be the one caught out — see advisors.py's module header
+for the full rationale and merge_anchors() for the tie-break rules.
 """
 from __future__ import annotations
 from .advisors import _finding, ADVISOR_MAX_JUMPS
 from .force import sector_forces, ttk_seconds, merge_profiles, combat_strength
+
+# Every rule below is gated (or, for buildup, merely reported) on a MERGED
+# jumps dict — see advisors.merge_anchors(). Each sector's jump count is
+# whichever of "nearest player station" or "player's current position" is
+# closer, and the parallel anchor dict records which one won ('station' |
+# 'current' | 'both' on a tie). npc_ships is already bounded to player-
+# station sectors (db/write.py), so in practice these rules only ever see
+# anchor 'station' or 'both' — the station-anchor jump count is always 0 for
+# a sector these rules can even reach. 'current' exists in the merge for
+# generality and because the avatar being physically present is still worth
+# naming distinctly in a finding's body, even when it never changes whether
+# the rule fires.
 
 # Same combat-role taxonomy as the fleet-composition trend series, imported
 # rather than copied — trends.py already warns its own copy must stay in sync
@@ -98,11 +117,11 @@ DAMAGED_HULL_PCT = 75.0
 TEMPLATES: dict[str, list[str]] = {
     'hostile_presence': [
         "{verdict}: {faction_name} has {ship_count} ship(s) in {sector_name}, "
-        "{jumps} jump(s) from your position, {force_clause}. {advice}",
-        "{sector_name} ({jumps} jump(s) out): {ship_count} {faction_name} "
+        "{proximity}, {force_clause}. {advice}",
+        "{sector_name} ({proximity}): {ship_count} {faction_name} "
         "vessel(s), {force_clause} — assessment: {verdict}. {advice}",
         "Hostile presence in {sector_name} — {ship_count} {faction_name} "
-        "ship(s) {jumps} jump(s) away, {force_clause}. {verdict}. {advice}",
+        "ship(s) {proximity}, {force_clause}. {verdict}. {advice}",
     ],
     'damaged_fleet': [
         "{ship_name} is down to {hull_pct}% hull in {sector_name} and isn't "
@@ -114,7 +133,7 @@ TEMPLATES: dict[str, list[str]] = {
     ],
     'composition_gap': [
         "{faction_name} is running {small_count} strike craft in "
-        "{sector_name} ({jumps} jump(s) out), and only {anti_small_pct}% of "
+        "{sector_name} ({proximity}), and only {anti_small_pct}% of "
         "your defenders' firepower can track targets that small. Add flak "
         "turrets or fighter escorts.",
         "Tracking mismatch in {sector_name}: {small_count} of "
@@ -123,31 +142,31 @@ TEMPLATES: dict[str, list[str]] = {
         "or fighters would close the gap.",
         "Your defence in {sector_name} is built for big targets — "
         "{anti_small_pct}% of its damage tracks strike craft, while "
-        "{faction_name} fields {small_count} of them {jumps} jump(s) from "
-        "you. Rebalance toward flak or escorts.",
+        "{faction_name} fields {small_count} of them {proximity}. "
+        "Rebalance toward flak or escorts.",
     ],
     'buildup': [
         "{faction_name} combat strength in {sector_name} has grown {growth}× "
         "over your last {scan_count} scans — firepower {firepower_growth}×, "
-        "hull {hull_growth}×, now {ship_count} ship(s) on station. Sustained "
-        "build-up like this reads as invasion staging, not a raid — reinforce "
-        "before it commits.",
+        "hull {hull_growth}×, now {ship_count} ship(s) on station, "
+        "{proximity}. Sustained build-up like this reads as invasion "
+        "staging, not a raid — reinforce before it commits.",
         "Build-up in {sector_name}: {faction_name} force has risen every scan "
         "for {scan_count} scans running, {growth}× stronger overall "
-        "(firepower {firepower_growth}×) at {ship_count} ship(s). A raid comes "
-        "and goes — steady growth like this is staging. Bolster the sector's "
-        "defence early.",
+        "(firepower {firepower_growth}×) at {ship_count} ship(s), {proximity}. "
+        "A raid comes and goes — steady growth like this is staging. Bolster "
+        "the sector's defence early.",
         "Watch {sector_name} — {faction_name} firepower there has climbed "
         "scan over scan to {firepower_growth}× what it was {scan_count} scans "
-        "ago, {growth}× stronger all told. That pattern usually precedes an "
-        "attack, not a passing raid.",
+        "ago, {growth}× stronger all told, {proximity}. That pattern usually "
+        "precedes an attack, not a passing raid.",
     ],
     'outranged': [
         "{faction_name}'s capital weapons in {sector_name} reach "
         "{their_range_km} km; your longest-ranged defender stops at "
         "{our_range_km} km. They can fire from standoff — close the distance "
         "fast or bring longer-range ships.",
-        "Outranged in {sector_name} ({jumps} jump(s) out): {capital_count} "
+        "Outranged in {sector_name} ({proximity}): {capital_count} "
         "{faction_name} capital(s) shoot to {their_range_km} km against "
         "your {our_range_km} km. Expect to take fire before you can reply.",
         "Range gap in {sector_name}: {faction_name} out-reaches you "
@@ -187,6 +206,20 @@ def _threat_names(conn, scan_id) -> tuple[dict, dict]:
         if r['owner_id'] and r['owner_name']:
             factions[r['owner_id']] = r['owner_name']
     return sectors, factions
+
+
+def _proximity(jumps: int, anchor: str) -> str:
+    """Render a merged jumps+anchor pair so station-proximity and avatar-
+    proximity are never conflated into one ambiguous "N jumps" — the anchor
+    says WHICH thing is N jumps away.
+    """
+    if anchor == 'both':
+        if jumps == 0:
+            return "right where you are, which is also one of your stations"
+        return f"~{jumps} jump(s) from both your nearest station and your current position"
+    if anchor == 'station':
+        return f"~{jumps} jump(s) from your nearest station"
+    return f"~{jumps} jump(s) from your current position"
 
 
 def _dominant_faction(hostile_profiles: dict, faction_names: dict) -> str:
@@ -346,18 +379,22 @@ def _counter_advice(theirs: dict, ours: dict) -> list[dict]:
     return tips
 
 
-def hostile_presence_findings(conn, scan_id, distances_from_current,
+def hostile_presence_findings(conn, scan_id, jumps_by_sector, anchor_by_sector,
                               forces) -> list[dict]:
     """Hostile-reputation ships operating where the player has stations,
     scored by fitted-loadout force comparison (force.py) instead of raw counts.
 
     ``forces`` is threat_forces()' result, computed once by the caller.
+    ``jumps_by_sector``/``anchor_by_sector`` are advisors.merge_anchors()'
+    result — the MIN of station- and current-position-distance, and which
+    anchor produced it.
 
     npc_ships only records ships in sectors that contain a player STATION
     (see db/write.py::_write_npc_ships), so every hit here is already sitting
-    on top of a player asset — the distance gate then keeps the advisor
-    player-relative, same reasoning as the economy rules: a threat 12 jumps
-    away is real, but not what you can react to from where you're standing.
+    on top of a player asset — that alone puts every reachable sector at 0
+    jumps via the station anchor, which is why this rule can never go silent
+    just because the avatar flew off; the merged anchor still lets the body
+    say when the avatar is ALSO right there ('both').
     """
     # Names, reputation and the combat/non-combat role split aren't part of
     # force.py's profiles (it deals purely in power numbers), so they come
@@ -384,9 +421,10 @@ def hostile_presence_findings(conn, scan_id, distances_from_current,
 
     findings = []
     for (sector_macro, faction_id), g in groups.items():
-        jumps = distances_from_current.get(sector_macro)
+        jumps = jumps_by_sector.get(sector_macro)
         if jumps is None or jumps > ADVISOR_MAX_JUMPS:
             continue
+        anchor = anchor_by_sector[sector_macro]
         theirs = forces[sector_macro]['hostile'][faction_id]
         ours = forces[sector_macro]['player']
         verdict = _verdict(theirs, ours)
@@ -405,6 +443,7 @@ def hostile_presence_findings(conn, scan_id, distances_from_current,
             'ship_count':   g['combat'] + g['noncombat'],
             'combat_count': g['combat'],
             'jumps':        jumps,
+            'proximity':    _proximity(jumps, anchor),
             'force_clause': _force_clause(theirs, ours, verdict),
             'advice':       _advice(verdict, t_they),
         }
@@ -416,6 +455,7 @@ def hostile_presence_findings(conn, scan_id, distances_from_current,
             'noncombat_count':       g['noncombat'],
             'unassessed_count':      theirs['unassessed_count'],
             'defender_count':        ours['ship_count'],
+            'anchor':                anchor,
             'their_dps':             round(theirs['dps_hull'] + theirs['dps_shield']),
             'our_dps':               round(ours['dps_hull'] + ours['dps_shield']),
             'their_ehp':             round(theirs['ehp_hull'] + theirs['ehp_shield']),
@@ -434,7 +474,7 @@ def hostile_presence_findings(conn, scan_id, distances_from_current,
 
 # ── Rule 2: defence composition can't track their strike craft ──────────────
 
-def composition_gap_findings(conn, scan_id, distances_from_current,
+def composition_gap_findings(conn, scan_id, jumps_by_sector, anchor_by_sector,
                              forces) -> list[dict]:
     """Sectors where the threat is mostly S/M craft but the defence's guns
     mostly can't track them (force.py's dps_anti_small vs total DPS).
@@ -444,13 +484,18 @@ def composition_gap_findings(conn, scan_id, distances_from_current,
     would let two half-swarms each duck under the threshold. Skipped when the
     defence has no assessed weapons at all: "your guns can't track them" is
     an unfoundable claim about guns we never saw.
+
+    ``jumps_by_sector``/``anchor_by_sector`` are advisors.merge_anchors()'
+    result — see hostile_presence_findings for why the merge keeps this rule
+    reporting even when the avatar has flown away from the threatened station.
     """
     sector_names, faction_names = _threat_names(conn, scan_id)
     findings = []
     for sector_macro, sides in forces.items():
-        jumps = distances_from_current.get(sector_macro)
+        jumps = jumps_by_sector.get(sector_macro)
         if jumps is None or jumps > ADVISOR_MAX_JUMPS:
             continue
+        anchor = anchor_by_sector[sector_macro]
         ours = sides['player']
         our_dps = ours['dps_hull'] + ours['dps_shield']
         if ours['ship_count'] == 0 or our_dps <= 0:
@@ -478,6 +523,7 @@ def composition_gap_findings(conn, scan_id, distances_from_current,
             'ship_count':     theirs['ship_count'],
             'anti_small_pct': round(anti_small_share * 100),
             'jumps':          jumps,
+            'proximity':      _proximity(jumps, anchor),
         }
         evidence = {
             'sector_macro':       sector_macro,
@@ -488,6 +534,7 @@ def composition_gap_findings(conn, scan_id, distances_from_current,
             'our_anti_small_dps': round(ours['dps_anti_small']),
             'unassessed_count':   theirs['unassessed_count'],
             'jumps':              jumps,
+            'anchor':             anchor,
         }
         findings.append(_finding(
             f"compgap:{sector_macro}",
@@ -497,7 +544,7 @@ def composition_gap_findings(conn, scan_id, distances_from_current,
 
 # ── Rule 3: their capitals out-reach every defender ──────────────────────────
 
-def outranged_findings(conn, scan_id, distances_from_current,
+def outranged_findings(conn, scan_id, jumps_by_sector, anchor_by_sector,
                        forces) -> list[dict]:
     """Sectors where hostile capital hulls (L/XL) hold a real weapon-range
     advantage over the whole defence — the standoff-bombardment setup, where
@@ -507,13 +554,18 @@ def outranged_findings(conn, scan_id, distances_from_current,
     defence has no assessed weapons (our_range 0 would "prove" any gun
     out-ranges us). The hostile range comes only from assessed ships too, so
     an unassessed K never triggers this — hostile_presence still reports it.
+
+    ``jumps_by_sector``/``anchor_by_sector`` are advisors.merge_anchors()'
+    result — see hostile_presence_findings for why the merge keeps this rule
+    reporting even when the avatar has flown away from the threatened station.
     """
     sector_names, faction_names = _threat_names(conn, scan_id)
     findings = []
     for sector_macro, sides in forces.items():
-        jumps = distances_from_current.get(sector_macro)
+        jumps = jumps_by_sector.get(sector_macro)
         if jumps is None or jumps > ADVISOR_MAX_JUMPS:
             continue
+        anchor = anchor_by_sector[sector_macro]
         ours = sides['player']
         if ours['ship_count'] == 0 or ours['max_range_m'] <= 0:
             continue
@@ -535,6 +587,7 @@ def outranged_findings(conn, scan_id, distances_from_current,
             'our_range_km':   round(ours['max_range_m'] / 1000, 1),
             'capital_count':  capitals,
             'jumps':          jumps,
+            'proximity':      _proximity(jumps, anchor),
         }
         evidence = {
             'sector_macro':   sector_macro,
@@ -543,6 +596,7 @@ def outranged_findings(conn, scan_id, distances_from_current,
             'capital_count':  capitals,
             'defender_count': ours['ship_count'],
             'jumps':          jumps,
+            'anchor':         anchor,
         }
         findings.append(_finding(
             f"outranged:{sector_macro}",
@@ -591,7 +645,7 @@ def hostile_strength_history(conn, scan_id, forces) -> dict[str, list[dict]]:
     return history
 
 
-def buildup_findings(conn, scan_id, distances_from_current,
+def buildup_findings(conn, scan_id, jumps_by_sector, anchor_by_sector,
                      forces) -> list[dict]:
     """Sectors whose hostile combat strength has risen every scan — staging,
     not a raid. This is the early-warning rule: a snapshot can't tell a
@@ -604,7 +658,9 @@ def buildup_findings(conn, scan_id, distances_from_current,
     rule: the threat is to the station in that sector, which doesn't get
     less threatened because the player flew away — and a multi-scan trend
     that flickered in and out with the player's position would defeat the
-    point of a warning. Jumps still go in the evidence when known.
+    point of a warning. Jumps and anchor (advisors.merge_anchors()' result)
+    still go in the evidence/body when known, purely informational here since
+    nothing gates on them.
     """
     if not forces:
         return []
@@ -644,6 +700,10 @@ def buildup_findings(conn, scan_id, distances_from_current,
         # instead of dampened by distance — how fast it's rising IS this
         # rule's urgency, where "how close is it" was presence's.
         priority = theirs['ship_count'] * THREAT_SCALE * growth
+        jumps = jumps_by_sector.get(sector_macro)
+        anchor = anchor_by_sector.get(sector_macro)
+        proximity = (_proximity(jumps, anchor) if jumps is not None and anchor
+                     else "an unknown distance from your stations and position")
         slots = {
             'faction_name': _dominant_faction(forces[sector_macro]['hostile'],
                                               faction_names),
@@ -653,6 +713,7 @@ def buildup_findings(conn, scan_id, distances_from_current,
             'firepower_growth': _grow('firepower'),
             'hull_growth':      _grow('hull'),
             'ship_count':   theirs['ship_count'],
+            'proximity':    proximity,
         }
         evidence = {
             'sector_macro':       sector_macro,
@@ -669,7 +730,8 @@ def buildup_findings(conn, scan_id, distances_from_current,
             'scans_rising':       len(run),
             'hostile_ship_count': theirs['ship_count'],
             'unassessed_count':   theirs['unassessed_count'],
-            'jumps':              distances_from_current.get(sector_macro),
+            'jumps':              jumps,
+            'anchor':             anchor,
         }
         findings.append(_finding(
             f"buildup:{sector_macro}",

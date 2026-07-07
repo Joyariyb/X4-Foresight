@@ -783,9 +783,14 @@ def to_export(conn: sqlite3.Connection, scan_id: int | None = None) -> dict:
         'changes':               compute_changes(conn, scan_id),
         # Rule-based recommendations (economy/logistics/military), player-
         # relative — see db/advisors/. Reuses this scan's galaxy_map BFS rather than
-        # rebuilding it, same convention as npc_trade_partners above.
+        # rebuilding it, same convention as npc_trade_partners above. Economy rules
+        # anchor to the player's stations; military rules merge station + current
+        # position (db/advisors/advisors.py merge_anchors) so flying away from the
+        # empire doesn't blank out threats sitting on player assets.
         'advisors':              compute_advisors(
-            conn, scan_id, galaxy_map['distances_from_current']),
+            conn, scan_id,
+            galaxy_map['distances_from_player'],
+            galaxy_map['distances_from_current']),
         # Player notification feed grouped by category, newest first (capped
         # per category at DB-write time), + career stats from the <stats> block.
         'events':                _events(conn, scan_id),

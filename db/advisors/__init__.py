@@ -8,22 +8,29 @@ and one more `findings += ...` line below — the other domains are untouched.
 from __future__ import annotations
 import sqlite3
 
-from .advisors import ware_avg_prices, npc_demand_by_ware
+from .advisors import ware_avg_prices, npc_demand_by_ware, merge_anchors
 from . import economy, logistics, military
 
 
 def compute_advisors(conn: sqlite3.Connection, scan_id: int | None = None,
+                      distances_from_player: dict[str, int] | None = None,
                       distances_from_current: dict[str, int] | None = None) -> dict:
     """Player-relative advisor findings for one scan.
 
-    ``distances_from_current`` should be jsonexport's galaxy_map
-    distances_from_current (jumps from where the player currently is) — the
-    caller passes it in already computed rather than this module rebuilding
-    the sector graph a second time, same convention as
-    jsonexport._npc_trade_partners taking distances_from_player. An empty/
-    missing dict (no resolvable current sector) simply means the NPC-facing
-    rules find nothing to report — an empty findings list is a completely
-    valid result on a fresh empire.
+    Both distance dicts come from jsonexport's galaxy_map, already computed
+    by the caller rather than this module rebuilding the sector graph a
+    second time (same convention as jsonexport._npc_trade_partners taking
+    distances_from_player):
+      - ``distances_from_player``: jumps from the NEAREST PLAYER STATION —
+        drives the economy rules, since a trade route starts at the surplus
+        station regardless of where the avatar is standing.
+      - ``distances_from_current``: jumps from the avatar's CURRENT sector —
+        merged with distances_from_player (advisors.merge_anchors) to drive
+        the distance-aware military rules, since a threat can be sitting on
+        a player asset OR right where the avatar currently is.
+    Missing/empty dicts simply mean the corresponding rules find nothing to
+    report — an empty findings list is a completely valid result on a fresh
+    empire.
 
     Returns ``{'findings': [...]}``, highest priority_score first. No cap
     here — the UI decides how many to surface.
@@ -34,9 +41,13 @@ def compute_advisors(conn: sqlite3.Connection, scan_id: int | None = None,
     if scan_id is None:
         raise ValueError("no scans in database to compute advisors")
 
+    distances_from_player = distances_from_player or {}
     distances_from_current = distances_from_current or {}
+    military_jumps, military_anchor = merge_anchors(
+        distances_from_player, distances_from_current)
+
     avg_prices = ware_avg_prices(conn)
-    demand_by_ware = npc_demand_by_ware(conn, scan_id, distances_from_current)
+    demand_by_ware = npc_demand_by_ware(conn, scan_id, distances_from_player)
     # Shared by the four force-based military rules — same convention as
     # demand_by_ware above (compute the expensive lookup once, pass it in).
     forces = military.threat_forces(conn, scan_id)
@@ -46,10 +57,14 @@ def compute_advisors(conn: sqlite3.Connection, scan_id: int | None = None,
     findings += economy.market_opportunity_findings(conn, scan_id, demand_by_ware)
     findings += economy.pricing_gap_findings(conn, scan_id, demand_by_ware)
     findings += logistics.idle_hauler_findings(conn, scan_id)
-    findings += military.hostile_presence_findings(conn, scan_id, distances_from_current, forces)
-    findings += military.composition_gap_findings(conn, scan_id, distances_from_current, forces)
-    findings += military.outranged_findings(conn, scan_id, distances_from_current, forces)
-    findings += military.buildup_findings(conn, scan_id, distances_from_current, forces)
+    findings += military.hostile_presence_findings(
+        conn, scan_id, military_jumps, military_anchor, forces)
+    findings += military.composition_gap_findings(
+        conn, scan_id, military_jumps, military_anchor, forces)
+    findings += military.outranged_findings(
+        conn, scan_id, military_jumps, military_anchor, forces)
+    findings += military.buildup_findings(
+        conn, scan_id, military_jumps, military_anchor, forces)
     findings += military.damaged_fleet_findings(conn, scan_id)
 
     findings.sort(key=lambda f: -f['priority_score'])
