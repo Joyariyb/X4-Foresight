@@ -368,8 +368,14 @@
     <log>
       <!-- alerts row: faction ref + the same ref embedded mid-sentence in text. -->
       <entry time="998500.0" category="alerts" title="Station under attack" text="Test Energy Plant is under attack by {20203,101}." faction="{20203,101}" component="[0x1000]" interact="showonmap"/>
-      <!-- upkeep row: title only, linked to the hauler. -->
+      <!-- Low-signal notifications the harvester drops (EventLogHandler._is_noise):
+           travel-mode/autopilot toggles, the "protected space" police notice,
+           and crew-assignment confirmations. None of these must survive into
+           ctx.player_events. -->
       <entry time="997500.0" category="upkeep" title="Assigned Individual Test Pilot to Hauler One" component="[0x3000]"/>
+      <entry time="997400.0" category="upkeep" title="You have entered space protected by {20203,101}." faction="{20203,101}"/>
+      <entry time="997300.0" title="Travel Mode engaged"/>
+      <entry time="997200.0" title="Autopilot activated"/>
       <!-- no category attribute: must bucket as 'uncategorised'. -->
       <entry time="996000.0" title="Note without category" text="Rows missing category= must not be dropped."/>
       <!-- news row: the game's [\012] newline escape (octal LF) in text, mixed

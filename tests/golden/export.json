@@ -1244,16 +1244,6 @@
         "time_ago_s": 5500.0
       }
     ],
-    "upkeep": [
-      {
-        "title": "Assigned Individual Test Pilot to Hauler One",
-        "text": "",
-        "faction_name": "",
-        "component_id": "[0x3000]",
-        "game_time_s": 997500.0,
-        "time_ago_s": 2500.0
-      }
-    ],
     "uncategorised": [
       {
         "title": "Note without category",

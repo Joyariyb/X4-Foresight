@@ -446,9 +446,11 @@ class TestEventLog:
         assert ctx.combat_kills['teladi']['kills'] == 1
 
     def test_events_captured_with_refs_resolved(self, ctx):
-        # 8 raw rows — the two double-logged pairs are still split here; they
-        # only collapse at DB-write time (dedupe_events, tested below).
-        assert len(ctx.player_events) == 8
+        # 7 raw rows survive harvest: the fixture's four low-signal rows
+        # (assign/protected/travel/autopilot) are dropped by _is_noise, and the
+        # two double-logged pairs are still split here — they only collapse at
+        # DB-write time (dedupe_events, tested below).
+        assert len(ctx.player_events) == 7
         ev = next(e for e in ctx.player_events if e.category == 'alerts')
         assert ev.title == 'Station under attack'
         # The {20203,101} ref embedded mid-sentence resolves via mini_lang.
@@ -467,10 +469,21 @@ class TestEventLog:
                            'Current reputation: 21')
 
     def test_missing_category_buckets_uncategorised(self, ctx):
+        # No 'upkeep' left: the fixture's only upkeep rows were the assign/
+        # protected notifications, both dropped by _is_noise.
         assert sorted(e.category for e in ctx.player_events) == [
             'alerts', 'alerts', 'news',
-            'uncategorised', 'uncategorised', 'uncategorised', 'uncategorised',
-            'upkeep']
+            'uncategorised', 'uncategorised', 'uncategorised', 'uncategorised']
+
+    def test_low_signal_notifications_dropped(self, ctx):
+        # Travel-mode/autopilot toggles, the "protected space" police notice,
+        # and crew-assignment confirmations are harvest-time noise — none of the
+        # four fixture rows may reach the feed. Checking substrings rather than
+        # exact titles mirrors how _is_noise matches.
+        blob = '\n'.join(f'{e.title}\n{e.text}' for e in ctx.player_events).lower()
+        for phrase in ('assigned individual', 'protected by',
+                       'travel mode', 'autopilot'):
+            assert phrase not in blob, f'{phrase!r} leaked into the event feed'
 
     def test_construction_entries_not_captured(self, ctx):
         # Station construction sequences reuse the <entry> tag

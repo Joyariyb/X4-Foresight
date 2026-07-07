@@ -18,6 +18,28 @@ _EMBEDDED_REF_RE = re.compile(r'\{(\d+),(\d+)\}')
 # so the DB/JSON carry real newlines and no consumer needs to know the escape.
 _NEWLINE_ESCAPE = '[\\012]'
 
+# Low-signal notification rows the player never needs to review after the fact:
+# travel-mode / autopilot toggles, the "you have entered space protected by X"
+# police notice, and individual crew-assignment confirmations. These fire
+# constantly during normal play and bury the events that actually matter
+# (attacks, losses, war news), so they're dropped at harvest — they never reach
+# the DB, the exported JSON, or the advisor that reads it. Matched leniently
+# (case-insensitive substring against title + text) so a small wording change
+# between game versions can't silently let them back in; to hide another
+# notification type, add its distinctive phrase to this tuple.
+_NOISE_SUBSTRINGS = (
+    'travel mode',
+    'autopilot',
+    'protected by',            # "You have entered space protected by <faction>."
+    'assigned individual',     # "Assigned Individual <name> to <ship>."
+)
+
+
+def _is_noise(title: str, text: str) -> bool:
+    """True when this row is one of the recurring low-signal notifications."""
+    haystack = f'{title}\n{text}'.lower()
+    return any(phrase in haystack for phrase in _NOISE_SUBSTRINGS)
+
 
 def _richness(e: PlayerEvent) -> tuple:
     """Orders a double-logged pair: the categorised/attributed row wins."""
@@ -122,12 +144,19 @@ class EventLogHandler:
             t = float(elem.get('time'))
         except (TypeError, ValueError):
             return
+        # Clean before the noise check: the escape/ref decoding happens on the
+        # same strings we match against, so a phrase split by a language ref
+        # still gets recognised.
+        title = self._clean(title)
+        text  = self._clean(text)
+        if _is_noise(title, text):
+            return
         faction_ref = elem.get('faction') or ''
         ctx.player_events.append(PlayerEvent(
             scan_id      = ctx.scan_id,
             category     = elem.get('category') or 'uncategorised',
-            title        = self._clean(title),
-            text         = self._clean(text),
+            title        = title,
+            text         = text,
             faction_name = resolve_text_ref(faction_ref, self._texts) if faction_ref else '',
             component_id = elem.get('component') or None,
             game_time_s  = t,
