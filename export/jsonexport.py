@@ -11,7 +11,7 @@ from pathlib import Path
 from scanner import galaxy_map as gm
 from scanner.ship_names import ship_display_name, resolve_ship_type
 from db.trends import compute_trends, compute_changes
-from db.advisors import compute_advisors
+from db.advisors.combine import compute_advisors
 from data.equipment_stats import EQUIPMENT_STATS, EQUIPMENT_ALIASES
 from data.factions import FACTION_NAMES
 from data.sector_stats import (SECTOR_NAMES, SECTOR_OWNERS, SECTOR_RESOURCES,

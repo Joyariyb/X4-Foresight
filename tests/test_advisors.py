@@ -4,7 +4,8 @@ from __future__ import annotations
 import pytest
 
 from db.connection import get_connection
-from db.advisors import military, compute_advisors
+from db.advisors import military
+from db.advisors.combine import compute_advisors
 from db.advisors.advisors import merge_anchors
 
 
