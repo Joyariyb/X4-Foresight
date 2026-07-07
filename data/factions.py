@@ -72,6 +72,15 @@ SKIP_FACTIONS = {
     "scavenger", "kaori", "court", "alliance", "player",
 }
 
+# Factions you can never improve relations with — there is no diplomacy path,
+# so their stations can never become trade partners. This is narrower than
+# "currently hostile": a faction merely at negative reputation is recoverable
+# and its trade data stays useful, so it must NOT go here. Only the two
+# always-hostile factions qualify. Used to skip parsing/storing their trade
+# offers during the scan (see scanner/handlers/npc_station.py), since every
+# advisor path already discards them via the reputation gate.
+PERMANENTLY_HOSTILE = {"xenon", "khaak"}
+
 
 def scale_reputation(raw: float) -> float:
     """

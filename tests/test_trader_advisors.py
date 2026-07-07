@@ -37,7 +37,9 @@ def trader_db(tmp_path):
         "INSERT INTO sector_resources (sector_macro, ware, yield_level, recharge_max, "
         "recharge_time, last_scan_id) VALUES (?, ?, ?, ?, 100000, 1)",
         [('sec_ore', 'ore', 'high', 50000),
-         ('sec_ore', 'silicon', 'low', 1000),
+         ('sec_ore', 'silicon', 'veryhigh', 1000),        # high yield, no demand
+         ('sec_ore', 'water', 'low', 500),                # below the yield floor
+         ('sec_ore', 'nividium', 'exotic', 800),          # unrecognised yield tier
          ('sec_hostile', 'ice', 'high', 20000),
          ('sec_home', 'energycells', 'medium', 5000)])   # already claimed — must be excluded
 
@@ -45,12 +47,14 @@ def trader_db(tmp_path):
         "INSERT OR IGNORE INTO ware_metadata (ware_id, name, transport_type, volume_m3) "
         "VALUES (?, ?, 'solid', 10)",
         [('ore', 'Ore'), ('silicon', 'Silicon'), ('ice', 'Ice'),
+         ('water', 'Water'), ('nividium', 'Nividium'),
          ('energycells', 'Energy Cells')])
 
     conn.executemany(
         "INSERT OR IGNORE INTO ware_prices (ware_id, price_min, price_avg, price_max) "
         "VALUES (?, ?, ?, ?)",
         [('ore', 10, 20, 30), ('silicon', 5, 10, 15), ('ice', 8, 16, 24),
+         ('water', 6, 12, 18), ('nividium', 500, 1000, 1500),
          ('energycells', 10, 15, 20)])
 
     conn.executemany(
@@ -107,7 +111,8 @@ def test_station_siting_advises_low_demand_and_notes_high_demand(trader_db):
     assert 'Demand' in ore['body']
     assert ore['evidence']['demand_depth'] == 500
 
-    # Low/no-demand ware: still advised (demand isn't a veto), no demand claim.
+    # High-yield ware with no demand: still advised (demand isn't a veto), and
+    # the body makes no demand claim it can't back up.
     silicon = by_id['siting:sec_ore:silicon']
     assert silicon['slots']['demand_note'] == ''
     assert 'Demand' not in silicon['body']
@@ -120,6 +125,42 @@ def test_station_siting_advises_low_demand_and_notes_high_demand(trader_db):
     # (see the `stations` insert above) — the claimed-sector filter must skip it.
     assert 'siting:sec_home:energycells' not in by_id
     assert not any(f['evidence']['sector_macro'] == 'sec_home' for f in findings)
+
+
+def test_station_siting_yield_floor(trader_db):
+    """Only 'high'-and-above deposits earn a permanent station: a known Low
+    deposit is dropped, while an unrecognised yield string keeps the benefit of
+    the doubt (per _DEFAULT_YIELD_RANK) and still surfaces rather than being
+    penalised for a save format we couldn't read."""
+    findings = trader.station_siting_findings(
+        trader_db, 1, {'sec_home': 0, 'sec_ore': 2},
+        {'ore': 20, 'silicon': 10, 'water': 12, 'nividium': 1000}, {})
+    ids = {f['id'] for f in findings}
+
+    assert 'siting:sec_ore:ore' in ids        # High — advised
+    assert 'siting:sec_ore:silicon' in ids    # Very High — advised
+    assert 'siting:sec_ore:water' not in ids  # Low — below the floor, dropped
+    assert 'siting:sec_ore:nividium' in ids   # unknown tier — benefit of the doubt
+
+
+def test_station_siting_respects_max_jumps(trader_db):
+    """The siting radius is a hard cut, not just a priority dampener: a deposit
+    one jump past SITING_MAX_JUMPS produces no finding, while one sitting
+    exactly on the boundary still does (the cut is inclusive)."""
+    avg_prices = {'ore': 20, 'silicon': 10}
+    demand_by_ware = {}
+
+    far = trader.station_siting_findings(
+        trader_db, 1,
+        {'sec_home': 0, 'sec_ore': trader.SITING_MAX_JUMPS + 1},
+        avg_prices, demand_by_ware)
+    assert not any(f['evidence']['sector_macro'] == 'sec_ore' for f in far)
+
+    edge = trader.station_siting_findings(
+        trader_db, 1,
+        {'sec_home': 0, 'sec_ore': trader.SITING_MAX_JUMPS},
+        avg_prices, demand_by_ware)
+    assert any(f['evidence']['sector_macro'] == 'sec_ore' for f in edge)
 
 
 def test_galaxy_arbitrage(trader_db):
@@ -158,14 +199,3 @@ def test_idle_trade_capital_silent_below_credit_threshold(trader_db):
 def test_idle_trade_capital_silent_when_fleet_already_trading(trader_db):
     trader_db.execute("UPDATE ships SET role = 'Freighter' WHERE sector_macro = 'sec_home'")
     assert trader.idle_trade_capital_findings(trader_db, 1) == []
-
-
-def test_reputation_locked_trade(trader_db):
-    findings = trader.reputation_locked_trade_findings(trader_db, 1, DISTANCES)
-    assert len(findings) == 1
-    f = findings[0]
-    assert f['id'] == 'replocked:xenon'
-    assert f['slots']['tier'] == 'Hostile'
-    assert f['evidence']['reputation_value'] == -30
-    # Teladi (reputation 5, above the -10 block) must not produce a finding.
-    assert all(fx['evidence']['faction_id'] != 'teladi' for fx in findings)

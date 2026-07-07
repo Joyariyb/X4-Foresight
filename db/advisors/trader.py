@@ -1,5 +1,5 @@
 """Core role: Trader-domain advisor rules (station siting, arbitrage, stranded
-deliveries, idle capital, reputation-locked trade).
+deliveries, idle capital).
 
 See advisors.py for the shared _finding() renderer and lookups this module
 builds on, and __init__.py's compute_advisors() for how these rules combine
@@ -18,11 +18,20 @@ npc_demand_by_ware.
 from __future__ import annotations
 from .advisors import _finding
 
-# Trader rules scout further afield than the reactive economy rules (a siting
-# or arbitrage tip 6 jumps out is still worth surfacing, just lower priority
-# via the same distance dampening) — a separate, larger radius from
-# advisors.ADVISOR_MAX_JUMPS, which gates "act on this now" opportunities.
+# The arbitrage and reputation-locked rules scout further afield than the
+# reactive economy rules (a tip 6 jumps out is still worth surfacing, just
+# lower priority via the same distance dampening) — a separate, larger radius
+# from advisors.ADVISOR_MAX_JUMPS, which gates "act on this now" opportunities.
 TRADER_MAX_JUMPS = 8
+
+# Siting caps tighter, on its own knob rather than reusing TRADER_MAX_JUMPS. A
+# mining station is a permanent asset you have to defend and resupply, so a
+# deposit far outside your footprint is a poor site however rich it is — unlike
+# a one-off arbitrage run, distance here isn't a per-trip cost you can just net
+# against the gain, so the wider scouting radius doesn't fit. 5 mirrors the
+# in-game trader jump range a station's own haulers work within, keeping
+# suggestions inside reach of the fleet that would actually service them.
+SITING_MAX_JUMPS = 5
 
 # Reachable unmet NPC demand (summed depth, from the shared demand_by_ware
 # lookup) at/above this is called out explicitly in a siting suggestion's
@@ -54,6 +63,11 @@ YIELD_RANK = {
     'highlow': 10, 'high': 11, 'highplus': 12, 'veryhigh': 13, 'highest': 14,
 }
 _DEFAULT_YIELD_RANK = 6
+
+# Siting advises 'high' richness and above — a Med-High-or-lower deposit rarely
+# earns back a permanent station. Kept beside the ranking it indexes into so
+# the two move together if the tiers are ever renumbered.
+SITING_YIELD_FLOOR = YIELD_RANK['high']
 YIELD_LABEL = {
     'lowest': 'Lowest', 'lowminus': 'Low-Minus', 'verylow': 'Very Low',
     'low': 'Low', 'lowplus': 'Low-Plus', 'lowextra': 'Low-Extra',
@@ -107,16 +121,6 @@ TEMPLATES: dict[str, list[str]] = {
         "{total} ships trade ({pct}%) — expand the trade fleet to make it "
         "earn.",
     ],
-    'reputation_locked_trade': [
-        "{faction_name} territory ({sector_name}, {jumps} jump(s) away) has "
-        "{ware_name} worth trading, but your {tier} reputation blocks it — "
-        "improving relations would unlock this route.",
-        "A trade opportunity for {ware_name} sits {jumps} jump(s) away in "
-        "{faction_name} space, currently out of reach at {tier} standing.",
-        "{faction_name} ({tier}) controls a reachable {ware_name} trade — "
-        "{jumps} jump(s) out — that your reputation currently locks you "
-        "out of.",
-    ],
 }
 
 
@@ -124,8 +128,8 @@ TEMPLATES: dict[str, list[str]] = {
 
 def station_siting_findings(conn, scan_id, distances_from_player, avg_prices,
                              demand_by_ware) -> list[dict]:
-    """Sectors with a mineable resource but no player station anywhere in
-    them yet. Always fires regardless of demand — low demand isn't a reason
+    """Sectors within SITING_MAX_JUMPS that hold a mineable resource but no
+    player station yet. Always fires regardless of demand — low demand isn't a reason
     NOT to build, it just means the note below doesn't get to claim a strong
     market — but appends a demand call-out when reachable unmet demand for
     that ware is high (see DEMAND_NOTE_THRESHOLD)."""
@@ -151,13 +155,20 @@ def station_siting_findings(conn, scan_id, distances_from_player, avg_prices,
         if owner and reputation.get(owner, 0) < REPUTATION_BLOCK_THRESHOLD:
             continue  # too hostile to safely build here
         jumps = distances_from_player.get(sector)
-        if jumps is None:
+        if jumps is None or jumps > SITING_MAX_JUMPS:
+            continue  # unreachable, or beyond the siting radius (see above)
+        # A permanent station only pays off on a genuinely rich deposit, so we
+        # advise 'high' yield and up. A *known* yield below the floor is a
+        # confident skip; an unrecognised string keeps the benefit of the doubt
+        # (see _DEFAULT_YIELD_RANK) rather than being dropped for a save format
+        # we couldn't read.
+        rank = YIELD_RANK.get(r['yield_level'], _DEFAULT_YIELD_RANK)
+        if r['yield_level'] in YIELD_RANK and rank < SITING_YIELD_FLOOR:
             continue
         ware = r['ware']
         demands = demand_by_ware.get(ware, [])
         depth_sum = sum(d['demand_depth'] for d in demands)
         avg_price = avg_prices.get(ware, 0)
-        rank = YIELD_RANK.get(r['yield_level'], _DEFAULT_YIELD_RANK)
         # No extraction-rate figure exists for raw resources (sector_resources
         # only records reservoir capacity, not a flow rate) — richness (yield
         # rank) and reachable demand are the only signals available, so the
@@ -326,57 +337,3 @@ def idle_trade_capital_findings(conn, scan_id) -> list[dict]:
     return [_finding(
         f"idlecapital:{scan_id}", 'trader', 'idle_trade_capital', priority,
         slots, evidence, TEMPLATES)]
-
-
-# ── Rule 5: reputation-locked trade (blocked faction, best reachable ware) ──
-
-def reputation_locked_trade_findings(conn, scan_id, distances_from_player) -> list[dict]:
-    reputation = {r['faction_id']: (r['value'], r['tier']) for r in conn.execute(
-        "SELECT faction_id, value, tier FROM reputation WHERE scan_id = ?", (scan_id,))}
-    rows = conn.execute(
-        "SELECT ns.owner_id, ns.owner_name, ns.sector_macro, ns.object_id, "
-        "       ns.code, ns.name AS station_name, sec.sector_name, "
-        "       w.ware_id, w.ware_name, w.price, w.amount, w.desired, w.is_selling "
-        "FROM npc_stations ns "
-        "JOIN npc_station_wares w ON w.station_id = ns.object_id "
-        "LEFT JOIN sectors sec ON sec.sector_macro = ns.sector_macro "
-        "WHERE w.price IS NOT NULL")
-    best_by_faction: dict[str, dict] = {}
-    for r in rows:
-        owner = r['owner_id']
-        rep = reputation.get(owner)
-        if rep is None or rep[0] >= REPUTATION_BLOCK_THRESHOLD:
-            continue
-        jumps = distances_from_player.get(r['sector_macro'])
-        if jumps is None or jumps > TRADER_MAX_JUMPS:
-            continue
-        volume = r['amount'] if r['is_selling'] else r['desired']
-        value_est = (r['price'] or 0) / 100.0 * (volume or 0)
-        if value_est <= 0:
-            continue
-        priority = value_est / (1 + jumps)
-        cur = best_by_faction.get(owner)
-        if cur is None or priority > cur['priority']:
-            best_by_faction[owner] = {
-                'priority': priority, 'row': r, 'jumps': jumps,
-                'rep_value': rep[0], 'tier': rep[1],
-            }
-    findings = []
-    for owner, best in best_by_faction.items():
-        r = best['row']
-        slots = {
-            'faction_name': r['owner_name'] or owner,
-            'sector_name':  r['sector_name'] or r['sector_macro'],
-            'ware_name':    r['ware_name'],
-            'jumps':        best['jumps'],
-            'tier':         best['tier'] or 'Hostile',
-        }
-        evidence = {
-            'faction_id': owner, 'reputation_value': best['rep_value'],
-            'ware_id': r['ware_id'], 'station_id': r['object_id'],
-            'jumps': best['jumps'],
-        }
-        findings.append(_finding(
-            f"replocked:{owner}", 'trader', 'reputation_locked_trade',
-            best['priority'], slots, evidence, TEMPLATES))
-    return findings

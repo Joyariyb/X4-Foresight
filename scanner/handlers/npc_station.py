@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 import re
-from data.factions import FACTION_NAMES
+from data.factions import FACTION_NAMES, PERMANENTLY_HOSTILE
 from data.wares import WARE_NAMES
 from ..entities import NpcStation, NpcStationWare
 from ..language import (
@@ -187,10 +187,16 @@ class NpcStationHandler:
         #
         # We try Format A first; if wares is empty, walk the individual
         # <trade ware="..."> elements inside the offers.
+        #
+        # Permanently-hostile factions (Xenon, Kha'ak) are skipped here: they
+        # can never be traded with, and every advisor consumer of
+        # npc_station_wares already drops them via a reputation gate, so parsing
+        # and storing their offers is dead work. The station record itself is
+        # still built below, so these stations stay on the universe map.
         trade_elem = elem.find('trade')
         wares: list[NpcStationWare] = []
 
-        if trade_elem is not None:
+        if trade_elem is not None and self._owner_id.lower() not in PERMANENTLY_HOSTILE:
             wares_str = trade_elem.get('wares', '')
             if wares_str:
                 # Format A — direction unknown, so leave is_buying/is_selling False

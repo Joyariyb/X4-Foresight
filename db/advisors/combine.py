@@ -68,7 +68,6 @@ def compute_advisors(conn: sqlite3.Connection, scan_id: int | None = None,
     findings += trader.galaxy_arbitrage_findings(conn, scan_id, distances_from_player)
     findings += trader.stranded_delivery_findings(conn, scan_id, avg_prices)
     findings += trader.idle_trade_capital_findings(conn, scan_id)
-    findings += trader.reputation_locked_trade_findings(conn, scan_id, distances_from_player)
     findings += military.hostile_presence_findings(
         conn, scan_id, military_jumps, military_anchor, forces)
     findings += military.composition_gap_findings(

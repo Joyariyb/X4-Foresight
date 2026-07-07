@@ -44,7 +44,6 @@
       galaxy_arbitrage:       { label: 'Galaxy Arbitrage',     icon: 'ti-arrows-exchange',   tone: 'positive' },
       stranded_delivery:      { label: 'Stranded Delivery',    icon: 'ti-alert-circle',      tone: 'warning'  },
       idle_trade_capital:     { label: 'Idle Trade Capital',   icon: 'ti-cash',              tone: 'info'     },
-      reputation_locked_trade:{ label: 'Reputation Locked',    icon: 'ti-lock',              tone: 'negative' },
     };
     const FALLBACK_META = { label: 'Finding', icon: 'ti-clipboard-list', tone: 'info' };
 
@@ -185,12 +184,11 @@
       const staging  = vf.filter(f => f.type === 'buildup').length;
       // Trader-only cells: siting count (a demand-note doesn't change the
       // count, just the card text), arbitrage/one-time Cr, stranded ships,
-      // idle credits banked, and factions currently locked out of trade.
+      // and idle credits banked.
       const sitingCount = vf.filter(f => f.type === 'station_siting').length;
       const arbGain     = sum(['galaxy_arbitrage'], 'gain');
       const strandedCnt = vf.filter(f => f.type === 'stranded_delivery').length;
       const idleCredits = sum(['idle_trade_capital'], 'credits');
-      const lockedCnt   = vf.filter(f => f.type === 'reputation_locked_trade').length;
       const cells = [
         ['Findings', vf.length.toLocaleString()],
         perHour ? ['Cr/hr at Stake', perHour.toLocaleString()] : null,
@@ -204,7 +202,6 @@
         arbGain     ? ['Arbitrage Cr at Stake', arbGain.toLocaleString()] : null,
         strandedCnt ? ['Stranded Deliveries', strandedCnt.toLocaleString()] : null,
         idleCredits ? ['Idle Credits Cr', idleCredits.toLocaleString()] : null,
-        lockedCnt   ? ['Factions Locked Out', lockedCnt.toLocaleString()] : null,
       ].filter(Boolean);
       return `<div class="adv-stats">${cells.map(([label, value]) => `
           <div class="adv-stat">
