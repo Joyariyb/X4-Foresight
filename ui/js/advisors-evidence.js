@@ -20,6 +20,8 @@
     // inspector.js) navigates by, so no separate code lookup is needed.
     const NPC_STATION_KEYS = {
       npc_station_id: 'npc_name',
+      sell_station_id: 'sell_name',
+      buy_station_id: 'buy_name',
     };
     // Keys that exist purely to feed the avg-price gauge below, never shown
     // as their own flat row. `code`/`station_code` are NOT listed here —
@@ -72,6 +74,14 @@
       }
       if (k === 'ship_id' && f.slots.ship_name) {
         return `<div class="adv-ev-key">Ship</div><div class="adv-ev-val">${f.slots.ship_name}</div>`;
+      }
+      // sell_price_cents/buy_price_cents (galaxy_arbitrage) are stored in cents
+      // like every other *_cents evidence key — convert to Cr/unit here rather
+      // than showing the raw cent count, which reads 100x too large.
+      if (k === 'sell_price_cents' || k === 'buy_price_cents') {
+        const label = EVIDENCE_LABELS[k] || k.replace(/_/g, ' ');
+        const cr = (v || 0) / 100;
+        return `<div class="adv-ev-key">${label}</div><div class="adv-ev-val">${cr.toLocaleString(undefined, { maximumFractionDigits: 1 })} Cr/unit</div>`;
       }
       const label = EVIDENCE_LABELS[k] || k.replace(/_/g, ' ');
       const value = typeof v === 'number'
