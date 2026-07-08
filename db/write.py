@@ -142,10 +142,18 @@ def _write_stations(cur, scan_id, ctx) -> None:
             "INSERT INTO station_inventory VALUES(?,?,?,?,?,?)",
             [(scan_id, s.object_id, w, _ware_name(w), a, v) for w, (a, v) in s.inventory.items()],
         )
+        # Explicit column list (not positional VALUES): the v3 buy_/sell_ split
+        # reaches migrated DBs via ALTER TABLE, which appends those columns at
+        # the table's physical end rather than where schema.sql declares them —
+        # positional values would misalign fresh vs. migrated databases.
         cur.executemany(
-            "INSERT INTO station_offers VALUES(?,?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO station_offers"
+            "(scan_id, station_id, ware_id, ware_name, is_buying, is_selling,"
+            " buy_price, buy_amount, sell_price, sell_amount, desired, illegal)"
+            " VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
             [(scan_id, s.object_id, o.ware_id, _ware_name(o.ware_id),
-              int(o.is_buying), int(o.is_selling), o.price, o.amount, o.desired,
+              int(o.is_buying), int(o.is_selling),
+              o.buy_price, o.buy_amount, o.sell_price, o.sell_amount, o.desired,
               int(o.illegal))
              for o in s.offers],
         )
@@ -416,15 +424,16 @@ def _write_reference(cur, scan_id, ctx) -> None:
     )
     ware_rows = [
         (n.object_id, w.ware_id, _ware_name(w.ware_id),
-         int(w.is_buying), int(w.is_selling), w.price, w.amount, w.desired,
-         int(w.illegal))
+         int(w.is_buying), int(w.is_selling),
+         w.buy_price, w.buy_amount, w.sell_price, w.sell_amount,
+         w.desired, int(w.illegal))
         for n in ctx.npc_stations for w in n.wares
     ]
     cur.executemany(
         "INSERT OR REPLACE INTO npc_station_wares"
-        "(station_id, ware_id, ware_name, is_buying, is_selling, price, amount,"
-        " desired, illegal)"
-        " VALUES(?,?,?,?,?,?,?,?,?)", ware_rows,
+        "(station_id, ware_id, ware_name, is_buying, is_selling,"
+        " buy_price, buy_amount, sell_price, sell_amount, desired, illegal)"
+        " VALUES(?,?,?,?,?,?,?,?,?,?,?)", ware_rows,
     )
 
     # Galaxy connectivity graph. The topology is one coherent graph re-derived

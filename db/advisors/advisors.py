@@ -85,33 +85,44 @@ def npc_demand_by_ware(conn, scan_id, distances_from_player,
                         max_jumps=ADVISOR_MAX_JUMPS) -> dict[str, list[dict]]:
     """{ware_id: [reachable NPC buy offers with genuine unmet demand]}.
 
-    "Genuine unmet demand" means desired > amount (there's room below the
-    station's own target stock) — a fully-stocked buy offer isn't an
-    opportunity even though is_buying=1. Reputation gate mirrors
-    ReputationEntry.can_trade (value >= -10); reachability is jumps from the
-    NEAREST PLAYER STATION (distances_from_player), capped at max_jumps, same
-    shape as jsonexport._npc_trade_partners.
+    Demand depth is the buy offer's ``amount`` — how much the station still
+    wants to buy right now. In an X4 save a buy offer carries ``desired`` (the
+    total order size) and ``amount`` (the quantity left to fill); at rest the
+    two are equal, and once a delivery is partway through ``amount`` is the
+    unfilled remainder while ``desired - amount`` is the part already delivered.
+    So ``amount`` IS the unmet demand — the old ``desired - amount`` was the
+    inverse (verified against real saves: desired == amount on ~99% of standing
+    offers, which collapsed this whole signal to zero). A zero-amount offer
+    isn't an opportunity. Reputation gate mirrors ReputationEntry.can_trade
+    (value >= -10); reachability is jumps from the NEAREST PLAYER STATION
+    (distances_from_player), capped at max_jumps, same shape as
+    jsonexport._npc_trade_partners.
 
     Station-relative, not avatar-relative: the hauler that would run this
     route starts from the surplus station, not from wherever the camera
     happens to be — so a mission deep in Xenon territory must not blank a
     trade opportunity next to a station that hasn't moved.
     """
+    # buy_price/buy_amount are the station's OWN buy offer — aliased to
+    # price/amount so the demand-depth logic below reads the same names it
+    # always has. A co-located sell offer for this ware keeps its own
+    # sell_price/sell_amount columns and can no longer clobber these.
     rows = conn.execute(
         "SELECT ns.object_id, ns.code, ns.name AS station_name, ns.sector_macro, "
         "       ns.owner_id, ns.owner_name, "
-        "       w.ware_id, w.ware_name, w.price, w.amount, w.desired "
+        "       w.ware_id, w.ware_name, w.buy_price AS price, "
+        "       w.buy_amount AS amount, w.desired "
         "FROM npc_stations ns "
         "JOIN npc_station_wares w ON w.station_id = ns.object_id "
         "JOIN reputation r ON r.faction_id = ns.owner_id AND r.scan_id = ? "
-        "WHERE w.is_buying = 1 AND w.desired IS NOT NULL AND r.value >= -10",
+        "WHERE w.is_buying = 1 AND w.buy_amount IS NOT NULL AND r.value >= -10",
         (scan_id,))
     out: dict[str, list[dict]] = {}
     for r in rows:
         jumps = distances_from_player.get(r['sector_macro'])
         if jumps is None or jumps > max_jumps:
             continue
-        depth = (r['desired'] or 0) - (r['amount'] or 0)
+        depth = r['amount'] or 0
         if depth <= 0:
             continue
         out.setdefault(r['ware_id'], []).append({

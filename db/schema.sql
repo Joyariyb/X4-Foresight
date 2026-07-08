@@ -133,8 +133,14 @@ CREATE TABLE IF NOT EXISTS station_offers (
     ware_name   TEXT,
     is_buying   INTEGER NOT NULL DEFAULT 0,
     is_selling  INTEGER NOT NULL DEFAULT 0,
-    price       INTEGER,
-    amount      INTEGER,
+    -- Split per direction (see npc_station_wares): a station that buys AND
+    -- sells the same ware keeps both offers' figures instead of the shared
+    -- price/amount losing whichever parsed last. buy_amount = unmet demand,
+    -- sell_amount = stock for sale.
+    buy_price   INTEGER,
+    buy_amount  INTEGER,
+    sell_price  INTEGER,
+    sell_amount INTEGER,
     desired     INTEGER,                          -- buy offers only: target stock
     illegal     INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (scan_id, station_id, ware_id)
@@ -434,10 +440,17 @@ CREATE TABLE IF NOT EXISTS npc_station_wares (
     ware_name    TEXT,
     is_buying    INTEGER NOT NULL DEFAULT 0,
     is_selling   INTEGER NOT NULL DEFAULT 0,
-    price        INTEGER,
-    amount       INTEGER,
-    -- Buy offers only: target stock. Migrated DBs have this at the table's
-    -- physical end (v2 ALTER) — write.py's explicit-column INSERT copes.
+    -- A station commonly buys AND sells the same ware at once, at different
+    -- prices and quantities, so each direction keeps its own pair rather than
+    -- sharing one price/amount (which lost whichever offer was written last).
+    -- buy_amount is the unmet demand; sell_amount is the stock for sale.
+    buy_price    INTEGER,
+    buy_amount   INTEGER,
+    sell_price   INTEGER,
+    sell_amount  INTEGER,
+    -- Buy offers only: target order size. Migrated DBs have desired plus the
+    -- four buy_/sell_ columns at the table's physical end (v2/v3 ALTERs) —
+    -- write.py's explicit-column INSERT copes.
     desired      INTEGER,
     illegal      INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (station_id, ware_id)

@@ -129,12 +129,16 @@ def market_opportunity_findings(conn, scan_id, demand_by_ware) -> list[dict]:
 # ── Rule 3: pricing gap (player selling below a reachable NPC buyer) ────────
 
 def pricing_gap_findings(conn, scan_id, demand_by_ware) -> list[dict]:
+    # The player's own SELL side of each ware — sell_price/sell_amount aliased
+    # to the generic names the gap math below reads. A co-posted buy offer for
+    # the same ware keeps its own columns and can't skew the sell price here.
     rows = conn.execute(
-        "SELECT so.station_id, so.ware_id, so.ware_name, so.price, so.amount, "
+        "SELECT so.station_id, so.ware_id, so.ware_name, "
+        "       so.sell_price AS price, so.sell_amount AS amount, "
         "       s.code, s.name AS station_name "
         "FROM station_offers so "
         "JOIN stations s ON s.object_id = so.station_id AND s.scan_id = so.scan_id "
-        "WHERE so.scan_id = ? AND so.is_selling = 1 AND so.price IS NOT NULL",
+        "WHERE so.scan_id = ? AND so.is_selling = 1 AND so.sell_price IS NOT NULL",
         (scan_id,))
     findings = []
     for r in rows:

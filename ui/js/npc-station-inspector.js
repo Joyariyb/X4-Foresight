@@ -35,10 +35,21 @@
   // at scan time, see db/write.py's _ware_name()), CHART_LINE is the fallback
   // for any ware the palette hasn't catalogued yet. Plain text line, no chip
   // background — the colour alone is the identity cue here.
+  // A station that trades this ware both ways carries a distinct buy and sell
+  // price, so both are shown, each tinted to match its arrow (sell = ▲ accent,
+  // buy = ▼ loss) — the same green/red convention as npcWareArrows above — so
+  // "384 / 325 Cr" reads unambiguously as sell / buy without a label. A
+  // one-directional ware shows only its single price.
+  function npcWarePrice(ware) {
+    const parts = [];
+    if (ware.sell_price) parts.push(`<span style="color:${CHART_ACCENT}">${Math.round(ware.sell_price).toLocaleString()}</span>`);
+    if (ware.buy_price)  parts.push(`<span style="color:${CHART_LOSS}">${Math.round(ware.buy_price).toLocaleString()}</span>`);
+    return parts.length ? `<span class="npc-insp-ware-price mono">${parts.join(' / ')} Cr</span>` : '';
+  }
+
   function npcWareLine(ware) {
-    const price   = ware.price ? `<span class="npc-insp-ware-price mono">${Math.round(ware.price).toLocaleString()} Cr</span>` : '';
     const illegal = ware.illegal ? '<span class="npc-insp-ware-illegal">Black market</span>' : '';
-    return `<div style="color:${WARE_COLOURS[ware.ware_name] || CHART_LINE}">${npcWareArrows(ware)}${ware.ware_name}${illegal}${price}</div>`;
+    return `<div style="color:${WARE_COLOURS[ware.ware_name] || CHART_LINE}">${npcWareArrows(ware)}${ware.ware_name}${illegal}${npcWarePrice(ware)}</div>`;
   }
 
   // All/Buy/Sell filter for the Wares section — same pill-track visual as

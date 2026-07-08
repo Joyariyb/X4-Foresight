@@ -202,13 +202,21 @@ class NpcStationWare:
     # no direction in the save file at all — both flags stay False for those.
     is_buying:  bool = False
     is_selling: bool = False
-    # Current offer price in CENTS, like the trade log (verified against real
-    # saves: values land exactly 100× the wares.xml credit band). Divide by 100
-    # before any credits math.
-    price:      int | None = None
-    amount:     int | None = None   # sellers: current stock; buyers: desired quantity
-    # Buy offers only: the full quantity the station wants. amount/desired is
-    # the demand depth — how far below its target stock the station has fallen.
+    # A single station commonly posts BOTH a buy and a sell offer for the same
+    # ware (any trading station quotes a spread), and the two offers carry
+    # genuinely different prices AND quantities. So buy and sell each get their
+    # own price/amount pair rather than one shared slot — collapsing them lost
+    # whichever offer parsed last (the bug this split fixes). All in CENTS, like
+    # the trade log (verified against real saves: values land exactly 100× the
+    # wares.xml credit band). Divide by 100 before any credits math.
+    buy_price:   int | None = None   # what the station pays on its buy offer
+    buy_amount:  int | None = None   # unmet demand — units still wanted right now
+    sell_price:  int | None = None   # what the station charges on its sell offer
+    sell_amount: int | None = None   # stock on hand for the player to buy
+    # Buy offers only: the total order size. Equals `buy_amount` at rest and only
+    # exceeds it mid-delivery (desired - buy_amount = the part already delivered),
+    # so the unmet demand is `buy_amount`, NOT desired - buy_amount. See
+    # advisors.npc_demand_by_ware.
     desired:    int | None = None
     illegal:    bool = False        # 'shady' flag — restricted black-market good
 
@@ -225,7 +233,7 @@ class NpcStation:
     owner_id:     str    # faction ID e.g. "teladi"
     owner_name:   str    # faction display name e.g. "Teladi Company"
     wares:        list[NpcStationWare] = field(default_factory=list)
-    # wares → own table: npc_station_wares (station_id, ware_id, ware_name, is_buying, is_selling, price, amount, desired, illegal)
+    # wares → own table: npc_station_wares (station_id, ware_id, ware_name, is_buying, is_selling, buy_price, buy_amount, sell_price, sell_amount, desired, illegal)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

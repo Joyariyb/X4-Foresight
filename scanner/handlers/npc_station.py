@@ -41,9 +41,15 @@ def parse_trade_offers(trade_elem) -> list[NpcStationWare]:
 
     buyer=/seller= holds the station's own component id — its PRESENCE (not its
     value) is what marks the direction of that trade offer. desired= appears on
-    buy offers only: the target stock, so amount/desired is the demand depth.
-    One station can list the same ware in more than one offer (rare), so rows
-    merge by ware_id rather than emitting duplicates.
+    buy offers only (the total order size); the unmet demand a buyer still wants
+    is amount=, not desired-amount= (see advisors.npc_demand_by_ware).
+
+    One station commonly posts the same ware in TWO offers at once — a buy and a
+    sell (any trading station quotes a spread) — with different prices and
+    quantities on each. Rows still merge by ware_id (so the UI shows one line
+    with both direction arrows), but the buy and sell figures land in their own
+    price/amount slots. Folding them into one shared slot lost whichever offer
+    parsed last, corrupting the demand and arbitrage numbers keyed off it.
     """
     by_ware: dict[str, NpcStationWare] = {}
     for t in trade_elem.findall('.//trade'):
@@ -51,16 +57,20 @@ def parse_trade_offers(trade_elem) -> list[NpcStationWare]:
         if not ware_id:
             continue
         w = by_ware.setdefault(ware_id, NpcStationWare(ware_id=ware_id))
+        price  = t.get('price')
+        amount = t.get('amount')
+        # Direction routes each figure to its own slot, so a buy and a sell for
+        # the same ware never overwrite one another.
         if t.get('buyer'):
             w.is_buying = True
+            if price:  w.buy_price  = int(price)
+            if amount: w.buy_amount = int(amount)
+            if (desired := t.get('desired')):
+                w.desired = int(desired)
         if t.get('seller'):
             w.is_selling = True
-        if (price := t.get('price')):
-            w.price = int(price)
-        if (amount := t.get('amount')):
-            w.amount = int(amount)
-        if (desired := t.get('desired')):
-            w.desired = int(desired)
+            if price:  w.sell_price  = int(price)
+            if amount: w.sell_amount = int(amount)
         if 'shady' in (t.get('flags') or ''):
             w.illegal = True
     return sorted(by_ware.values(), key=lambda w: w.ware_id)

@@ -27,7 +27,16 @@ def trader_db(tmp_path):
         "VALUES (?, 1, ?, ?, 1)",
         [('sec_home', 'Home Sector', 'teladi'),
          ('sec_ore', 'Ore Belt', 'teladi'),
+         ('sec_far', 'Distant Reach', 'teladi'),   # unlinked: no buyer in range
          ('sec_hostile', 'Hostile Reach', 'xenon')])
+
+    # Jump graph: sec_home <-> sec_ore (1 jump). sec_far is deliberately absent,
+    # so it's isolated — used to prove siting demand is centred on the candidate
+    # sector (sec_ore reaches the sec_home ore buyer; sec_far reaches nobody).
+    conn.executemany(
+        "INSERT INTO sector_links (sector_a, sector_b, cost, last_scan_id) "
+        "VALUES (?, ?, ?, 1)",
+        [('sec_home', 'sec_ore', 1)])
 
     conn.execute(
         "INSERT INTO stations (scan_id, object_id, code, name, sector_macro, status) "
@@ -40,6 +49,7 @@ def trader_db(tmp_path):
          ('sec_ore', 'silicon', 'veryhigh', 1000),        # high yield, no demand
          ('sec_ore', 'water', 'low', 500),                # below the yield floor
          ('sec_ore', 'nividium', 'exotic', 800),          # unrecognised yield tier
+         ('sec_far', 'ore', 'high', 50000),               # same ore, no buyer in reach
          ('sec_hostile', 'ice', 'high', 20000),
          ('sec_home', 'energycells', 'medium', 5000)])   # already claimed — must be excluded
 
@@ -62,14 +72,26 @@ def trader_db(tmp_path):
         "owner_id, owner_name) VALUES (?, 1, ?, ?, ?, ?, ?)",
         [('[0xB1]', 'SEL-1', 'Cheap Seller', 'sec_home', 'teladi', 'Teladi'),
          ('[0xB2]', 'BUY-1', 'Pricey Buyer',  'sec_ore',  'teladi', 'Teladi'),
-         ('[0xB3]', 'HOS-1', 'Xenon Post',    'sec_hostile', 'xenon', 'Xenon')])
+         ('[0xB3]', 'HOS-1', 'Xenon Post',    'sec_hostile', 'xenon', 'Xenon'),
+         ('[0xB4]', 'ORE-1', 'Ore Buyer',     'sec_home', 'teladi', 'Teladi')])
 
     conn.executemany(
         "INSERT INTO npc_station_wares (station_id, ware_id, ware_name, is_buying, "
-        "is_selling, price, amount, desired) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        [('[0xB1]', 'energycells', 'Energy Cells', 0, 1, 1000, 500, None),
-         ('[0xB2]', 'energycells', 'Energy Cells', 1, 0, 3000, 0, 500),
-         ('[0xB3]', 'ice', 'Ice', 1, 0, 1500, 0, 200)])
+        "is_selling, buy_price, buy_amount, sell_price, sell_amount, desired) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        # Buy offers at rest: buy_amount (what's still wanted) == desired (order
+        # size), matching how real saves store standing demand.
+        # [0xB1] both SELLS energycells (stock 500 @ 10) AND posts a cheap,
+        # never-selected BUY for it (want 9999 @ 0.5): a conflation guard. The
+        # arbitrage seller side must read sell_amount (500), so the trade volume
+        # is seller-bound at 500 — a merged row that clobbered sell_amount with
+        # buy_amount (9999) would let B2's 8000 demand pull the volume to 8000.
+        [('[0xB1]', 'energycells', 'Energy Cells', 1, 1, 50, 9999, 1000, 500, None),
+         ('[0xB2]', 'energycells', 'Energy Cells', 1, 0, 3000, 8000, None, None, 8000),
+         ('[0xB3]', 'ice', 'Ice', 1, 0, 1500, 200, None, None, 200),
+         # Ore buyer in sec_home (1 jump from sec_ore) — the siting demand note's
+         # source. buy_amount 500 is the unmet demand that must reach sec_ore.
+         ('[0xB4]', 'ore', 'Ore', 1, 0, 250, 500, None, None, 500)])
 
     conn.execute(
         "INSERT INTO in_progress_deliveries (scan_id, ship_id, ship_code, ship_name, "
@@ -98,33 +120,48 @@ def trader_db(tmp_path):
 DISTANCES = {'sec_home': 0, 'sec_ore': 3, 'sec_hostile': 2}
 
 
-def test_station_siting_advises_low_demand_and_notes_high_demand(trader_db):
+def test_station_siting_notes_strong_demand(trader_db):
     avg_prices = {'ore': 20, 'silicon': 10, 'ice': 16}
-    demand_by_ware = {'ore': [{'demand_depth': 500}]}   # silicon: no demand
 
-    findings = trader.station_siting_findings(
-        trader_db, 1, DISTANCES, avg_prices, demand_by_ware)
+    findings = trader.station_siting_findings(trader_db, 1, DISTANCES, avg_prices)
     by_id = {f['id']: f for f in findings}
 
-    # High-demand ware: advised AND the body carries the demand call-out.
-    ore = by_id['siting:sec_ore:ore']
-    assert 'Demand' in ore['body']
-    assert ore['evidence']['demand_depth'] == 500
-
-    # High-yield ware with no demand: still advised (demand isn't a veto), and
-    # the body makes no demand claim it can't back up.
-    silicon = by_id['siting:sec_ore:silicon']
-    assert silicon['slots']['demand_note'] == ''
-    assert 'Demand' not in silicon['body']
+    # sec_ore collapses to one finding, headlined by ore (its best-priority,
+    # strongly-demanded ware); the body carries the demand call-out. Demand
+    # (500) comes from the ore buyer in sec_home, 1 jump away via sector_links.
+    f = by_id['siting:sec_ore']
+    assert f['evidence']['ware_id'] == 'ore'
+    assert f['evidence']['demand_depth'] == 500
+    assert 'Demand' in f['body']
 
     # Hostile-owned sector (reputation < -10): excluded even though it has a
     # resource, because building there isn't safe.
-    assert 'siting:sec_hostile:ice' not in by_id
+    assert 'siting:sec_hostile' not in by_id
 
     # sec_home has a resource deposit too, but already holds a player station
     # (see the `stations` insert above) — the claimed-sector filter must skip it.
-    assert 'siting:sec_home:energycells' not in by_id
     assert not any(f['evidence']['sector_macro'] == 'sec_home' for f in findings)
+
+
+def test_station_siting_dedups_per_sector(trader_db):
+    """A resource-rich sector yields ONE finding, headlined by its best-priority
+    ware, with the other qualifying deposits folded into an 'also rich in'
+    mention rather than one card per ware."""
+    findings = trader.station_siting_findings(
+        trader_db, 1, {'sec_home': 0, 'sec_ore': 3}, {'ore': 20, 'silicon': 10})
+    ore_findings = [f for f in findings if f['evidence']['sector_macro'] == 'sec_ore']
+
+    assert len(ore_findings) == 1
+    f = ore_findings[0]
+    assert f['id'] == 'siting:sec_ore'
+    assert f['evidence']['ware_id'] == 'ore'          # best priority — headline
+    # The other high-yield deposit is surfaced as a richness signal, not dropped.
+    assert 'silicon' in f['evidence']['other_wares']
+    assert 'Silicon' in f['body']
+    assert 'also rich in' in f['body']
+    # The below-floor ware never appears, not even as a mention.
+    assert 'water' not in f['evidence']['other_wares']
+    assert 'Water' not in f['body']
 
 
 def test_station_siting_yield_floor(trader_db):
@@ -134,13 +171,18 @@ def test_station_siting_yield_floor(trader_db):
     penalised for a save format we couldn't read."""
     findings = trader.station_siting_findings(
         trader_db, 1, {'sec_home': 0, 'sec_ore': 2},
-        {'ore': 20, 'silicon': 10, 'water': 12, 'nividium': 1000}, {})
-    ids = {f['id'] for f in findings}
+        {'ore': 20, 'silicon': 10, 'water': 12, 'nividium': 1000})
+    f = next(f for f in findings if f['evidence']['sector_macro'] == 'sec_ore')
 
-    assert 'siting:sec_ore:ore' in ids        # High — advised
-    assert 'siting:sec_ore:silicon' in ids    # Very High — advised
-    assert 'siting:sec_ore:water' not in ids  # Low — below the floor, dropped
-    assert 'siting:sec_ore:nividium' in ids   # unknown tier — benefit of the doubt
+    # The sector's surviving wares — headline plus mentions — are exactly the
+    # high-and-above ones; the Low deposit (water) is absent everywhere.
+    surfaced = {f['evidence']['ware_id'], *f['evidence']['other_wares']}
+    assert surfaced == {'ore', 'silicon', 'nividium'}
+    assert 'water' not in surfaced
+    # nividium (no buyers) out-prices ore for the headline, so the demand note
+    # reflects the headline ware and stays silent — ore's demand is a demoted
+    # mention, not a claim on this card.
+    assert 'Demand' not in f['body']
 
 
 def test_station_siting_respects_max_jumps(trader_db):
@@ -148,28 +190,46 @@ def test_station_siting_respects_max_jumps(trader_db):
     one jump past SITING_MAX_JUMPS produces no finding, while one sitting
     exactly on the boundary still does (the cut is inclusive)."""
     avg_prices = {'ore': 20, 'silicon': 10}
-    demand_by_ware = {}
 
     far = trader.station_siting_findings(
         trader_db, 1,
-        {'sec_home': 0, 'sec_ore': trader.SITING_MAX_JUMPS + 1},
-        avg_prices, demand_by_ware)
+        {'sec_home': 0, 'sec_ore': trader.SITING_MAX_JUMPS + 1}, avg_prices)
     assert not any(f['evidence']['sector_macro'] == 'sec_ore' for f in far)
 
     edge = trader.station_siting_findings(
         trader_db, 1,
-        {'sec_home': 0, 'sec_ore': trader.SITING_MAX_JUMPS},
-        avg_prices, demand_by_ware)
+        {'sec_home': 0, 'sec_ore': trader.SITING_MAX_JUMPS}, avg_prices)
     assert any(f['evidence']['sector_macro'] == 'sec_ore' for f in edge)
+
+
+def test_station_siting_demand_is_sector_centered(trader_db):
+    """Same ware, two candidate sectors: the one within reach of an ore buyer
+    gets the demand note; the isolated one gets none. This is the regression
+    guard against a galaxy-wide total pasted identically onto every card."""
+    findings = trader.station_siting_findings(
+        trader_db, 1, {'sec_ore': 1, 'sec_far': 1}, {'ore': 20})
+    by_id = {f['id']: f for f in findings}
+
+    near, far = by_id['siting:sec_ore'], by_id['siting:sec_far']
+    assert near['evidence']['ware_id'] == far['evidence']['ware_id'] == 'ore'
+    # sec_ore reaches the sec_home ore buyer (linked, 1 jump); sec_far is
+    # isolated in the jump graph, so no buyer is in range.
+    assert near['evidence']['demand_depth'] == 500
+    assert far['evidence']['demand_depth'] == 0
+    assert 'Demand' in near['body']
+    assert 'Demand' not in far['body']
 
 
 def test_galaxy_arbitrage(trader_db):
     findings = trader.galaxy_arbitrage_findings(trader_db, 1, DISTANCES)
     assert len(findings) == 1
     f = findings[0]
-    assert f['slots']['sell_price'] == 10.0    # 1000 cents
-    assert f['slots']['buy_price'] == 30.0      # 3000 cents
-    assert f['slots']['gain'] == round((3000 - 1000) / 100.0 * min(500, 500))
+    assert f['slots']['sell_price'] == 10.0    # 1000 cents (B1 sell offer)
+    assert f['slots']['buy_price'] == 30.0      # 3000 cents (B2 buy offer)
+    # Volume is seller-bound at B1's sell_amount (500), NOT its unrelated
+    # buy_amount (9999) — proves the buy/sell figures no longer clobber.
+    assert f['evidence']['volume'] == 500
+    assert f['slots']['gain'] == round((3000 - 1000) / 100.0 * min(500, 8000))
     assert f['priority_score'] > 0
 
 

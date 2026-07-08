@@ -13,7 +13,7 @@ DEFAULT_DB_PATH = Path(__file__).resolve().parents[1] / 'x4_foresight.db'
 # connection. To evolve the schema: add the column/table to schema.sql (for
 # fresh DBs), append a (version, [statements]) entry to MIGRATIONS (for
 # existing DBs), and bump this to that same number.
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 # Numbered migrations for databases older than SCHEMA_VERSION. Append-only —
 # never edit a shipped entry, since DBs past that version will not re-run it.
@@ -23,6 +23,20 @@ SCHEMA_VERSION = 2
 MIGRATIONS: list[tuple[int, list[str]]] = [
     # desired= from NPC buy offers (demand depth for the advisor: amount/desired).
     (2, ["ALTER TABLE npc_station_wares ADD COLUMN desired INTEGER"]),
+    # Split the shared price/amount into per-direction pairs so a station that
+    # both buys and sells the same ware no longer loses one offer's figures.
+    # Both the NPC reference table and the per-scan player-station table share
+    # the parser, so both split. The old price/amount columns are left in place
+    # (SQLite can't drop them cheaply) but go unread — write.py and every SELECT
+    # name the new columns. Old rows read NULL for the new pairs until re-scanned.
+    (3, ["ALTER TABLE npc_station_wares ADD COLUMN buy_price INTEGER",
+         "ALTER TABLE npc_station_wares ADD COLUMN buy_amount INTEGER",
+         "ALTER TABLE npc_station_wares ADD COLUMN sell_price INTEGER",
+         "ALTER TABLE npc_station_wares ADD COLUMN sell_amount INTEGER",
+         "ALTER TABLE station_offers ADD COLUMN buy_price INTEGER",
+         "ALTER TABLE station_offers ADD COLUMN buy_amount INTEGER",
+         "ALTER TABLE station_offers ADD COLUMN sell_price INTEGER",
+         "ALTER TABLE station_offers ADD COLUMN sell_amount INTEGER"]),
 ]
 
 # Database paths whose schema this process has already applied. apply_schema()

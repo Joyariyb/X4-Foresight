@@ -302,6 +302,12 @@
                          ABOVE the player station's own energycells sell offer
                          (20) — exercises the Advisors pricing_gap rule. -->
                     <trade ware="energycells" buyer="[0x2200]" amount="2607" desired="3000" price="35"/>
+                    <!-- Same ware quoted BOTH ways at once (a trading spread):
+                         the buy offer above and this sell offer must survive as
+                         separate figures, not collapse to one — regression for
+                         the buy/sell conflation bug. Distinct price and stock
+                         from the buy side so a clobber would be visible. -->
+                    <trade ware="energycells" seller="[0x2200]" amount="640" price="42"/>
                     <trade ware="spacefuel" buyer="[0x2200]" amount="120" desired="200" price="250" flags="tradeonly|shady"/>
                   </production>
                 </offers>

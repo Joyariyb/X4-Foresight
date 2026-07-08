@@ -142,18 +142,21 @@ def _stations(conn, scan_id) -> list[dict]:
         # (plus ware_id, the robust join key for advisor supply/demand matching).
         d['offers'] = [
             {
-                'ware_id':    r['ware_id'],
-                'ware_name':  r['ware_name'],
-                'is_buying':  bool(r['is_buying']),
-                'is_selling': bool(r['is_selling']),
-                'price':      r['price'],
-                'amount':     r['amount'],
-                'desired':    r['desired'],
-                'illegal':    bool(r['illegal']),
+                'ware_id':     r['ware_id'],
+                'ware_name':   r['ware_name'],
+                'is_buying':   bool(r['is_buying']),
+                'is_selling':  bool(r['is_selling']),
+                'buy_price':   r['buy_price'],
+                'buy_amount':  r['buy_amount'],
+                'sell_price':  r['sell_price'],
+                'sell_amount': r['sell_amount'],
+                'desired':     r['desired'],
+                'illegal':     bool(r['illegal']),
             }
             for r in conn.execute(
-                "SELECT ware_id, ware_name, is_buying, is_selling, price, "
-                "amount, desired, illegal FROM station_offers "
+                "SELECT ware_id, ware_name, is_buying, is_selling, buy_price, "
+                "buy_amount, sell_price, sell_amount, desired, illegal "
+                "FROM station_offers "
                 "WHERE scan_id=? AND station_id=? ORDER BY ware_name",
                 (scan_id, sid))
         ]
@@ -379,28 +382,35 @@ def _sectors(conn) -> list[dict]:
 
 
 def _npc_station_wares(conn) -> dict[str, list[dict]]:
-    """{station_id: [{ware_name, is_buying, is_selling, price, amount, illegal}, ...]}
-    for every NPC station's trade goods.
+    """{station_id: [{ware_name, is_buying, is_selling, buy_price, buy_amount,
+    sell_price, sell_amount, desired, illegal}, ...]} for every NPC station's
+    trade goods.
 
     npc_station_wares is a latest-only reference table (no scan_id), matching
     npc_stations itself — see _write_reference() in db/write.py. is_buying/
     is_selling are both 0 for Format-A stations (pirate/black-market bases),
     which the save file never gives a trade direction for at all.
+
+    A ware a station both buys and sells is ONE entry carrying both direction
+    pairs (buy_* and sell_*), so the inspector renders it on a single line with
+    both arrows — see ui/js/npc-station-inspector.js.
     """
     rows = conn.execute(
-        "SELECT station_id, ware_name, is_buying, is_selling, price, amount, "
-        "desired, illegal "
+        "SELECT station_id, ware_name, is_buying, is_selling, "
+        "buy_price, buy_amount, sell_price, sell_amount, desired, illegal "
         "FROM npc_station_wares ORDER BY ware_name")
     out: dict[str, list[dict]] = {}
     for r in rows:
         out.setdefault(r['station_id'], []).append({
-            'ware_name':  r['ware_name'],
-            'is_buying':  bool(r['is_buying']),
-            'is_selling': bool(r['is_selling']),
-            'price':      r['price'],
-            'amount':     r['amount'],
-            'desired':    r['desired'],
-            'illegal':    bool(r['illegal']),
+            'ware_name':   r['ware_name'],
+            'is_buying':   bool(r['is_buying']),
+            'is_selling':  bool(r['is_selling']),
+            'buy_price':   r['buy_price'],
+            'buy_amount':  r['buy_amount'],
+            'sell_price':  r['sell_price'],
+            'sell_amount': r['sell_amount'],
+            'desired':     r['desired'],
+            'illegal':     bool(r['illegal']),
         })
     return out
 

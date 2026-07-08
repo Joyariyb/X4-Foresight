@@ -16,6 +16,7 @@ point, not the avatar's current position, same reasoning as advisors.py's
 npc_demand_by_ware.
 """
 from __future__ import annotations
+from scanner.galaxy_map import distances_from
 from .advisors import _finding
 
 # The arbitrage and reputation-locked rules scout further afield than the
@@ -33,10 +34,16 @@ TRADER_MAX_JUMPS = 8
 # suggestions inside reach of the fleet that would actually service them.
 SITING_MAX_JUMPS = 5
 
-# Reachable unmet NPC demand (summed depth, from the shared demand_by_ware
-# lookup) at/above this is called out explicitly in a siting suggestion's
-# body. Below it we still advise — low demand is not a veto, see below — we
-# just don't claim a demand signal we can't back up.
+# How far a would-be station's output can profitably reach buyers. Distinct
+# from SITING_MAX_JUMPS ("how far from me will I build") — this is "how far can
+# the new station sell", measured from the CANDIDATE sector, not the player's
+# assets. 5 matches a trader's jump range from its home station.
+SITING_DEMAND_JUMPS = 5
+
+# Reachable unmet NPC demand (summed buy_amount within SITING_DEMAND_JUMPS of
+# the candidate sector) at/above this is called out explicitly in a siting
+# suggestion's body. Below it we still advise — low demand is not a veto, see
+# below — we just don't claim a demand signal we can't back up.
 DEMAND_NOTE_THRESHOLD = 50
 
 # Reputation floor below which we don't advise building/trading in a faction's
@@ -82,13 +89,13 @@ TEMPLATES: dict[str, list[str]] = {
         "{sector_name} has a {yield_label} {ware_name} deposit with no player "
         "station drawing on it yet — consider building a {ware_name} "
         "extraction station there ({jumps} jump(s) from your nearest "
-        "asset).{demand_note}",
+        "asset).{demand_note}{also_note}",
         "Unclaimed opportunity: {sector_name}'s {yield_label} {ware_name} "
         "field sits untouched, {jumps} jump(s) out — a mining station there "
-        "would put it to work.{demand_note}",
+        "would put it to work.{demand_note}{also_note}",
         "Consider staking a claim in {sector_name} — its {yield_label} "
         "{ware_name} deposit has no player presence nearby ({jumps} "
-        "jump(s) away).{demand_note}",
+        "jump(s) away).{demand_note}{also_note}",
     ],
     'galaxy_arbitrage': [
         "{ware_name} sells for {sell_price} Cr/unit at {sell_name} but "
@@ -126,17 +133,71 @@ TEMPLATES: dict[str, list[str]] = {
 
 # ── Rule 1: station siting (unclaimed resource, demand-aware) ───────────────
 
-def station_siting_findings(conn, scan_id, distances_from_player, avg_prices,
-                             demand_by_ware) -> list[dict]:
+def station_siting_findings(conn, scan_id, distances_from_player, avg_prices) -> list[dict]:
     """Sectors within SITING_MAX_JUMPS that hold a mineable resource but no
     player station yet. Always fires regardless of demand — low demand isn't a reason
     NOT to build, it just means the note below doesn't get to claim a strong
-    market — but appends a demand call-out when reachable unmet demand for
-    that ware is high (see DEMAND_NOTE_THRESHOLD)."""
+    market — but appends a demand call-out when unmet NPC demand for that ware,
+    reachable within SITING_DEMAND_JUMPS of the CANDIDATE sector, is high (see
+    DEMAND_NOTE_THRESHOLD).
+
+    Demand is centred on the candidate sector, not the player's assets: a new
+    station sells what it extracts to buyers near IT, so two unclaimed Ore
+    sectors get different demand notes depending on which buyers each can reach
+    — not one galaxy-wide total pasted onto every card.
+
+    One finding per SECTOR, not per deposit: a resource-rich sector is a single
+    place to build, so it's headlined by its best-priority ware and the other
+    qualifying deposits are folded into an "also rich in" mention rather than
+    spamming the feed with a near-identical card per ware."""
     reputation = {r['faction_id']: r['value'] for r in conn.execute(
         "SELECT faction_id, value FROM reputation WHERE scan_id = ?", (scan_id,))}
     claimed = {r['sector_macro'] for r in conn.execute(
         "SELECT DISTINCT sector_macro FROM stations WHERE scan_id = ?", (scan_id,))}
+
+    # Sector-centred demand: the galaxy jump graph (persisted in sector_links)
+    # plus every reachable-faction NPC buy offer, grouped ware→sector→amount. A
+    # 0-1 BFS from each candidate then sums the buy_amount of buyers within
+    # SITING_DEMAND_JUMPS. buy_amount (not desired) is the unmet demand — see
+    # advisors.npc_demand_by_ware.
+    graph: dict[str, list[tuple[str, int]]] = {}
+    for a, b, cost in conn.execute(
+            "SELECT sector_a, sector_b, cost FROM sector_links WHERE last_scan_id = ?",
+            (scan_id,)):
+        graph.setdefault(a, []).append((b, cost))
+        graph.setdefault(b, []).append((a, cost))
+    demand_ws: dict[str, dict[str, list[int]]] = {}
+    for r in conn.execute(
+            "SELECT ns.sector_macro, w.ware_id, w.buy_amount "
+            "FROM npc_stations ns "
+            "JOIN npc_station_wares w ON w.station_id = ns.object_id "
+            "JOIN reputation rep ON rep.faction_id = ns.owner_id AND rep.scan_id = ? "
+            "WHERE w.is_buying = 1 AND w.buy_amount > 0 AND rep.value >= ?",
+            (scan_id, REPUTATION_BLOCK_THRESHOLD)):
+        demand_ws.setdefault(r['ware_id'], {}).setdefault(
+            r['sector_macro'], []).append(r['buy_amount'])
+
+    reach_cache: dict[str, set[str]] = {}
+
+    def _sector_demand(sector: str, ware: str) -> tuple[int, int]:
+        """(total unmet demand, buyer count) for `ware` within
+        SITING_DEMAND_JUMPS of `sector` — 0-1 BFS, cached per sector. The
+        candidate sector itself always counts (its own buyers, 0 jumps)."""
+        by_sector = demand_ws.get(ware)
+        if not by_sector:
+            return 0, 0
+        reach = reach_cache.get(sector)
+        if reach is None:
+            reach = reach_cache[sector] = (
+                set(distances_from(graph, sector, SITING_DEMAND_JUMPS)) | {sector})
+        total = buyers = 0
+        for s in reach:
+            amts = by_sector.get(s)
+            if amts:
+                total += sum(amts)
+                buyers += len(amts)
+        return total, buyers
+
     rows = conn.execute(
         "SELECT sr.sector_macro, sr.ware, sr.yield_level, sr.recharge_max, "
         "       sec.sector_name, sec.owner_id, "
@@ -146,7 +207,10 @@ def station_siting_findings(conn, scan_id, distances_from_player, avg_prices,
         "LEFT JOIN ware_metadata wm ON wm.ware_id = sr.ware "
         "WHERE sr.last_scan_id = ? AND sec.is_discovered = 1",
         (scan_id,))
-    findings = []
+    # Accumulate qualifying deposits per sector, then emit once. best_by_sector
+    # keeps the highest-priority candidate as the headline; the demoted ones
+    # feed the "also rich in" mention.
+    best_by_sector: dict[str, dict] = {}
     for r in rows:
         sector = r['sector_macro']
         if sector in claimed:
@@ -166,35 +230,63 @@ def station_siting_findings(conn, scan_id, distances_from_player, avg_prices,
         if r['yield_level'] in YIELD_RANK and rank < SITING_YIELD_FLOOR:
             continue
         ware = r['ware']
-        demands = demand_by_ware.get(ware, [])
-        depth_sum = sum(d['demand_depth'] for d in demands)
+        depth_sum, n_buyers = _sector_demand(sector, ware)
         avg_price = avg_prices.get(ware, 0)
         # No extraction-rate figure exists for raw resources (sector_resources
         # only records reservoir capacity, not a flow rate) — richness (yield
         # rank) and reachable demand are the only signals available, so the
         # priority is a proxy rather than a Cr/hr estimate like economy.py's.
         priority = (rank + 1) * max(avg_price, 1) * (1 + depth_sum / 100.0) / (1 + jumps)
-        if depth_sum >= DEMAND_NOTE_THRESHOLD:
+        cand = {
+            'ware': ware, 'ware_name': r['ware_name'] or ware, 'rank': rank,
+            'yield_level': r['yield_level'], 'yield_label': YIELD_LABEL.get(
+                r['yield_level'], (r['yield_level'] or 'Unknown').title()),
+            'priority': priority, 'depth_sum': depth_sum, 'n_buyers': n_buyers,
+            'avg_price': avg_price, 'recharge_max': r['recharge_max'],
+            'jumps': jumps, 'sector_name': r['sector_name'] or sector,
+        }
+        entry = best_by_sector.get(sector)
+        if entry is None:
+            best_by_sector[sector] = {'best': cand, 'others': []}
+        elif priority > entry['best']['priority']:
+            entry['others'].append(entry['best'])   # demote the old headline
+            entry['best'] = cand
+        else:
+            entry['others'].append(cand)
+
+    findings = []
+    for sector, entry in best_by_sector.items():
+        best = entry['best']
+        # Richest-first so the mention reads best deposit → worst.
+        others = sorted(entry['others'], key=lambda c: -c['rank'])
+        if best['depth_sum'] >= DEMAND_NOTE_THRESHOLD:
             demand_note = (f" Demand nearby is already strong — "
-                            f"{depth_sum:,.0f} units wanted across "
-                            f"{len(demands)} reachable buyer(s).")
+                            f"{best['depth_sum']:,.0f} units wanted across "
+                            f"{best['n_buyers']} reachable buyer(s).")
         else:
             demand_note = ''
+        if others:
+            listed = ', '.join(f"{c['yield_label']} {c['ware_name']}" for c in others)
+            also_note = f" This sector is also rich in {listed}."
+        else:
+            also_note = ''
         slots = {
-            'sector_name': r['sector_name'] or sector,
-            'ware_name':   r['ware_name'] or ware,
-            'yield_label': YIELD_LABEL.get(r['yield_level'],
-                                           (r['yield_level'] or 'Unknown').title()),
-            'jumps':       jumps,
+            'sector_name': best['sector_name'],
+            'ware_name':   best['ware_name'],
+            'yield_label': best['yield_label'],
+            'jumps':       best['jumps'],
             'demand_note': demand_note,
+            'also_note':   also_note,
         }
         evidence = {
-            'sector_macro': sector, 'ware_id': ware,
-            'yield_level': r['yield_level'], 'recharge_max': r['recharge_max'],
-            'jumps': jumps, 'demand_depth': round(depth_sum), 'avg_price': avg_price,
+            'sector_macro': sector, 'ware_id': best['ware'],
+            'yield_level': best['yield_level'], 'recharge_max': best['recharge_max'],
+            'jumps': best['jumps'], 'demand_depth': round(best['depth_sum']),
+            'avg_price': best['avg_price'],
+            'other_wares': [c['ware'] for c in others],
         }
         findings.append(_finding(
-            f"siting:{sector}:{ware}", 'trader', 'station_siting', priority,
+            f"siting:{sector}", 'trader', 'station_siting', best['priority'],
             slots, evidence, TEMPLATES))
     return findings
 
@@ -202,21 +294,26 @@ def station_siting_findings(conn, scan_id, distances_from_player, avg_prices,
 # ── Rule 2: galaxy-wide arbitrage (NPC buy vs sell, not tied to player stock) ─
 
 def galaxy_arbitrage_findings(conn, scan_id, distances_from_player) -> list[dict]:
+    # Each side reads its own direction's price/amount pair (aliased to the
+    # generic names the pairing logic below uses). A station that both buys and
+    # sells this ware now surfaces on BOTH sides with the correct figures for
+    # each, instead of one merged row whose single price/amount was whichever
+    # offer parsed last.
     sells = conn.execute(
         "SELECT ns.object_id, ns.code, ns.name AS station_name, ns.sector_macro, "
-        "       w.ware_id, w.ware_name, w.price, w.amount "
+        "       w.ware_id, w.ware_name, w.sell_price AS price, w.sell_amount AS amount "
         "FROM npc_stations ns "
         "JOIN npc_station_wares w ON w.station_id = ns.object_id "
         "JOIN reputation r ON r.faction_id = ns.owner_id AND r.scan_id = ? "
-        "WHERE w.is_selling = 1 AND w.price IS NOT NULL AND r.value >= ?",
+        "WHERE w.is_selling = 1 AND w.sell_price IS NOT NULL AND r.value >= ?",
         (scan_id, REPUTATION_BLOCK_THRESHOLD)).fetchall()
     buys = conn.execute(
         "SELECT ns.object_id, ns.code, ns.name AS station_name, ns.sector_macro, "
-        "       w.ware_id, w.price, w.desired "
+        "       w.ware_id, w.buy_price AS price, w.buy_amount AS amount "
         "FROM npc_stations ns "
         "JOIN npc_station_wares w ON w.station_id = ns.object_id "
         "JOIN reputation r ON r.faction_id = ns.owner_id AND r.scan_id = ? "
-        "WHERE w.is_buying = 1 AND w.price IS NOT NULL AND r.value >= ?",
+        "WHERE w.is_buying = 1 AND w.buy_price IS NOT NULL AND r.value >= ?",
         (scan_id, REPUTATION_BLOCK_THRESHOLD)).fetchall()
 
     def _reachable(rows):
@@ -245,7 +342,11 @@ def galaxy_arbitrage_findings(conn, scan_id, distances_from_player) -> list[dict
         gap_cents = (buy_row['price'] or 0) - (sell_row['price'] or 0)
         if gap_cents <= 0:
             continue
-        volume = min(sell_row['amount'] or 0, buy_row['desired'] or 0)
+        # A one-time run moves min(what the seller has in stock, what the buyer
+        # still wants). The buyer's want is its offer `amount` (unfilled
+        # remainder), not `desired` (the full order size) — see
+        # advisors.npc_demand_by_ware.
+        volume = min(sell_row['amount'] or 0, buy_row['amount'] or 0)
         if volume <= 0:
             continue
         gain = gap_cents / 100.0 * volume

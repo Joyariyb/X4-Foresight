@@ -168,8 +168,10 @@
           "ware_name": "Energy Cells",
           "is_buying": false,
           "is_selling": false,
-          "price": null,
-          "amount": null,
+          "buy_price": null,
+          "buy_amount": null,
+          "sell_price": null,
+          "sell_amount": null,
           "desired": null,
           "illegal": false
         },
@@ -177,8 +179,10 @@
           "ware_name": "Silicon Wafers",
           "is_buying": false,
           "is_selling": false,
-          "price": null,
-          "amount": null,
+          "buy_price": null,
+          "buy_amount": null,
+          "sell_price": null,
+          "sell_amount": null,
           "desired": null,
           "illegal": false
         }
@@ -200,17 +204,21 @@
           "ware_name": "Advanced Electronics",
           "is_buying": false,
           "is_selling": true,
-          "price": 1200,
-          "amount": 810,
+          "buy_price": null,
+          "buy_amount": null,
+          "sell_price": 1200,
+          "sell_amount": 810,
           "desired": null,
           "illegal": false
         },
         {
           "ware_name": "Energy Cells",
           "is_buying": true,
-          "is_selling": false,
-          "price": 35,
-          "amount": 2607,
+          "is_selling": true,
+          "buy_price": 35,
+          "buy_amount": 2607,
+          "sell_price": 42,
+          "sell_amount": 640,
           "desired": 3000,
           "illegal": false
         },
@@ -218,8 +226,10 @@
           "ware_name": "Spacefuel",
           "is_buying": true,
           "is_selling": false,
-          "price": 250,
-          "amount": 120,
+          "buy_price": 250,
+          "buy_amount": 120,
+          "sell_price": null,
+          "sell_amount": null,
           "desired": 200,
           "illegal": true
         }
@@ -288,8 +298,10 @@
           "ware_name": "Energy Cells",
           "is_buying": false,
           "is_selling": true,
-          "price": 20,
-          "amount": 4200,
+          "buy_price": null,
+          "buy_amount": null,
+          "sell_price": 20,
+          "sell_amount": 4200,
           "desired": null,
           "illegal": false
         },
@@ -298,8 +310,10 @@
           "ware_name": "Silicon Wafers",
           "is_buying": true,
           "is_selling": false,
-          "price": 120,
-          "amount": 800,
+          "buy_price": 120,
+          "buy_amount": 800,
+          "sell_price": null,
+          "sell_amount": null,
           "desired": 1000,
           "illegal": false
         }
@@ -1101,7 +1115,7 @@
           "surplus_rate": 10500.0,
           "npc_station_id": "[0x2200]",
           "jumps": 1,
-          "demand_depth": 393
+          "demand_depth": 2607
         }
       },
       {
@@ -1126,7 +1140,7 @@
           "surplus_rate": 10500.0,
           "npc_station_id": "[0x2200]",
           "jumps": 1,
-          "demand_depth": 393
+          "demand_depth": 2607
         }
       },
       {

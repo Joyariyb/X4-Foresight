@@ -128,11 +128,11 @@ class TestPlayerStation:
 
         sell = offers['energycells']
         assert (sell.is_selling, sell.is_buying) == (True, False)
-        assert (sell.price, sell.amount, sell.desired) == (20, 4200, None)
+        assert (sell.sell_price, sell.sell_amount, sell.desired) == (20, 4200, None)
 
         buy = offers['siliconwafers']
         assert (buy.is_buying, buy.is_selling) == (True, False)
-        assert (buy.price, buy.amount, buy.desired) == (120, 800, 1000)
+        assert (buy.buy_price, buy.buy_amount, buy.desired) == (120, 800, 1000)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -164,15 +164,19 @@ class TestNpcStation:
 
         sell = wares['advancedelectronics']
         assert (sell.is_selling, sell.is_buying) == (True, False)
-        assert (sell.price, sell.amount) == (1200, 810)
+        assert (sell.sell_price, sell.sell_amount) == (1200, 810)
 
-        buy = wares['energycells']
-        assert (buy.is_buying, buy.is_selling) == (True, False)
-        # Priced above the player station's own energycells sell offer (20) —
-        # deliberate, see fixture comment (exercises Advisors pricing_gap).
-        assert (buy.price, buy.amount) == (35, 2607)
-        # desired only appears on buy offers — amount/desired is demand depth.
-        assert buy.desired == 3000
+        # energycells is quoted BOTH ways at this station (buy + sell of the same
+        # ware) — the two offers must keep separate figures, not collapse. See
+        # the fixture comment; regression for the buy/sell conflation bug.
+        both = wares['energycells']
+        assert (both.is_buying, both.is_selling) == (True, True)
+        # Buy side priced above the player station's own energycells sell offer
+        # (20) — deliberate, exercises Advisors pricing_gap.
+        assert (both.buy_price, both.buy_amount) == (35, 2607)
+        assert (both.sell_price, both.sell_amount) == (42, 640)
+        # desired only appears on buy offers — buy_amount/desired is demand depth.
+        assert both.desired == 3000
         assert sell.desired is None
 
         # 'shady' inside a multi-token flags= string marks black-market goods.

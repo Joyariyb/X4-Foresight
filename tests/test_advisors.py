@@ -30,12 +30,13 @@ def test_overflow_risk(export):
 
 
 def test_market_opportunity(export):
-    # Test Energy Plant's energycells surplus matches the Format B NPC
-    # station's genuine unmet demand (desired=3000 > amount=2607), 1 jump away.
+    # Test Energy Plant's energycells surplus matches the Format B NPC station's
+    # unmet demand — the buy offer's `amount` (2607 = how much it still wants),
+    # NOT desired-amount. 1 jump away.
     f = _finding(export, 'market_opportunity',
                  'marketgap:[0x1000]:energycells:[0x2200]')
     assert f['slots']['jumps'] == 1
-    assert f['evidence']['demand_depth'] == 393
+    assert f['evidence']['demand_depth'] == 2607
     assert f['priority_score'] > 0
 
 

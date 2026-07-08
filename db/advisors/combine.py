@@ -64,7 +64,7 @@ def compute_advisors(conn: sqlite3.Connection, scan_id: int | None = None,
     findings += economy.pricing_gap_findings(conn, scan_id, demand_by_ware)
     findings += logistics.idle_hauler_findings(conn, scan_id)
     findings += trader.station_siting_findings(
-        conn, scan_id, distances_from_player, avg_prices, demand_by_ware)
+        conn, scan_id, distances_from_player, avg_prices)
     findings += trader.galaxy_arbitrage_findings(conn, scan_id, distances_from_player)
     findings += trader.stranded_delivery_findings(conn, scan_id, avg_prices)
     findings += trader.idle_trade_capital_findings(conn, scan_id)
