@@ -181,7 +181,11 @@ def station_siting_findings(conn, scan_id, distances_from_player, avg_prices) ->
         demand_ws.setdefault(r['ware_id'], {}).setdefault(
             r['sector_macro'], []).append({
                 'station_name': r['station_name'] or r['station_id'],
-                'amount': r['buy_amount'], 'price': r['buy_price'],
+                'amount': r['buy_amount'],
+                # buy_price is in cents (see save-format.md); avg_price it's
+                # compared against (ware_avg_prices) is in whole credits, same
+                # conversion galaxy_arbitrage_findings applies below.
+                'price': round((r['buy_price'] or 0) / 100.0, 1),
             })
 
     reach_cache: dict[str, set[str]] = {}
