@@ -67,6 +67,41 @@
     .adv-ev-key { font-family: var(--font-label); font-size: 1.05rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-label); }
     .adv-ev-val { font-family: var(--font-data); font-size: 1.15rem; color: var(--text-primary); overflow-wrap: anywhere; }
 
+    /* Sector row's clickable name (evidence.sector_macro, every finding type
+       that carries it). Its own class rather than crew.css's shared
+       .sector-link — that one hard-codes an !important warning-colour hover,
+       which would fight the teal glow here — so this reads as a sibling of
+       the Buyers panel/tooltip's neon treatment below, not a duller default
+       link one row above it. */
+    .adv-sector-link { display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; color: var(--color-primary); font-family: var(--font-data); font-size: 1.15rem; transition: text-shadow var(--duration-short) var(--ease-standard); }
+    .adv-sector-link .ti { font-size: 1.1rem; }
+    .adv-sector-link:hover { text-shadow: 0 0 0.6rem var(--color-primary); text-decoration: underline; }
+
+    /* Details/Buyers toggle — station siting only. Reuses the shared filter-
+       chip button so it reads as a sibling of the type filter above the list,
+       but the active state gets its own glow (scoped to this toggle, not the
+       shared button) so it doesn't look like a lesser cousin of the Buyers
+       panel/tooltip it opens onto. */
+    .adv-ev-tabs { display: flex; gap: 0.4rem; margin-top: 0.8rem; }
+    .adv-ev-tabs .station-tab-btn.active { box-shadow: 0 0 0.6rem var(--color-primary); }
+
+    /* Buyers panel — one row per reachable NPC buy offer behind the card's
+       demand figure. Dark inset-glow box (same recipe as charts.css's
+       .econlog-box, tinted to the siting card's own --color-special purple
+       instead of the Economy tab's teal) so this reads as a graph-adjacent
+       panel, not a plain evidence list — each row previews the same
+       elaborate hover gauge as the Economy tab's chart tooltips (see
+       _buyerTipHtml in advisors-feed.js). Scrolls independently of the
+       fixed-height drawer (UI_STANDARDS overflow rule) so a sector with many
+       buyers doesn't get clipped by the drawer's max-height transition. */
+    .adv-buyers { display: flex; flex-direction: column; gap: 0.3rem; margin-top: 0.6rem; padding: 0.6rem 1rem; max-height: 18rem; overflow-y: auto; background: var(--surface-1); border: 1px solid var(--color-special-line); border-radius: var(--radius-sm); box-shadow: inset 0 0 1.6rem var(--color-special-dim); }
+    .adv-buyer-row { display: flex; align-items: baseline; gap: 1rem; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--outline); border-radius: var(--radius-sm); cursor: help; transition: background var(--duration-short) var(--ease-standard); }
+    .adv-buyer-row:last-child { border-bottom: none; }
+    .adv-buyer-row:hover { background: var(--state-hover); }
+    .adv-buyer-name { font-family: var(--font-body); font-size: 1.15rem; color: var(--text-primary); flex: 1; min-width: 0; overflow-wrap: anywhere; }
+    .adv-buyer-amount, .adv-buyer-price { font-family: var(--font-data); font-size: 1.1rem; color: var(--text-secondary); white-space: nowrap; }
+    .adv-ev-empty { margin-top: 0.8rem; padding: 0.8rem 1rem; font-family: var(--font-body); font-size: 1.2rem; color: var(--text-secondary); }
+
     /* ── TONE MODIFIERS ── */
     /* One class per semantic meaning wires the trio (solid/dim) into the
        rail, icon, and type label. Cards keep the neutral --outline border —

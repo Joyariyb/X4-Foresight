@@ -166,36 +166,44 @@ def station_siting_findings(conn, scan_id, distances_from_player, avg_prices) ->
             (scan_id,)):
         graph.setdefault(a, []).append((b, cost))
         graph.setdefault(b, []).append((a, cost))
-    demand_ws: dict[str, dict[str, list[int]]] = {}
+    # Each buyer record carries station_name/price alongside amount so the
+    # "Buyers" evidence panel can list who's behind the demand number, not
+    # just its total — the aggregate alone isn't auditable.
+    demand_ws: dict[str, dict[str, list[dict]]] = {}
     for r in conn.execute(
-            "SELECT ns.sector_macro, w.ware_id, w.buy_amount "
+            "SELECT ns.sector_macro, w.ware_id, w.buy_amount, w.buy_price, "
+            "       ns.name AS station_name, ns.object_id AS station_id "
             "FROM npc_stations ns "
             "JOIN npc_station_wares w ON w.station_id = ns.object_id "
             "JOIN reputation rep ON rep.faction_id = ns.owner_id AND rep.scan_id = ? "
             "WHERE w.is_buying = 1 AND w.buy_amount > 0 AND rep.value >= ?",
             (scan_id, REPUTATION_BLOCK_THRESHOLD)):
         demand_ws.setdefault(r['ware_id'], {}).setdefault(
-            r['sector_macro'], []).append(r['buy_amount'])
+            r['sector_macro'], []).append({
+                'station_name': r['station_name'] or r['station_id'],
+                'amount': r['buy_amount'], 'price': r['buy_price'],
+            })
 
     reach_cache: dict[str, set[str]] = {}
 
-    def _sector_demand(sector: str, ware: str) -> tuple[int, int]:
-        """(total unmet demand, buyer count) for `ware` within
+    def _sector_demand(sector: str, ware: str) -> tuple[int, list[dict]]:
+        """(total unmet demand, buyer records) for `ware` within
         SITING_DEMAND_JUMPS of `sector` — 0-1 BFS, cached per sector. The
         candidate sector itself always counts (its own buyers, 0 jumps)."""
         by_sector = demand_ws.get(ware)
         if not by_sector:
-            return 0, 0
+            return 0, []
         reach = reach_cache.get(sector)
         if reach is None:
             reach = reach_cache[sector] = (
                 set(distances_from(graph, sector, SITING_DEMAND_JUMPS)) | {sector})
-        total = buyers = 0
+        total = 0
+        buyers: list[dict] = []
         for s in reach:
-            amts = by_sector.get(s)
-            if amts:
-                total += sum(amts)
-                buyers += len(amts)
+            recs = by_sector.get(s)
+            if recs:
+                total += sum(r['amount'] for r in recs)
+                buyers.extend(recs)
         return total, buyers
 
     rows = conn.execute(
@@ -230,7 +238,7 @@ def station_siting_findings(conn, scan_id, distances_from_player, avg_prices) ->
         if r['yield_level'] in YIELD_RANK and rank < SITING_YIELD_FLOOR:
             continue
         ware = r['ware']
-        depth_sum, n_buyers = _sector_demand(sector, ware)
+        depth_sum, buyers = _sector_demand(sector, ware)
         avg_price = avg_prices.get(ware, 0)
         # No extraction-rate figure exists for raw resources (sector_resources
         # only records reservoir capacity, not a flow rate) — richness (yield
@@ -241,7 +249,7 @@ def station_siting_findings(conn, scan_id, distances_from_player, avg_prices) ->
             'ware': ware, 'ware_name': r['ware_name'] or ware, 'rank': rank,
             'yield_level': r['yield_level'], 'yield_label': YIELD_LABEL.get(
                 r['yield_level'], (r['yield_level'] or 'Unknown').title()),
-            'priority': priority, 'depth_sum': depth_sum, 'n_buyers': n_buyers,
+            'priority': priority, 'depth_sum': depth_sum, 'buyers': buyers,
             'avg_price': avg_price, 'recharge_max': r['recharge_max'],
             'jumps': jumps, 'sector_name': r['sector_name'] or sector,
         }
@@ -262,7 +270,7 @@ def station_siting_findings(conn, scan_id, distances_from_player, avg_prices) ->
         if best['depth_sum'] >= DEMAND_NOTE_THRESHOLD:
             demand_note = (f" Demand nearby is already strong — "
                             f"{best['depth_sum']:,.0f} units wanted across "
-                            f"{best['n_buyers']} reachable buyer(s).")
+                            f"{len(best['buyers'])} reachable buyer(s).")
         else:
             demand_note = ''
         if others:
@@ -282,8 +290,15 @@ def station_siting_findings(conn, scan_id, distances_from_player, avg_prices) ->
             'sector_macro': sector, 'ware_id': best['ware'],
             'yield_level': best['yield_level'], 'recharge_max': best['recharge_max'],
             'jumps': best['jumps'], 'demand_depth': round(best['depth_sum']),
-            'avg_price': best['avg_price'],
             'other_wares': [c['ware'] for c in others],
+            # Per-station demand behind demand_depth, sorted richest-first —
+            # the "Buyers" evidence panel renders this instead of the raw grid.
+            'buyers': sorted(best['buyers'], key=lambda b: -b['amount']),
+            # Not shown as its own Details row (the UI hides it there) — kept
+            # in evidence purely as the reference point each buyer's price is
+            # compared against on hover, so a below/above-average read doesn't
+            # need a second round trip through avg_prices.
+            'avg_price': best['avg_price'],
         }
         findings.append(_finding(
             f"siting:{sector}", 'trader', 'station_siting', best['priority'],

@@ -104,7 +104,6 @@
       anchor:             'Proximity Anchor',
       recharge_max:       'Reservoir Capacity',
       yield_level:        'Yield Level',
-      avg_price:          'Average Price Cr',
       sell_station_id:    'Sell Station',
       buy_station_id:     'Buy Station',
       sell_jumps:         'Jumps to Seller',
@@ -125,17 +124,27 @@
     let _view     = 'economic';
     let _filter   = 'all';
     let _open     = new Set();   // finding ids with an expanded evidence drawer
+    // station_siting drawers only: finding id -> 'details' | 'buyers'. Absent
+    // entries default to 'details' rather than storing it explicitly for
+    // every card, so non-siting types never touch this map at all.
+    let _evView   = new Map();
 
     function setData(advisors) {
       _findings = (advisors && advisors.findings) || [];
       _filter   = 'all';
       _open     = new Set();     // stale drawers from the previous scan close
+      _evView   = new Map();
     }
 
     function setFilter(type) { _filter = type; render(); }
 
     function toggle(id) {
       _open.has(id) ? _open.delete(id) : _open.add(id);
+      render();
+    }
+
+    function setEvidenceView(id, view) {
+      _evView.set(id, view);
       render();
     }
 
@@ -211,20 +220,114 @@
     }
 
     // ── Evidence drawer ───────────────────────────────────────────────
+    // One row of the evidence grid. `sector_macro` gets special treatment
+    // everywhere it appears (siting, hostile-presence, buildup, etc.): every
+    // rule that emits it also emits a matching `sector_name` slot, so the
+    // drawer can show the readable name and jump straight to the Sectors tab
+    // card instead of dead-ending on an internal macro string.
+    function _evidenceRowHtml(f, k, v) {
+      if (k === 'sector_macro') {
+        const name = f.slots.sector_name || v;
+        return `<div class="adv-ev-key">Sector</div>
+          <div class="adv-ev-val"><span class="adv-sector-link" onclick="event.stopPropagation(); goToSector('${v}')"><i class="ti ti-map-pin"></i>${name}</span></div>`;
+      }
+      const label = EVIDENCE_LABELS[k] || k.replace(/_/g, ' ');
+      const value = typeof v === 'number'
+        ? (Number.isInteger(v) ? v.toLocaleString() : v.toLocaleString(undefined, { maximumFractionDigits: 2 }))
+        : (v ?? '—');
+      return `<div class="adv-ev-key">${label}</div><div class="adv-ev-val">${value}</div>`;
+    }
+
+    // Buyer-row hover: how this station's buy price compares to the ware's
+    // galaxy-average sell price (evidence.avg_price) — same skeleton as
+    // cashflow-chart.js's avgPriceTipHtml (header + big figure w/ delta +
+    // glowing gauge + reference rows), reused here so a siting card's hover
+    // popovers read as siblings of the Economy tab's, not a lesser cousin.
+    function _buyerTipHtml(b, avgPrice) {
+      const diff  = avgPrice > 0 ? (b.price - avgPrice) / avgPrice * 100 : 0;
+      const above = diff >= 0;
+      const col   = above ? CHART_ACCENT : CHART_LOSS;
+      const label = above ? '▲ ABOVE AVG' : '▼ BELOW AVG';
+      // Gauge centred on the galaxy average, marker clamped to ±50% so an
+      // extreme outlier price doesn't run the glow dot off the track.
+      const clamped = Math.max(-50, Math.min(50, diff));
+      const markerPct = (50 + clamped).toFixed(1);
+      const gauge = avgPrice > 0
+        ? `<div style="position:relative;height:0.5rem;background:linear-gradient(90deg,${CHART_LOSS}33,var(--outline) 50%,${CHART_ACCENT}33);border-radius:0.3rem;margin-bottom:0.6rem;overflow:visible">
+             <div style="position:absolute;left:50%;top:-0.2rem;bottom:-0.2rem;width:1px;background:var(--text-brand)"></div>
+             <div style="position:absolute;left:${markerPct}%;top:50%;width:0.7rem;height:0.7rem;border-radius:50%;background:${col};transform:translate(-50%,-50%);box-shadow:0 0 0.5rem ${col}"></div>
+           </div>`
+        : '';
+      return `<div style="min-width:20rem;padding:0.2rem 0">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;margin-bottom:0.6rem;padding-bottom:0.4rem;border-bottom:1px solid var(--outline)">
+          <span style="color:var(--text-primary);font-size:1.1rem;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:16rem">${b.station_name}</span>
+        </div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:1rem;margin-bottom:0.6rem">
+          <span style="font-family:var(--font-data);font-size:1.8rem;color:${col};line-height:1">${b.price.toLocaleString()}<span style="font-size:1rem;color:var(--text-brand)"> cr/unit</span></span>
+          ${avgPrice > 0 ? `<span style="color:${col};font-family:var(--font-data);font-size:1.1rem;white-space:nowrap">${label} ${Math.abs(diff).toFixed(1)}%</span>` : ''}
+        </div>
+        ${gauge}
+        <div style="display:flex;justify-content:space-between;gap:1.2rem;padding:1px 0">
+          <span style="color:var(--text-brand);font-size:1rem">Galaxy Average</span>
+          <span style="color:var(--text-secondary);font-family:var(--font-data);font-size:1rem">${avgPrice > 0 ? avgPrice.toLocaleString() + ' Cr' : '—'}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;gap:1.2rem;padding:1px 0">
+          <span style="color:var(--text-brand);font-size:1rem">Amount Wanted</span>
+          <span style="color:var(--text-secondary);font-family:var(--font-data);font-size:1rem">${b.amount.toLocaleString()} units</span>
+        </div>
+      </div>`;
+    }
+
+    // Station siting's Buyers panel: one row per reachable NPC buy offer
+    // behind that card's demand_depth figure — what they want and what
+    // they're paying, so the aggregate number is auditable down to the
+    // station that contributed it. Hovering a row pops the price-vs-average
+    // gauge above instead of cramming it into the row itself.
+    function _buyersHtml(buyers, avgPrice) {
+      if (!buyers || !buyers.length) {
+        return `<div class="adv-ev-empty">No reachable buyers for this ware yet.</div>`;
+      }
+      const rows = buyers.map(b => `
+          <div class="adv-buyer-row" data-buyer-tip="${encodeURIComponent(_buyerTipHtml(b, avgPrice))}">
+            <span class="adv-buyer-name">${b.station_name}</span>
+            <span class="adv-buyer-amount">${b.amount.toLocaleString()} wanted</span>
+            <span class="adv-buyer-price">${b.price.toLocaleString()} Cr/unit</span>
+          </div>`).join('');
+      return `<div class="adv-buyers">${rows}</div>`;
+    }
+
     function _evidenceHtml(f) {
-      const rows = Object.entries(f.evidence).map(([k, v]) => {
-        const label = EVIDENCE_LABELS[k] || k.replace(/_/g, ' ');
-        const value = typeof v === 'number'
-          ? (Number.isInteger(v) ? v.toLocaleString() : v.toLocaleString(undefined, { maximumFractionDigits: 2 }))
-          : (v ?? '—');
-        return `<div class="adv-ev-key">${label}</div><div class="adv-ev-val">${value}</div>`;
-      }).join('');
-      return `<div class="adv-drawer">
-          <div class="adv-evidence">
-            ${rows}
-            <div class="adv-ev-key">Priority Score</div>
-            <div class="adv-ev-val">${f.priority_score.toLocaleString()}</div>
-          </div>
+      const isSiting = f.type === 'station_siting';
+      // Siting is the only type with a Details/Buyers toggle — every other
+      // finding renders its plain evidence grid as before.
+      if (!isSiting) {
+        const rows = Object.entries(f.evidence)
+          .map(([k, v]) => _evidenceRowHtml(f, k, v)).join('');
+        return `<div class="adv-drawer">
+            <div class="adv-evidence">
+              ${rows}
+              <div class="adv-ev-key">Priority Score</div>
+              <div class="adv-ev-val">${f.priority_score.toLocaleString()}</div>
+            </div>
+          </div>`;
+      }
+
+      const view = _evView.get(f.id) || 'details';
+      const tab = (key, label) => `<button class="station-tab-btn ${view === key ? 'active' : ''}" `
+        + `onclick="event.stopPropagation(); AdvisorsFeed.setEvidenceView('${f.id}', '${key}')">${label}</button>`;
+      const tabs = `<div class="adv-ev-tabs">${tab('details', 'Details')}${tab('buyers', 'Buyers')}</div>`;
+
+      if (view === 'buyers') {
+        return `<div class="adv-drawer">${tabs}${_buyersHtml(f.evidence.buyers, f.evidence.avg_price)}</div>`;
+      }
+      // Details view: raw evidence grid, minus the buyer list (its own tab)
+      // and avg_price (kept in evidence only to feed each buyer row's hover
+      // gauge — see _buyerTipHtml — never shown as a flat Details row).
+      const rows = Object.entries(f.evidence)
+        .filter(([k]) => k !== 'buyers' && k !== 'avg_price')
+        .map(([k, v]) => _evidenceRowHtml(f, k, v)).join('');
+      return `<div class="adv-drawer">${tabs}
+          <div class="adv-evidence">${rows}</div>
         </div>`;
     }
 
@@ -275,7 +378,7 @@
       // A view change resets the type filter and open drawers — the chips on
       // the other tab reference types this view's list doesn't contain, so a
       // carried-over filter would show a confusingly empty list.
-      if (view && view !== _view) { _view = view; _filter = 'all'; _open = new Set(); }
+      if (view && view !== _view) { _view = view; _filter = 'all'; _open = new Set(); _evView = new Map(); }
       const root = document.getElementById(VIEWS[_view].root);
       if (!root) return;
 
@@ -340,5 +443,14 @@
       return true;
     });
 
-    return { setData, setFilter, toggle, render, openHelp };
+    // Buyer-row hover on station siting's Buyers panel — same pre-rendered-
+    // HTML pattern as advCounterTip above.
+    registerTip('buyerTip', (el, _e, tip) => {
+      tip.innerHTML = decodeURIComponent(el.dataset.buyerTip);
+      tip.style.color      = '';
+      tip.style.whiteSpace = 'normal';
+      return true;
+    });
+
+    return { setData, setFilter, toggle, setEvidenceView, render, openHelp };
   })();
