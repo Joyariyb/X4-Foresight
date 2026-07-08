@@ -220,22 +220,117 @@
     }
 
     // ── Evidence drawer ───────────────────────────────────────────────
-    // One row of the evidence grid. `sector_macro` gets special treatment
-    // everywhere it appears (siting, hostile-presence, buildup, etc.): every
-    // rule that emits it also emits a matching `sector_name` slot, so the
-    // drawer can show the readable name and jump straight to the Sectors tab
-    // card instead of dead-ending on an internal macro string.
+    // Evidence keys that reference a PLAYER station: id key -> {name slot,
+    // evidence key holding its `code`}. Player stations live on the Stations
+    // tab keyed by code (station-helpers.js goToStation), same as the
+    // fleet table's home-station links.
+    const PLAYER_STATION_KEYS = {
+      station_id:  { nameSlot: 'station_name', codeKey: 'code' },
+      homebase_id: { nameSlot: 'station_name', codeKey: 'station_code' },
+    };
+    // Evidence keys that reference an NPC station: id key -> readable-name
+    // slot. The raw value IS the object_id goToNpcStation() (npc-station-
+    // inspector.js) navigates by, so no separate code lookup is needed.
+    const NPC_STATION_KEYS = {
+      npc_station_id: 'npc_name',
+    };
+    // Keys that exist purely to feed the avg-price gauge below, never shown
+    // as their own flat row. `code`/`station_code` are NOT listed here —
+    // military's damaged_fleet also carries a bare `code` (the ship's own
+    // tag, unrelated to any station link), so hiding those two is done per-
+    // finding in _evidenceHtml, scoped to whichever PLAYER_STATION_KEYS a
+    // finding's evidence actually uses.
+    const HIDDEN_EVIDENCE_KEYS = new Set([
+      'avg_price', 'price', 'player_price_cents', 'npc_price_cents',
+    ]);
+
+    // One row of the evidence grid. `sector_macro` and the station-id keys
+    // above get special treatment: every rule that emits one also emits a
+    // matching readable-name slot, so the drawer can show that name and jump
+    // straight to the referenced card instead of dead-ending on an internal
+    // id string. `ware_id` similarly swaps in the finding's own `ware_name`
+    // slot rather than the raw macro-ish ware id.
     function _evidenceRowHtml(f, k, v) {
       if (k === 'sector_macro') {
         const name = f.slots.sector_name || v;
         return `<div class="adv-ev-key">Sector</div>
           <div class="adv-ev-val"><span class="adv-sector-link" onclick="event.stopPropagation(); goToSector('${v}')"><i class="ti ti-map-pin"></i>${name}</span></div>`;
       }
+      if (PLAYER_STATION_KEYS[k]) {
+        const { nameSlot, codeKey } = PLAYER_STATION_KEYS[k];
+        const name  = f.slots[nameSlot] || v;
+        const code  = f.evidence[codeKey];
+        const label = EVIDENCE_LABELS[k] || 'Station';
+        const val = code
+          ? `<span class="adv-station-link" onclick="event.stopPropagation(); goToStation('${code}')"><i class="ti ti-building-factory-2"></i>${name}</span>`
+          : name;
+        return `<div class="adv-ev-key">${label}</div><div class="adv-ev-val">${val}</div>`;
+      }
+      if (NPC_STATION_KEYS[k]) {
+        const name  = f.slots[NPC_STATION_KEYS[k]] || v;
+        const label = EVIDENCE_LABELS[k] || 'Station';
+        return `<div class="adv-ev-key">${label}</div>
+          <div class="adv-ev-val"><span class="adv-station-link" onclick="event.stopPropagation(); goToNpcStation('${v}')"><i class="ti ti-building-factory-2"></i>${name}</span></div>`;
+      }
+      if (k === 'ware_id') {
+        return `<div class="adv-ev-key">Ware</div><div class="adv-ev-val">${f.slots.ware_name || v}</div>`;
+      }
+      if (k === 'ship_id' && f.slots.ship_name) {
+        return `<div class="adv-ev-key">Ship</div><div class="adv-ev-val">${f.slots.ship_name}</div>`;
+      }
       const label = EVIDENCE_LABELS[k] || k.replace(/_/g, ' ');
       const value = typeof v === 'number'
         ? (Number.isInteger(v) ? v.toLocaleString() : v.toLocaleString(undefined, { maximumFractionDigits: 2 }))
         : (v ?? '—');
       return `<div class="adv-ev-key">${label}</div><div class="adv-ev-val">${value}</div>`;
+    }
+
+    // Inline vs-average price visual — one more key/value row in the SAME
+    // .adv-evidence grid as the rest of the drawer (not a boxed block of its
+    // own), keyed "Pricing" so the row reads name-left/bar-right like every
+    // other evidence row. Same gradient-track-with-glowing-dot instrument as
+    // _buyerTipHtml below and cashflow-chart.js's avgPriceTipHtml (the
+    // Stations > Economy > Breakdown chart's hover), just static instead of a
+    // tooltip. One dot per marker, so pricing_gap can plot "Your Price" and
+    // "Their Price" on the same track — their above/below-average colours
+    // alone make the gap visible. Capped at half the value column's width
+    // (.adv-pricing-gauge in advisors.css) rather than stretching full width.
+    // Picks its markers from whichever price shape a finding's evidence
+    // carries — pricing_gap has both sides of the gap, market_opportunity
+    // just the one reachable price. Findings with no avg_price (overflow_risk,
+    // idle_hauler, ...) render nothing.
+    function _pricingRowHtml(f) {
+      const ev = f.evidence;
+      if (!ev.avg_price) return '';
+      const avgPrice = ev.avg_price;
+      const markers = (ev.player_price_cents != null && ev.npc_price_cents != null)
+        ? [{ label: 'Your Price', price: ev.player_price_cents / 100 },
+           { label: 'Their Price', price: ev.npc_price_cents / 100 }]
+        : (ev.price != null ? [{ label: 'Their Price', price: ev.price }] : null);
+      if (!markers) return '';
+
+      const dots = markers.map(m => {
+        const diff  = (m.price - avgPrice) / avgPrice * 100;
+        const above = diff >= 0;
+        const col   = above ? CHART_ACCENT : CHART_LOSS;
+        // Clamped to ±50% so an extreme outlier price doesn't run its dot off the track.
+        const pct = (50 + Math.max(-50, Math.min(50, diff))).toFixed(1);
+        return { ...m, diff, above, col, pct };
+      });
+      const dotsHtml = dots.map(d => `<div class="adv-pricing-dot" style="left:${d.pct}%;background:${d.col};box-shadow:0 0 0.5rem ${d.col}"></div>`).join('');
+      const legend = dots.map(d => `<span style="color:${d.col}">${d.label} ${d.price.toLocaleString()} Cr ${d.above ? '▲' : '▼'}${Math.abs(d.diff).toFixed(1)}%</span>`).join('')
+        + `<span>Avg ${avgPrice.toLocaleString()} Cr</span>`;
+
+      return `<div class="adv-ev-key">Pricing</div>
+        <div class="adv-ev-val">
+          <div class="adv-pricing-gauge">
+            <div class="adv-pricing-track" style="background:linear-gradient(90deg,${CHART_LOSS}33,var(--outline) 50%,${CHART_ACCENT}33)">
+              <div class="adv-pricing-mid"></div>
+              ${dotsHtml}
+            </div>
+            <div class="adv-pricing-legend">${legend}</div>
+          </div>
+        </div>`;
     }
 
     // Buyer-row hover: how this station's buy price compares to the ware's
@@ -301,14 +396,18 @@
       // Siting is the only type with a Details/Buyers toggle — every other
       // finding renders its plain evidence grid as before.
       if (!isSiting) {
+        // Station-link plumbing (the `code`/`station_code` a PLAYER_STATION_KEYS
+        // row consumes) is only hidden when this finding actually carries the
+        // matching station_id/homebase_id key — damaged_fleet's bare `code`
+        // (a ship tag, no station link involved) is untouched by this.
+        const codeKeys = Object.keys(f.evidence)
+          .filter(k => PLAYER_STATION_KEYS[k])
+          .map(k => PLAYER_STATION_KEYS[k].codeKey);
         const rows = Object.entries(f.evidence)
+          .filter(([k]) => !HIDDEN_EVIDENCE_KEYS.has(k) && !codeKeys.includes(k))
           .map(([k, v]) => _evidenceRowHtml(f, k, v)).join('');
         return `<div class="adv-drawer">
-            <div class="adv-evidence">
-              ${rows}
-              <div class="adv-ev-key">Priority Score</div>
-              <div class="adv-ev-val">${f.priority_score.toLocaleString()}</div>
-            </div>
+            <div class="adv-evidence">${rows}${_pricingRowHtml(f)}</div>
           </div>`;
       }
 

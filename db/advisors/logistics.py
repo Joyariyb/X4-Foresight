@@ -61,6 +61,7 @@ def idle_hauler_findings(conn, scan_id) -> list[dict]:
         }
         evidence = {
             'ship_id': r['object_id'], 'homebase_id': r['homebase_id'],
+            'station_code': r['station_code'],
             'cargo_m3': r['cargo_m3'], 'cargo_max_m3': r['cargo_max_m3'],
         }
         findings.append(_finding(

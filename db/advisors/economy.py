@@ -75,7 +75,8 @@ def overflow_risk_findings(conn, scan_id, avg_prices) -> list[dict]:
         }
         evidence = {
             'station_id': r['station_id'], 'code': r['code'],
-            'ware_id': r['ware_id'], 'surplus_rate': r['surplus_rate'],
+            'ware_id': r['ware_id'],
+            'surplus_rate': r['surplus_rate'],
             'time_to_cap_hours': r['time_to_cap_hours'],
         }
         findings.append(_finding(
@@ -86,7 +87,7 @@ def overflow_risk_findings(conn, scan_id, avg_prices) -> list[dict]:
 
 # ── Rule 2: market opportunity (surplus -> reachable NPC demand) ─────────────
 
-def market_opportunity_findings(conn, scan_id, demand_by_ware) -> list[dict]:
+def market_opportunity_findings(conn, scan_id, demand_by_ware, avg_prices) -> list[dict]:
     rows = conn.execute(
         "SELECT spa.station_id, spa.ware_id, spa.ware_name, spa.surplus_rate, "
         "       s.code, s.name AS station_name "
@@ -115,9 +116,15 @@ def market_opportunity_findings(conn, scan_id, demand_by_ware) -> list[dict]:
             'value_per_hour': round(value_per_hour),
         }
         evidence = {
-            'station_id': r['station_id'], 'ware_id': r['ware_id'],
+            'station_id': r['station_id'], 'code': r['code'],
+            'ware_id': r['ware_id'],
             'surplus_rate': r['surplus_rate'], 'npc_station_id': best['object_id'],
             'jumps': best['jumps'], 'demand_depth': best['demand_depth'],
+            # price/avg_price aren't shown as their own Details rows — kept
+            # here purely to feed the card's inline vs-average price gauge
+            # (see advisors-feed.js's _priceGaugeHtml), same convention as
+            # trader.station_siting_findings' avg_price.
+            'price': price_cr, 'avg_price': avg_prices.get(r['ware_id'], 0),
         }
         findings.append(_finding(
             f"marketgap:{r['station_id']}:{r['ware_id']}:{best['object_id']}",
@@ -128,7 +135,7 @@ def market_opportunity_findings(conn, scan_id, demand_by_ware) -> list[dict]:
 
 # ── Rule 3: pricing gap (player selling below a reachable NPC buyer) ────────
 
-def pricing_gap_findings(conn, scan_id, demand_by_ware) -> list[dict]:
+def pricing_gap_findings(conn, scan_id, demand_by_ware, avg_prices) -> list[dict]:
     # The player's own SELL side of each ware — sell_price/sell_amount aliased
     # to the generic names the gap math below reads. A co-posted buy offer for
     # the same ware keeps its own columns and can't skew the sell price here.
@@ -166,10 +173,11 @@ def pricing_gap_findings(conn, scan_id, demand_by_ware) -> list[dict]:
             'gain':         round(gain),
         }
         evidence = {
-            'station_id': r['station_id'], 'ware_id': r['ware_id'],
+            'station_id': r['station_id'], 'code': r['code'],
+            'ware_id': r['ware_id'],
             'player_price_cents': r['price'], 'npc_price_cents': best['price'],
             'npc_station_id': best['object_id'], 'jumps': best['jumps'],
-            'amount': r['amount'],
+            'amount': r['amount'], 'avg_price': avg_prices.get(r['ware_id'], 0),
         }
         findings.append(_finding(
             f"pricing:{r['station_id']}:{r['ware_id']}:{best['object_id']}",

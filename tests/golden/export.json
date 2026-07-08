@@ -1089,6 +1089,7 @@
         "evidence": {
           "ship_id": "[0x6100]",
           "homebase_id": "[0x6000]",
+          "station_code": "STA-002",
           "cargo_m3": 0.0,
           "cargo_max_m3": 8200.0
         }
@@ -1111,11 +1112,14 @@
         },
         "evidence": {
           "station_id": "[0x1000]",
+          "code": "STA-001",
           "ware_id": "energycells",
           "surplus_rate": 10500.0,
           "npc_station_id": "[0x2200]",
           "jumps": 1,
-          "demand_depth": 2607
+          "demand_depth": 2607,
+          "price": 0.35,
+          "avg_price": 16
         }
       },
       {
@@ -1136,11 +1140,14 @@
         },
         "evidence": {
           "station_id": "[0x6000]",
+          "code": "STA-002",
           "ware_id": "energycells",
           "surplus_rate": 10500.0,
           "npc_station_id": "[0x2200]",
           "jumps": 1,
-          "demand_depth": 2607
+          "demand_depth": 2607,
+          "price": 0.35,
+          "avg_price": 16
         }
       },
       {
@@ -1229,12 +1236,14 @@
         },
         "evidence": {
           "station_id": "[0x1000]",
+          "code": "STA-001",
           "ware_id": "energycells",
           "player_price_cents": 20,
           "npc_price_cents": 35,
           "npc_station_id": "[0x2200]",
           "jumps": 1,
-          "amount": 4200
+          "amount": 4200,
+          "avg_price": 16
         }
       }
     ]

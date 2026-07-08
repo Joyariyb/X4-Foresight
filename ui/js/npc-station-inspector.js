@@ -193,6 +193,22 @@
     if (st) openNpcStationInspector(st);
   }
 
+  // Cross-tab jump to an NPC station's Inspector — the NPC counterpart of
+  // station-helpers.js's goToStation(), called from the Advisors evidence
+  // drawer's station links (advisors-feed.js). Only reaches stations already
+  // in allNpcTradePartners (reachable within NPC_TRADE_RANGE_MAX_JUMPS of the
+  // player, same radius the advisor rules themselves gate on — see
+  // advisors.ADVISOR_MAX_JUMPS), so a no-op here means the station legitimately
+  // isn't one the player can currently act on.
+  function goToNpcStation(objectId) {
+    const st = allNpcTradePartners.find(s => s.object_id === objectId);
+    if (!st) return;
+    _navRecord();
+    switchTab('stations-npc', document.getElementById('nav-stations'));
+    _navAfterJump();
+    openNpcStationInspector(st);
+  }
+
   function npcAltRow(entry) {
     const arrow = entry.dir === 'sell'
       ? `<span style="color:${CHART_ACCENT}">▲</span>`

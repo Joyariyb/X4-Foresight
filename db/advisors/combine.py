@@ -60,8 +60,8 @@ def compute_advisors(conn: sqlite3.Connection, scan_id: int | None = None,
 
     findings: list[dict] = []
     findings += economy.overflow_risk_findings(conn, scan_id, avg_prices)
-    findings += economy.market_opportunity_findings(conn, scan_id, demand_by_ware)
-    findings += economy.pricing_gap_findings(conn, scan_id, demand_by_ware)
+    findings += economy.market_opportunity_findings(conn, scan_id, demand_by_ware, avg_prices)
+    findings += economy.pricing_gap_findings(conn, scan_id, demand_by_ware, avg_prices)
     findings += logistics.idle_hauler_findings(conn, scan_id)
     findings += trader.station_siting_findings(
         conn, scan_id, distances_from_player, avg_prices)
