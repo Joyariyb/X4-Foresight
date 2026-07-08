@@ -140,8 +140,8 @@
         const pts = c.skills[sk];
         return `<div class="file-skill-row">
           <span class="file-skill-name">${SKILL_NAMES[sk] || sk}</span>
-          <span style="letter-spacing:-1px">${skillStars(pts)}</span>
-          <span style="font-family:var(--font-data);font-size:10px;color:var(--text-brand);margin-left:4px">${pts} pts</span>
+          <span class="file-skill-stars">${skillStars(pts)}</span>
+          <span class="file-skill-pts">${pts} pts</span>
         </div>`;
       }).join('');
 
@@ -153,11 +153,33 @@
       ['Variant',   c.variant],
     ].filter(([, v]) => v);
     const metaHtml = metaRows.map(([lbl, val]) =>
-      `<div style="display:flex;gap:8px;padding:2px 0;align-items:center">
-        <span style="min-width:72px;font-family:var(--font-data);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-brand)">${lbl}</span>
+      `<div class="file-meta-row">
+        <span class="file-meta-label">${lbl}</span>
         <span class="file-meta-val">${val}</span>
       </div>`
     ).join('');
+
+    // Assignment asset — show the ship/station's name (assigned_name, resolved in
+    // populate.js), linked to its home tab. assigned_code is the routing handle,
+    // kept as a secondary tag only when we have a distinct name to pair it with
+    // (so a nameless asset reads "[ABC-123]", not "ABC-123 [ABC-123]"). Stations
+    // route to the Stations tab; everything else to Naval.
+    const assetName = c.assigned_name || c.assigned_code || 'Unassigned';
+    const codeTag   = c.assigned_code && c.assigned_name
+      ? `<span class="file-assign-code"> [${c.assigned_code}]</span>` : '';
+    const assignHtml = c.assigned_code
+      ? `<span class="file-assign-name crew-link" onclick="${
+          c.assigned_type === 'station'
+            ? `goToStation('${c.assigned_code}')`
+            : `jumpToShip('${c.assigned_code}','player')`
+        }">${assetName}${codeTag}</span>`
+      : `<span class="file-assign-name">${assetName}</span>`;
+
+    // Sector — link to its Sectors-tab card when we know the macro. goToSector
+    // guards undiscovered sectors itself, so an unknown-space click is a no-op.
+    const sectorHtml = c.sector_macro
+      ? `<span class="file-assign-sector crew-link" onclick="goToSector('${c.sector_macro}')">${c.sector || '—'}</span>`
+      : `<span class="file-assign-sector">${c.sector || '—'}</span>`;
 
     card.innerHTML = `
       <div class="file-header">
@@ -169,15 +191,19 @@
         ${skillsHtml}
       </div>` : ''}
       <div class="file-section">
-        <div class="file-sec-label">Assignment</div>
-        <div class="file-assign-name">${c.assigned_to || 'Unassigned'}<span class="file-assign-code">${c.assigned_code ? ' [' + c.assigned_code + ']' : ''}</span></div>
-        <div class="file-assign-sector">${c.sector || '—'}</div>
+        <div class="file-meta-row">
+          <span class="file-meta-label">Assignment</span>
+          ${assignHtml}
+        </div>
+        <div class="file-meta-row">
+          <span class="file-meta-label">Sector</span>
+          ${sectorHtml}
+        </div>
       </div>
       ${metaHtml ? `<div class="file-section">
         <div class="file-sec-label">Profile</div>
         ${metaHtml}
       </div>` : ''}
-      ${c.seed ? `<div class="file-section"><div class="file-seed">SEED · ${c.seed}</div></div>` : ''}
     `;
   }
 

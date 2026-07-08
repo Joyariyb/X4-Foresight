@@ -52,10 +52,13 @@
       const sCol    = SIZE_COLOURS[s.size] || "var(--text-secondary)";
       const oIcon   = delivering ? ORDER_ICONS.Delivering
                                  : (ORDER_ICONS[s.ship_order] || "ti-circle");
-      const oText   = delivering
+      // Full cargo/destination detail moves to the tooltip so the column stays
+      // scannable — the row text just says "Delivering".
+      const oText   = delivering ? 'Delivering' : s.ship_order;
+      const oTip    = delivering
         ? `Delivering ${s.delivery.amount.toLocaleString()} ${s.delivery.ware_name}` +
           (s.delivery.dest_station_name ? ` → ${s.delivery.dest_station_name}` : '')
-        : s.ship_order;
+        : '';
       const nameStr = s.display_name || s.name || "—";
       // Gate the Hull Type cell's click-through on the hull actually being
       // catalogued — a few rare hulls (escape pods, etc.) have no HULL_CATALOG entry.
@@ -127,7 +130,7 @@
             ${shieldBar(s.shield_pct, s.shield_hp, s.shield_max)}
           </div>
         </td>
-        <td><i class="ti ${oIcon}" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:${oCol}"></i><span style="color:${oCol}">${oText}</span></td>
+        <td${delivering ? ` data-text-tip="${oTip}"` : ''}><i class="ti ${oIcon}" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:${oCol}"></i><span style="color:${oCol}">${oText}</span></td>
         <td style="color:var(--text-secondary)">${s.sector_macro ? `<span class="sector-link" data-sector-macro="${s.sector_macro}">` : ''}<i class="ti ti-map-pin" style="font-size:12px;vertical-align:-2px;margin-right:4px;color:var(--text-brand)"></i>${s.sector}${s.sector_macro ? '</span>' : ''}</td>
         <td style="white-space:nowrap">${stationEl}</td>
         <td style="color:var(--text-brand);white-space:nowrap"><i class="ti ti-user" style="font-size:12px;vertical-align:-2px;margin-right:4px"></i>${pilotEl}</td>

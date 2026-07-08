@@ -23,11 +23,19 @@
     .file-sec-label { font-family: var(--font-data); font-size: 1rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-label); margin-bottom: 0.6rem; }
     .file-skill-row { display: flex; align-items: center; gap: 0.8rem; padding: 0.2rem 0; }
     .file-skill-name { min-width: 9rem; font-family: var(--font-data); font-size: 1.1rem; color: var(--text-secondary); text-transform: capitalize; }
-    .file-assign-name { font-size: 1.4rem; font-family: var(--font-label); font-weight: 600; color: var(--text-primary); }
+    /* Tighten the star glyphs so a 5-star run reads as one block, not five gaps. */
+    .file-skill-stars { letter-spacing: -0.1rem; }
+    .file-skill-pts { font-family: var(--font-data); font-size: 1rem; color: var(--text-brand); margin-left: 0.4rem; }
+    /* Ship/station name — teal mono bold like .ship-name elsewhere, held at the
+       card's value size (1.2rem) so it sits inline beside its row label rather
+       than towering over it. */
+    .file-assign-name { font-size: 1.2rem; font-family: var(--font-data); font-weight: 700; color: var(--color-primary); }
     .file-assign-code { font-family: var(--font-data); font-size: 1.1rem; color: var(--color-highlight); margin-left: 0.6rem; }
-    .file-assign-sector { font-family: var(--font-data); font-size: 1.1rem; color: var(--text-label); margin-top: 0.4rem; }
+    /* Sector value — same mono data treatment as the other card values. */
+    .file-assign-sector { font-family: var(--font-data); font-size: 1.2rem; color: var(--text-secondary); }
+    .file-meta-row { display: flex; align-items: center; gap: 0.8rem; padding: 0.2rem 0; }
+    .file-meta-label { min-width: 7.2rem; font-family: var(--font-data); font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-brand); }
     .file-meta-val { font-family: var(--font-data); font-size: 1.2rem; color: var(--text-secondary); }
-    .file-seed { font-family: var(--font-data); font-size: 0.9rem; color: var(--text-label); margin-top: 0.6rem; word-break: break-all; }
     .file-empty { display: flex; align-items: center; justify-content: center; height: 16rem; font-family: var(--font-data); font-size: 1.1rem; color: var(--text-label); background: var(--surface-2); border: 1px solid var(--outline); border-radius: var(--radius-md); }
     /* Selected row highlight in the crew roster table */
     .crew-row-active td { background: var(--color-primary-dim) !important; }

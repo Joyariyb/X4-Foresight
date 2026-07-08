@@ -78,6 +78,16 @@
     (data.stations || []).forEach(s => { s.sector = resolveSector(s); });
     (data.npc_trade_partners || []).forEach(s => { s.sector = resolveSector(s); });
 
+    // Resolve each crew member's assigned asset to its display name — assigned_to
+    // only carries the kind ("Ship"/"Station"), and assigned_code is a bare code.
+    // Ships prefer their catalogued display_name (same string the Fleet table
+    // shows), then a custom name; stations use their custom name. Left null when
+    // the asset isn't in the current data so the card falls back to the code.
+    const assetNameByCode = {};
+    playerShips.forEach(s => { if (s.code) assetNameByCode[s.code] = s.display_name || s.name || null; });
+    (data.stations || []).forEach(s => { if (s.code) assetNameByCode[s.code] = s.name || null; });
+    crew.forEach(c => { c.assigned_name = c.assigned_code ? (assetNameByCode[c.assigned_code] || null) : null; });
+
     // Re-assemble the { fleet_summary, player_ships, npc_ships } object the
     // rest of populate() reads as `ships`.
     const ships    = { fleet_summary: data.fleet_summary || {},
@@ -685,7 +695,7 @@
            </div>
            <div style="display:flex;gap:0.8rem;padding:0.4rem 1.4rem">
              <span style="${prodHdrStyle};flex:1">Internal Use</span>
-             <span style="${prodHdrStyle};min-width:5.4rem;text-align:right">Rate</span>
+             <span style="${prodHdrStyle};min-width:5.4rem;text-align:right">Output</span>
              <span style="${prodHdrStyle};min-width:5.2rem;text-align:right">Runtime</span>
            </div>
          </div>`;
