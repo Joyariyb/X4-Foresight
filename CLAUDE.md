@@ -28,6 +28,26 @@ The graph can go stale: if `git rev-parse HEAD` doesn't match the commit recorde
 (no API key needed). Update after merging a branch or finishing a chunk of work — not
 mid-feature.
 
+For files over ~1,500 lines, locate the section via graphify first (`explain`/`query`
+gives `source_location` line numbers), then Read with offset/limit — never end-to-end.
+
+## Codebase map — HTML/CSS the graph can't index
+
+graphify's AST extractor has no HTML or CSS support, so these files never get nodes.
+Use this map to Read them with offset/limit instead of end-to-end:
+
+- `ui/ui.html` — 46-line QtWebEngine shell: `<head>` stylesheet list, then
+  `#app-root` + `js/shell-loader.js` injects `body.html`. The real layout is below.
+- `ui/body.html` (~940 lines) — the full dashboard DOM, shared by desktop and web.
+  Order: `#loading` L8 · `#shell`/`#topbar` nav L24 · `#sidebar` L61 · `#content`
+  tab panels from L133: overview 136, trends 206, fleet 211, designs 260,
+  builder 317, reslib 328, stations 357, stations-npc 364, crew 487, diplomacy 538,
+  universe 576, sectors 612, alerts 639, events 647, advisors-* 654–672, help 685.
+  (Line numbers drift as the file grows — trust ids over numbers.)
+- `ui/css/*.css` — one file per tab/feature, named to match its tab; `base.css`
+  holds the design tokens, `layout.css` the shell/topbar/sidebar, `charts.css`
+  the shared chart primitives.
+
 ## Standards — read these before writing code
 
 These are the authoritative rulebooks. Follow them; don't re-derive conventions.
