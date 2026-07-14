@@ -16,6 +16,52 @@
   const ORDER_COLOURS = { Trading:"var(--color-positive)", Delivering:"var(--color-positive)", Mining:"var(--color-warning)", Escorting:"var(--color-primary)", Waiting:"var(--text-brand)" };
   const SIZE_COLOURS  = { XL:"var(--color-special)", L:"var(--color-warning)", M:"var(--color-primary)", S:"var(--text-secondary)" };
 
+  // Tabler-icon class per ship role / order / summary card — shared by
+  // populate.js, fleet.js and faction-tabs.js (same consumers as the colour
+  // maps above, so they live together here).
+  const ROLE_ICONS = {
+    "Fighter":              "ti-rocket",
+    "Heavy Fighter":        "ti-rocket",
+    "Corvette":             "ti-rocket",
+    "Destroyer":            "ti-anchor",
+    "Frigate":              "ti-shield",
+    "Gunboat":              "ti-crosshair",
+    "Scout":                "ti-eye",
+    "Carrier":              "ti-drone",
+    "Freighter":            "ti-package",
+    "Transport":            "ti-package",
+    "Gas Tanker":           "ti-ripple",
+    "Miner (Solid)":        "ti-shovel",
+    "Miner (Liquid)":       "ti-droplet",
+    "Combat Supply":        "ti-box",
+    "Supply":               "ti-box",
+    "Boarding":             "ti-sword",
+  };
+
+  const ORDER_ICONS = {
+    "Trading":   "ti-arrows-exchange",
+    "Delivering": "ti-package-export",
+    "Mining":    "ti-shovel",
+    "Escorting": "ti-shield",
+    "Waiting":   "ti-clock",
+    "Idle":      "ti-clock",
+    "Patrol":    "ti-route",
+    "Attack":    "ti-crosshair",
+    "Building":  "ti-hammer",
+    "Repair":    "ti-tool",
+    "Supply":    "ti-box",
+    "Docking":   "ti-ship",
+    "Travel":    "ti-route",
+  };
+
+  const CARD_ICONS = {
+    "Credits":       "ti-coin",
+    "Total Ships":   "ti-rocket",
+    "Stations":      "ti-building-factory-2",
+    "Hostile Hulls": "ti-alert-triangle",
+    "Waiting":       "ti-clock",
+  };
+
   // ── Chart series palette ──────────────────────────────────────────────────
   // These are hex literals rather than var(--color-primary): the cash-flow and economy
   // charts render as inline SVG, and CSS custom properties don't resolve inside
