@@ -9,10 +9,11 @@ There is a prebuilt graphify knowledge graph in `graphify-out/` (`graphify-out/g
 It tracks relationships between symbols (calls, contains, shares_data_with) that a text
 search can't see, and is faster and cheaper than reading files one at a time.
 
-**Use graphify first to understand and search code connections** — not just for
+**The first tool call of any code question is a graphify query.** Not just for
 open-ended exploration, but for any specific question too: "where is X used", "what
 calls Y", "what else touches this state", "find every caller before removing this
-parameter":
+parameter". (A transcript audit found half of past sessions grepped or read files
+first and paid for it in re-orientation reads — don't be that session.)
 
 - `python -m graphify query "your question"` — find relevant nodes/edges
 - `python -m graphify explain "SymbolName"` — a node's context and neighbours
@@ -65,6 +66,16 @@ These are the authoritative rulebooks. Follow them; don't re-derive conventions.
 - `ui/ui.html` renders in **QtWebEngine**. For drop shadows use the CSS
   `filter: drop-shadow(...)`, **not** SVG `<feDropShadow>` — the SVG filter silently
   fails to render in QtWebEngine. (Also in [`UI_STANDARDS.md`](docs/UI_STANDARDS.md) §7.)
+
+## Environment facts — don't rediscover these
+
+- Canonical Python is 3.14 at `C:\Users\lenovo\AppData\Local\Python\pythoncore-3.14-64\`
+  (plain `python` on PATH). It has `isal` and `lxml`; it does **not** have `psutil` —
+  don't probe for it or pip-install mid-session.
+- There is **no `gh` CLI** on this machine. Use plain `git`; for GitHub-side actions,
+  hand the user a URL or instructions instead.
+- Console output is UTF-8 (`PYTHONIOENCODING` is set in `.claude/settings.json`) —
+  no need for encoding workarounds or ASCII-only print statements.
 
 ## Working style
 
