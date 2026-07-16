@@ -694,6 +694,37 @@ def _hull_catalog() -> dict:
     return out
 
 
+def _station_missions(conn, scan_id) -> dict:
+    """{station_id: {station_name, station_code, sector_name, missions: [...]}}
+
+    Grouped by station here (not in the UI) — same rationale as _events: the
+    AI consumer of the JSON gets the same ready-to-use shape. Each mission
+    carries its objective steps joined in from station_mission_objectives.
+    """
+    objectives_by_offer: dict[str, list[dict]] = {}
+    for r in _rows(conn,
+                   "SELECT * FROM station_mission_objectives WHERE scan_id=? "
+                   "ORDER BY offer_id, step", (scan_id,)):
+        objectives_by_offer.setdefault(r['offer_id'], []).append(
+            _drop(r, 'scan_id', 'offer_id'))
+
+    out: dict[str, dict] = {}
+    for r in _rows(conn,
+                   "SELECT * FROM station_missions WHERE scan_id=? "
+                   "ORDER BY station_name, name", (scan_id,)):
+        station = out.setdefault(r['station_id'], {
+            'station_name': r['station_name'],
+            'station_code': r['station_code'],
+            'sector_name':  r['sector_name'],
+            'missions':     [],
+        })
+        mission = _drop(r, 'scan_id', 'station_id', 'station_code',
+                         'station_name', 'sector_macro', 'sector_name')
+        mission['objectives'] = objectives_by_offer.get(r['offer_id'], [])
+        station['missions'].append(mission)
+    return out
+
+
 def _events(conn, scan_id) -> dict:
     """{category: [event rows…]} newest first — the "recent events" feed.
 
@@ -822,6 +853,9 @@ def to_export(conn: sqlite3.Connection, scan_id: int | None = None) -> dict:
         # Player notification feed grouped by category, newest first (capped
         # per category at DB-write time), + career stats from the <stats> block.
         'events':                _events(conn, scan_id),
+        # Station bulletin-board mission offers, grouped by the station
+        # they're anchored to (see scanner/handlers/missions.py).
+        'station_missions':      _station_missions(conn, scan_id),
         'player_stats': {
             r['stat_id']: (int(r['value'])
                            if isinstance(r['value'], float) and r['value'].is_integer()

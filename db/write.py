@@ -77,6 +77,7 @@ def write_scan(conn: sqlite3.Connection, ctx) -> int:
     _write_in_progress_deliveries(cur, scan_id, ctx)
     _write_player_events(cur, scan_id, ctx)
     _write_player_stats(cur, scan_id, ctx)
+    _write_station_missions(cur, scan_id, ctx)
     _write_crew(cur, scan_id, ctx)
     _write_active(cur, scan_id, ctx)
     _write_ledger(cur, scan_id, ctx)
@@ -314,6 +315,50 @@ def _write_player_events(cur, scan_id, ctx) -> None:
             for e in evs[:EVENTS_PER_CATEGORY]
         )
     cur.executemany("INSERT INTO player_events VALUES(?,?,?,?,?,?,?,?)", rows)
+
+
+def _write_station_missions(cur, scan_id, ctx) -> None:
+    """One row per station-anchored mission offer, plus its objective steps.
+
+    station_id is known at harvest time (MissionHandler), but the station's
+    display name/code/sector are resolved here — same deferred-lookup pattern
+    as _write_npc_ships' delivery destination, since ctx.npc_station_index is
+    only guaranteed complete once the whole file has been parsed.
+
+    The offer's component= isn't always a station: for some mission types
+    (sabotage/signal-leak targets, observed as class="signalleak") it points
+    to a marker object physically on a station rather than the station
+    itself, and the scanner doesn't track that indirection. Rather than show
+    a blank-named "station" in the UI, missions whose component= doesn't
+    resolve to a real NPC station are dropped — same "not station-anchored"
+    treatment as the tutorial/plot/campaign-thread offers the handler already
+    filters out.
+    """
+    sect_name = {sec.sector_macro: sec.sector_name for sec in ctx.sectors}
+
+    rows = []
+    kept_offer_ids = set()
+    for m in ctx.station_missions:
+        st = ctx.npc_station_index.get(m.station_id)
+        if st is None:
+            continue
+        kept_offer_ids.add(m.offer_id)
+        rows.append((
+            scan_id, m.offer_id, m.station_id, st.code, st.name,
+            st.sector_macro, sect_name.get(st.sector_macro, ''),
+            m.name, m.description, m.faction_id, m.faction_name,
+            m.mission_type, m.level, m.reward_cr, m.reward_text, m.distance_m,
+        ))
+    cur.executemany(
+        "INSERT INTO station_missions VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
+
+    obj_rows = [
+        (scan_id, m.offer_id, step, otype, text)
+        for m in ctx.station_missions if m.offer_id in kept_offer_ids
+        for step, otype, text in m.objectives
+    ]
+    cur.executemany(
+        "INSERT INTO station_mission_objectives VALUES(?,?,?,?,?)", obj_rows)
 
 
 def _write_player_stats(cur, scan_id, ctx) -> None:

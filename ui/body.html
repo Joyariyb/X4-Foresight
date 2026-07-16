@@ -112,6 +112,9 @@
       <div class="sb-item" onclick="switchTab('events', null); EventsFeed.render()">
         <span class="sb-item-label"><i class="ti ti-notebook"></i> Events</span>
       </div>
+      <div class="sb-item" onclick="switchTab('missions', null); MissionsFeed.render()">
+        <span class="sb-item-label"><i class="ti ti-flag"></i> Missions</span>
+      </div>
       <div class="sb-divider"></div>
       <div class="sb-heading">JSON Exports <span style="color:var(--color-negative)">&mdash; WIP</span></div>
       <div class="sb-item">
@@ -647,6 +650,14 @@
       <div class="tab-panel" id="tab-events">
         <div class="sec-header"><div class="sec-title">Events</div><div class="sec-line"></div></div>
         <div id="events-root"></div>
+      </div>
+
+      <!-- CAPTAINS LOG · MISSIONS TAB — station bulletin-board missions,
+           grouped by the station offering them, rendered by
+           js/missions-feed.js from the export's `station_missions` section. -->
+      <div class="tab-panel" id="tab-missions">
+        <div class="sec-header"><div class="sec-title">Missions</div><div class="sec-line"></div></div>
+        <div id="missions-root"></div>
       </div>
 
       <!-- ADVISORS · ECONOMIC TAB — ranked rule-based findings from the

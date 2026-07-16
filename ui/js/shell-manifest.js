@@ -33,6 +33,7 @@
     'js/station-helpers.js',
     'js/production-flow.js',
     'js/events-feed.js',
+    'js/missions-feed.js',
     'js/advisors-meta.js',
     'js/advisors-evidence.js',
     'js/advisors-feed.js',

@@ -113,6 +113,11 @@
                          sectors: data.sectors || [] });
     EventsFeed.render();
 
+    // Station bulletin-board missions — same hand-off pattern as EventsFeed:
+    // data in now, the sidebar's Missions item re-renders on open.
+    MissionsFeed.setData(data.station_missions);
+    MissionsFeed.render();
+
     // Economic Advisor findings — same hand-off pattern as EventsFeed: data
     // in now, the sidebar's Advisors > Economic item re-renders on open.
     AdvisorsFeed.setData(data.advisors);

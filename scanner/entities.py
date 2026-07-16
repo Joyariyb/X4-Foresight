@@ -477,3 +477,39 @@ class ActiveAutoTrade:
     amount:       int
     price_cr:     float
     total_cr:     float
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  STATION MISSIONS  (bulletin-board <offer> rows anchored to an NPC station)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@dataclass
+class StationMission:
+    """One station bulletin-board mission offer (a "generic mission" in MD terms).
+
+    Only offers carrying a component= attribute are captured — that's the
+    station the mission is physically anchored to. Tutorials, the plot, and
+    multi-stage faction-war campaign threads (threadtype="sequential") carry
+    no component= and are skipped by the handler, since they aren't tied to
+    one station. actor= (the NPC you comm for the briefing) is deliberately
+    not resolved/stored — this is a station-anchored mission, not an
+    NPC-offered one.
+    """
+    scan_id:       int
+    offer_id:      str                       # save's <offer id=>, unique per mission
+    station_id:    str                       # FK → npc_stations.object_id
+    station_code:  str
+    station_name:  str
+    sector_macro:  str
+    sector_name:   str
+    name:          str                       # offer name= e.g. "Hired Help"
+    description:   str
+    faction_id:    str                       # offer faction=
+    faction_name:  str
+    mission_type:  str                       # offer type= e.g. "repair", "find", "transport"
+    level:         str                       # difficulty: veryeasy..veryhard
+    reward_cr:     int | None                # offer reward=, credits
+    reward_text:   str | None                # offer rewardtext=, non-credit reward
+    distance_m:    float | None              # offer distance= from the station
+    objectives:    list[tuple[int, str, str]] = field(default_factory=list)
+    # each tuple: (step, type, text) from <briefing><objective step= type= text=/>

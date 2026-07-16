@@ -7,7 +7,7 @@ from .entities import (
     Station, NpcStation, Ship, CrewMember, ReputationEntry, Sector, Gate,
     SectorResource, FactionRelationEntry,
     ActiveTrade, ActiveAutoTrade, InProgressDelivery, PlayerEvent,
-    TradeHistory, TradeHistoryMining, TradeHistoryInternal,
+    TradeHistory, TradeHistoryMining, TradeHistoryInternal, StationMission,
 )
 
 # All saves use class="station"; others ("factory", "headquarters", "complex") may occur in DLC.
@@ -99,6 +99,11 @@ class ScanContext:
     # Career stats from the <stats> block: stat id → numeric value
     # (trade_score, fight_rank, …). First occurrence wins.
     player_stats: dict[str, float] = field(default_factory=dict)
+
+    # ── Station bulletin-board missions (MissionHandler) ─────────────────────
+    # Every <missions><offer component=...> row (station-anchored generic
+    # missions only — see StationMission's docstring).
+    station_missions: list[StationMission] = field(default_factory=list)
 
 
     # ── Cross-handler reference data ──────────────────────────────────────────

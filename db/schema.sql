@@ -319,6 +319,41 @@ CREATE TABLE IF NOT EXISTS player_stats (
     PRIMARY KEY (scan_id, stat_id)
 );
 
+-- Station bulletin-board mission offers (<missions><offer component=>), one
+-- snapshot per scan of whatever's currently posted — no cross-scan dedup,
+-- same HISTORY class as player_events. Only offers anchored to a station are
+-- captured; see scanner/handlers/missions.py for what's excluded and why.
+CREATE TABLE IF NOT EXISTS station_missions (
+    scan_id       INTEGER NOT NULL REFERENCES scans(scan_id) ON DELETE CASCADE,
+    offer_id      TEXT,          -- save's <offer id=>, unique per mission
+    station_id    TEXT,          -- FK → npc_stations.object_id
+    station_code  TEXT,
+    station_name  TEXT,
+    sector_macro  TEXT,
+    sector_name   TEXT,
+    name          TEXT,          -- offer name= e.g. "Hired Help"
+    description   TEXT,
+    faction_id    TEXT,          -- offer faction=
+    faction_name  TEXT,
+    mission_type  TEXT,          -- offer type= e.g. "repair", "find", "transport"
+    level         TEXT,          -- difficulty: veryeasy..veryhard
+    reward_cr     INTEGER,       -- offer reward=, credits ('' if non-credit only)
+    reward_text   TEXT,          -- offer rewardtext=, non-credit reward
+    distance_m    REAL           -- offer distance= from the station
+);
+CREATE INDEX IF NOT EXISTS ix_station_missions_scan    ON station_missions(scan_id);
+CREATE INDEX IF NOT EXISTS ix_station_missions_station ON station_missions(station_id);
+
+-- One row per <briefing><objective> step of a station_missions row above.
+CREATE TABLE IF NOT EXISTS station_mission_objectives (
+    scan_id   INTEGER NOT NULL REFERENCES scans(scan_id) ON DELETE CASCADE,
+    offer_id  TEXT,
+    step      INTEGER,
+    type      TEXT,
+    text      TEXT
+);
+CREATE INDEX IF NOT EXISTS ix_station_mission_objectives_offer ON station_mission_objectives(scan_id, offer_id);
+
 
 -- ══ LEDGER (cumulative, dedup'd across scans) ════════════════════════════════
 -- Completed trades (once per trade, dedup'd by game_time_s). INSERT OR IGNORE on trade_key

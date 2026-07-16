@@ -21,6 +21,12 @@ _SECTOR_NAME_RE = re.compile(r'\(([^)]+)\)\s*$')
 _SECTOR_MACRO_RE = re.compile(r'cluster_(\d+)_sector(\d+)_macro', re.IGNORECASE)
 _LOCATION_REF_RE = re.compile(r'\{20004,(\d+)\}')
 _TEXT_REF_RE     = re.compile(r'^\{(\d+),(\d+)\}$')
+# A ref immediately followed by its own literal fallback text in parentheses —
+# same convention page 20004 uses for sector names ("{20003,270001}(The Void)"),
+# observed on a couple of NPC factories too (e.g.
+# "{20201,6604}(Scrap Processing Factory)"). resolve_text_ref() prefers the
+# resolved page text when available and falls back to the embedded literal.
+_TEXT_REF_FALLBACK_RE = re.compile(r'^\{(\d+),(\d+)\}\((.*)\)$')
 
 
 @contextlib.contextmanager
@@ -212,15 +218,41 @@ def nameindex_to_roman(nameindex_str: str) -> str:
         return ''
 
 
+# Some pages store another ref as their own text — e.g. page 20102 id 1091
+# (a "base station type" entry) resolves to the literal string
+# "{20201,6604}(Scrap Processing Factory)", a second ref+fallback pair
+# pointing at the ware-factory-name page. Bounded defensively (observed only
+# 2 levels deep in practice) so a pathological/circular texts dict can't loop.
+_MAX_REF_DEPTH = 3
+
+
 def resolve_text_ref(raw: str, texts: dict) -> str:
     """
-    Resolves a bare {page,id} language reference to its text string.
+    Resolves a {page,id} language reference to its text string, following
+    nested refs up to _MAX_REF_DEPTH levels (see _MAX_REF_DEPTH's comment).
+
+    Also handles a ref immediately followed by its own literal fallback text
+    in parentheses (see _TEXT_REF_FALLBACK_RE) — the resolved page text wins
+    when the page is loaded; the embedded literal is used otherwise, so a ref
+    to a page this scanner doesn't preload still resolves to something readable.
+
     Returns the raw value unchanged if it is not a reference or not found.
     """
-    m = _TEXT_REF_RE.match(raw)
-    if m:
-        return texts.get(f"{m.group(1)}:{m.group(2)}", raw)
-    return raw
+    value = raw
+    for _ in range(_MAX_REF_DEPTH):
+        m = _TEXT_REF_RE.match(value)
+        if m:
+            key = f"{m.group(1)}:{m.group(2)}"
+            if key not in texts:
+                return value
+            value = texts[key]
+            continue
+        m = _TEXT_REF_FALLBACK_RE.match(value)
+        if m:
+            value = texts.get(f"{m.group(1)}:{m.group(2)}", m.group(3))
+            continue
+        break
+    return value
 
 
 # Known X4 size suffixes — stripped from the end of the station type token

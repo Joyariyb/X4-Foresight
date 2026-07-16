@@ -496,6 +496,42 @@ class TestEventLog:
         assert all(e.title for e in ctx.player_events)
 
 
+class TestStationMissions:
+    """MissionHandler / _write_station_missions / _station_missions export.
+
+    Fixture's <missions> block has two <offer>s: one anchored to the TEL
+    trade station [0x2000] (kept), one tutorial with no component= (dropped
+    by the handler itself — no station to group it under)."""
+
+    def test_only_station_anchored_offer_captured(self, ctx):
+        assert len(ctx.station_missions) == 1
+        m = ctx.station_missions[0]
+        assert m.offer_id == '900001'
+        assert m.station_id == '[0x2000]'
+
+    def test_fields_and_newline_decoded(self, ctx):
+        m = ctx.station_missions[0]
+        assert m.name == 'Hired Help'
+        assert m.description == 'Fix the leak.\nReward attached.'
+        assert m.faction_id == 'teladi'
+        assert m.mission_type == 'repair'
+        assert m.level == 'veryeasy'
+        assert m.reward_cr == 55120
+        assert m.distance_m == 4200.0
+        assert m.objectives == [(1, 'repair', 'TRD-042 data leak')]
+
+    def test_export_grouped_by_station_with_resolved_name(self, export):
+        sm = export['station_missions']
+        assert list(sm.keys()) == ['[0x2000]']
+        station = sm['[0x2000]']
+        assert station['station_code'] == 'TRD-042'
+        assert len(station['missions']) == 1
+        mission = station['missions'][0]
+        assert mission['name'] == 'Hired Help'
+        assert mission['objectives'] == [
+            {'step': 1, 'type': 'repair', 'text': 'TRD-042 data leak'}]
+
+
 class TestEventDedupe:
     """dedupe_events() collapses the game's double-logged rows (same
     timestamp, bare row + richer twin) — shapes taken from a real 7.x save."""

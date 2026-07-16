@@ -1,0 +1,24 @@
+    /* Core role: Styles for the Captains Log missions tab — station cards and
+       the mission rows within them. Class-based + semantic tokens, same
+       approach as events.css. */
+
+    /* ── TYPE FILTER ── */
+    /* Chips reuse .events-filter/.station-tab-btn from events.css/shared-ui.css —
+       same rem-based tab chip, no separate definition needed here. */
+
+    /* ── STATION CARDS ── */
+    .mission-station-card { background: var(--surface-1); border: 1px solid var(--outline); border-radius: var(--radius-md); margin-bottom: 1rem; overflow: hidden; }
+    .mission-station-header { display: flex; align-items: center; gap: 1rem; padding: 0.7rem 1rem; background: var(--surface-2); border-bottom: 1px solid var(--outline); }
+    .mission-station-name { font-family: var(--font-label); font-size: 1.2rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-brand); }
+    .mission-station-sector { color: var(--text-secondary); font-size: 1.15rem; }
+    .mission-station-count { margin-left: auto; font-family: var(--font-data); color: var(--text-secondary); }
+
+    /* ── MISSION ROWS ── */
+    .mission-row { display: flex; align-items: center; gap: 1rem; padding: 0.55rem 1rem; border-bottom: 1px solid var(--outline); }
+    .mission-row:last-child { border-bottom: none; }
+    .mission-row:hover { background: var(--state-hover); }
+    .mission-icon { font-size: 1.5rem; flex: none; color: var(--text-brand); }
+    .mission-main { flex: 1; min-width: 0; }
+    .mission-text { color: var(--text-secondary); font-size: 1.2rem; margin-top: 0.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mission-reward { font-family: var(--font-data); color: var(--color-warning); font-size: 1.2rem; flex: none; min-width: 8rem; text-align: right; }
+    .mission-level { flex: none; font-family: var(--font-label); font-size: 0.95rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.1rem 0.5rem; border: 1px solid; border-radius: var(--radius-sm); }

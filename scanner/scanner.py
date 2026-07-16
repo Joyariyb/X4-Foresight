@@ -17,6 +17,7 @@ from .handlers.gate        import GateHandler
 from .handlers.resource    import ResourceHandler
 from .handlers.combat      import CombatHandler
 from .handlers.events      import EventLogHandler
+from .handlers.missions    import MissionHandler
 
 
 # Every tag any handler dispatches on, across _on_component_start/_on_element_start/
@@ -34,6 +35,7 @@ _DISPATCHED_TAGS = (
     'booster', 'log', 'stat', 'entry', 'removed', 'object', 'aidirector',
     'vars', 'value', 'order', 'param', 'trade',
     'area', 'wares', 'yields', 'ware', 'recharge', 'yield',
+    'offer', 'objective',
 )
 
 
@@ -53,9 +55,16 @@ class Scanner:
         # Load language file once; lang_path is a manual override if it exists.
         lang_root    = load_language_root(lang_path)
         sector_names = load_sector_names(lang_root)
-        # Pages: 20102=station basename refs, 20215=factory categories (resolve_station_type),
-        # 20203=faction names (resolve {20203,N} refs on combat-kill log entries).
-        texts = load_text_pages(lang_root, {20102, 20215, 20203})
+        # Pages: 20102=station basename refs, 20103=unique/named station names
+        # (lore stations like "Second Duchy Palace" — a name= ref straight to
+        # this page, not the generic type-name path), 20201=ware/factory names
+        # (a handful of stations put this ref directly in name=/basename=
+        # instead of going through resolve_station_type's macro-based lookup),
+        # 20215=factory categories (resolve_station_type), 20203=faction names
+        # (resolve {20203,N} refs on combat-kill log entries). Tallied against
+        # a real save: these four cover every name=/basename= ref seen on any
+        # station/factory/headquarters/complex component.
+        texts = load_text_pages(lang_root, {20102, 20103, 20201, 20215, 20203})
 
         self._station = StationHandler(sector_names, texts)
         self._ship    = ShipHandler()
@@ -68,6 +77,7 @@ class Scanner:
         self._resource = ResourceHandler()
         self._combat  = CombatHandler(texts)
         self._events  = EventLogHandler(texts)
+        self._missions = MissionHandler()
 
         # Stored for handlers that need them during scan (ship, station).
         self._sector_names = sector_names
@@ -321,6 +331,15 @@ class Scanner:
             # are handled by StationHandler's tree walk.
             self._trade.on_trade(elem, ctx)
 
+        elif tag == 'offer':
+            # <missions><offer> — a bulletin-board mission. Captures attributes;
+            # finalised (or discarded, if it has no station anchor) on </offer>.
+            self._missions.on_offer_start(elem, ctx)
+
+        elif tag == 'objective':
+            # <briefing><objective> — one step of the current offer, if any.
+            self._missions.on_objective(elem, ctx)
+
     def _on_element_end(
         self, tag: str, elem, ctx: ScanContext
     ) -> None:
@@ -351,3 +370,8 @@ class Scanner:
             # Commit the accumulated $Ship/$destination/$Ware triple (if present)
             # to delivery_dest_index.
             self._economy.on_vars_end(elem, ctx)
+
+        elif tag == 'offer':
+            # Finalise the current mission offer into ctx.station_missions
+            # (a no-op if it had no component= station anchor).
+            self._missions.on_offer_end(elem, ctx)

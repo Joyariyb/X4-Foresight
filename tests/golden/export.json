@@ -1298,6 +1298,34 @@
       }
     ]
   },
+  "station_missions": {
+    "[0x2000]": {
+      "station_name": "TEL Solar Power Plant II (TRD-042)",
+      "station_code": "TRD-042",
+      "sector_name": "Testora Rim",
+      "missions": [
+        {
+          "offer_id": "900001",
+          "name": "Hired Help",
+          "description": "Fix the leak.\nReward attached.",
+          "faction_id": "teladi",
+          "faction_name": "[TEL] Teladi Company",
+          "mission_type": "repair",
+          "level": "veryeasy",
+          "reward_cr": 55120,
+          "reward_text": null,
+          "distance_m": 4200.0,
+          "objectives": [
+            {
+              "step": 1,
+              "type": "repair",
+              "text": "TRD-042 data leak"
+            }
+          ]
+        }
+      ]
+    }
+  },
   "player_stats": {
     "fight_score": 715,
     "ships_destroyed": 7,
