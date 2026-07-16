@@ -332,6 +332,7 @@
           "time_to_cap_hours": 94.66666666666667
         }
       },
+      "input_rates": {},
       "assigned_fleet": {
         "total": 3,
         "traders": 1,
@@ -420,6 +421,7 @@
           "time_to_cap_hours": 4.761904761904762
         }
       },
+      "input_rates": {},
       "assigned_fleet": {
         "total": 1,
         "traders": 1,

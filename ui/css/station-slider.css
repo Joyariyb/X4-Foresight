@@ -55,8 +55,8 @@
     /* Dark text on the bright teal thumb; subtle emboss via text-shadow.       */
     .tri-opt.active { color: #051210; font-weight: 700; text-shadow: 0 1px 0 rgba(255,255,255,0.22); }
 
-    /* Discreet caret on the Economy segment — hints at the Breakdown/Logs
-       dropdown without competing with the Overview/More labels either side.
+    /* Discreet caret on the Economy and More segments — hints at their
+       dropdowns without competing with the Overview label.
        Dim at rest, brightens with the rest of the label on hover/active. */
     .tri-opt-caret {
       margin-left: 0.3rem;
@@ -68,10 +68,11 @@
     .tri-opt:hover .tri-opt-caret { opacity: 0.75; }
     .tri-opt.active .tri-opt-caret { opacity: 0.85; }
 
-    /* ── ECONOMY DROPDOWN (tri-track "Economy" segment → Breakdown / Logs) ──
-       Click-driven (toggleEconomyDropdown in station-helpers.js), unlike the
-       topbar's hover-driven nav-dd-menu — anchored under the Economy third
-       of the tri-track only, not the full slider width. */
+    /* ── SEGMENT DROPDOWNS (tri-track "Economy" → Breakdown / Logs,
+       "More" → Production) — click-driven (toggleStationDropdown in
+       station-helpers.js), unlike the topbar's hover-driven nav-dd-menu —
+       each anchored under its own third of the tri-track, not the full
+       slider width. Base rule positions under the Economy (middle) third. */
     .econ-dd-wrap { position: relative; }
     .econ-dd-menu {
       position: absolute; top: calc(100% + 0.4rem); left: 33.333%; width: 33.333%;
@@ -84,6 +85,10 @@
       transition: opacity var(--duration-short), transform var(--duration-short);
     }
     .econ-dd-menu.open { display: flex; opacity: 1; transform: translateY(0); }
+    /* More segment's menu sits under the right third. Right-anchored (not
+       left: 66.666%) so the 11rem min-width grows leftward over the track
+       instead of overhanging the card's right edge. */
+    .econ-dd-menu.under-more { left: auto; right: 0; }
     .econ-dd-item {
       display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 1rem;
       font-family: var(--font-label); font-size: 1.05rem; letter-spacing: 0.05em;

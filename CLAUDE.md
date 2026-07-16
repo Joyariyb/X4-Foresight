@@ -27,7 +27,10 @@ pointed you to the right place.
 The graph can go stale: if `git rev-parse HEAD` doesn't match the commit recorded in
 `graphify-out/GRAPH_REPORT.md`, refresh it with `python -m graphify update .`
 (no API key needed). Update after merging a branch or finishing a chunk of work — not
-mid-feature.
+mid-feature. **After every rebuild, run `python scratch/add_inline_handler_edges.py`**
+— the extractor can't see `onclick="fn(...)"` calls inside JS template literals
+(string content is never parsed), so that script re-adds the missing UI-handler
+call edges; a rebuild wipes them.
 
 For files over ~1,500 lines, locate the section via graphify first (`explain`/`query`
 gives `source_location` line numbers), then Read with offset/limit — never end-to-end.

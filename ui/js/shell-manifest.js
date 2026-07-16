@@ -31,6 +31,7 @@
     'js/help.js',
     'js/crew.js',
     'js/station-helpers.js',
+    'js/production-flow.js',
     'js/events-feed.js',
     'js/advisors-meta.js',
     'js/advisors-evidence.js',

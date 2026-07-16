@@ -192,6 +192,24 @@ def _stations(conn, scan_id) -> list[dict]:
             }
             for r in analytics if r['ware_name']
         }
+        # Input-side rates — one row per CONSUMED ware. The analytics rows above
+        # are keyed by produced ware, so externally sourced inputs (ore at a
+        # refinery) only get a rate here. Empty {} on scans from before the
+        # station_input_rates table existed; the flow panel falls back to
+        # limiting-ware chips in that case.
+        d['input_rates'] = {
+            r['ware_name']: {
+                'rate':          r['consumption_rate'],
+                'stock':         r['stock_units'],
+                'runtime_hours': r['runtime_hours'],
+            }
+            for r in _rows(
+                conn,
+                "SELECT ware_name, consumption_rate, stock_units, runtime_hours "
+                "FROM station_input_rates WHERE scan_id=? AND station_id=?",
+                (scan_id, sid))
+            if r['ware_name']
+        }
         # Ships that call this station home, bucketed by role.  The UI shows the
         # total in the Ships stat cell and the breakdown on hover.
         d['assigned_fleet'] = fleet_by_stn.get(sid, _EMPTY_FLEET)

@@ -866,14 +866,21 @@
                 <div class="tri-track" id="tri-${s.code}" data-pos="0" style="position:relative">
                   <div class="tri-thumb"></div>
                   <span class="tri-opt active" onclick="setStationSlider('${s.code}',0)">Overview</span>
-                  <span class="tri-opt"        onclick="toggleEconomyDropdown(event,'${s.code}')">Economy<i class="ti ti-chevron-down tri-opt-caret"></i></span>
-                  <span class="tri-opt"        onclick="setStationSlider('${s.code}',2)">More</span>
+                  <span class="tri-opt"        onclick="toggleStationDropdown(event,'econdd-${s.code}')">Economy<i class="ti ti-chevron-down tri-opt-caret"></i></span>
+                  <span class="tri-opt"        onclick="toggleStationDropdown(event,'moredd-${s.code}')">More<i class="ti ti-chevron-down tri-opt-caret"></i></span>
                 </div>
                 <!-- Breakdown/Logs picker for the Economy segment — click-driven
-                     (see toggleEconomyDropdown), anchored under that third only. -->
+                     (see toggleStationDropdown), anchored under that third only. -->
                 <div class="econ-dd-menu" id="econdd-${s.code}">
                   <div class="econ-dd-item" onclick="selectEconomyView('${s.code}','breakdown')"><i class="ti ti-chart-donut-2"></i> Breakdown</div>
                   <div class="econ-dd-item" onclick="selectEconomyView('${s.code}','logs')"><i class="ti ti-list-details"></i> Logs</div>
+                </div>
+                <!-- Picker for the More segment — same shell as the Economy menu,
+                     but anchored under the right third (.under-more). Production
+                     is the only option for now; selectMoreView is already shaped
+                     for more entries later. -->
+                <div class="econ-dd-menu under-more" id="moredd-${s.code}">
+                  <div class="econ-dd-item" onclick="selectMoreView('${s.code}','production')"><i class="ti ti-settings"></i> Production</div>
                 </div>
               </div>
             </div>
@@ -929,9 +936,10 @@
             <div class="econview-panel${econView === 'logs' ? ' active' : ''}" data-econview="logs" id="econlogs-${safeCode}">${economyLogsHtml(safeCode, s.code, allTrades, allMining)}</div>
           </div>
         </div>
-        <!-- Slider panel 2: placeholder for a future view -->
+        <!-- Slider panel 2: More → Production — ware-flow diagram
+             (productionFlowSvg in production-flow.js). -->
         <div class="station-slider-panel" data-slider="2" style="display:none">
-          <div style="padding:1.2rem 1.4rem;font-family:var(--font-data);font-size:1.1rem;color:var(--text-brand)">—</div>
+          ${productionFlowSvg(s)}
         </div>
       </div>`;
     }).join("");

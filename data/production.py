@@ -104,20 +104,15 @@ def inputs_per_cycle(ware_id: str, count: int = 1) -> dict[str, int]:
     return {WARE_NAMES.get(iid, iid): qty * count for iid, qty in raw.items()}
 
 
-def consumption_rates_from_modules(modules: list[dict]) -> dict[str, float]:
-    """Returns {ware_display_name: units_per_hour_consumed_internally} for a station.
+def _consumed_per_hour_by_id(modules) -> dict[str, float]:
+    """Returns {ware_id: units_per_hour} every production module consumes, combined.
 
     Walks every production module (identified by its macro) and sums up how many
-    units of each INPUT ware all the modules collectively consume per hour. Result
-    is keyed by display name so the UI can look up by the same name used in
-    production_rates.
-
-    `modules` is the list of dicts with at least a 'macro' key, as stored in
-    station_modules / the export's d['modules'].
-
-    Example: a station with 3 hull-parts modules and 2 energy-cell modules would
-    return {'Energy Cells': X, 'Graphene': Y, 'Refined Metals': Z} — the combined
-    internal demand from both module types.
+    units of each INPUT ware all the modules collectively consume per hour,
+    picking the faction-specific recipe when one exists. Shared core of
+    consumption_rates_from_modules, input_rates_from_modules and
+    production_analytics_from_modules so the three can never drift apart on
+    recipe handling.
     """
     consumed: dict[str, float] = {}  # ware_id → units/hr
 
@@ -138,9 +133,57 @@ def consumption_rates_from_modules(modules: list[dict]) -> dict[str, float]:
         for in_ware, in_amt in inputs.items():
             consumed[in_ware] = consumed.get(in_ware, 0.0) + in_amt * cycles_per_hr
 
-    # Convert ware IDs to display names for the UI. Unknown IDs are dropped
-    # (they'd have no WARE_COLOURS entry and the UI can't use them anyway).
-    return {WARE_NAMES[w]: v for w, v in consumed.items() if w in WARE_NAMES}
+    return consumed
+
+
+def consumption_rates_from_modules(modules: list[dict]) -> dict[str, float]:
+    """Returns {ware_display_name: units_per_hour_consumed_internally} for a station.
+
+    Display-name-keyed view of _consumed_per_hour_by_id so the UI can look up
+    by the same name used in production_rates.
+
+    `modules` is the list of dicts with at least a 'macro' key, as stored in
+    station_modules / the export's d['modules'].
+
+    Example: a station with 3 hull-parts modules and 2 energy-cell modules would
+    return {'Energy Cells': X, 'Graphene': Y, 'Refined Metals': Z} — the combined
+    internal demand from both module types.
+    """
+    # Unknown IDs are dropped (they'd have no WARE_COLOURS entry and the UI
+    # can't use them anyway).
+    return {WARE_NAMES[w]: v
+            for w, v in _consumed_per_hour_by_id(modules).items()
+            if w in WARE_NAMES}
+
+
+def input_rates_from_modules(
+    modules,
+    inventory: dict[str, tuple[int, float]],
+) -> list[dict]:
+    """Returns per-consumed-ware rows for a station, ready to store in
+    station_input_rates.
+
+    The complement of production_analytics_from_modules: that table is keyed by
+    PRODUCED ware, so externally sourced inputs (e.g. ore at a refinery) never
+    get a rate row there. This is one row per CONSUMED ware — it drives the
+    sized input ribbons on the UI's station production-flow panel.
+
+    `inventory` — {ware_id: (units, volume_m3)} as stored on the Station entity.
+
+    Each dict: ware_id, ware_name, consumption_rate (units/hr), stock_units,
+    runtime_hours (stock ÷ rate; None when the rate is zero).
+    """
+    rows = []
+    for ware_id, rate in _consumed_per_hour_by_id(modules).items():
+        stock = inventory.get(ware_id, (0, 0.0))[0]   # units only
+        rows.append({
+            'ware_id':          ware_id,
+            'ware_name':        WARE_NAMES.get(ware_id, ware_id),
+            'consumption_rate': rate,
+            'stock_units':      stock,
+            'runtime_hours':    (stock / rate) if rate > 0 else None,
+        })
+    return rows
 
 
 def production_analytics_from_modules(
@@ -187,15 +230,7 @@ def production_analytics_from_modules(
 
     # Step 2: sum internal consumption per input ware across all modules,
     # respecting faction-specific recipes (e.g. Teladi hull parts use teladianium).
-    consumed_per_hr: dict[str, float] = {}
-    for ware_id, factions in prod_modules.items():
-        stats = PRODUCTION_STATS[ware_id]
-        cycles_per_hr = 3600.0 / stats['time']
-        for faction in factions:
-            method = FACTION_METHOD.get(faction, 'default')
-            inputs = stats['methods'].get(method) or stats['methods'].get('default', {})
-            for in_ware, in_amt in inputs.items():
-                consumed_per_hr[in_ware] = consumed_per_hr.get(in_ware, 0.0) + in_amt * cycles_per_hr
+    consumed_per_hr = _consumed_per_hour_by_id(modules)
 
     # Step 3: build one analytics dict per produced ware.
     analytics = []

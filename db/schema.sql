@@ -492,6 +492,21 @@ CREATE TABLE IF NOT EXISTS station_production_analytics (
     PRIMARY KEY (scan_id, station_id, ware_id)
 );
 
+-- Per-scan input-side consumption per station/ware: every ware the station's
+-- production modules consume. The analytics table above is keyed by PRODUCED
+-- ware, so externally sourced inputs (e.g. ore at a refinery) can only get a
+-- rate row here. Drives the input rail of the UI's production-flow panel.
+CREATE TABLE IF NOT EXISTS station_input_rates (
+    scan_id          INTEGER NOT NULL REFERENCES scans(scan_id) ON DELETE CASCADE,
+    station_id       TEXT    NOT NULL,
+    ware_id          TEXT    NOT NULL,
+    ware_name        TEXT,               -- display name of the consumed ware
+    consumption_rate REAL,               -- units/hr consumed by all modules combined
+    stock_units      INTEGER,            -- station inventory of this ware at scan time
+    runtime_hours    REAL,               -- stock_units / consumption_rate; NULL when rate is 0
+    PRIMARY KEY (scan_id, station_id, ware_id)
+);
+
 -- Galaxy connectivity graph: sector-to-sector links (one row per undirected edge).
 -- Cost 1=gate/accelerator (counts toward jump range); cost 0=superhighway (free).
 -- Unique among REFERENCE tables: topology is ONE coherent graph, so cleared+rewritten each scan.

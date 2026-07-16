@@ -184,6 +184,18 @@ def _write_stations(cur, scan_id, ctx) -> None:
               pa['limiting_ware_id'], pa['limiting_ware_name'])
              for pa in s.production_analytics],
         )
+        # Per-consumed-ware input rates — the input side of the production-flow
+        # panel. Explicit column list for the same ALTER TABLE reason as above.
+        cur.executemany(
+            "INSERT INTO station_input_rates"
+            "(scan_id, station_id, ware_id, ware_name,"
+            " consumption_rate, stock_units, runtime_hours)"
+            " VALUES(?,?,?,?,?,?,?)",
+            [(scan_id, s.object_id,
+              ir['ware_id'], ir['ware_name'],
+              ir['consumption_rate'], ir['stock_units'], ir['runtime_hours'])
+             for ir in s.input_rates],
+        )
 
 
 def _write_ships(cur, scan_id, ctx) -> None:

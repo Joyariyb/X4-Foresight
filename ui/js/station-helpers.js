@@ -4,26 +4,28 @@
   // Read by populate.js when it renders slider panel 1; defaults to breakdown.
   const economyViewByStation = {};
 
-  // Opens/closes the Breakdown/Logs picker for one station's Economy segment.
+  // Opens/closes one station-card segment picker (Economy's Breakdown/Logs or
+  // More's Production menu — both reuse the .econ-dd-menu shell). Takes the
+  // menu element's id so one function serves every segment's dropdown.
   // Click-driven (not hover, unlike the topbar nav dropdown) so it doesn't
   // fire while the user is just passing the cursor over the tri-track.
-  let openEconomyDropdown = null;
+  let openStationDropdown = null;
 
-  function toggleEconomyDropdown(e, code) {
+  function toggleStationDropdown(e, menuId) {
     e.stopPropagation();
-    const menu = document.getElementById('econdd-' + code);
+    const menu = document.getElementById(menuId);
     if (!menu) return;
     const wasOpen = menu.classList.contains('open');
-    closeAllEconomyDropdowns();
+    closeAllStationDropdowns();
     if (!wasOpen) {
       menu.classList.add('open');
-      openEconomyDropdown = code;
+      openStationDropdown = menuId;
     }
   }
 
-  function closeAllEconomyDropdowns() {
+  function closeAllStationDropdowns() {
     document.querySelectorAll('.econ-dd-menu.open').forEach(m => m.classList.remove('open'));
-    openEconomyDropdown = null;
+    openStationDropdown = null;
   }
 
   // Swaps the visible sub-panel within an already-rendered Economy slider
@@ -46,11 +48,20 @@
   function selectEconomyView(code, view) {
     setEconomyView(code, view);
     setStationSlider(code, 1);
-    closeAllEconomyDropdowns();
+    closeAllStationDropdowns();
+  }
+
+  // Picking an option from the More dropdown: jump the slider to the More
+  // panel and close the picker. `view` is unused while Production is the only
+  // option — it exists so future options (mirroring setEconomyView) can swap
+  // sub-panels without changing the populate.js call sites.
+  function selectMoreView(code, view) {
+    setStationSlider(code, 2);
+    closeAllStationDropdowns();
   }
 
   document.addEventListener('click', (e) => {
-    if (openEconomyDropdown && !e.target.closest('.econ-dd-wrap')) closeAllEconomyDropdowns();
+    if (openStationDropdown && !e.target.closest('.econ-dd-wrap')) closeAllStationDropdowns();
   });
 
   // Switches the visible tab panel within a single station card.

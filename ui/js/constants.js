@@ -78,6 +78,17 @@
   const CHART_LINE_ALT = '#7af5e4'; // bright data line (cumulative-by-trade mode)
   const CHART_LOSS     = '#ef5350'; // negative / loss values (incl. own-ship losses)
   const CHART_KILL     = '#fb923c'; // offensive combat tally (enemy kills) — warm, distinct from CHART_LOSS
+  const CHART_WARN     = '#d29922'; // warning tone — mirrors --amber/--color-warning; the chart palette above never needed an amber until production-flow.js
+
+  // ── Neutral surface/text hex mirrors of base.css semantic tokens ──
+  // Same "vars don't resolve inside inline SVG" constraint as the chart palette
+  // above, but for panels that must read like the rest of the app's neutral
+  // cards (station production-flow) rather than a stylised chart.
+  const SVG_SURFACE  = '#161b22'; // --surface-1 / --bg-panel
+  const SVG_OUTLINE  = '#21262d'; // --outline / --border
+  const SVG_TEXT     = '#c9d1d9'; // --text-primary
+  const SVG_TEXT_DIM = '#8b949e'; // --text-secondary
+  const SVG_BRAND    = '#3fb950'; // --text-brand / --color-positive (green is overloaded by design)
 
   const WARE_COLOURS = {
     // Raw resources
