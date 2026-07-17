@@ -228,13 +228,15 @@
       padding: 0.3rem 0.7rem 0.2rem; border-radius: 1rem; border: 1px solid;
       border-bottom-width: 2.5px; white-space: nowrap;
     }
-    /* Legend for the underline colour, appended to every Wares panel body —
-       the same red→yellow→green scale as _wareGradLerp, so it stays in step
-       with theme changes to --red/--yellow/--green without hardcoding stops. */
+    /* Legend for the underline colour, appended to every Wares panel body.
+       Mirrors _priceGradColour's three zones (JS): green (cheap) / a flat
+       --blue band for "at average" (same info-blue as the Resources chip
+       elsewhere in the UI) / red (pricey), so it stays in step with theme
+       changes without hardcoding stops. */
     .uhp-price-legend { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.6rem; font-size: 0.95rem; color: var(--text-secondary); }
-    /* Stops hold red/green flat through the outer 20% before transitioning,
-       mirroring _priceGradColour's sub-linear bias (JS) so the legend's
-       "mostly saturated, brief yellow crossing" shape matches the chips
-       instead of reading as a plain three-stop linear ramp. */
-    .uhp-price-legend-bar { flex: 1; height: 0.3rem; border-radius: 0.2rem; background: linear-gradient(90deg, var(--red) 0%, var(--red) 20%, var(--yellow) 50%, var(--green) 80%, var(--green) 100%); }
+    /* Stops mirror _priceGradColour's PRICE_BAND (±10%, flat blue 35–65%)
+       and PRICE_SPAN (fully saturated green/red by ±25%, i.e. 15%/85%) over
+       an assumed ±30% legend range — a tight blue band with a fast
+       transition either side, not a gradual ramp. */
+    .uhp-price-legend-bar { flex: 1; height: 0.3rem; border-radius: 0.2rem; background: linear-gradient(90deg, var(--green) 0%, var(--green) 15%, var(--blue) 35%, var(--blue) 65%, var(--red) 85%, var(--red) 100%); }
 

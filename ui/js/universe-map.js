@@ -384,6 +384,20 @@
     return '#' + [mix(0), mix(1), mix(2)].map(v => v.toString(16).padStart(2, '0')).join('');
   }
 
+  // Straight two-colour hex mix, t in [0,1]. Reads the two CSS custom
+  // properties fresh each call, same theme-follows-repaint reasoning as
+  // _wareGradLerp above.
+  function _mixCssVars(varA, varB, t) {
+    const hex = v => {
+      const h = getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+      return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+    };
+    const a = hex(varA), b = hex(varB);
+    t = Math.max(0, Math.min(1, t));
+    const mix = (i) => Math.round(a[i] + (b[i] - a[i]) * t);
+    return '#' + [mix(0), mix(1), mix(2)].map(v => v.toString(16).padStart(2, '0')).join('');
+  }
+
   // Static per-sector reference data (name / sunlight / mineable yields).
   // Set by scan-loader.js's loadResourceLibrary(); lets the interactive
   // overlay draw sector sub-hexes and the hover panel before any scan exists.
@@ -1259,10 +1273,15 @@
 
   // Price-relative colour for a ware chip's underline: ratio = this
   // listing's price ÷ its galaxy-average price (warePrices, populate.js —
-  // same static bands the cashflow ware tooltip anchors to). Clamped to
-  // ±50% of average, then biased away from the 0.5 (average) midpoint with
-  // a sub-linear curve so the scale reads decisively green/red rather than
-  // spending most of its range on a muddy yellow near-average band.
+  // same static bands the cashflow ware tooltip anchors to). Three zones,
+  // not a continuous ramp: a flat --blue band (the same info-blue used
+  // elsewhere in the UI, e.g. the Resources chip) for anything within
+  // PRICE_BAND of average, then a fast transition — reaching solid
+  // green/red by PRICE_BAND + PRICE_SPAN away — so "at average" reads as a
+  // deliberate, easy-to-spot colour rather than one indistinct stop along a
+  // red-to-green ramp.
+  const PRICE_BAND = 0.10; // ±10% of average still counts as "at average"
+  const PRICE_SPAN = 0.15; // beyond the band, fully saturated within another 15%
   function _priceGradColour(price, wareId) {
     const avg = warePrices[wareId]?.average;
     if (!avg) return 'transparent';
@@ -1271,11 +1290,11 @@
     // every other buy_price/sell_price in the export; warePrices.average is
     // already plain credits, so this side of the comparison needs the
     // conversion or every ratio clamps to the pricey ceiling.
-    const ratio = Math.max(0.5, Math.min(1.5, (price / 100) / avg));
-    let t = 1 - (ratio - 0.5); // cheap (0.5x) -> 1 (green), pricey (1.5x) -> 0 (red)
-    const d = t - 0.5;
-    t = 0.5 + Math.sign(d) * Math.pow(Math.abs(d) * 2, 0.6) * 0.5;
-    return _wareGradLerp(t);
+    const ratio = (price / 100) / avg;
+    const d = ratio - 1; // signed deviation from average
+    if (Math.abs(d) <= PRICE_BAND) return getComputedStyle(document.documentElement).getPropertyValue('--blue').trim();
+    const t = Math.min(1, (Math.abs(d) - PRICE_BAND) / PRICE_SPAN);
+    return d > 0 ? _mixCssVars('--blue', '--red', t) : _mixCssVars('--blue', '--green', t);
   }
 
   // Legend strip explaining the underline colour, appended to the bottom of
