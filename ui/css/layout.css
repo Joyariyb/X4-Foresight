@@ -1,6 +1,18 @@
     /* Core role: Main layout grid (top bar, tabs, sidebar, responsive zones). */
     /* TOP BAR */
     #topbar { display: flex; align-items: stretch; background: var(--surface-1); border-bottom: 1px solid var(--outline); height: 4.8rem; flex-shrink: 0; }
+    /* Horizontal scroll is a last resort for the rare case where even
+       icon-only mode doesn't fit — js/topbar-responsive.js measures real
+       overflow (scrollWidth vs clientWidth) and only adds .topbar-scroll
+       once label-shrink and icon-only collapse have both failed to fit.
+       It must stay OFF the rest of the time: setting overflow-x on #topbar
+       forces the browser to also compute overflow-y as auto (a box can't mix
+       visible/auto across its two axes), which clips the Naval/Stations/
+       Universe dropdown menus — they're positioned absolute, popping open
+       below the topbar's own box, so any vertical clipping on #topbar hides
+       them entirely. Scoping this to the rare fallback state keeps dropdowns
+       working in the other ~100% of cases. */
+    #topbar.topbar-scroll { overflow-x: auto; }
     .tb-logo { display: flex; align-items: center; gap: 0.8rem; padding: 0 2rem; border-right: 1px solid var(--outline); font-family: var(--font-label); font-weight: 700; font-size: 1.5rem; letter-spacing: 0.12em; color: var(--color-primary); white-space: nowrap; }
     .tb-logo i { font-size: 1.8rem; }
     .tb-field { display: flex; flex-direction: column; justify-content: center; padding: 0 1.8rem; border-right: 1px solid var(--outline); }
@@ -35,6 +47,36 @@
     .nav-tab i { font-size: 1.6rem; }
     .nav-badge { font-size: 1rem; font-family: var(--font-data); background: var(--color-primary-dim); color: var(--color-primary); padding: 1px 0.5rem; border-radius: var(--radius-md); }
     .nav-badge.warn { background: var(--color-negative-dim); color: var(--color-negative); }
+
+    /* Responsive label shrink + icon-only collapse — both driven by
+       js/topbar-responsive.js measuring real overflow, not a viewport
+       breakpoint. Badge text length (nav-trends-count, nav-ships,
+       nav-alerts) changes how much room the bar actually needs at a given
+       window width, so a fixed max-width can either trigger too early
+       (wasting space) or too late (leaving tabs hidden off the edge under
+       overflow-x). Measuring real overflow avoids both.
+       --nav-scale is stepped down by the script before it gives up on text
+       entirely and falls back to icon-only. */
+    /* No transition here on purpose: topbar-responsive.js sets --nav-scale in
+       a tight measure-then-check loop (set the value, read scrollWidth,
+       repeat), and a transitioning font-size would still be mid-animation at
+       the moment each check runs, so every step would measure the old size
+       and never report a fit -- collapsing straight to icon-only every time. */
+    .nav-label { font-size: calc(1em * var(--nav-scale, 1)); }
+    /* flex-grow makes every icon-only tab claim an equal share of the row,
+       so they spread across the full width between the logo and the scan
+       field instead of bunching at their intrinsic (icon-only) width on the
+       left. justify-content re-centers the icon+badge inside that now-wider
+       box, since .nav-tab has no main-axis alignment in the (non-compact)
+       label mode above. */
+    #topbar.topbar-compact .nav-tab { padding: 0 0.9rem; flex: 1 1 0; justify-content: center; }
+    #topbar.topbar-compact .nav-label { display: none; }
+    /* .nav-dd-menu normally anchors to its parent .nav-tab's left edge
+       (left: 0), which lined up with the icon when the tab was its natural
+       (narrow) width. Now that compact tabs stretch to fill the row, that
+       same left:0 would leave the menu anchored to the tab's new left edge
+       instead of under the icon, so re-center it on the tab's midpoint. */
+    #topbar.topbar-compact .nav-dd-menu { left: 50%; transform: translateX(-50%); }
 
     /* ── NAV DROPDOWN (Universe → Map / Sectors) ──
        The parent .nav-tab is a non-clickable label; the menu opens on hover.
@@ -211,14 +253,12 @@
                        auto-fit grids (.cards-row in shared-ui.css, .sd-grid in
                        sectors.css) up to the #shell cap.
          • ≤ 1000px  → narrow. Stack master-detail panes, collapse the fixed
-                       two-column grids to one column, trim the sidebar, and let
-                       the (nowrap) topbar scroll instead of overflowing.
+                       two-column grids to one column, and trim the sidebar.
+                       (The topbar's own icon-only collapse is handled
+                       separately by js/topbar-responsive.js, not this
+                       breakpoint — see the .topbar-compact rules above.)
        ────────────────────────────────────────────────────────────────────── */
     @media (max-width: 1000px) {
-      /* Topbar has many nowrap items (logo, fields, every nav tab); let it
-         scroll sideways rather than spilling out of the shell. */
-      #topbar { overflow-x: auto; }
-
       /* Reclaim a little width from the sidebar. We keep it visible (never
          display:none) because Ship Builder and the Resource Library are only
          reachable from it — hiding it would strand those views. */
@@ -241,5 +281,21 @@
       .two-col,
       .dcard-body,
       .dcard-footer { grid-template-columns: 1fr; }
+    }
+
+    /* ── TOPBAR SHRINK ──
+       A first, gentler stage before the ≤1000px icon-only collapse above:
+       just tightens padding so every label still shows. Kept separate since
+       the topbar runs out of room sooner than the content grid does (it has
+       to fit the logo + every nav tab + the scan picker on one row), so it
+       gets its own earlier threshold. The desktop app's window has a 900px
+       minimum width (EmpireWindow.setMinimumSize in main_ui.py), which is why
+       the icon-only stage sits at 1000px rather than lower — it needs to be
+       reachable before that floor, not just in a browser tab. */
+    @media (max-width: 1150px) {
+      .tb-logo  { padding: 0 1.2rem; font-size: 1.3rem; }
+      .tb-logo i { font-size: 1.6rem; }
+      .nav-tab  { padding: 0 1rem; }
+      .tb-field { padding: 0 1.2rem; }
     }
 

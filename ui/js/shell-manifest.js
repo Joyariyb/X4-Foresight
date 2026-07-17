@@ -9,6 +9,7 @@
   // Everything that can load before the shell's bridge exists.
   const SHELL_SCRIPTS_CORE = [
     'js/constants.js',
+    'js/topbar-responsive.js',
     'js/tip-registry.js',
     'js/economy-chart.js',
     'js/economy-logs.js',

@@ -25,29 +25,29 @@
 
   <div id="topbar">
     <div class="tb-logo"><i class="ti ti-radar-2"></i> X4 · EMPIRE INTELLIGENCE</div>
-    <div class="nav-tab active" id="nav-overview" onclick="switchTab('overview',this)"><i class="ti ti-layout-dashboard"></i> Overview</div>
-    <div class="nav-tab" id="nav-trends" onclick="switchTab('trends',this)"><i class="ti ti-trending-up"></i> Trends <span class="nav-badge" id="nav-trends-count">—</span></div>
-    <div class="nav-tab nav-dropdown" id="nav-naval"><i class="ti ti-rocket"></i> Naval <span class="nav-badge" id="nav-ships">—</span> <i class="ti ti-chevron-down nav-dd-caret"></i>
+    <div class="nav-tab active" id="nav-overview" onclick="switchTab('overview',this)"><i class="ti ti-layout-dashboard"></i> <span class="nav-label">Overview</span></div>
+    <div class="nav-tab" id="nav-trends" onclick="switchTab('trends',this)"><i class="ti ti-trending-up"></i> <span class="nav-label">Trends</span> <span class="nav-badge" id="nav-trends-count">—</span></div>
+    <div class="nav-tab nav-dropdown" id="nav-naval"><i class="ti ti-rocket"></i> <span class="nav-label">Naval</span> <span class="nav-badge" id="nav-ships">—</span> <i class="ti ti-chevron-down nav-dd-caret"></i>
       <div class="nav-dd-menu">
         <div class="nav-dd-item" onclick="switchTab('fleet',document.getElementById('nav-naval'))"><i class="ti ti-list-details"></i> Ships</div>
         <div class="nav-dd-item" onclick="switchTab('designs',document.getElementById('nav-naval')); renderDesigns()"><i class="ti ti-vector-triangle"></i> Designs</div>
       </div>
     </div>
-    <div class="nav-tab nav-dropdown" id="nav-stations"><i class="ti ti-building-factory-2"></i> Stations <i class="ti ti-chevron-down nav-dd-caret"></i>
+    <div class="nav-tab nav-dropdown" id="nav-stations"><i class="ti ti-building-factory-2"></i> <span class="nav-label">Stations</span> <i class="ti ti-chevron-down nav-dd-caret"></i>
       <div class="nav-dd-menu">
         <div class="nav-dd-item" onclick="switchTab('stations',document.getElementById('nav-stations'))"><i class="ti ti-user"></i> Player</div>
         <div class="nav-dd-item" onclick="switchTab('stations-npc',document.getElementById('nav-stations')); renderNpcStationsVisibleRows()"><i class="ti ti-robot"></i> NPC</div>
       </div>
     </div>
-    <div class="nav-tab" onclick="switchTab('crew',this)"><i class="ti ti-users"></i> Crew</div>
-    <div class="nav-tab" onclick="switchTab('diplomacy',this)"><i class="ti ti-world"></i> Diplomacy</div>
-    <div class="nav-tab nav-dropdown" id="nav-universe"><i class="ti ti-planet"></i> Universe <i class="ti ti-chevron-down nav-dd-caret"></i>
+    <div class="nav-tab" onclick="switchTab('crew',this)"><i class="ti ti-users"></i> <span class="nav-label">Crew</span></div>
+    <div class="nav-tab" onclick="switchTab('diplomacy',this)"><i class="ti ti-world"></i> <span class="nav-label">Diplomacy</span></div>
+    <div class="nav-tab nav-dropdown" id="nav-universe"><i class="ti ti-planet"></i> <span class="nav-label">Universe</span> <i class="ti ti-chevron-down nav-dd-caret"></i>
       <div class="nav-dd-menu">
         <div class="nav-dd-item" onclick="switchTab('universe',document.getElementById('nav-universe')); initUniverseView()"><i class="ti ti-map-2"></i> Map</div>
         <div class="nav-dd-item" onclick="switchTab('sectors',document.getElementById('nav-universe')); renderSectorsList()"><i class="ti ti-list"></i> Sectors</div>
       </div>
     </div>
-    <div class="nav-tab" onclick="switchTab('alerts',this)"><i class="ti ti-alert-triangle"></i> Alerts <span class="nav-badge warn" id="nav-alerts">0</span></div>
+    <div class="nav-tab" onclick="switchTab('alerts',this)"><i class="ti ti-alert-triangle"></i> <span class="nav-label">Alerts</span> <span class="nav-badge warn" id="nav-alerts">0</span></div>
     <div class="tb-field tb-scan" id="tb-scan-field" style="display:none">
       <div class="lbl"><i class="ti ti-history" style="font-size:1rem;vertical-align:-1px"></i> Scan</div>
       <div class="scan-picker" id="scan-picker">
