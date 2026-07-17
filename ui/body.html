@@ -593,18 +593,19 @@
           <span style="color:var(--outline);margin:0 0.4rem">·</span>
           <i class="ti ti-filter" style="font-size:1.4rem"></i>
           <span>Overlays</span>
-          <!-- Placeholder overlay-selection chips — five stand-ins so the row's
-               layout/spacing can be judged before the real overlays (and their
-               names) exist. Styled after the By-Ware legend chips in
-               cashflow-ware.js, but using the UI_STANDARDS §2 semantic colour
-               trio instead of per-ware hex, since there's no ware-style identity
-               colour to key off yet. Look/feel to be revisited once real
-               overlays land — see toggleOverlayChip in universe-map.js. -->
-          <span class="u-overlay-chip u-overlay-chip--primary active"  onclick="toggleOverlayChip(this)">Overlay 1</span>
-          <span class="u-overlay-chip u-overlay-chip--positive active" onclick="toggleOverlayChip(this)">Overlay 2</span>
-          <span class="u-overlay-chip u-overlay-chip--warning active"  onclick="toggleOverlayChip(this)">Overlay 3</span>
-          <span class="u-overlay-chip u-overlay-chip--negative active" onclick="toggleOverlayChip(this)">Overlay 4</span>
-          <span class="u-overlay-chip u-overlay-chip--special active"  onclick="toggleOverlayChip(this)">Overlay 5</span>
+          <!-- Overlay-selection chips — a radio group (toggleOverlayChip in
+               universe-map.js): picking one deselects the rest, and clicking
+               the active chip clears back to no overlay. Colours are the
+               UI_STANDARDS §2 semantic trio plus --color-info for Resources
+               (no ware-style identity colour to key off). Only Empire has its
+               panel body wired up so far; the rest show a placeholder note
+               in _uOverlayChipHtml until their data exists. -->
+          <span class="u-overlay-chip u-overlay-chip--primary"  onclick="toggleOverlayChip(this, 'wares')">Wares</span>
+          <span class="u-overlay-chip u-overlay-chip--info"     onclick="toggleOverlayChip(this, 'resources')">Resources</span>
+          <span class="u-overlay-chip u-overlay-chip--positive" onclick="toggleOverlayChip(this, 'empire')">Empire</span>
+          <span class="u-overlay-chip u-overlay-chip--warning"  onclick="toggleOverlayChip(this, 'diplomacy')">Diplomacy</span>
+          <span class="u-overlay-chip u-overlay-chip--negative" onclick="toggleOverlayChip(this, 'threat')">Threat</span>
+          <span class="u-overlay-chip u-overlay-chip--special"  onclick="toggleOverlayChip(this, 'missions')">Missions</span>
         </div>
         <div id="universe-map-wrap">
           <!-- zoom-layer is an HTML div on purpose: browsers GPU-composite CSS

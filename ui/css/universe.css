@@ -57,11 +57,12 @@
     }
     .u-opt.active { color: #051210; font-weight: 700; text-shadow: 0 1px 0 rgba(255,255,255,0.22); }
 
-    /* Placeholder overlay-selection chips — same shape as the By-Ware legend
-       chips (cashflow-ware.js), but built from the semantic colour trio
-       (UI_STANDARDS §2) rather than per-ware hex, since these are stand-ins
-       with no identity colour of their own yet. Inactive state dims to 0.35
-       opacity, matching the ware-chip on/off convention. */
+    /* Overlay-selection chips — same shape as the By-Ware legend chips
+       (cashflow-ware.js), but built from the semantic colour trio
+       (UI_STANDARDS §2) plus --color-info for Resources, since these have no
+       ware-style identity colour of their own. Radio group (toggleOverlayChip
+       in universe-map.js): inactive dims to 0.35 opacity, matching the
+       ware-chip on/off convention. */
     .u-overlay-chip {
       display: inline-flex;
       align-items: center;
@@ -82,6 +83,7 @@
     .u-overlay-chip--warning  { color: var(--color-warning);  background: var(--color-warning-dim);  border: 1px solid var(--color-warning-line); }
     .u-overlay-chip--negative { color: var(--color-negative); background: var(--color-negative-dim); border: 1px solid var(--color-negative-line); }
     .u-overlay-chip--special  { color: var(--color-special);  background: var(--color-special-dim);  border: 1px solid var(--color-special-line); }
+    .u-overlay-chip--info     { color: var(--color-info);     background: var(--color-info-dim);     border: 1px solid var(--color-info-line); }
     #universe-map-wrap { flex: 1; min-height: 0; overflow: hidden; cursor: grab; position: relative; background: var(--surface-0); user-select: none; }
     #universe-map-wrap.panning { cursor: grabbing; }
     /* The "almost 3D" tilt: the map plane leans away from the camera like a

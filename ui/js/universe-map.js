@@ -356,6 +356,9 @@
   let _uOverlayMode    = 'interactive'; // 'interactive' | 'save'
   let _uOverlayUserSet = false;
   let _uLastMapData    = null; // last render payload, so toggling re-renders without refetching
+  // Filter-bar overlay chip (radio, at most one at a time). null = no chip
+  // selected, so the hover panel falls back to its per-mode default body.
+  let _uActiveOverlay  = null; // null | 'wares' | 'resources' | 'empire' | 'diplomacy' | 'threat' | 'missions'
   // Static per-sector reference data (name / sunlight / mineable yields).
   // Set by scan-loader.js's loadResourceLibrary(); lets the interactive
   // overlay draw sector sub-hexes and the hover panel before any scan exists.
@@ -989,10 +992,21 @@
     let html = `<div class="uhp-name">${secName}</div>
 <div class="uhp-owner" style="color:${ownColor}">${ownName}</div>`;
 
-    // The interactive overlay is a reference map, so its panel shows the
-    // sector's fixed properties (sunlight, mineable yields) instead of the
-    // save-specific empire readout below (nearest station, ship presence).
-    if (_uOverlayMode === 'interactive') {
+    // Fog of war: in 'save' mode an undiscovered sector shows nothing beyond
+    // the header, regardless of which overlay chip (if any) is selected.
+    // 'interactive' mode has fog-of-war lifted, so this never applies there.
+    const undiscovered = _uOverlayMode === 'save' && sec && sec.is_discovered === false;
+
+    if (undiscovered) {
+      html += `<div class="uhp-sep"></div><div class="uhp-none">Undiscovered</div>`;
+    } else if (_uActiveOverlay) {
+      // An overlay chip replaces the panel body below the header; the
+      // interactive-vs-save default content below is skipped entirely.
+      html += _uOverlayChipHtml(_uActiveOverlay, sectorMacro);
+    } else if (_uOverlayMode === 'interactive') {
+      // The interactive overlay is a reference map, so its panel shows the
+      // sector's fixed properties (sunlight, mineable yields) instead of the
+      // save-specific empire readout below (nearest station, ship presence).
       const sunPct = sec?.sunlight != null ? Math.round(sec.sunlight * 100) + '%' : '—';
       html += `<div class="uhp-sep"></div>
 <div class="uhp-stat"><span>Sunlight</span><span class="uhp-sun">${sunPct}</span></div>`;
@@ -1049,11 +1063,76 @@
     renderUniverseMap(_uLastMapData || {});
   }
 
-  // Placeholder overlay chips (body.html) — just flips the dimmed/lit look for
-  // now, matching the By-Ware legend chip's on/off feel. No overlay is wired
-  // up behind these yet; that lands once the real overlays exist.
-  function toggleOverlayChip(el) {
-    el.classList.toggle('active');
+  // Overlay chips (body.html filter bar) act as a radio group — selecting one
+  // deselects the rest, and clicking the already-active chip clears the
+  // selection back to no overlay. _uActiveOverlay drives what _showUHoverPanel
+  // renders below the name/owner header on the next hover.
+  function toggleOverlayChip(el, key) {
+    const wasActive = el.classList.contains('active');
+    document.querySelectorAll('.u-overlay-chip').forEach(c => c.classList.remove('active'));
+    if (wasActive) {
+      _uActiveOverlay = null;
+    } else {
+      el.classList.add('active');
+      _uActiveOverlay = key;
+    }
+  }
+
+  // Overlay chip labels for the "not wired up yet" placeholder body shown by
+  // every chip except Empire, which has its data already built (see below).
+  const _U_OVERLAY_LABELS = {
+    wares: 'Wares', resources: 'Resources', diplomacy: 'Diplomacy',
+    threat: 'Threat', missions: 'Missions',
+  };
+
+  // Dispatches to the active overlay chip's panel body. Only Empire is wired
+  // up so far; the rest render a one-line placeholder until their data exists.
+  function _uOverlayChipHtml(key, sectorMacro) {
+    if (key === 'empire') return _uEmpireOverlayHtml(sectorMacro);
+    return `<div class="uhp-sep"></div><div class="uhp-none">${_U_OVERLAY_LABELS[key] || key} overlay not wired up yet</div>`;
+  }
+
+  // Empire overlay panel body: player station count + names, ship counts by
+  // role, the nearest owned station's jump distance, and jumps from empire —
+  // all built once per render in renderUniverseMap (see _playerStaBySector,
+  // _playerShipsBySector, _nearestStation, _distFromEmpire above).
+  function _uEmpireOverlayHtml(sectorMacro) {
+    const stations = _playerStaBySector[sectorMacro] || [];
+    const ships    = _playerShipsBySector[sectorMacro] || [];
+    const near     = _nearestStation[sectorMacro];
+    const dist     = _distFromEmpire[sectorMacro];
+
+    let html = `<div class="uhp-sep"></div>
+<div class="uhp-stat"><span>Your Stations</span><span>${stations.length}</span></div>`;
+    if (stations.length) {
+      html += stations.map(st =>
+        `<div class="uhp-stat"><span>${st.name || st.code || 'Station'}</span></div>`
+      ).join('');
+    }
+
+    if (ships.length) {
+      const cat = { miner: 0, trader: 0, combat: 0 };
+      for (const sp of ships) cat[_shipCategory(sp.role)]++;
+      const breakdown = [
+        cat.miner  && `${cat.miner} mining`,
+        cat.trader && `${cat.trader} trade`,
+        cat.combat && `${cat.combat} combat`,
+      ].filter(Boolean).join(' · ');
+      html += `<div class="uhp-stat"><span>Your Ships</span><span>${ships.length}</span></div>`
+            + (breakdown ? `<div class="uhp-none">${breakdown}</div>` : '');
+    }
+
+    if (near) {
+      const jLabel = near.jumps === 0 ? 'here' : `${near.jumps} jump${near.jumps !== 1 ? 's' : ''}`;
+      html += `<div class="uhp-sep"></div>
+<div class="uhp-nearest"><span class="uhp-stname">${near.name}</span><span class="uhp-jumps">${jLabel}</span></div>`;
+    }
+
+    if (dist != null) {
+      html += `<div class="uhp-stat"><span>Jumps From Empire</span><span>${dist}</span></div>`;
+    }
+
+    return html;
   }
 
   function _uSyncOverlayButtons() {
