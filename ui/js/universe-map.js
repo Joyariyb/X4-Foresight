@@ -343,6 +343,7 @@
   let _sectorInfoMap  = {}; // sector_macro → sector row
   let _npcBySector    = {}; // sector_macro → [{owner_id, owner_name, count}]
   let _sectorWares    = {}; // sector_macro → {bought:[{ware_id,ware_name,price},…], sold:[…]}
+  let _missionsBySector = {}; // sector_macro → [mission, …] (export's station_missions, flattened)
   let _playerStaBySector = {}; // sector_macro → [station, …]
   let _playerShipsBySector = {}; // sector_macro → [ship, …]
   let _repByFaction      = {}; // faction_id → reputation row
@@ -932,6 +933,17 @@
     _npcBySector = data.npc_stations_by_sector || {};
     _sectorWares = data.sector_wares || {};
 
+    // Bulletin-board mission offers grouped by sector — export's
+    // station_missions is keyed by station, so flatten it here the same way
+    // _playerStaBySector/_playerShipsBySector rebucket their station/ship
+    // lists by sector_macro below.
+    _missionsBySector = {};
+    for (const st of Object.values(data.station_missions || {})) {
+      if (!st.sector_macro) continue;
+      const bucket = _missionsBySector[st.sector_macro] || (_missionsBySector[st.sector_macro] = []);
+      for (const m of st.missions) bucket.push(m);
+    }
+
     // The player's own stations grouped by sector (data.stations is player-only).
     // Powers the per-sector station count + "Your Stations" list in the Sectors tab.
     _playerStaBySector = {};
@@ -1276,21 +1288,147 @@
   }
 
   // Overlay chip labels for the "not wired up yet" placeholder body shown by
-  // every chip except Empire, Resources, Wares and Diplomacy, which have
-  // their data already built (see below).
-  const _U_OVERLAY_LABELS = {
-    threat: 'Threat', missions: 'Missions',
-  };
+  // every chip except Empire, Resources, Wares, Diplomacy, Threat and
+  // Missions, which have their data already built (see below).
+  const _U_OVERLAY_LABELS = {};
 
   // Dispatches to the active overlay chip's panel body. Empire, Resources,
-  // Wares and Diplomacy are wired up so far; the rest render a one-line
-  // placeholder until their data exists.
+  // Wares, Diplomacy, Threat and Missions are wired up so far; the rest
+  // render a one-line placeholder until their data exists.
   function _uOverlayChipHtml(key, sectorMacro) {
     if (key === 'empire')    return _uEmpireOverlayHtml(sectorMacro);
     if (key === 'resources') return _uResourcesOverlayHtml(sectorMacro);
     if (key === 'wares')     return _uWaresOverlayHtml(sectorMacro);
     if (key === 'diplomacy') return _uDiplomacyOverlayHtml(sectorMacro);
+    if (key === 'threat')    return _uThreatOverlayHtml(sectorMacro);
+    if (key === 'missions')  return _uMissionsOverlayHtml(sectorMacro);
     return `<div class="uhp-sep"></div><div class="uhp-none">${_U_OVERLAY_LABELS[key] || key} overlay not wired up yet</div>`;
+  }
+
+  // Missions overlay panel body: open bulletin-board offers in the sector
+  // (export's station_missions, flattened by sector — _missionsBySector
+  // above), capped to a handful of rows so one crowded trade hub doesn't
+  // blow out the hover panel. Rows show category (offer type, not the
+  // per-mission name — a hover flyout has no room for prose) + difficulty +
+  // reward. Type icon/label and difficulty pill are pulled from MissionsFeed
+  // (missions-feed.js) rather than re-declared here, so this panel always
+  // matches the Missions tab's own vocabulary. Reward mirrors missions-feed.js's
+  // _reward: credits first, falling back to the non-credit reward text — same
+  // --color-warning treatment as .mission-reward there, so a reward reads the
+  // same colour everywhere it appears.
+  const _U_MISSIONS_CAP = 5;
+  function _uMissionsOverlayHtml(sectorMacro) {
+    const missions = _missionsBySector[sectorMacro] || [];
+    if (!missions.length) {
+      return `<div class="uhp-sep"></div><div class="uhp-none">No mission offers</div>`;
+    }
+    const reward = (m) => m.reward_cr ? fmtCredits(m.reward_cr)
+      : (m.reward_text ? m.reward_text.split('\n')[0] : '—');
+    // Header uses --color-special (the Missions chip's own hue, base.css) so
+    // the flyout visibly ties back to the chip that opened it — every other
+    // wired-up overlay colours its body from the *data* (buy/sell, standing,
+    // threat), but missions have no natural binary signal, so the chip's own
+    // accent stands in instead.
+    const rows = missions.slice(0, _U_MISSIONS_CAP).map(m => {
+      const meta = MissionsFeed.typeMeta(m.mission_type);
+      return `<div class="uhp-mission-row">
+  <i class="ti ${meta.icon} uhp-mission-icon"></i>
+  <div class="uhp-mission-main">
+    <div class="uhp-mission-category">${meta.label}</div>
+    ${MissionsFeed.levelBadge(m.level)}
+  </div>
+  <span class="uhp-mission-reward">${reward(m)}</span>
+</div>`;
+    }).join('');
+    const more = missions.length > _U_MISSIONS_CAP
+      ? `<div class="uhp-none">+${missions.length - _U_MISSIONS_CAP} more</div>` : '';
+    return `<div class="uhp-sep"></div>
+<div class="uhp-mission-header"><i class="ti ti-flag"></i> ${missions.length} Offer${missions.length !== 1 ? 's' : ''}</div>
+${rows}${more}`;
+  }
+
+  // Buckets a faction by player standing, reusing the same five-tier scale
+  // reputation.py's reputation_label() writes into ReputationEntry.tier
+  // ("Allied"/"Friendly"/"Neutral"/"Hostile"/"At War") — no separate
+  // thresholds to keep in sync. Xenon/Kha'ak (LOCKED_REP_FACTIONS,
+  // constants.js) are hard-locked hostile in the game itself, so they bucket
+  // as hostile even before any reputation row exists for them (a fresh scan
+  // with no recorded contact). A faction with no rep row otherwise (never
+  // encountered) defaults to neutral rather than assumed hostile.
+  function _uThreatBucket(factionId) {
+    if (LOCKED_REP_FACTIONS.has(factionId)) return 'hostile';
+    const tier = _repByFaction[factionId]?.tier;
+    if (tier === 'Allied' || tier === 'Friendly') return 'ally';
+    if (tier === 'Hostile' || tier === 'At War')  return 'hostile';
+    return 'neutral';
+  }
+
+  // Threat overlay panel body: NPC stations in the sector grouped into
+  // Hostiles/Allies/Neutrals tags by player standing (_uThreatBucket), each
+  // showing its factions as the same dot rows the default no-overlay panel
+  // uses (_showUHoverPanel's else branch). The Hostiles tag also carries a
+  // proximity readout — whether the sector itself or a direct neighbour
+  // (_sectorAdj) is owned by a hostile faction, since a sector can be
+  // dangerous by adjacency even with no NPC stations of its own. All direct
+  // edges are one jump away regardless of gate/highway cost (see the cost-0
+  // "intra-cluster highway" comment in renderUniverseMap). Undiscovered
+  // neighbours are skipped, same fog-of-war rule showSectorDetail's
+  // Connections list uses, so the overlay can't leak ownership of a sector
+  // the player hasn't found yet.
+  function _uThreatOverlayHtml(sectorMacro) {
+    const sec  = _sectorInfoMap[sectorMacro];
+    const facs = _npcBySector[sectorMacro] || [];
+
+    const grouped = { hostile: [], ally: [], neutral: [] };
+    for (const f of facs) grouped[_uThreatBucket(f.owner_id)].push(f);
+
+    const hostileHere = sec?.owner_id && _uThreatBucket(sec.owner_id) === 'hostile';
+    const hostileNear = (_sectorAdj[sectorMacro] || [])
+      .map(lk => _sectorInfoMap[lk.macro])
+      .filter(ns => ns && ns.is_discovered && ns.owner_id && _uThreatBucket(ns.owner_id) === 'hostile');
+
+    if (!facs.length && !hostileHere && !hostileNear.length) {
+      return `<div class="uhp-sep"></div><div class="uhp-none">No NPC presence</div>`;
+    }
+
+    const factionRows = (list) => list.map(f => {
+      const m     = f.owner_name.match(/^\[(\w+)\]/);
+      const short = m ? m[1] : f.owner_name.slice(0, 3).toUpperCase();
+      const color = FACTION_COLOURS[f.owner_id] || '#6e7681';
+      return `<div class="uhp-faction-row">
+  <span class="uhp-fdot" style="background:${color}"></span>
+  <span class="uhp-fcode">${short}</span>
+  <span class="uhp-fcount">${f.count}</span>
+</div>`;
+    }).join('');
+
+    // label/tagClass/list/extraLines — extraLines only populated for the
+    // Hostiles group (the proximity readout).
+    const proximityLines = [];
+    if (hostileHere) {
+      const name = (sec.owner_name || sec.owner_id).replace(/^\[\w+\]\s*/, '');
+      proximityLines.push(`<div class="uhp-threat-line">${name} here</div>`);
+    }
+    for (const ns of hostileNear) {
+      const name = (ns.owner_name || ns.owner_id).replace(/^\[\w+\]\s*/, '');
+      proximityLines.push(`<div class="uhp-threat-line">${name} 1 jump away</div>`);
+    }
+
+    const groups = [
+      { key: 'hostile', label: 'Hostiles here', tagClass: 'tag-hostile', list: grouped.hostile, extra: proximityLines.join('') },
+      { key: 'ally',    label: 'Allies here',    tagClass: 'tag-ally',    list: grouped.ally,    extra: '' },
+      { key: 'neutral', label: 'Neutrals here',  tagClass: 'tag-neutral', list: grouped.neutral, extra: '' },
+    ];
+
+    const html = groups
+      .filter(g => g.list.length || g.extra)
+      .map(g => `<div class="uhp-threat-group">
+  <span class="uhp-threat-tag ${g.tagClass}">${g.label}</span>
+  ${factionRows(g.list)}${g.extra}
+</div>`)
+      .join('');
+
+    return `<div class="uhp-sep"></div>${html}`;
   }
 
   // Price-relative colour for a ware chip's underline: ratio = this

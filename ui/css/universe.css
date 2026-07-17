@@ -209,6 +209,28 @@
     .uhp-sun   { font-family: var(--font-data); color: var(--color-warning); }
     .uhp-ryield{ font-weight: 600; }
     .uhp-none  { color: var(--text-secondary); font-size: 1.1rem; }
+    /* Threat overlay: NPC stations grouped into Hostiles/Allies/Neutrals tags
+       by player standing (_uThreatBucket, universe-map.js). Tag pill mirrors
+       the Sectors-tab .sd-tag recipe (sectors.css) — same rounded-pill shape,
+       just scoped here since the hover panel is narrower than a sector card. */
+    .uhp-threat-group { margin: 0.6rem 0; }
+    .uhp-threat-tag {
+      display: inline-block; font-family: var(--font-label); font-size: 1rem; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase; padding: 0.2rem 0.9rem;
+      border-radius: 1rem; border: 1px solid; white-space: nowrap; margin-bottom: 0.4rem;
+    }
+    .uhp-threat-tag.tag-hostile { color: var(--color-negative); border-color: var(--color-negative-line); background: var(--color-negative-dim); }
+    .uhp-threat-tag.tag-ally    { color: var(--color-positive); border-color: var(--color-positive-line); background: var(--color-positive-dim); }
+    .uhp-threat-tag.tag-neutral { color: var(--text-primary);   border-color: var(--outline);            background: var(--surface-2); }
+    /* Hostile-proximity readout inside the Hostiles group — whether the
+       sector itself or a direct neighbour is hostile-owned. Negative-state
+       trio (UI_STANDARDS §2) as a tinted callout row, not just coloured
+       text, so it reads as a warning rather than a plain stat. */
+    .uhp-threat-line {
+      color: var(--color-negative); background: var(--color-negative-dim);
+      border: 1px solid var(--color-negative-line); border-radius: var(--radius-sm);
+      font-size: 1.1rem; padding: 0.3rem 0.6rem; margin: 0.3rem 0;
+    }
     /* Wares overlay: Sells/Buys groups of chip tags (same pill vocabulary as
        .sd-tag in sectors.css), not a comma-separated paragraph — a sector can
        carry 15+ wares and a wall of text at hover-panel width reads as an
@@ -239,4 +261,42 @@
        an assumed ±30% legend range — a tight blue band with a fast
        transition either side, not a gradual ramp. */
     .uhp-price-legend-bar { flex: 1; height: 0.3rem; border-radius: 0.2rem; background: linear-gradient(90deg, var(--green) 0%, var(--green) 15%, var(--blue) 35%, var(--blue) 65%, var(--red) 85%, var(--red) 100%); }
+    /* Missions overlay: bulletin-board offers, capped list (universe-map.js
+       _uMissionsOverlayHtml). Header and icon lean on --color-special (the
+       Missions chip's own purple, base.css) rather than a data-driven colour
+       like the other overlays — missions have no buy/sell or standing signal
+       to colour by, so the chip's own accent carries the flair instead.
+       Icon and difficulty pill (.mission-level) are the exact classes/colours
+       missions-feed.js already uses, so this panel and the Missions tab read
+       as the same feature, not two skins of it. */
+    .uhp-mission-header {
+      display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem;
+      color: var(--color-special); font-family: var(--font-label); font-size: 1.1rem;
+      font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .uhp-mission-row { display: flex; align-items: center; gap: 0.6rem; margin: 0.4rem 0; max-width: 24rem; }
+    .uhp-mission-icon { flex: none; font-size: 1.3rem; color: var(--color-special); }
+    .uhp-mission-main { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 0.5rem; }
+    /* Category (offer type= label, e.g. "Find"/"Transport"), not the
+       per-mission name — a hover flyout has no room for prose, so this shows
+       what kind of job it is rather than its flavour title (full name/
+       description/objectives stay in the Missions tab). flex:1 1 0 +
+       min-width:0 keeps the same shrink-to-ellipsis safety as the reward
+       below even though every category label is a single short word today. */
+    .uhp-mission-category {
+      flex: 1 1 0; min-width: 0;
+      color: var(--text-primary); font-family: var(--font-label); font-size: 1.05rem;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    /* max-width + ellipsis, not flex:none — reward_cr (fmtCredits) is always
+       short, but the non-credit fallback (reward_text, e.g. "Salvage value +
+       50% (max: 4,690,000 Cr)") can run long, and an un-capped flex:none item
+       refuses to shrink: it just spills past the row/panel edge instead of
+       giving the name room. Capping it here is what makes the row's own
+       max-width (above) actually hold. */
+    .uhp-mission-reward {
+      flex: 0 1 auto; min-width: 0; max-width: 8rem;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right;
+      color: var(--color-warning); font-family: var(--font-data); font-size: 1.05rem;
+    }
 

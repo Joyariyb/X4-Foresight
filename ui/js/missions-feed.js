@@ -146,5 +146,8 @@
       return true;
     });
 
-    return { setData, setFilter, render };
+    // typeMeta/levelBadge exposed so the Universe tab's Missions overlay
+    // (universe-map.js) can reuse the same icon/difficulty vocabulary as
+    // this tab instead of maintaining a second copy of TYPE_META/LEVEL_META.
+    return { setData, setFilter, render, typeMeta: _typeMeta, levelBadge: _levelBadge };
   })();

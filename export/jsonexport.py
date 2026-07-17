@@ -757,11 +757,14 @@ def _hull_catalog() -> dict:
 
 
 def _station_missions(conn, scan_id) -> dict:
-    """{station_id: {station_name, station_code, sector_name, missions: [...]}}
+    """{station_id: {station_name, station_code, sector_macro, sector_name, missions: [...]}}
 
     Grouped by station here (not in the UI) — same rationale as _events: the
     AI consumer of the JSON gets the same ready-to-use shape. Each mission
     carries its objective steps joined in from station_mission_objectives.
+    sector_macro is kept at the station level (not per-mission, since every
+    mission on a station shares it) so the Universe tab's Missions overlay
+    can bucket offers by sector without a separate station->sector lookup.
     """
     objectives_by_offer: dict[str, list[dict]] = {}
     for r in _rows(conn,
@@ -777,6 +780,7 @@ def _station_missions(conn, scan_id) -> dict:
         station = out.setdefault(r['station_id'], {
             'station_name': r['station_name'],
             'station_code': r['station_code'],
+            'sector_macro': r['sector_macro'],
             'sector_name':  r['sector_name'],
             'missions':     [],
         })

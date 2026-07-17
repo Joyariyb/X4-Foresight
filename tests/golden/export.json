@@ -237,6 +237,22 @@
     }
   ],
   "sector_wares": {
+    "cluster_1_sector001_macro": {
+      "bought": [
+        {
+          "ware_id": "siliconwafers",
+          "ware_name": "Silicon Wafers",
+          "price": 120
+        }
+      ],
+      "sold": [
+        {
+          "ware_id": "energycells",
+          "ware_name": "Energy Cells",
+          "price": 20
+        }
+      ]
+    },
     "cluster_2_sector001_macro": {
       "bought": [
         {
@@ -260,22 +276,6 @@
           "ware_id": "energycells",
           "ware_name": "Energy Cells",
           "price": 42
-        }
-      ]
-    },
-    "cluster_1_sector001_macro": {
-      "bought": [
-        {
-          "ware_id": "siliconwafers",
-          "ware_name": "Silicon Wafers",
-          "price": 120
-        }
-      ],
-      "sold": [
-        {
-          "ware_id": "energycells",
-          "ware_name": "Energy Cells",
-          "price": 20
         }
       ]
     }
@@ -1346,6 +1346,7 @@
     "[0x2000]": {
       "station_name": "TEL Solar Power Plant II (TRD-042)",
       "station_code": "TRD-042",
+      "sector_macro": "cluster_2_sector001_macro",
       "sector_name": "Testora Rim",
       "missions": [
         {
