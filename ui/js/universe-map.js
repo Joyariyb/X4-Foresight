@@ -359,6 +359,10 @@
   // Filter-bar overlay chip (radio, at most one at a time). null = no chip
   // selected, so the hover panel falls back to its per-mode default body.
   let _uActiveOverlay  = null; // null | 'wares' | 'resources' | 'empire' | 'diplomacy' | 'threat' | 'missions'
+  // Single-ware focus for the Resources chip's dropdown. null = show every
+  // sector's ordinary owner colour; a ware id repaints sector sub-hexes on a
+  // red→green gradient keyed to that ware's yield (see _uResourceWareColour).
+  let _uActiveWare     = null;
   // Static per-sector reference data (name / sunlight / mineable yields).
   // Set by scan-loader.js's loadResourceLibrary(); lets the interactive
   // overlay draw sector sub-hexes and the hover panel before any scan exists.
@@ -602,6 +606,56 @@
 
     const UNDISCOVERED_COLOUR = '#3d444d';
 
+    // ── Resources overlay: single-ware yield gradient ──────────────────────────
+    // Stops read from the same semantic tokens the yield-label badges use
+    // (sectors.css [data-yield] rules) rather than literal colours, so the
+    // gradient stays in step with theme changes to --red/--yellow/--green.
+    const _wareGradStops = ['--red', '--yellow', '--green'].map(v => {
+      const hex = getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+      return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
+    });
+    function _wareGradLerp(t) {
+      t = Math.max(0, Math.min(1, t));
+      const [a, b, tt] = t < 0.5 ? [_wareGradStops[0], _wareGradStops[1], t * 2]
+                                  : [_wareGradStops[1], _wareGradStops[2], (t - 0.5) * 2];
+      const mix = (i) => Math.round(a[i] + (b[i] - a[i]) * tt);
+      return '#' + [mix(0), mix(1), mix(2)].map(v => v.toString(16).padStart(2, '0')).join('');
+    }
+    // Coarse yield tier, mirroring the 5-group bucketing sectors.css already
+    // uses for [data-yield] colouring (verylow/low*/med*/high*/veryhigh).
+    function _yieldTier(y) {
+      if (!y) return 0;
+      if (y === 'verylow') return 1;
+      if (/^low/.test(y))  return 2;
+      if (/^med/.test(y))  return 3;
+      if (y === 'veryhigh') return 5;
+      if (/^high/.test(y)) return 4;
+      return 0;
+    }
+    // Sub-hex fill for a discovered sector when the Resources chip has a
+    // single ware selected: red (no/low yield) → green (highest yield).
+    function _uResourceWareColour(sec) {
+      const res = (sec.resources || []).find(r => r.ware === _uActiveWare);
+      return _wareGradLerp((res ? _yieldTier(res.yield_level) : 0) / 5);
+    }
+
+    // Galaxy-wide sunlight ceiling for the Sunlight picker option — the
+    // brightest sector (galaxy-wide, not just discovered ones) is the
+    // topline for "fully green", so the gradient always resolves relative to
+    // what this save's galaxy actually contains rather than a fixed %.
+    const _uMaxSunlight = sectorRows.reduce((m, s) => Math.max(m, s.sunlight || 0), 0);
+    // Sunlight anchors 100% (the game's baseline) at yellow rather than the
+    // midpoint of the observed range — red only below 100%, green scaling up
+    // to whatever this galaxy's brightest sector reaches above it.
+    function _uSunlightColour(sec) {
+      if (sec.sunlight == null) return _wareGradLerp(0);
+      const s = Math.max(0, sec.sunlight);
+      const t = s <= 1
+        ? s * 0.5
+        : (_uMaxSunlight > 1 ? 0.5 + 0.5 * Math.min(1, (s - 1) / (_uMaxSunlight - 1)) : 0.5);
+      return _wareGradLerp(t);
+    }
+
     // ── Render SVG ────────────────────────────────────────────────────────────
     vp.innerHTML = '';
     // Labels are HTML in the flat overlay, not SVG (see #universe-labels CSS).
@@ -786,8 +840,15 @@
           const sx = cx + ox * HEX_BODY;
           const sy = cy + oy * HEX_BODY;
           const revealed = !!sec.is_discovered || revealAll;
-          const sc = revealed ? (FACTION_COLOURS[sec.owner_id] || '#6e7681')
-                              : UNDISCOVERED_COLOUR;
+          // Resources chip + a single ware (or Sunlight) selected overrides
+          // the owner colour with a gradient — available on both maps, since
+          // Resources itself is static per-sector data (see
+          // #u-overlay-filters in body.html).
+          const wareMode = _uActiveOverlay === 'resources' && _uActiveWare;
+          const sc = !revealed              ? UNDISCOVERED_COLOUR
+                   : wareMode === 'sunlight' ? _uSunlightColour(sec)
+                   : wareMode                ? _uResourceWareColour(sec)
+                                              : (FACTION_COLOURS[sec.owner_id] || '#6e7681');
 
           sg.appendChild(el('polygon', {
             points:         hexPoints(sx, sy, subR - 0.5),
@@ -1003,18 +1064,9 @@
       // The interactive map is a fixed reference view — overlay chips are
       // hidden while it's active (see _uSyncOverlayButtons), so this always
       // wins over any _uActiveOverlay left selected from the save map.
-      // Shows the sector's fixed properties (sunlight, mineable yields)
-      // instead of the save-specific empire readout below.
-      const sunPct = sec?.sunlight != null ? Math.round(sec.sunlight * 100) + '%' : '—';
-      html += `<div class="uhp-sep"></div>
-<div class="uhp-stat"><span>Sunlight</span><span class="uhp-sun">${sunPct}</span></div>`;
-      const res = sec?.resources || [];
-      html += res.length
-        ? res.map(r =>
-            `<div class="uhp-stat"><span>${r.ware_name || r.ware}</span>` +
-            `<span class="uhp-ryield" data-yield="${r.yield_level || ''}">${_yieldLabel(r.yield_level || '')}</span></div>`
-          ).join('')
-        : `<div class="uhp-none">No mineable resources</div>`;
+      // Shows the sector's fixed properties (sunlight, mineable yields) —
+      // the same body the Resources chip's overlay renders on the save map.
+      html += _uResourcesOverlayHtml(sectorMacro);
     } else if (_uActiveOverlay) {
       // Save map only: an overlay chip replaces the default body below the
       // header (nearest station / NPC presence, in the else branch below).
@@ -1078,20 +1130,141 @@
       el.classList.add('active');
       _uActiveOverlay = key;
     }
+
+    // Deactivating (or switching away from) Resources drops any selected
+    // ware and closes its picker — a stale ware shouldn't keep tinting the
+    // map once the chip itself is off.
+    if (_uActiveOverlay !== 'resources') {
+      _uActiveWare = null;
+      _closeResourcesWareMenu();
+    }
+
+    // Re-render unconditionally: most chips only change hover-panel text
+    // (read live from _uActiveOverlay, no render needed), but Resources
+    // repaints the sector sub-hexes themselves via the gradient (see wareMode
+    // in the sector-hex loop above), so toggling it on/off must re-render.
+    renderUniverseMap(_uLastMapData || {});
+  }
+
+  // Opens/closes the Resources chip's ware picker (the caret in body.html).
+  // Click-driven, same shell and pattern as toggleStationDropdown in
+  // station-helpers.js (station card Economy/More segment pickers), kept
+  // separate here since it's scoped to .uov-ware-wrap, not .econ-dd-wrap.
+  function toggleResourcesWareMenu(e) {
+    e.stopPropagation(); // don't also fire the chip's own onclick (toggleOverlayChip)
+    const menu = document.getElementById('u-resources-ware-menu');
+    if (!menu) return;
+    const wasOpen = menu.classList.contains('open');
+    _closeResourcesWareMenu();
+    if (!wasOpen) {
+      _uPopulateWareMenu();
+      menu.classList.add('open');
+    }
+  }
+
+  function _closeResourcesWareMenu() {
+    document.getElementById('u-resources-ware-menu')?.classList.remove('open');
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.uov-ware-wrap')) _closeResourcesWareMenu();
+  });
+
+  // Khaak-scrap asteroid fields carry a mineable entry but aren't a ware
+  // anyone trades or mines intentionally — junk data from the static sector
+  // catalog (export/jsonexport.py _sector_catalog), excluded from the picker
+  // rather than the underlying resources list (the hover panel still shows it).
+  const _U_WARE_EXCLUDE = new Set(['rawkhaakscrap']);
+
+  // Builds the ware picker's item list from whatever sectors are currently
+  // known (works on both the save map and the interactive reference map,
+  // though the picker is only reachable on the save map — see wareMode).
+  // Built as real elements with attached listeners rather than an innerHTML
+  // template, so ware ids never need escaping for use in a click handler.
+  function _uPopulateWareMenu() {
+    const menu = document.getElementById('u-resources-ware-menu');
+    if (!menu) return;
+    const seen = new Map();
+    for (const macro in _sectorInfoMap) {
+      for (const r of (_sectorInfoMap[macro].resources || [])) {
+        if (r.ware && !_U_WARE_EXCLUDE.has(r.ware.toLowerCase()) && !seen.has(r.ware))
+          seen.set(r.ware, r.ware_name || r.ware);
+      }
+    }
+    const wares = [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+    menu.innerHTML = '';
+    // Selection square mirrors .beqf-check (fleet-designs.css) — an outlined
+    // box that fills solid when this row is the active ware (or "All
+    // Resources" when nothing is selected).
+    const addItem = (id, name) => {
+      const isSel = id === (_uActiveWare || '');
+      const item = document.createElement('div');
+      item.className = 'uov-ware-item' + (isSel ? ' active' : '');
+      const check = document.createElement('span');
+      check.className = 'uov-ware-check' + (isSel ? ' sel' : '');
+      const label = document.createElement('span');
+      label.textContent = name;
+      item.append(check, label);
+      item.addEventListener('click', () => setResourcesWare(id));
+      menu.appendChild(item);
+    };
+    addItem('', 'All Resources');
+    // Sentinel id — no real X4 ware macro collides with 'sunlight'. Colours
+    // sectors by sunlight % instead of a mineable yield (see _uSunlightColour
+    // and the wareMode branch in the sector-hex loop above).
+    addItem('sunlight', 'Sunlight');
+    for (const [id, name] of wares) addItem(id, name);
+  }
+
+  // Picking a ware from the menu: re-renders so the sector sub-hexes pick up
+  // the new gradient. Picking one also activates the Resources chip itself
+  // (mirrors clicking the chip directly) since choosing a ware only makes
+  // sense once the overlay is showing.
+  function setResourcesWare(wareId) {
+    _uActiveWare = wareId || null;
+    _closeResourcesWareMenu();
+    if (_uActiveOverlay !== 'resources') {
+      document.querySelectorAll('.u-overlay-chip').forEach(c => c.classList.remove('active'));
+      document.getElementById('u-ov-chip-resources')?.classList.add('active');
+      _uActiveOverlay = 'resources';
+    }
+    renderUniverseMap(_uLastMapData || {});
   }
 
   // Overlay chip labels for the "not wired up yet" placeholder body shown by
-  // every chip except Empire, which has its data already built (see below).
+  // every chip except Empire and Resources, which have their data already
+  // built (see below).
   const _U_OVERLAY_LABELS = {
-    wares: 'Wares', resources: 'Resources', diplomacy: 'Diplomacy',
+    wares: 'Wares', diplomacy: 'Diplomacy',
     threat: 'Threat', missions: 'Missions',
   };
 
-  // Dispatches to the active overlay chip's panel body. Only Empire is wired
-  // up so far; the rest render a one-line placeholder until their data exists.
+  // Dispatches to the active overlay chip's panel body. Only Empire and
+  // Resources are wired up so far; the rest render a one-line placeholder
+  // until their data exists.
   function _uOverlayChipHtml(key, sectorMacro) {
-    if (key === 'empire') return _uEmpireOverlayHtml(sectorMacro);
+    if (key === 'empire')    return _uEmpireOverlayHtml(sectorMacro);
+    if (key === 'resources') return _uResourcesOverlayHtml(sectorMacro);
     return `<div class="uhp-sep"></div><div class="uhp-none">${_U_OVERLAY_LABELS[key] || key} overlay not wired up yet</div>`;
+  }
+
+  // Resources overlay panel body: sunlight % + mineable yields, the same data
+  // and markup the interactive map's default panel renders (see
+  // _showUHoverPanel's 'interactive' branch) — reused here rather than
+  // duplicated so both stay in step if the yield markup ever changes.
+  function _uResourcesOverlayHtml(sectorMacro) {
+    const sec    = _sectorInfoMap[sectorMacro];
+    const sunPct = sec?.sunlight != null ? Math.round(sec.sunlight * 100) + '%' : '—';
+    let html = `<div class="uhp-sep"></div>
+<div class="uhp-stat"><span>Sunlight</span><span class="uhp-sun">${sunPct}</span></div>`;
+    const res = sec?.resources || [];
+    html += res.length
+      ? res.map(r =>
+          `<div class="uhp-stat"><span>${r.ware_name || r.ware}</span>` +
+          `<span class="uhp-ryield" data-yield="${r.yield_level || ''}">${_yieldLabel(r.yield_level || '')}</span></div>`
+        ).join('')
+      : `<div class="uhp-none">No mineable resources</div>`;
+    return html;
   }
 
   // Empire overlay panel body: player station count + names, ship counts by
@@ -1144,9 +1317,11 @@
       ?.classList.toggle('active', _uOverlayMode === 'save');
     document.getElementById('u-ov-track')
       ?.setAttribute('data-pos', _uOverlayMode === 'save' ? '1' : '0');
-    // Overlay chips only apply to the save map — the interactive map is a
-    // fixed reference view (sunlight + yields only), so hide the whole row.
-    document.getElementById('u-overlay-filters')
+    // The save-only chips (Wares/Empire/Diplomacy/Threat/Missions) need scan
+    // data that doesn't exist on the interactive map — hide just that group.
+    // Resources stays visible everywhere (static per-sector data, see
+    // #u-overlay-filters in body.html).
+    document.getElementById('u-overlay-filters-save')
       ?.classList.toggle('u-hidden', _uOverlayMode === 'interactive');
   }
 

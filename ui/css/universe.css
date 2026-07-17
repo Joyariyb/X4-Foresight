@@ -84,10 +84,67 @@
     .u-overlay-chip--negative { color: var(--color-negative); background: var(--color-negative-dim); border: 1px solid var(--color-negative-line); }
     .u-overlay-chip--special  { color: var(--color-special);  background: var(--color-special-dim);  border: 1px solid var(--color-special-line); }
     .u-overlay-chip--info     { color: var(--color-info);     background: var(--color-info-dim);     border: 1px solid var(--color-info-line); }
-    /* Overlays only apply to the save map; _uSyncOverlayButtons hides this
-       whole row while the interactive reference map is selected. */
+    /* Resources is always available (static per-sector data); the rest need
+       save data, so #u-overlay-filters-save alone is hidden on the
+       interactive map by _uSyncOverlayButtons. */
     #u-overlay-filters { display: inline-flex; align-items: center; }
-    #u-overlay-filters.u-hidden { display: none; }
+    #u-overlay-filters-save { display: inline-flex; align-items: center; }
+    #u-overlay-filters-save.u-hidden { display: none; }
+
+    /* Resources chip's single-ware picker — click-driven dropdown anchored
+       under the chip, same shell as the station card's Economy/More segment
+       pickers (station-slider.css .econ-dd-menu/.econ-dd-item), just scoped
+       to its own wrapper instead of a tri-track third. */
+    .uov-ware-wrap { position: relative; display: inline-flex; }
+    /* No colour of its own — inherits the chip's --color-info text colour and
+       its 0.35→1 opacity swap on activate, so the caret always matches the
+       chip exactly instead of drifting out of sync with a separate token. */
+    .uov-caret {
+      margin-left: 0.3rem;
+      font-size: 0.85em;
+      vertical-align: -0.05em;
+    }
+    .uov-ware-menu {
+      position: absolute; top: calc(100% + 0.4rem); left: 0;
+      min-width: 12rem; z-index: 60;
+      background: var(--surface-1); border: 1px solid var(--outline);
+      border-radius: var(--radius-md);
+      box-shadow: 0 0.6rem 1.6rem rgba(0,0,0,0.5);
+      display: none; flex-direction: column; padding: 0.3rem 0;
+      opacity: 0; transform: translateY(-0.3rem);
+      transition: opacity var(--duration-short), transform var(--duration-short);
+    }
+    .uov-ware-menu.open { display: flex; opacity: 1; transform: translateY(0); }
+    .uov-ware-item {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 0.5rem 1rem;
+      font-family: var(--font-label);
+      font-size: 1.05rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background var(--duration-short), color var(--duration-short);
+    }
+    .uov-ware-item:hover  { background: var(--surface-2); color: var(--color-info); }
+    .uov-ware-item.active { color: var(--color-info); font-weight: 600; }
+    /* Selection square — same outlined-box-fills-solid shape as .beqf-check
+       (fleet-designs.css), keyed to --color-info to match this picker's chip. */
+    .uov-ware-check {
+      width: 1.3rem; height: 1.3rem; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      border: 0.15rem solid var(--color-info);
+      border-radius: var(--radius-sm);
+    }
+    .uov-ware-check.sel::after {
+      content: '';
+      width: 0.7rem; height: 0.7rem;
+      background: var(--color-info);
+      border-radius: 1px;
+    }
     #universe-map-wrap { flex: 1; min-height: 0; overflow: hidden; cursor: grab; position: relative; background: var(--surface-0); user-select: none; }
     #universe-map-wrap.panning { cursor: grabbing; }
     /* The "almost 3D" tilt: the map plane leans away from the camera like a
