@@ -2,12 +2,86 @@
     /* UNIVERSE TAB — map fills edge-to-edge via negative margin */
     #tab-universe { flex: 1; min-height: 0; margin: -1.4rem; gap: 0; }
     .universe-filter-bar { height: 3.8rem; padding: 0 1.4rem; display: flex; align-items: center; gap: 0.8rem; background: var(--surface-1); border-bottom: 1px solid var(--outline); flex-shrink: 0; font-family: var(--font-label); font-size: 1.1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-label); }
-    /* Overlay toggle chips. Typography is inherited from the bar so the chips
-       read as part of it; the active chip carries the primary trio so the
-       selected state reads as brand, not a grey swap (UI_STANDARDS §6). */
-    .u-overlay-btn { font-family: inherit; font-size: inherit; letter-spacing: inherit; text-transform: inherit; color: var(--text-secondary); background: none; border: 1px solid var(--outline); border-radius: var(--radius-sm); padding: 0.4rem 1.2rem; cursor: pointer; transition: background var(--duration-short) var(--ease-standard), color var(--duration-short) var(--ease-standard), border-color var(--duration-short) var(--ease-standard); }
-    .u-overlay-btn:hover { background: var(--state-hover); }
-    .u-overlay-btn.active { color: var(--color-primary); background: var(--color-primary-dim); border-color: var(--color-primary-line); }
+    /* Overlay toggle — two-position version of the Stations > Player card's
+       tri-track slider (station-slider.css), reusing its carved-channel/
+       sliding-thumb look so the two toggles read as the same control across
+       tabs. Same dark channel + teal thumb colours as .tri-track/.tri-thumb;
+       only the column count (2 vs 3) and sizing differ, tuned to sit inline
+       in the 3.8rem filter bar rather than a full station card. */
+    .u-track {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      position: relative;
+      background: rgba(4,12,20,0.88);
+      border: 1px solid rgba(0,0,0,0.70);
+      border-radius: 2rem;
+      overflow: hidden;
+      user-select: none;
+      box-shadow:
+        inset 0 0.2rem 0.7rem rgba(0,0,0,0.70),
+        inset 0 1px 0.3rem rgba(0,0,0,0.50),
+        0 1px 0 rgba(255,255,255,0.07);
+    }
+    .u-thumb {
+      position: absolute;
+      top: 0.2rem; left: 0.2rem;
+      width: calc(50% - 0.4rem);
+      height: calc(100% - 0.4rem);
+      background: linear-gradient(170deg,
+        rgba(85,245,215,0.97) 0%,
+        rgba(46,202,178,0.93) 42%,
+        rgba(29,170,150,0.91) 100%);
+      border-radius: 1.6rem;
+      transition: left var(--duration-medium) var(--ease-standard);
+      pointer-events: none;
+      box-shadow:
+        0 0.3rem 0.9rem rgba(0,0,0,0.70),
+        0 1px 0.3rem rgba(0,0,0,0.50),
+        inset 0 1px 0 rgba(255,255,255,0.42),
+        inset 0 -1px 0 rgba(0,0,0,0.24);
+    }
+    .u-track[data-pos="1"] .u-thumb { left: calc(50% + 0.2rem); }
+    .u-opt {
+      position: relative;
+      z-index: 1;
+      padding: 0.5rem 1.2rem;
+      text-align: center;
+      font-family: var(--font-data);
+      font-size: 1rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(45,212,191,0.40);
+      cursor: pointer;
+      transition: color var(--duration-short);
+      white-space: nowrap;
+    }
+    .u-opt.active { color: #051210; font-weight: 700; text-shadow: 0 1px 0 rgba(255,255,255,0.22); }
+
+    /* Placeholder overlay-selection chips — same shape as the By-Ware legend
+       chips (cashflow-ware.js), but built from the semantic colour trio
+       (UI_STANDARDS §2) rather than per-ware hex, since these are stand-ins
+       with no identity colour of their own yet. Inactive state dims to 0.35
+       opacity, matching the ware-chip on/off convention. */
+    .u-overlay-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.2rem 0.7rem;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-data);
+      font-size: 1rem;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+      opacity: 0.35;
+      transition: opacity var(--duration-short) var(--ease-standard);
+    }
+    .u-overlay-chip.active { opacity: 1; }
+    .u-overlay-chip--primary  { color: var(--color-primary);  background: var(--color-primary-dim);  border: 1px solid var(--color-primary-line); }
+    .u-overlay-chip--positive { color: var(--color-positive); background: var(--color-positive-dim); border: 1px solid var(--color-positive-line); }
+    .u-overlay-chip--warning  { color: var(--color-warning);  background: var(--color-warning-dim);  border: 1px solid var(--color-warning-line); }
+    .u-overlay-chip--negative { color: var(--color-negative); background: var(--color-negative-dim); border: 1px solid var(--color-negative-line); }
+    .u-overlay-chip--special  { color: var(--color-special);  background: var(--color-special-dim);  border: 1px solid var(--color-special-line); }
     #universe-map-wrap { flex: 1; min-height: 0; overflow: hidden; cursor: grab; position: relative; background: var(--surface-0); user-select: none; }
     #universe-map-wrap.panning { cursor: grabbing; }
     /* The "almost 3D" tilt: the map plane leans away from the camera like a

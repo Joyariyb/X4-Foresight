@@ -1049,10 +1049,19 @@
     renderUniverseMap(_uLastMapData || {});
   }
 
+  // Placeholder overlay chips (body.html) — just flips the dimmed/lit look for
+  // now, matching the By-Ware legend chip's on/off feel. No overlay is wired
+  // up behind these yet; that lands once the real overlays exist.
+  function toggleOverlayChip(el) {
+    el.classList.toggle('active');
+  }
+
   function _uSyncOverlayButtons() {
     document.getElementById('u-ov-btn-interactive')
       ?.classList.toggle('active', _uOverlayMode === 'interactive');
     document.getElementById('u-ov-btn-save')
       ?.classList.toggle('active', _uOverlayMode === 'save');
+    document.getElementById('u-ov-track')
+      ?.setAttribute('data-pos', _uOverlayMode === 'save' ? '1' : '0');
   }
 

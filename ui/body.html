@@ -578,16 +578,33 @@
       <!-- UNIVERSE TAB -->
       <div class="tab-panel" id="tab-universe">
         <div class="universe-filter-bar">
+          <!-- Two map states: the interactive reference map (fog-of-war lifted,
+               sunlight/yield hover) and the save's own discovered view. Styled
+               as a two-position version of the Stations > Player card's
+               tri-track slider (station-slider.css); active state and thumb
+               position are kept in sync by _uSyncOverlayButtons on every render. -->
+          <div class="u-track" id="u-ov-track" data-pos="0">
+            <div class="u-thumb"></div>
+            <span class="u-opt active" id="u-ov-btn-interactive"
+                  onclick="setUniverseOverlay('interactive')">Interactive Map</span>
+            <span class="u-opt" id="u-ov-btn-save"
+                  onclick="setUniverseOverlay('save')">Save Map</span>
+          </div>
+          <span style="color:var(--outline);margin:0 0.4rem">·</span>
           <i class="ti ti-filter" style="font-size:1.4rem"></i>
           <span>Overlays</span>
-          <span style="color:var(--outline);margin:0 0.4rem">·</span>
-          <!-- Two map states: the interactive reference map (fog-of-war lifted,
-               sunlight/yield hover) and the save's own discovered view. Active
-               state is kept in sync by _uSyncOverlayButtons on every render. -->
-          <button type="button" class="u-overlay-btn active" id="u-ov-btn-interactive"
-                  onclick="setUniverseOverlay('interactive')">Interactive Map</button>
-          <button type="button" class="u-overlay-btn" id="u-ov-btn-save"
-                  onclick="setUniverseOverlay('save')">Save Specific</button>
+          <!-- Placeholder overlay-selection chips — five stand-ins so the row's
+               layout/spacing can be judged before the real overlays (and their
+               names) exist. Styled after the By-Ware legend chips in
+               cashflow-ware.js, but using the UI_STANDARDS §2 semantic colour
+               trio instead of per-ware hex, since there's no ware-style identity
+               colour to key off yet. Look/feel to be revisited once real
+               overlays land — see toggleOverlayChip in universe-map.js. -->
+          <span class="u-overlay-chip u-overlay-chip--primary active"  onclick="toggleOverlayChip(this)">Overlay 1</span>
+          <span class="u-overlay-chip u-overlay-chip--positive active" onclick="toggleOverlayChip(this)">Overlay 2</span>
+          <span class="u-overlay-chip u-overlay-chip--warning active"  onclick="toggleOverlayChip(this)">Overlay 3</span>
+          <span class="u-overlay-chip u-overlay-chip--negative active" onclick="toggleOverlayChip(this)">Overlay 4</span>
+          <span class="u-overlay-chip u-overlay-chip--special active"  onclick="toggleOverlayChip(this)">Overlay 5</span>
         </div>
         <div id="universe-map-wrap">
           <!-- zoom-layer is an HTML div on purpose: browsers GPU-composite CSS
@@ -1234,7 +1251,7 @@
 
           <section class="help-topic" id="help-universe" data-help-group="Universe"
                    data-help-title="Universe Map" data-help-icon="ti-map-2"
-                   data-help-blurb="The hex-grid cluster map, ownership colouring, zoom-gated detail levels, and the Interactive/Save Specific toggle.">
+                   data-help-blurb="The hex-grid cluster map, ownership colouring, zoom-gated detail levels, and the Interactive/Save Map toggle.">
         <div class="sec-header"><div class="sec-title">Universe Map · Help</div><div class="sec-line"></div></div>
         <div class="adv-help-note">
           <i class="ti ti-info-circle"></i>
@@ -1256,11 +1273,11 @@
           </div>
           <div class="adv-help-card adv--info">
             <div class="adv-help-body">
-              <div class="adv-help-head"><i class="ti ti-toggle-left adv-icon"></i><span class="adv-type">Interactive Map vs. Save Specific</span></div>
+              <div class="adv-help-head"><i class="ti ti-toggle-left adv-icon"></i><span class="adv-type">Interactive Map vs. Save Map</span></div>
               <p><strong>Interactive Map</strong> is a static reference view with
                 fog of war lifted — every cluster and sector in the galaxy is
                 shown regardless of what your pilot has actually found.
-                <strong>Save Specific</strong> restricts the map to sectors and
+                <strong>Save Map</strong> restricts the map to sectors and
                 gates your current save has actually discovered; anything beyond
                 that is hidden or marked "Undiscovered."</p>
             </div>
