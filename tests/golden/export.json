@@ -236,6 +236,50 @@
       ]
     }
   ],
+  "sector_wares": {
+    "cluster_2_sector001_macro": {
+      "bought": [
+        {
+          "ware_id": "energycells",
+          "ware_name": "Energy Cells",
+          "price": 35
+        },
+        {
+          "ware_id": "spacefuel",
+          "ware_name": "Spacefuel",
+          "price": 250
+        }
+      ],
+      "sold": [
+        {
+          "ware_id": "advancedelectronics",
+          "ware_name": "Advanced Electronics",
+          "price": 1200
+        },
+        {
+          "ware_id": "energycells",
+          "ware_name": "Energy Cells",
+          "price": 42
+        }
+      ]
+    },
+    "cluster_1_sector001_macro": {
+      "bought": [
+        {
+          "ware_id": "siliconwafers",
+          "ware_name": "Silicon Wafers",
+          "price": 120
+        }
+      ],
+      "sold": [
+        {
+          "ware_id": "energycells",
+          "ware_name": "Energy Cells",
+          "price": 20
+        }
+      ]
+    }
+  },
   "stations": [
     {
       "object_id": "[0x1000]",

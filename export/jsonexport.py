@@ -433,6 +433,68 @@ def _npc_station_wares(conn) -> dict[str, list[dict]]:
     return out
 
 
+def _sector_wares(conn, scan_id) -> dict[str, dict[str, list[dict]]]:
+    """
+    {sector_macro: {bought: [{ware_id, ware_name, price}, ...],
+                     sold:   [{ware_id, ware_name, price}, ...]}} — every ware
+    bought or sold anywhere in the sector. A ware traded both ways in a
+    sector appears in both lists. price is that direction's listing price
+    averaged across every station in the sector trading it — just enough for
+    the Wares overlay chip to colour a ware relative to its galaxy-average
+    price (ware_prices), not station-level detail (that's the NPC inspector's
+    job).
+
+    Two sources feed this, unlike _npc_station_wares (NPC only): NPC stations
+    galaxy-wide via npc_station_wares (latest-only, unlike
+    _npc_trade_partners' 5-jump/reputation-filtered subset — the Wares overlay
+    needs the whole map, not just realistic trade partners) joined to
+    npc_stations for sector_macro, PLUS the player's own posted offers from
+    station_offers (this scan only) joined to stations.
+    """
+    rows = _rows(
+        conn,
+        "SELECT ns.sector_macro, w.ware_id, w.ware_name, w.is_buying, w.is_selling, "
+        "       w.buy_price, w.sell_price "
+        "FROM npc_station_wares w "
+        "JOIN npc_stations ns ON ns.object_id = w.station_id "
+        "WHERE ns.sector_macro IS NOT NULL AND w.ware_name IS NOT NULL "
+        "UNION ALL "
+        "SELECT s.sector_macro, o.ware_id, o.ware_name, o.is_buying, o.is_selling, "
+        "       o.buy_price, o.sell_price "
+        "FROM station_offers o "
+        "JOIN stations s ON s.object_id = o.station_id AND s.scan_id = o.scan_id "
+        "WHERE o.scan_id = ? AND s.sector_macro IS NOT NULL AND o.ware_name IS NOT NULL",
+        (scan_id,),
+    )
+    # macro -> ware_id -> {'name': ware_name, 'prices': [price, ...]}
+    bought: dict[str, dict[str, dict]] = {}
+    sold: dict[str, dict[str, dict]] = {}
+    for r in rows:
+        macro = r['sector_macro']
+        if r['is_buying'] and r['buy_price'] is not None:
+            entry = bought.setdefault(macro, {}).setdefault(
+                r['ware_id'], {'name': r['ware_name'], 'prices': []})
+            entry['prices'].append(r['buy_price'])
+        if r['is_selling'] and r['sell_price'] is not None:
+            entry = sold.setdefault(macro, {}).setdefault(
+                r['ware_id'], {'name': r['ware_name'], 'prices': []})
+            entry['prices'].append(r['sell_price'])
+
+    def _entries(bucket: dict[str, dict], macro: str) -> list[dict]:
+        return sorted(
+            ({'ware_id': wid, 'ware_name': v['name'],
+              'price': round(sum(v['prices']) / len(v['prices']))}
+             for wid, v in bucket.get(macro, {}).items()),
+            key=lambda e: e['ware_name'])
+
+    out: dict[str, dict[str, list[dict]]] = {}
+    for macro in bought.keys() | sold.keys():
+        out[macro] = {
+            'bought': _entries(bought, macro),
+            'sold':   _entries(sold, macro),
+        }
+    return out
+
 
 # Hard ceiling on the Stations → NPC tab's trade-range slider. Beyond this,
 # a station is no longer a realistic trade partner, so there's no point
@@ -824,6 +886,10 @@ def to_export(conn: sqlite3.Connection, scan_id: int | None = None) -> dict:
         'galaxy_map':            galaxy_map,
         'npc_stations_by_sector': _npc_station_counts(conn, scan_id),
         'npc_trade_partners':    _npc_trade_partners(conn, scan_id, galaxy_map['distances_from_player']),
+        # Wares overlay chip (Universe tab): galaxy-wide bought/sold ware
+        # names per sector, unlike npc_trade_partners' reputation/range-
+        # filtered subset above.
+        'sector_wares':          _sector_wares(conn, scan_id),
         'stations':              _stations(conn, scan_id),
         'ships':                 ships,
         'fleet_summary':         _fleet_summary(ships),

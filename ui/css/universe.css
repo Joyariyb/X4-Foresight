@@ -209,4 +209,32 @@
     .uhp-sun   { font-family: var(--font-data); color: var(--color-warning); }
     .uhp-ryield{ font-weight: 600; }
     .uhp-none  { color: var(--text-secondary); font-size: 1.1rem; }
+    /* Wares overlay: Sells/Buys groups of chip tags (same pill vocabulary as
+       .sd-tag in sectors.css), not a comma-separated paragraph — a sector can
+       carry 15+ wares and a wall of text at hover-panel width reads as an
+       unreadable data dump. ▲/▼ + chip colour are set inline by JS
+       (CHART_ACCENT/CHART_LOSS — same convention as the trade log and
+       cashflow tooltips); width is capped so the panel never outgrows the
+       viewport regardless of ware-list length. */
+    .uhp-ware-group { margin: 0.5rem 0; max-width: 24rem; }
+    .uhp-ware-label { display: flex; align-items: center; gap: 0.4rem; font-size: 1.1rem; color: var(--text-primary); font-weight: 600; margin-bottom: 0.4rem; }
+    .uhp-ware-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    /* border-bottom is overridden inline per chip (_priceGradColour) to carry
+       a second, independent signal — price vs. galaxy average — without the
+       chip growing: same box, just a thicker coloured underline than the
+       1px border on the other three sides. */
+    .uhp-ware-chip  {
+      font-family: var(--font-label); font-size: 0.95rem; line-height: 1;
+      padding: 0.3rem 0.7rem 0.2rem; border-radius: 1rem; border: 1px solid;
+      border-bottom-width: 2.5px; white-space: nowrap;
+    }
+    /* Legend for the underline colour, appended to every Wares panel body —
+       the same red→yellow→green scale as _wareGradLerp, so it stays in step
+       with theme changes to --red/--yellow/--green without hardcoding stops. */
+    .uhp-price-legend { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.6rem; font-size: 0.95rem; color: var(--text-secondary); }
+    /* Stops hold red/green flat through the outer 20% before transitioning,
+       mirroring _priceGradColour's sub-linear bias (JS) so the legend's
+       "mostly saturated, brief yellow crossing" shape matches the chips
+       instead of reading as a plain three-stop linear ramp. */
+    .uhp-price-legend-bar { flex: 1; height: 0.3rem; border-radius: 0.2rem; background: linear-gradient(90deg, var(--red) 0%, var(--red) 20%, var(--yellow) 50%, var(--green) 80%, var(--green) 100%); }
 

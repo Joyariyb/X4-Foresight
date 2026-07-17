@@ -342,6 +342,7 @@
   let _nearestStation = {}; // sector_macro → {name, jumps}
   let _sectorInfoMap  = {}; // sector_macro → sector row
   let _npcBySector    = {}; // sector_macro → [{owner_id, owner_name, count}]
+  let _sectorWares    = {}; // sector_macro → {bought:[{ware_id,ware_name,price},…], sold:[…]}
   let _playerStaBySector = {}; // sector_macro → [station, …]
   let _playerShipsBySector = {}; // sector_macro → [ship, …]
   let _repByFaction      = {}; // faction_id → reputation row
@@ -363,6 +364,26 @@
   // sector's ordinary owner colour; a ware id repaints sector sub-hexes on a
   // red→green gradient keyed to that ware's yield (see _uResourceWareColour).
   let _uActiveWare     = null;
+  // Red→yellow→green gradient shared by the Resources chip's sub-hex fill
+  // (yield-relative) and the Wares chip's ware-chip underline (price-relative
+  // — see _priceGradColour below). Stops read from the same semantic tokens
+  // the yield-label badges use (sectors.css [data-yield] rules) rather than
+  // literal colours, so both stay in step with theme changes to
+  // --red/--yellow/--green. Recomputed on each call (cheap: 3 style reads)
+  // rather than cached at load time, so a theme change takes effect
+  // immediately without needing a re-render to repaint the stops themselves.
+  function _wareGradLerp(t) {
+    const stops = ['--red', '--yellow', '--green'].map(v => {
+      const hex = getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+      return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
+    });
+    t = Math.max(0, Math.min(1, t));
+    const [a, b, tt] = t < 0.5 ? [stops[0], stops[1], t * 2]
+                                : [stops[1], stops[2], (t - 0.5) * 2];
+    const mix = (i) => Math.round(a[i] + (b[i] - a[i]) * tt);
+    return '#' + [mix(0), mix(1), mix(2)].map(v => v.toString(16).padStart(2, '0')).join('');
+  }
+
   // Static per-sector reference data (name / sunlight / mineable yields).
   // Set by scan-loader.js's loadResourceLibrary(); lets the interactive
   // overlay draw sector sub-hexes and the hover panel before any scan exists.
@@ -607,20 +628,6 @@
     const UNDISCOVERED_COLOUR = '#3d444d';
 
     // ── Resources overlay: single-ware yield gradient ──────────────────────────
-    // Stops read from the same semantic tokens the yield-label badges use
-    // (sectors.css [data-yield] rules) rather than literal colours, so the
-    // gradient stays in step with theme changes to --red/--yellow/--green.
-    const _wareGradStops = ['--red', '--yellow', '--green'].map(v => {
-      const hex = getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-      return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
-    });
-    function _wareGradLerp(t) {
-      t = Math.max(0, Math.min(1, t));
-      const [a, b, tt] = t < 0.5 ? [_wareGradStops[0], _wareGradStops[1], t * 2]
-                                  : [_wareGradStops[1], _wareGradStops[2], (t - 0.5) * 2];
-      const mix = (i) => Math.round(a[i] + (b[i] - a[i]) * tt);
-      return '#' + [mix(0), mix(1), mix(2)].map(v => v.toString(16).padStart(2, '0')).join('');
-    }
     // Coarse yield tier, mirroring the 5-group bucketing sectors.css already
     // uses for [data-yield] colouring (verylow/low*/med*/high*/veryhigh).
     function _yieldTier(y) {
@@ -883,6 +890,7 @@
     for (const s of sectorRows) _sectorInfoMap[s.sector_macro] = s;
 
     _npcBySector = data.npc_stations_by_sector || {};
+    _sectorWares = data.sector_wares || {};
 
     // The player's own stations grouped by sector (data.stations is player-only).
     // Powers the per-sector station count + "Your Stations" list in the Sectors tab.
@@ -1235,17 +1243,77 @@
   // every chip except Empire and Resources, which have their data already
   // built (see below).
   const _U_OVERLAY_LABELS = {
-    wares: 'Wares', diplomacy: 'Diplomacy',
+    diplomacy: 'Diplomacy',
     threat: 'Threat', missions: 'Missions',
   };
 
-  // Dispatches to the active overlay chip's panel body. Only Empire and
-  // Resources are wired up so far; the rest render a one-line placeholder
+  // Dispatches to the active overlay chip's panel body. Empire, Resources
+  // and Wares are wired up so far; the rest render a one-line placeholder
   // until their data exists.
   function _uOverlayChipHtml(key, sectorMacro) {
     if (key === 'empire')    return _uEmpireOverlayHtml(sectorMacro);
     if (key === 'resources') return _uResourcesOverlayHtml(sectorMacro);
+    if (key === 'wares')     return _uWaresOverlayHtml(sectorMacro);
     return `<div class="uhp-sep"></div><div class="uhp-none">${_U_OVERLAY_LABELS[key] || key} overlay not wired up yet</div>`;
+  }
+
+  // Price-relative colour for a ware chip's underline: ratio = this
+  // listing's price ÷ its galaxy-average price (warePrices, populate.js —
+  // same static bands the cashflow ware tooltip anchors to). Clamped to
+  // ±50% of average, then biased away from the 0.5 (average) midpoint with
+  // a sub-linear curve so the scale reads decisively green/red rather than
+  // spending most of its range on a muddy yellow near-average band.
+  function _priceGradColour(price, wareId) {
+    const avg = warePrices[wareId]?.average;
+    if (!avg) return 'transparent';
+    // sector_wares' price is in CENTS (scanner/entities.py NpcStationWare —
+    // "All in CENTS ... Divide by 100 before any credits math"), same as
+    // every other buy_price/sell_price in the export; warePrices.average is
+    // already plain credits, so this side of the comparison needs the
+    // conversion or every ratio clamps to the pricey ceiling.
+    const ratio = Math.max(0.5, Math.min(1.5, (price / 100) / avg));
+    let t = 1 - (ratio - 0.5); // cheap (0.5x) -> 1 (green), pricey (1.5x) -> 0 (red)
+    const d = t - 0.5;
+    t = 0.5 + Math.sign(d) * Math.pow(Math.abs(d) * 2, 0.6) * 0.5;
+    return _wareGradLerp(t);
+  }
+
+  // Legend strip explaining the underline colour, appended to the bottom of
+  // every Wares panel body (not just when a specific ware is hovered) so the
+  // convention doesn't have to be memorised.
+  const _U_PRICE_LEGEND = `<div class="uhp-price-legend">
+  <span>cheap</span><span class="uhp-price-legend-bar"></span><span>pricey</span>
+</div>`;
+
+  // Wares overlay panel body: every ware bought/sold anywhere in the sector
+  // (export/jsonexport.py _sector_wares — NPC stations galaxy-wide plus the
+  // player's own posted offers). Sell/buy arrows and chip colour mirror the
+  // station-inspector convention (npcWareArrows in npc-station-inspector.js):
+  // sell = ▲ CHART_ACCENT, buy = ▼ CHART_LOSS — the same red/green language
+  // as the trade log and cashflow chart tooltips. The underline is a second,
+  // independent colour: this listing's price relative to its galaxy average
+  // (see _priceGradColour), so direction and price read as two separate
+  // signals on the same chip.
+  function _uWaresOverlayHtml(sectorMacro) {
+    const w = _sectorWares[sectorMacro] || {};
+    const bought = w.bought || [];
+    const sold   = w.sold   || [];
+    if (!bought.length && !sold.length) {
+      return `<div class="uhp-sep"></div><div class="uhp-none">No trade offers</div>`;
+    }
+    const group = (label, arrow, color, entries) => entries.length
+      ? `<div class="uhp-ware-group">
+  <div class="uhp-ware-label"><span style="color:${color}">${arrow}</span> ${label}</div>
+  <div class="uhp-ware-chips">${entries.map(e =>
+    `<span class="uhp-ware-chip" style="color:${color};border-color:${hexToRgba(color, 0.45)};` +
+    `background:${hexToRgba(color, 0.12)};border-bottom-color:${_priceGradColour(e.price, e.ware_id)}">${e.ware_name}</span>`
+  ).join('')}</div>
+</div>`
+      : '';
+    return `<div class="uhp-sep"></div>`
+      + group('Sells', '▲', CHART_ACCENT, sold)
+      + group('Buys',  '▼', CHART_LOSS,  bought)
+      + _U_PRICE_LEGEND;
   }
 
   // Resources overlay panel body: sunlight % + mineable yields, the same data

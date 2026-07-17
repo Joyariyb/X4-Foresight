@@ -41,9 +41,11 @@
   // "384 / 325 Cr" reads unambiguously as sell / buy without a label. A
   // one-directional ware shows only its single price.
   function npcWarePrice(ware) {
+    // sell_price/buy_price are stored in CENTS (scanner/entities.py's
+    // NpcStationWare docstring) — divide by 100 before display.
     const parts = [];
-    if (ware.sell_price) parts.push(`<span style="color:${CHART_ACCENT}">${Math.round(ware.sell_price).toLocaleString()}</span>`);
-    if (ware.buy_price)  parts.push(`<span style="color:${CHART_LOSS}">${Math.round(ware.buy_price).toLocaleString()}</span>`);
+    if (ware.sell_price) parts.push(`<span style="color:${CHART_ACCENT}">${Math.round(ware.sell_price / 100).toLocaleString()}</span>`);
+    if (ware.buy_price)  parts.push(`<span style="color:${CHART_LOSS}">${Math.round(ware.buy_price / 100).toLocaleString()}</span>`);
     return parts.length ? `<span class="npc-insp-ware-price mono">${parts.join(' / ')} Cr</span>` : '';
   }
 
