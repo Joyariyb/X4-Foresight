@@ -84,6 +84,10 @@
     .u-overlay-chip--negative { color: var(--color-negative); background: var(--color-negative-dim); border: 1px solid var(--color-negative-line); }
     .u-overlay-chip--special  { color: var(--color-special);  background: var(--color-special-dim);  border: 1px solid var(--color-special-line); }
     .u-overlay-chip--info     { color: var(--color-info);     background: var(--color-info-dim);     border: 1px solid var(--color-info-line); }
+    /* Overlays only apply to the save map; _uSyncOverlayButtons hides this
+       whole row while the interactive reference map is selected. */
+    #u-overlay-filters { display: inline-flex; align-items: center; }
+    #u-overlay-filters.u-hidden { display: none; }
     #universe-map-wrap { flex: 1; min-height: 0; overflow: hidden; cursor: grab; position: relative; background: var(--surface-0); user-select: none; }
     #universe-map-wrap.panning { cursor: grabbing; }
     /* The "almost 3D" tilt: the map plane leans away from the camera like a

@@ -999,14 +999,12 @@
 
     if (undiscovered) {
       html += `<div class="uhp-sep"></div><div class="uhp-none">Undiscovered</div>`;
-    } else if (_uActiveOverlay) {
-      // An overlay chip replaces the panel body below the header; the
-      // interactive-vs-save default content below is skipped entirely.
-      html += _uOverlayChipHtml(_uActiveOverlay, sectorMacro);
     } else if (_uOverlayMode === 'interactive') {
-      // The interactive overlay is a reference map, so its panel shows the
-      // sector's fixed properties (sunlight, mineable yields) instead of the
-      // save-specific empire readout below (nearest station, ship presence).
+      // The interactive map is a fixed reference view — overlay chips are
+      // hidden while it's active (see _uSyncOverlayButtons), so this always
+      // wins over any _uActiveOverlay left selected from the save map.
+      // Shows the sector's fixed properties (sunlight, mineable yields)
+      // instead of the save-specific empire readout below.
       const sunPct = sec?.sunlight != null ? Math.round(sec.sunlight * 100) + '%' : '—';
       html += `<div class="uhp-sep"></div>
 <div class="uhp-stat"><span>Sunlight</span><span class="uhp-sun">${sunPct}</span></div>`;
@@ -1017,6 +1015,10 @@
             `<span class="uhp-ryield" data-yield="${r.yield_level || ''}">${_yieldLabel(r.yield_level || '')}</span></div>`
           ).join('')
         : `<div class="uhp-none">No mineable resources</div>`;
+    } else if (_uActiveOverlay) {
+      // Save map only: an overlay chip replaces the default body below the
+      // header (nearest station / NPC presence, in the else branch below).
+      html += _uOverlayChipHtml(_uActiveOverlay, sectorMacro);
     } else {
       if (near) {
         const jLabel = near.jumps === 0 ? 'here' : `${near.jumps} jump${near.jumps !== 1 ? 's' : ''}`;
@@ -1142,5 +1144,9 @@
       ?.classList.toggle('active', _uOverlayMode === 'save');
     document.getElementById('u-ov-track')
       ?.setAttribute('data-pos', _uOverlayMode === 'save' ? '1' : '0');
+    // Overlay chips only apply to the save map — the interactive map is a
+    // fixed reference view (sunlight + yields only), so hide the whole row.
+    document.getElementById('u-overlay-filters')
+      ?.classList.toggle('u-hidden', _uOverlayMode === 'interactive');
   }
 

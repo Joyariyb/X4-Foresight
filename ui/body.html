@@ -590,22 +590,27 @@
             <span class="u-opt" id="u-ov-btn-save"
                   onclick="setUniverseOverlay('save')">Save Map</span>
           </div>
-          <span style="color:var(--outline);margin:0 0.4rem">·</span>
-          <i class="ti ti-filter" style="font-size:1.4rem"></i>
-          <span>Overlays</span>
-          <!-- Overlay-selection chips — a radio group (toggleOverlayChip in
-               universe-map.js): picking one deselects the rest, and clicking
-               the active chip clears back to no overlay. Colours are the
-               UI_STANDARDS §2 semantic trio plus --color-info for Resources
-               (no ware-style identity colour to key off). Only Empire has its
-               panel body wired up so far; the rest show a placeholder note
-               in _uOverlayChipHtml until their data exists. -->
-          <span class="u-overlay-chip u-overlay-chip--primary"  onclick="toggleOverlayChip(this, 'wares')">Wares</span>
-          <span class="u-overlay-chip u-overlay-chip--info"     onclick="toggleOverlayChip(this, 'resources')">Resources</span>
-          <span class="u-overlay-chip u-overlay-chip--positive" onclick="toggleOverlayChip(this, 'empire')">Empire</span>
-          <span class="u-overlay-chip u-overlay-chip--warning"  onclick="toggleOverlayChip(this, 'diplomacy')">Diplomacy</span>
-          <span class="u-overlay-chip u-overlay-chip--negative" onclick="toggleOverlayChip(this, 'threat')">Threat</span>
-          <span class="u-overlay-chip u-overlay-chip--special"  onclick="toggleOverlayChip(this, 'missions')">Missions</span>
+          <!-- Overlay chips only apply to the save map — the interactive map
+               is a fixed reference view (sunlight + yields only), so the
+               whole filter row is hidden there by _uSyncOverlayButtons. -->
+          <span id="u-overlay-filters">
+            <span style="color:var(--outline);margin:0 0.4rem">·</span>
+            <i class="ti ti-filter" style="font-size:1.4rem"></i>
+            <span>Overlays</span>
+            <!-- Overlay-selection chips — a radio group (toggleOverlayChip in
+                 universe-map.js): picking one deselects the rest, and clicking
+                 the active chip clears back to no overlay. Colours are the
+                 UI_STANDARDS §2 semantic trio plus --color-info for Resources
+                 (no ware-style identity colour to key off). Only Empire has its
+                 panel body wired up so far; the rest show a placeholder note
+                 in _uOverlayChipHtml until their data exists. -->
+            <span class="u-overlay-chip u-overlay-chip--primary"  onclick="toggleOverlayChip(this, 'wares')">Wares</span>
+            <span class="u-overlay-chip u-overlay-chip--info"     onclick="toggleOverlayChip(this, 'resources')">Resources</span>
+            <span class="u-overlay-chip u-overlay-chip--positive" onclick="toggleOverlayChip(this, 'empire')">Empire</span>
+            <span class="u-overlay-chip u-overlay-chip--warning"  onclick="toggleOverlayChip(this, 'diplomacy')">Diplomacy</span>
+            <span class="u-overlay-chip u-overlay-chip--negative" onclick="toggleOverlayChip(this, 'threat')">Threat</span>
+            <span class="u-overlay-chip u-overlay-chip--special"  onclick="toggleOverlayChip(this, 'missions')">Missions</span>
+          </span>
         </div>
         <div id="universe-map-wrap">
           <!-- zoom-layer is an HTML div on purpose: browsers GPU-composite CSS
