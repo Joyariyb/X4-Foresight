@@ -641,6 +641,30 @@
 
     const UNDISCOVERED_COLOUR = '#3d444d';
 
+    // Player standing per faction, so the sector pane can show the owner's tier
+    // (using the same tierBadge as the Diplomacy tab) — built here, ahead of
+    // the sector-hex loop below, since the Diplomacy overlay's hex tint also
+    // reads from it.
+    _repByFaction = {};
+    for (const r of (data.reputation || [])) _repByFaction[r.faction_id] = r;
+
+    // ── Diplomacy overlay: reputation-tier hex colour ──────────────────────────
+    // Green→red by standing, same direction as repBar()/sign() elsewhere in
+    // the UI. Unowned sectors and owners with no reputation row (not yet
+    // scanned) fall back to the neutral undiscovered grey rather than a
+    // colour that implies a standing we don't actually have.
+    function _uDiplomacyColour(sec) {
+      const rep = sec.owner_id ? _repByFaction[sec.owner_id] : null;
+      if (!rep) return UNDISCOVERED_COLOUR;
+      const t = Math.max(-1, Math.min(1, rep.value / 30)); // -30..+30 -> -1..1
+      // _mixCssVars reads custom properties as raw hex (see its comment above),
+      // so this must use the base --green/--red/--text-dim tokens directly —
+      // --color-positive etc. are one level of var() indirection and would
+      // come back as the literal string "var(--green)" instead of a hex code.
+      return t >= 0 ? _mixCssVars('--text-dim', '--green', t)
+                    : _mixCssVars('--text-dim', '--red', -t);
+    }
+
     // ── Resources overlay: single-ware yield gradient ──────────────────────────
     // Coarse yield tier, mirroring the 5-group bucketing sectors.css already
     // uses for [data-yield] colouring (verylow/low*/med*/high*/veryhigh).
@@ -864,12 +888,14 @@
           // Resources chip + a single ware (or Sunlight) selected overrides
           // the owner colour with a gradient — available on both maps, since
           // Resources itself is static per-sector data (see
-          // #u-overlay-filters in body.html).
+          // #u-overlay-filters in body.html). Diplomacy is save-map only
+          // (see _uSyncOverlayButtons) but shares the same override slot.
           const wareMode = _uActiveOverlay === 'resources' && _uActiveWare;
-          const sc = !revealed              ? UNDISCOVERED_COLOUR
-                   : wareMode === 'sunlight' ? _uSunlightColour(sec)
-                   : wareMode                ? _uResourceWareColour(sec)
-                                              : (FACTION_COLOURS[sec.owner_id] || '#6e7681');
+          const sc = !revealed                     ? UNDISCOVERED_COLOUR
+                   : wareMode === 'sunlight'        ? _uSunlightColour(sec)
+                   : wareMode                       ? _uResourceWareColour(sec)
+                   : _uActiveOverlay === 'diplomacy' ? _uDiplomacyColour(sec)
+                                                     : (FACTION_COLOURS[sec.owner_id] || '#6e7681');
 
           sg.appendChild(el('polygon', {
             points:         hexPoints(sx, sy, subR - 0.5),
@@ -921,11 +947,6 @@
       if (!sp.sector_macro) continue;
       (_playerShipsBySector[sp.sector_macro] || (_playerShipsBySector[sp.sector_macro] = [])).push(sp);
     }
-
-    // Player standing per faction, so the sector pane can show the owner's tier
-    // (using the same tierBadge as the Diplomacy tab).
-    _repByFaction = {};
-    for (const r of (data.reputation || [])) _repByFaction[r.faction_id] = r;
 
     // Jump distance from your nearest owned/occupied territory to every sector,
     // for the Core/Frontier/Remote tags. 0 = a sector you're established in.
@@ -1162,9 +1183,10 @@
     }
 
     // Re-render unconditionally: most chips only change hover-panel text
-    // (read live from _uActiveOverlay, no render needed), but Resources
-    // repaints the sector sub-hexes themselves via the gradient (see wareMode
-    // in the sector-hex loop above), so toggling it on/off must re-render.
+    // (read live from _uActiveOverlay, no render needed), but Resources and
+    // Diplomacy repaint the sector sub-hexes themselves via their gradients
+    // (see wareMode / _uDiplomacyColour in the sector-hex loop above), so
+    // toggling either on/off must re-render.
     renderUniverseMap(_uLastMapData || {});
   }
 
@@ -1254,20 +1276,20 @@
   }
 
   // Overlay chip labels for the "not wired up yet" placeholder body shown by
-  // every chip except Empire and Resources, which have their data already
-  // built (see below).
+  // every chip except Empire, Resources, Wares and Diplomacy, which have
+  // their data already built (see below).
   const _U_OVERLAY_LABELS = {
-    diplomacy: 'Diplomacy',
     threat: 'Threat', missions: 'Missions',
   };
 
-  // Dispatches to the active overlay chip's panel body. Empire, Resources
-  // and Wares are wired up so far; the rest render a one-line placeholder
-  // until their data exists.
+  // Dispatches to the active overlay chip's panel body. Empire, Resources,
+  // Wares and Diplomacy are wired up so far; the rest render a one-line
+  // placeholder until their data exists.
   function _uOverlayChipHtml(key, sectorMacro) {
     if (key === 'empire')    return _uEmpireOverlayHtml(sectorMacro);
     if (key === 'resources') return _uResourcesOverlayHtml(sectorMacro);
     if (key === 'wares')     return _uWaresOverlayHtml(sectorMacro);
+    if (key === 'diplomacy') return _uDiplomacyOverlayHtml(sectorMacro);
     return `<div class="uhp-sep"></div><div class="uhp-none">${_U_OVERLAY_LABELS[key] || key} overlay not wired up yet</div>`;
   }
 
@@ -1395,6 +1417,38 @@
     }
 
     return html;
+  }
+
+  // Diplomacy overlay panel body: player standing with the sector's owner —
+  // tier badge + bar (reusing formatters.js's tierBadge/repBar, the same
+  // widgets the Diplomacy tab's reputation table uses) plus two derived
+  // yes/no lines. can_trade mirrors ReputationEntry.can_trade (scanner/
+  // entities.py) — trading is blocked below -10. can_dock mirrors
+  // ReputationEntry.is_hostile instead: docking isn't gated by the trade
+  // threshold, it's gated by hostility (a faction that attacks on sight
+  // at <= -25 won't let you dock, even though -10..-25 still allows it).
+  // Unclaimed sectors (no owner_id) and unscanned factions (no reputation
+  // row yet) both fall back to a plain "no owner" line.
+  function _uDiplomacyOverlayHtml(sectorMacro) {
+    const sec = _sectorInfoMap[sectorMacro];
+    const rep = sec?.owner_id ? _repByFaction[sec.owner_id] : null;
+    if (!rep) {
+      return `<div class="uhp-sep"></div><div class="uhp-none">No owner</div>`;
+    }
+
+    const canTrade = rep.value >= -10;
+    const canDock  = rep.value > -25;
+    const yn = (ok) => `<span style="color:${ok ? 'var(--color-positive)' : 'var(--color-negative)'}">${ok ? 'Yes' : 'No'}</span>`;
+    // Same sign-based colour repBar() draws its fill in — keeps the number
+    // and the bar reading as one signal instead of two.
+    const repColor = rep.value >= 0 ? 'var(--color-positive)' : 'var(--color-negative)';
+
+    return `<div class="uhp-sep"></div>
+<div class="uhp-stat"><span>Standing</span>${tierBadge(rep.tier)}</div>
+<div class="uhp-stat"><span>Reputation</span><span style="color:${repColor}">${sign(rep.value)}</span></div>
+${repBar(rep.value)}
+<div class="uhp-stat"><span>Can Dock</span>${yn(canDock)}</div>
+<div class="uhp-stat"><span>Can Trade</span>${yn(canTrade)}</div>`;
   }
 
   function _uSyncOverlayButtons() {
