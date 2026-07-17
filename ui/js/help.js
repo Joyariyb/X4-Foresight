@@ -18,19 +18,30 @@
       let toc = '<div class="help-toc-item" data-topic="" onclick="Help.open()">'
               + '<i class="ti ti-layout-grid"></i> All topics</div>';
       let cards = '';
-      let group = null;
+      // Group sections by data-help-group first (rather than opening a new
+      // <details> every time the group label changes) so every topic under
+      // one heading lands inside a single collapsible block, however the
+      // sections happen to be ordered in body.html.
+      const groups = new Map();
       for (const sec of _sections()) {
         const g = sec.dataset.helpGroup || 'Other';
-        if (g !== group) {
-          toc += `<div class="help-toc-group">${g}</div>`;
-          group = g;
-        }
-        toc += `<div class="help-toc-item" data-topic="${sec.id}" onclick="Help.open('${sec.id}')">`
-             + `<i class="ti ${sec.dataset.helpIcon}"></i> ${sec.dataset.helpTitle}</div>`;
+        if (!groups.has(g)) groups.set(g, []);
+        groups.get(g).push(sec);
         cards += `<div class="help-hub-card" onclick="Help.open('${sec.id}')">`
                + `<div class="help-hub-card-head"><i class="ti ${sec.dataset.helpIcon}"></i>`
                + `<span>${sec.dataset.helpTitle}</span></div>`
                + `<p>${sec.dataset.helpBlurb || ''}</p></div>`;
+      }
+      for (const [g, secs] of groups) {
+        let items = '';
+        for (const sec of secs) {
+          items += `<div class="help-toc-item" data-topic="${sec.id}" onclick="Help.open('${sec.id}')">`
+                 + `<i class="ti ${sec.dataset.helpIcon}"></i> ${sec.dataset.helpTitle}</div>`;
+        }
+        // <details> gives collapse for free with no JS state to track; open
+        // by default so first-time visitors see the full topic list at once.
+        toc += `<details class="help-toc-group" open><summary class="help-toc-group-sum">`
+             + `<i class="ti ti-chevron-right help-toc-group-chev"></i>${g}</summary>${items}</details>`;
       }
       document.getElementById('help-toc').innerHTML = toc;
       document.getElementById('help-hub-grid').innerHTML = cards;

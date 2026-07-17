@@ -13,8 +13,16 @@
     .help-topic.active { display: block; }
 
     /* ── TOPIC LIST ── */
-    .help-toc { flex: none; width: 20rem; position: sticky; top: 0; display: flex; flex-direction: column; gap: 0.2rem; padding: 0.8rem; background: var(--surface-1); border: 1px solid var(--outline); border-radius: var(--radius-md); }
-    .help-toc-group { font-family: var(--font-label); font-size: 1.05rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-label); margin: 0.8rem 0 0.2rem; padding: 0 0.6rem; }
+    .help-toc { flex: none; width: 20rem; position: sticky; top: 0; display: flex; flex-direction: column; gap: 0.1rem; padding: 0.8rem; background: var(--surface-1); border: 1px solid var(--outline); border-radius: var(--radius-md); }
+
+    /* Native <details> per category — collapse is free, no JS state to track.
+       Same marker-hiding + rotating-chevron pattern as .sd-ships in sectors.css. */
+    .help-toc-group { margin: 0.6rem 0 0; }
+    .help-toc-group-sum { display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.6rem; font-family: var(--font-label); font-size: 1.05rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-label); cursor: pointer; list-style: none; user-select: none; border-radius: var(--radius-sm); }
+    .help-toc-group-sum::-webkit-details-marker { display: none; }
+    .help-toc-group-sum:hover { color: var(--text-primary); background: var(--state-hover); }
+    .help-toc-group-chev { font-size: 1.1rem; flex: none; transition: transform var(--duration-short) var(--ease-standard); }
+    .help-toc-group[open] .help-toc-group-chev { transform: rotate(90deg); }
     .help-toc-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.6rem; font-family: var(--font-body); font-size: 1.3rem; color: var(--text-secondary); border-radius: var(--radius-sm); cursor: pointer; transition: background var(--duration-short) var(--ease-standard); }
     .help-toc-item:hover { background: var(--state-hover); color: var(--text-primary); }
     .help-toc-item.active { background: var(--state-active); color: var(--text-primary); }
