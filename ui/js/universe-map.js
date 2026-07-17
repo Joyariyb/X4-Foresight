@@ -1335,10 +1335,15 @@
   // independent colour: this listing's price relative to its galaxy average
   // (see _priceGradColour), so direction and price read as two separate
   // signals on the same chip.
+  // Kha'ak alloy (ware_id khaakalloy, displayed as "Allographyne") is hidden
+  // from the Wares overlay for now — pulled from data/wares.py rather than
+  // the export, so re-enabling it later is a one-line revert here.
+  const _U_TRADE_WARE_EXCLUDE = new Set(['khaakalloy']);
+
   function _uWaresOverlayHtml(sectorMacro) {
     const w = _sectorWares[sectorMacro] || {};
-    const bought = w.bought || [];
-    const sold   = w.sold   || [];
+    const bought = (w.bought || []).filter(e => !_U_TRADE_WARE_EXCLUDE.has(e.ware_id));
+    const sold   = (w.sold   || []).filter(e => !_U_TRADE_WARE_EXCLUDE.has(e.ware_id));
     if (!bought.length && !sold.length) {
       return `<div class="uhp-sep"></div><div class="uhp-none">No trade offers</div>`;
     }
