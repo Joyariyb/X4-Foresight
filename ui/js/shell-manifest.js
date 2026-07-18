@@ -38,6 +38,7 @@
     'js/advisors-meta.js',
     'js/advisors-evidence.js',
     'js/advisors-feed.js',
+    'js/alerts.js',
     'js/populate.js',
     'js/npc-stations.js',
     'js/npc-station-inspector.js',
