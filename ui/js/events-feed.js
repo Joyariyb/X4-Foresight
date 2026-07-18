@@ -21,14 +21,11 @@
 
     // Career-stat ids worth surfacing, with friendly labels. Whitelisted so a
     // save quirk dumping unexpected <stat> ids can't clutter the strip.
+    // trade_rank/trade_score/fight_rank/fight_score/ships_destroyed moved to
+    // the Overview tab's Empire Snapshot cards — see populate.js.
     const STAT_LABELS = [
-      ['trade_rank',      'Trade Rank'],
-      ['trade_score',     'Trade Score'],
-      ['fight_rank',      'Fight Rank'],
-      ['fight_score',     'Fight Score'],
       ['think_rank',      'Think Rank'],
       ['think_score',     'Think Score'],
-      ['ships_destroyed', 'Ships Destroyed'],
     ];
 
     let _events = {};   // {category: [rows]} straight from the export

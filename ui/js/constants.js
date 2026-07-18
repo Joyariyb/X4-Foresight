@@ -55,11 +55,16 @@
   };
 
   const CARD_ICONS = {
-    "Credits":       "ti-coin",
-    "Total Ships":   "ti-rocket",
-    "Stations":      "ti-building-factory-2",
-    "Hostile Hulls": "ti-alert-triangle",
-    "Waiting":       "ti-clock",
+    "Credits":          "ti-coin",
+    "Total Ships":      "ti-rocket",
+    "Stations":         "ti-building-factory-2",
+    "Hostiles Present":  "ti-alert-triangle",
+    "Waiting":          "ti-clock",
+    "Trade Rank":       "ti-briefcase",
+    "Trade Score":      "ti-trending-up",
+    "Fight Rank":       "ti-sword",
+    "Fight Score":      "ti-crosshair",
+    "Ships Destroyed":  "ti-skull",
   };
 
   // ── Chart series palette ──────────────────────────────────────────────────

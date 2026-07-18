@@ -131,13 +131,31 @@
     const alertCount = (hostile.length > 0 ? 1 : 0) + (waiting.length > 0 ? 1 : 0);
     document.getElementById("nav-alerts").textContent = alertCount;
 
+    // Hostiles Present — enemy NPC ships sitting in a sector where the player
+    // owns a station (npc_ships is already bounded to those sectors at export
+    // time, so no extra sector filtering is needed here). "Hostile" mirrors
+    // the reputation tiers sectors.js treats as adversarial, not just the
+    // locked-hostile races, so an active war with a normally-neutral faction
+    // still counts.
+    const HOSTILE_REP_TIERS = new Set(["Hostile", "At War"]);
+    const repTierByFaction = {};
+    rep.forEach(f => { repTierByFaction[f.faction_id] = f.tier; });
+    const hostilesPresent = npcList.filter(s => HOSTILE_REP_TIERS.has(repTierByFaction[s.owner_id])).length;
+
+    const playerStats = data.player_stats || {};
+
     // Summary cards
     const cards = [
-      { label:"Credits",       value: fmtCredits(player.credits), cls:"amber" },
-      { label:"Total Ships",   value: fleet.total || "—",              cls:"" },
-      { label:"Stations",      value: stations.length,                 cls:"" },
-      { label:"Hostile Hulls", value: hostile.length,                  cls: hostile.length > 0 ? "red" : "green" },
-      { label:"Waiting",       value: waiting.length,                  cls: waiting.length > 0 ? "amber" : "" },
+      { label:"Credits",         value: fmtCredits(player.credits),         cls:"amber" },
+      { label:"Total Ships",     value: fleet.total || "—",                 cls:"" },
+      { label:"Stations",        value: stations.length,                    cls:"" },
+      { label:"Hostiles Present", value: hostilesPresent,                    cls: hostilesPresent > 0 ? "red" : "green" },
+      { label:"Waiting",         value: waiting.length,                     cls: waiting.length > 0 ? "amber" : "" },
+      { label:"Trade Rank",      value: playerStats.trade_rank      ?? "—", cls:"" },
+      { label:"Trade Score",     value: playerStats.trade_score     ?? "—", cls:"" },
+      { label:"Fight Rank",      value: playerStats.fight_rank      ?? "—", cls:"" },
+      { label:"Fight Score",     value: playerStats.fight_score     ?? "—", cls:"" },
+      { label:"Ships Destroyed", value: playerStats.ships_destroyed ?? "—", cls:"" },
     ];
     document.getElementById("summary-cards").innerHTML = cards.map(c => {
       const icon = CARD_ICONS[c.label] || "ti-info-circle";
