@@ -348,7 +348,7 @@
       const msg = `<div class="alert-title">${f.slots.sector_name}</div>
         <div class="alert-sub">${f.slots.verdict} · ${f.slots.faction_name}</div>
         <div class="alert-actions">${adviseBtn(f)}${AdvisorsFeed.counterIconHtml(f)}</div>`;
-      alerts.push({ msg, cls, icon: "ti-alert-triangle" });
+      alerts.push({ msg, cls, icon: "ti-alert-triangle", cat: "military" });
     });
 
     // Force Build-Up — sectors where hostile combat strength has risen every
@@ -359,7 +359,7 @@
       const msg = `<div class="alert-title">${f.slots.sector_name}</div>
         <div class="alert-sub">Building up · ${f.slots.faction_name} (${f.slots.growth}×)</div>
         <div class="alert-actions">${adviseBtn(f)}</div>`;
-      alerts.push({ msg, cls: "amber", icon: "ti-trending-up-2" });
+      alerts.push({ msg, cls: "amber", icon: "ti-trending-up-2", cat: "military" });
     });
 
     // Composition Gap — sectors where the hostile force is mostly S/M strike
@@ -370,7 +370,7 @@
       const msg = `<div class="alert-title">${f.slots.sector_name}</div>
         <div class="alert-sub">${f.slots.small_count} strike craft, only ${f.slots.anti_small_pct}% of your DPS tracks them · ${f.slots.faction_name}</div>
         <div class="alert-actions">${adviseBtn(f)}</div>`;
-      alerts.push({ msg, cls: "amber", icon: "ti-puzzle" });
+      alerts.push({ msg, cls: "amber", icon: "ti-puzzle", cat: "military" });
     });
 
     // Outranged — sectors where hostile capital hulls (L/XL) out-reach the
@@ -381,7 +381,7 @@
       const msg = `<div class="alert-title">${f.slots.sector_name}</div>
         <div class="alert-sub">${f.slots.capital_count} capital(s) reach ${f.slots.their_range_km} km vs your ${f.slots.our_range_km} km · ${f.slots.faction_name}</div>
         <div class="alert-actions">${adviseBtn(f)}</div>`;
-      alerts.push({ msg, cls: "amber", icon: "ti-target-arrow" });
+      alerts.push({ msg, cls: "amber", icon: "ti-target-arrow", cat: "military" });
     });
 
     // Damaged Fleet — combat ships under DAMAGED_HULL_PCT (75%) hull, undocked
@@ -399,7 +399,7 @@
       const msg = `<div class="alert-title">${f.slots.ship_name}</div>
         <div class="alert-sub">${f.slots.hull_pct}% hull · ${f.slots.role} · ${f.slots.sector_name}</div>
         <div class="alert-actions">${adviseBtn(f)}</div>`;
-      alerts.push({ msg, cls, icon: "ti-heart-broken" });
+      alerts.push({ msg, cls, icon: "ti-heart-broken", cat: "military" });
     });
 
     // Station Damaged / Under Attack — buckets stations by severity rather
@@ -410,12 +410,12 @@
     if (damagedStationsRed.length > 0) {
       const codes = damagedStationsRed.slice(0,6).map(s=>stationLink(s.code)).join(", ");
       const more  = damagedStationsRed.length > 6 ? ` (+${damagedStationsRed.length-6} more)` : "";
-      alerts.push({ msg:`<div class="alert-sub">${damagedStationsRed.length} station(s) under attack or critical hull: ${codes}${more}</div>`, cls:"red", icon:"ti-alert-triangle" });
+      alerts.push({ msg:`<div class="alert-sub">${damagedStationsRed.length} station(s) under attack or critical hull: ${codes}${more}</div>`, cls:"red", icon:"ti-alert-triangle", cat: "military" });
     }
     if (damagedStationsAmber.length > 0) {
       const codes = damagedStationsAmber.slice(0,6).map(s=>stationLink(s.code)).join(", ");
       const more  = damagedStationsAmber.length > 6 ? ` (+${damagedStationsAmber.length-6} more)` : "";
-      alerts.push({ msg:`<div class="alert-sub">${damagedStationsAmber.length} station(s) damaged: ${codes}${more}</div>`, cls:"amber", icon:"ti-alert-triangle" });
+      alerts.push({ msg:`<div class="alert-sub">${damagedStationsAmber.length} station(s) damaged: ${codes}${more}</div>`, cls:"amber", icon:"ti-alert-triangle", cat: "military" });
     }
 
     // Production Stalling — one row per station per severity, listing the
@@ -424,11 +424,11 @@
     stallsByStation.forEach((sev, code) => {
       if (sev.red.length > 0) {
         const wares = sev.red.slice(0,6).join(", ") + (sev.red.length > 6 ? ` (+${sev.red.length-6} more)` : "");
-        alerts.push({ msg:`<div class="alert-title">${stationLink(code)}</div><div class="alert-sub">Stalled: ${wares}</div>`, cls:"red", icon:"ti-player-pause" });
+        alerts.push({ msg:`<div class="alert-title">${stationLink(code)}</div><div class="alert-sub">Stalled: ${wares}</div>`, cls:"red", icon:"ti-player-pause", cat: "economy" });
       }
       if (sev.amber.length > 0) {
         const wares = sev.amber.slice(0,6).join(", ") + (sev.amber.length > 6 ? ` (+${sev.amber.length-6} more)` : "");
-        alerts.push({ msg:`<div class="alert-title">${stationLink(code)}</div><div class="alert-sub">Stalling soon: ${wares}</div>`, cls:"amber", icon:"ti-player-pause" });
+        alerts.push({ msg:`<div class="alert-title">${stationLink(code)}</div><div class="alert-sub">Stalling soon: ${wares}</div>`, cls:"amber", icon:"ti-player-pause", cat: "economy" });
       }
     });
 
@@ -439,11 +439,11 @@
     starvedByStation.forEach((sev, code) => {
       if (sev.red.length > 0) {
         const wares = sev.red.slice(0,6).join(", ") + (sev.red.length > 6 ? ` (+${sev.red.length-6} more)` : "");
-        alerts.push({ msg:`<div class="alert-title">${stationLink(code)}</div><div class="alert-sub">Starving: ${wares}</div>`, cls:"red", icon:"ti-gas-station-off" });
+        alerts.push({ msg:`<div class="alert-title">${stationLink(code)}</div><div class="alert-sub">Starving: ${wares}</div>`, cls:"red", icon:"ti-gas-station-off", cat: "economy" });
       }
       if (sev.amber.length > 0) {
         const wares = sev.amber.slice(0,6).join(", ") + (sev.amber.length > 6 ? ` (+${sev.amber.length-6} more)` : "");
-        alerts.push({ msg:`<div class="alert-title">${stationLink(code)}</div><div class="alert-sub">Low input: ${wares}</div>`, cls:"amber", icon:"ti-gas-station-off" });
+        alerts.push({ msg:`<div class="alert-title">${stationLink(code)}</div><div class="alert-sub">Low input: ${wares}</div>`, cls:"amber", icon:"ti-gas-station-off", cat: "economy" });
       }
     });
 
@@ -455,7 +455,7 @@
       const codes = underfundedStations.slice(0,6)
         .map(s => `${stationLink(s.code)} (${fmtCredits(s.account_amount)})`).join(", ");
       const more  = underfundedStations.length > 6 ? ` (+${underfundedStations.length-6} more)` : "";
-      alerts.push({ msg:`<div class="alert-sub">${underfundedStations.length} station(s) underfunded: ${codes}${more}</div>`, cls:"amber", icon:"ti-wallet-off" });
+      alerts.push({ msg:`<div class="alert-sub">${underfundedStations.length} station(s) underfunded: ${codes}${more}</div>`, cls:"amber", icon:"ti-wallet-off", cat: "economy" });
     }
 
     // No Logistics Assigned — one row listing every consuming station with no
@@ -471,7 +471,7 @@
         return `${stationLink(code)} (${shown})`;
       }).join(", ");
       const more = noLogisticsStations.length > 6 ? ` (+${noLogisticsStations.length-6} more)` : "";
-      alerts.push({ msg:`<div class="alert-sub">${noLogisticsStations.length} station(s) with no logistics assigned: ${codes}${more}</div>`, cls:"amber", icon:"ti-truck-off" });
+      alerts.push({ msg:`<div class="alert-sub">${noLogisticsStations.length} station(s) with no logistics assigned: ${codes}${more}</div>`, cls:"amber", icon:"ti-truck-off", cat: "logistics" });
     }
 
     // Mining Supply Gap — one row listing every affected station code with the
@@ -484,7 +484,7 @@
         return `${stationLink(code)} (${shown})`;
       }).join(", ");
       const more = miningGapStations.length > 6 ? ` (+${miningGapStations.length-6} more)` : "";
-      alerts.push({ msg:`<div class="alert-sub">${miningGapStations.length} station(s) with no mining supply: ${codes}${more}</div>`, cls:"amber", icon:"ti-pick" });
+      alerts.push({ msg:`<div class="alert-sub">${miningGapStations.length} station(s) with no mining supply: ${codes}${more}</div>`, cls:"amber", icon:"ti-pick", cat: "logistics" });
     }
 
     // Trade Gone Quiet — one row listing every affected station code with
@@ -499,7 +499,7 @@
         return `${stationLink(code)} (${label})`;
       }).join(", ");
       const more = quietStations.length > 6 ? ` (+${quietStations.length-6} more)` : "";
-      alerts.push({ msg:`<div class="alert-sub">${quietStations.length} station(s) gone quiet: ${codes}${more}</div>`, cls:"amber", icon:"ti-zzz" });
+      alerts.push({ msg:`<div class="alert-sub">${quietStations.length} station(s) gone quiet: ${codes}${more}</div>`, cls:"amber", icon:"ti-zzz", cat: "logistics" });
     }
 
     // Surplus Piling Up — one row per station listing every ware whose stock
@@ -518,7 +518,7 @@
     };
     pileUpByStation.forEach((wares, code) => {
       const list = wares.slice(0,6).map(pileUpWareChip).join(", ") + (wares.length > 6 ? ` (+${wares.length-6} more)` : "");
-      alerts.push({ msg:`<div class="alert-title">${stationLink(code)}</div><div class="alert-sub">Surplus piling up: ${list}</div>`, cls:"amber", icon:"ti-building-warehouse" });
+      alerts.push({ msg:`<div class="alert-title">${stationLink(code)}</div><div class="alert-sub">Surplus piling up: ${list}</div>`, cls:"amber", icon:"ti-building-warehouse", cat: "economy" });
     });
 
     // Storage Overflow — stations about to cap out on a surplus ware within
@@ -532,7 +532,7 @@
       const msg = `<div class="alert-title">${f.slots.station_name}</div>
         <div class="alert-sub">${f.slots.ware_name}</div>
         <div class="alert-actions">${adviseBtn(f, "economic")}</div>`;
-      alerts.push({ msg, cls, icon: "ti-database-exclamation" });
+      alerts.push({ msg, cls, icon: "ti-database-exclamation", cat: "economy" });
     });
 
     // Ship codes are player ships (`waiting` is filtered from the player fleet
@@ -547,7 +547,7 @@
       const msg = `<div class="alert-title">${shipLink(f.slots.ship_code)} · ${f.slots.ware_name}</div>
         <div class="alert-sub">Holding cargo ${f.slots.hours}h, no delivery destination</div>
         <div class="alert-actions">${adviseBtn(f, "trader")}</div>`;
-      alerts.push({ msg, cls: "amber", icon: "ti-package-off" });
+      alerts.push({ msg, cls: "amber", icon: "ti-package-off", cat: "logistics" });
     });
 
     // Wrapped in a single <div>: bare text mixed with inline .ship-link spans
@@ -558,12 +558,12 @@
     if (waiting.length > 0) {
       const codes = waiting.slice(0,6).map(s=>shipLink(s.code)).join(", ");
       const more  = waiting.length > 6 ? ` (+${waiting.length-6} more)` : "";
-      alerts.push({ msg:`<div class="alert-sub">${waiting.length} ships idling (Waiting order): ${codes}${more}</div>`, cls:"amber", icon:"ti-clock" });
+      alerts.push({ msg:`<div class="alert-sub">${waiting.length} ships idling (Waiting order): ${codes}${more}</div>`, cls:"amber", icon:"ti-clock", cat: "logistics" });
     }
 
     const idleMiners = waiting.filter(s => MINER_ROLES.has(s.role));
     if (idleMiners.length > 0) {
-      alerts.push({ msg:`<div class="alert-sub">${idleMiners.length} idle miner(s): ${idleMiners.map(s=>shipLink(s.code)).join(", ")}</div>`, cls:"amber", icon:"ti-shovel" });
+      alerts.push({ msg:`<div class="alert-sub">${idleMiners.length} idle miner(s): ${idleMiners.map(s=>shipLink(s.code)).join(", ")}</div>`, cls:"amber", icon:"ti-shovel", cat: "logistics" });
     }
 
     // Under-Equipped Ships — one row listing every offending ship code with its
@@ -574,10 +574,44 @@
       const codes = underEquipped.slice(0,6)
         .map(u => `${shipLink(u.ship.code)} (${u.gaps.join(", ")})`).join(", ");
       const more  = underEquipped.length > 6 ? ` (+${underEquipped.length-6} more)` : "";
-      alerts.push({ msg:`<div class="alert-sub">${underEquipped.length} ship(s) under-equipped: ${codes}${more}</div>`, cls:"amber", icon:"ti-sword-off" });
+      alerts.push({ msg:`<div class="alert-sub">${underEquipped.length} ship(s) under-equipped: ${codes}${more}</div>`, cls:"amber", icon:"ti-sword-off", cat: "military" });
     }
 
-    alertsList.innerHTML = alerts.length === 0
-      ? `<div class="alert green"><i class="ti ti-circle-check"></i> No alerts detected.</div>`
-      : alerts.map(a => `<div class="alert ${a.cls}"><i class="ti ${a.icon}"></i> ${a.msg}</div>`).join("");
+    // Categories mirror the domain split already used elsewhere (advisor
+    // findings' own domain field, the Advisors tab views): Military for
+    // combat/threat conditions, Economy for station production/finance
+    // health, Logistics for fleet-assignment and trade-flow gaps. Rendered
+    // as native <details> sections (same collapsible idiom as Sectors'
+    // Station Presence list, sectors.css .sd-fac) rather than hand-rolled
+    // JS toggle state — the browser owns open/closed for free. Left open by
+    // default: this tab's whole job is surfacing active problems, so
+    // nothing should start hidden. Collapsing is for a category the player
+    // has already triaged this session, not the default state.
+    const CATEGORIES = [
+      { key: "military",  label: "Military",  icon: "ti-sword" },
+      { key: "economy",   label: "Economy",   icon: "ti-building-factory-2" },
+      { key: "logistics", label: "Logistics", icon: "ti-truck" },
+    ];
+
+    if (alerts.length === 0) {
+      alertsList.innerHTML = `<div class="alert green"><i class="ti ti-circle-check"></i> No alerts detected.</div>`;
+    } else {
+      alertsList.innerHTML = CATEGORIES.map(cat => {
+        const tiles = alerts.filter(a => a.cat === cat.key);
+        if (tiles.length === 0) return "";
+        // Badge takes the worst severity present so a category with even
+        // one red tile inside reads red at a glance while still collapsed.
+        const worst = tiles.some(t => t.cls === "red") ? "red" : "amber";
+        const grid = tiles.map(a => `<div class="alert ${a.cls}"><i class="ti ${a.icon}"></i> ${a.msg}</div>`).join("");
+        return `<details class="alert-cat" open>
+          <summary class="alert-cat-sum">
+            <i class="ti ti-chevron-right alert-cat-chev"></i>
+            <i class="ti ${cat.icon} alert-cat-icon"></i>
+            <span class="alert-cat-name">${cat.label}</span>
+            <span class="alert-cat-count ${worst}">${tiles.length}</span>
+          </summary>
+          <div class="alert-cat-grid">${grid}</div>
+        </details>`;
+      }).join("");
+    }
   }
