@@ -159,6 +159,54 @@
       return gaps.length > 0 ? [{ ship: s, gaps }] : [];
     });
 
+    // Surplus Piling Up — a produced ware's net surplus (production_rate minus
+    // consumption_rate, from station_production_analytics via _stations()) is
+    // accumulating faster than the trade log shows it actually leaving the
+    // station. No advisor finding backs this yet, same raw-scan-data pattern
+    // as Production Stalling/Input Starvation above. Deliberately makes no
+    // claim about WHY the surplus isn't clearing (price, distance, no
+    // subordinate assigned, a paused offer, ...) — earlier versions of this
+    // alert guessed "overpriced" or "no offer" and both were wrong often
+    // enough (a station can sell plenty through a manually-run trade
+    // subordinate with no posted offer at all) to be worse than no guess.
+    //
+    // data.station_trades only covers the delta since the previous scan, so
+    // there's no absolute clock to turn "units sold" into a rate — the
+    // widest time_ago_s across every trade in that delta approximates the
+    // window's span, since every entry falls somewhere inside it. No trades
+    // at all means no window to measure against, so the check no-ops rather
+    // than guessing. production_rates is keyed by display name, not ware_id,
+    // so this reuses the Production tab's own name→id slug conversion
+    // (populate.js, "Energy Cells" → "energycells") to match against
+    // station_trades, which is genuinely ware_id-keyed.
+    const stationTrades = data.station_trades || [];
+    const tradeWindowHours = stationTrades.length > 0
+      ? Math.max(...stationTrades.map(t => t.time_ago_s || 0)) / 3600
+      : 0;
+    // Each entry keeps the raw made/sold rates rather than a pre-formatted
+    // string — the tile only shows the ware name (coloured via WARE_COLOURS,
+    // same as the Production tab), with the rates available on hover so a
+    // station with several offending wares doesn't turn into a wall of text.
+    const pileUpByStation = new Map(); // station code -> [{name, excess, sold}, ...]
+    if (tradeWindowHours > 0) {
+      stations.forEach(s => {
+        const prodRates = s.production_rates || {};
+        const consRates = s.consumption_rates || {};
+        Object.entries(prodRates).forEach(([wareName, prodRate]) => {
+          const surplusRate = (prodRate || 0) - (consRates[wareName] || 0);
+          if (surplusRate <= 0) return;
+          const wareId = wareName.toLowerCase().replace(/\s+/g, '');
+          const soldUnits = stationTrades
+            .filter(t => t.station_code === s.code && t.ware === wareId && t.direction === "Out")
+            .reduce((sum, t) => sum + (t.amount || 0), 0);
+          const soldRate = soldUnits / tradeWindowHours;
+          if (soldRate >= surplusRate) return;
+          if (!pileUpByStation.has(s.code)) pileUpByStation.set(s.code, []);
+          pileUpByStation.get(s.code).push({ name: wareName, excess: surplusRate, sold: soldRate });
+        });
+      });
+    }
+
     // The badge counts alert *categories*, not individual tiles — a fleet of
     // twenty idle ships is one problem to look at, not twenty.
     const alertCount = (hostilePresence.length > 0 ? 1 : 0)
@@ -167,7 +215,8 @@
       + (damagedFleet.length > 0 ? 1 : 0) + (storageOverflow.length > 0 ? 1 : 0)
       + (strandedDeliveries.length > 0 ? 1 : 0) + (stationDamageActive ? 1 : 0)
       + (stallsByStation.size > 0 ? 1 : 0) + (starvedByStation.size > 0 ? 1 : 0)
-      + (underfundedStations.length > 0 ? 1 : 0) + (underEquipped.length > 0 ? 1 : 0);
+      + (underfundedStations.length > 0 ? 1 : 0) + (underEquipped.length > 0 ? 1 : 0)
+      + (pileUpByStation.size > 0 ? 1 : 0);
     document.getElementById("nav-alerts").textContent = alertCount;
 
     const alertsList = document.getElementById("alerts-list");
@@ -303,6 +352,25 @@
       const more  = underfundedStations.length > 6 ? ` (+${underfundedStations.length-6} more)` : "";
       alerts.push({ msg:`<div class="alert-sub">${underfundedStations.length} station(s) underfunded: ${codes}${more}</div>`, cls:"amber", icon:"ti-wallet-off" });
     }
+
+    // Surplus Piling Up — one row per station listing every ware whose stock
+    // is growing faster than the trade log shows it selling, same bucketed-
+    // list pattern as Input Starvation above. Each ware renders as its
+    // WARE_COLOURS-tinted name only (matching the Production tab) rather than
+    // the made/sold rates inline — a station with several offending wares
+    // turned into a wall of numbers, so those move to a data-text-tip hover
+    // instead (see UI_STANDARDS.md §8: shared #hull-tip popover, never
+    // title=). Amber only: a stockpile building up is a logistics gap to
+    // look into, not damage or a fight being lost.
+    const pileUpWareChip = w => {
+      const col = WARE_COLOURS[w.name] || 'var(--text-secondary)';
+      const tip = `${Math.round(w.excess)}/hr excess vs ${Math.round(w.sold)}/hr sold`;
+      return `<span style="color:${col}" data-text-tip="${tip}">${w.name}</span>`;
+    };
+    pileUpByStation.forEach((wares, code) => {
+      const list = wares.slice(0,6).map(pileUpWareChip).join(", ") + (wares.length > 6 ? ` (+${wares.length-6} more)` : "");
+      alerts.push({ msg:`<div class="alert-title">${stationLink(code)}</div><div class="alert-sub">Surplus piling up: ${list}</div>`, cls:"amber", icon:"ti-building-warehouse" });
+    });
 
     // Storage Overflow — stations about to cap out on a surplus ware within
     // OVERFLOW_ALERT_HOURS (1h). Terse tile per finding (station + the
