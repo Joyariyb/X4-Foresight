@@ -1361,7 +1361,7 @@
 
           <section class="help-topic" id="help-alerts" data-help-group="Alerts"
                    data-help-title="Alerts" data-help-icon="ti-alert-triangle"
-                   data-help-blurb="The four conditions that populate this tab and how they differ from the topbar's Alerts badge count."
+                   data-help-blurb="The five conditions that populate this tab and how they differ from the topbar's Alerts badge count."
                    >
         <div class="sec-header"><div class="sec-title">Alerts · Help</div><div class="sec-line"></div></div>
         <div class="adv-help-note">
@@ -1369,7 +1369,7 @@
           <p>Fully recomputed on every scan — there's no dismiss or acknowledge
             action, so an alert simply stops appearing once the underlying
             condition clears. Shows a single green "No alerts detected" message
-            when none of the four below are true.</p>
+            when none of the five below are true.</p>
         </div>
         <div class="adv-help-list">
           <div class="adv-help-card adv--negative">
@@ -1393,6 +1393,16 @@
           </div>
           <div class="adv-help-card adv--warning">
             <div class="adv-help-body">
+              <div class="adv-help-head"><i class="ti ti-puzzle adv-icon"></i><span class="adv-type">Composition Gap</span></div>
+              <p>Sectors where the hostile force is mostly S/M strike craft and
+                only a small share of your defenders' firepower can track
+                targets that small — a loadout mismatch (add flak or fighter
+                escorts), not a fight you're currently losing. Also sourced
+                from the Military advisor.</p>
+            </div>
+          </div>
+          <div class="adv-help-card adv--warning">
+            <div class="adv-help-body">
               <div class="adv-help-head"><i class="ti ti-clock adv-icon"></i><span class="adv-type">Idling Ships</span></div>
               <p>Any ship currently on the "Waiting" order — idle capacity doing
                 nothing. Lists up to 6 ship codes plus a "+N more" count beyond
@@ -1411,10 +1421,10 @@
         <div class="adv-help-note">
           <i class="ti ti-info-circle"></i>
           <p>The topbar's Alerts badge is a coarser count than this tab's list —
-            it adds at most one point each for hostile presence, force build-up
-            and idling ships (max 3 total), regardless of how many sectors or
-            ships are actually involved, so a badge of "2" just means two of
-            those three conditions are currently true.</p>
+            it adds at most one point each for hostile presence, force build-up,
+            composition gap and idling ships (max 4 total), regardless of how
+            many sectors or ships are actually involved, so a badge of "2" just
+            means two of those four conditions are currently true.</p>
         </div>
           </section>
 

@@ -139,9 +139,11 @@
     const hostilePresence = militaryFindings.filter(f =>
       f.type === "hostile_presence" && f.slots.verdict !== "Covered");
     const buildups = militaryFindings.filter(f => f.type === "buildup");
+    const compositionGaps = militaryFindings.filter(f => f.type === "composition_gap");
 
     const alertCount = (hostilePresence.length > 0 ? 1 : 0)
-      + (buildups.length > 0 ? 1 : 0) + (waiting.length > 0 ? 1 : 0);
+      + (buildups.length > 0 ? 1 : 0) + (compositionGaps.length > 0 ? 1 : 0)
+      + (waiting.length > 0 ? 1 : 0);
     document.getElementById("nav-alerts").textContent = alertCount;
 
     // Hostiles Present — enemy NPC ships sitting in a sector where the player
@@ -1027,6 +1029,17 @@
         <div class="alert-sub">Building up · ${f.slots.faction_name} (${f.slots.growth}×)</div>
         <div class="alert-actions">${adviseBtn(f)}</div>`;
       alerts.push({ msg, cls: "amber", icon: "ti-trending-up-2" });
+    });
+
+    // Composition Gap — sectors where the hostile force is mostly S/M strike
+    // craft the defence's guns can't track (composition_gap_findings() in
+    // military.py compares dps_anti_small to total DPS). Always amber: it's
+    // a loadout mismatch to fix ahead of time, not a fight being lost now.
+    compositionGaps.forEach(f => {
+      const msg = `<div class="alert-title">${f.slots.sector_name}</div>
+        <div class="alert-sub">${f.slots.small_count} strike craft, only ${f.slots.anti_small_pct}% of your DPS tracks them · ${f.slots.faction_name}</div>
+        <div class="alert-actions">${adviseBtn(f)}</div>`;
+      alerts.push({ msg, cls: "amber", icon: "ti-puzzle" });
     });
 
     // Ship codes are player ships (`waiting` is filtered from `players`
