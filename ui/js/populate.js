@@ -165,11 +165,34 @@
     const strandedDeliveries = ((data.advisors || {}).findings || [])
       .filter(f => f.domain === "trader" && f.type === "stranded_delivery");
 
+    // Station Damaged / Under Attack — sourced straight from data.stations[]
+    // (export/jsonexport.py's _stations(), the stations table's hull/shield_pct
+    // columns), not an advisor finding: this is raw scan health data, no
+    // trend or force-comparison reasoning behind it. Under Construction is
+    // excluded since a new build's hull naturally starts below 100% and
+    // that's not damage. Shields collapsed to near-zero (while the station
+    // actually has a hull to protect) flags fire happening *right now*,
+    // ahead of hull_pct dropping on the next scan.
+    const STATION_HULL_RED_PCT = 60;
+    const STATION_HULL_AMBER_PCT = 90;
+    const STATION_SHIELD_NEAR_ZERO_PCT = 5;
+    const damagedStationsRed = [];
+    const damagedStationsAmber = [];
+    stations.filter(s => s.status !== "Under Construction").forEach(s => {
+      const underFire = s.hull_max > 0 && s.shield_pct != null && s.shield_pct <= STATION_SHIELD_NEAR_ZERO_PCT;
+      if (underFire || (s.hull_pct != null && s.hull_pct < STATION_HULL_RED_PCT)) {
+        damagedStationsRed.push(s);
+      } else if (s.hull_pct != null && s.hull_pct < STATION_HULL_AMBER_PCT) {
+        damagedStationsAmber.push(s);
+      }
+    });
+    const stationDamageActive = damagedStationsRed.length > 0 || damagedStationsAmber.length > 0;
+
     const alertCount = (hostilePresence.length > 0 ? 1 : 0)
       + (buildups.length > 0 ? 1 : 0) + (compositionGaps.length > 0 ? 1 : 0)
       + (outranged.length > 0 ? 1 : 0) + (waiting.length > 0 ? 1 : 0)
       + (damagedFleet.length > 0 ? 1 : 0) + (storageOverflow.length > 0 ? 1 : 0)
-      + (strandedDeliveries.length > 0 ? 1 : 0);
+      + (strandedDeliveries.length > 0 ? 1 : 0) + (stationDamageActive ? 1 : 0);
     document.getElementById("nav-alerts").textContent = alertCount;
 
     // Hostiles Present — enemy NPC ships sitting in a sector where the player
@@ -502,6 +525,13 @@
       const shieldPctStr = shieldPct != null ? Math.round(shieldPct) + '%' : '—';
       const shieldBarW   = shieldPct != null ? Math.min(shieldPct, 100).toFixed(1) : '0';
 
+      // Two-state label colour rule: amber/red values demand attention so the
+      // label inherits the same colour as its value — they read as one unit.
+      // Any other colour (green, teal, blue) is "healthy/normal" so the label
+      // stays muted and only the value carries the colour.
+      const attnColor = col =>
+        (col === 'var(--color-warning)' || col === 'var(--color-negative)') ? col : 'var(--text-brand)';
+
       // Shield cell inner HTML — null renders a "NO SHIELDS" label centred in the bar area
       const shieldDisplay = shieldPct == null
         ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
@@ -526,13 +556,6 @@
       const statusColor = statusRaw.includes('construction') ? 'var(--color-warning)'
                         : statusRaw.includes('wreck')        ? 'var(--color-negative)'
                         : 'var(--color-positive)';
-
-      // Two-state label colour rule: amber/red values demand attention so the
-      // label inherits the same colour as its value — they read as one unit.
-      // Any other colour (green, teal, blue) is "healthy/normal" so the label
-      // stays muted and only the value carries the colour.
-      const attnColor = col =>
-        (col === 'var(--color-warning)' || col === 'var(--color-negative)') ? col : 'var(--text-brand)';
 
       // Stats
       const dockedShips  = s.docked_ships || [];
@@ -1033,6 +1056,10 @@
     // into view).
     const adviseBtn = (f, view = "military") => `<button class="alert-advise" onclick="AdvisorsFeed.jumpToFinding('${f.id}','${view}')">Advise</button>`;
 
+    // Station codes jump to the Stations tab via goToStation() (station-helpers.js) —
+    // same .stn-link affordance the Fleet tab's homebase column uses.
+    const stationLink = code => `<span class="stn-link" onclick="goToStation('${code}')">${code}</span>`;
+
     // Hostile Presence — one tile per (sector, hostile faction) where their
     // force is at least a match for the player's present defence there.
     // Undefended/Outmatched (we'd lose that fight) render red; Contested
@@ -1096,6 +1123,22 @@
         <div class="alert-actions">${adviseBtn(f)}</div>`;
       alerts.push({ msg, cls, icon: "ti-heart-broken" });
     });
+
+    // Station Damaged / Under Attack — buckets stations by severity rather
+    // than one tile per station (there can be a lot of stations), same list
+    // pattern as the idling-ships/idle-miners rows below. ti-building-broken
+    // doesn't exist in the bundled Tabler set, so this falls back to the
+    // same triangle icon as the other red/amber alerts above.
+    if (damagedStationsRed.length > 0) {
+      const codes = damagedStationsRed.slice(0,6).map(s=>stationLink(s.code)).join(", ");
+      const more  = damagedStationsRed.length > 6 ? ` (+${damagedStationsRed.length-6} more)` : "";
+      alerts.push({ msg:`<div class="alert-sub">${damagedStationsRed.length} station(s) under attack or critical hull: ${codes}${more}</div>`, cls:"red", icon:"ti-alert-triangle" });
+    }
+    if (damagedStationsAmber.length > 0) {
+      const codes = damagedStationsAmber.slice(0,6).map(s=>stationLink(s.code)).join(", ");
+      const more  = damagedStationsAmber.length > 6 ? ` (+${damagedStationsAmber.length-6} more)` : "";
+      alerts.push({ msg:`<div class="alert-sub">${damagedStationsAmber.length} station(s) damaged: ${codes}${more}</div>`, cls:"amber", icon:"ti-alert-triangle" });
+    }
 
     // Storage Overflow — stations about to cap out on a surplus ware within
     // OVERFLOW_ALERT_HOURS (1h). Terse tile per finding (station + the
