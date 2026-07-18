@@ -33,6 +33,7 @@
   "scanner/handlers/economy.py",
   "scanner/handlers/events.py",
   "scanner/handlers/gate.py",
+  "scanner/handlers/missions.py",
   "scanner/handlers/npc_station.py",
   "scanner/handlers/reputation.py",
   "scanner/handlers/resource.py",
