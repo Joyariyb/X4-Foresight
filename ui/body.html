@@ -1474,6 +1474,20 @@
           </div>
           <div class="adv-help-card adv--warning">
             <div class="adv-help-body">
+              <div class="adv-help-head"><i class="ti ti-truck-off adv-icon"></i><span class="adv-type">No Logistics Assigned</span></div>
+              <p>A station that's actively consuming wares (non-empty input
+                rates) with zero subordinate haulers assigned to it, and no
+                inbound delivery in its trade log within the last 6 hours —
+                read straight from the station's fleet assignment and trade
+                history, not an advisor finding. A hauler already en route
+                on a slow leg, or a manually-flown delivery, keeps a station
+                off this list even with no dedicated subordinate. One row
+                listing the affected station codes, each with its unserved
+                wares in parentheses (soonest to run dry first).</p>
+            </div>
+          </div>
+          <div class="adv-help-card adv--warning">
+            <div class="adv-help-body">
               <div class="adv-help-head"><i class="ti ti-building-warehouse adv-icon"></i><span class="adv-type">Surplus Piling Up</span></div>
               <p>A produced ware's net surplus (production rate minus internal
                 consumption) growing faster than the trade log shows it
@@ -1547,10 +1561,11 @@
             it adds at most one point each for hostile presence, force build-up,
             composition gap, outranged, idling ships, damaged fleet, station
             damage, production stalling, input starvation, station underfunded,
-            surplus piling up, storage overflow, stranded deliveries and
-            under-equipped ships (max 14 total), regardless of how many sectors,
-            ships or stations are actually involved, so a badge of "2" just
-            means two of those fourteen conditions are currently true.</p>
+            no logistics assigned, surplus piling up, storage overflow,
+            stranded deliveries and under-equipped ships (max 15 total),
+            regardless of how many sectors, ships or stations are actually
+            involved, so a badge of "2" just means two of those fifteen
+            conditions are currently true.</p>
         </div>
           </section>
 

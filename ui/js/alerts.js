@@ -207,6 +207,37 @@
       });
     }
 
+    // No Logistics Assigned — a station with input_rates non-empty (it's
+    // actively consuming wares) but assigned_fleet.traders === 0 (no
+    // subordinate hauler on its books) is only really logistics-starved if
+    // nothing else is quietly covering it — a manually-flown run, another
+    // station's spare hauler, etc. So this also requires no inbound trade at
+    // that station within NO_LOGISTICS_RECENT_HOURS of station_trades'
+    // time_ago_s: long enough that a hauler already en route on a slow
+    // cross-sector leg doesn't false-positive, short enough that a station
+    // with nothing in that whole window really has no one covering it.
+    // Deliberately distinct from the Trader/Logistics advisors
+    // (db/advisors/trader.py, db/advisors/logistics.py) — neither checks
+    // this consuming-station-with-no-hauler-and-no-recent-delivery case, so
+    // this is a raw-scan-data check like Station Underfunded above, not a
+    // duplicate of an advisor finding.
+    const NO_LOGISTICS_RECENT_HOURS = 6;
+    const noLogisticsStations = stations.flatMap(s => {
+      const rates = s.input_rates || {};
+      const wareNames = Object.keys(rates);
+      if (wareNames.length === 0) return [];
+      if (((s.assigned_fleet || {}).traders || 0) !== 0) return [];
+      const hasRecentDelivery = stationTrades.some(t => t.station_code === s.code
+        && t.direction === "In" && (t.time_ago_s || 0) <= NO_LOGISTICS_RECENT_HOURS * 3600);
+      if (hasRecentDelivery) return [];
+      // With no hauler at all, every input here is going unserved — but the
+      // one(s) about to actually run dry are what the player needs to see
+      // first, so sort soonest-to-deplete first rather than alphabetically.
+      const wares = wareNames.sort((a, b) =>
+        (rates[a].runtime_hours ?? Infinity) - (rates[b].runtime_hours ?? Infinity));
+      return [{ code: s.code, wares }];
+    });
+
     // The badge counts alert *categories*, not individual tiles — a fleet of
     // twenty idle ships is one problem to look at, not twenty.
     const alertCount = (hostilePresence.length > 0 ? 1 : 0)
@@ -216,7 +247,7 @@
       + (strandedDeliveries.length > 0 ? 1 : 0) + (stationDamageActive ? 1 : 0)
       + (stallsByStation.size > 0 ? 1 : 0) + (starvedByStation.size > 0 ? 1 : 0)
       + (underfundedStations.length > 0 ? 1 : 0) + (underEquipped.length > 0 ? 1 : 0)
-      + (pileUpByStation.size > 0 ? 1 : 0);
+      + (pileUpByStation.size > 0 ? 1 : 0) + (noLogisticsStations.length > 0 ? 1 : 0);
     document.getElementById("nav-alerts").textContent = alertCount;
 
     const alertsList = document.getElementById("alerts-list");
@@ -351,6 +382,22 @@
         .map(s => `${stationLink(s.code)} (${fmtCredits(s.account_amount)})`).join(", ");
       const more  = underfundedStations.length > 6 ? ` (+${underfundedStations.length-6} more)` : "";
       alerts.push({ msg:`<div class="alert-sub">${underfundedStations.length} station(s) underfunded: ${codes}${more}</div>`, cls:"amber", icon:"ti-wallet-off" });
+    }
+
+    // No Logistics Assigned — one row listing every consuming station with no
+    // dedicated hauler and no recent delivery, same bucketed-list pattern as
+    // Station Underfunded above. Each station carries its own unserved wares
+    // in parentheses (soonest-to-deplete first, same "(detail)" suffix
+    // pattern as Under-Equipped Ships) so the row says WHAT needs a hauler,
+    // not just where. Amber only: it's an unassigned-subordinate gap to fix,
+    // not damage or a fight being lost.
+    if (noLogisticsStations.length > 0) {
+      const codes = noLogisticsStations.slice(0,6).map(({code, wares}) => {
+        const shown = wares.slice(0,3).join(", ") + (wares.length > 3 ? ` +${wares.length-3}` : "");
+        return `${stationLink(code)} (${shown})`;
+      }).join(", ");
+      const more = noLogisticsStations.length > 6 ? ` (+${noLogisticsStations.length-6} more)` : "";
+      alerts.push({ msg:`<div class="alert-sub">${noLogisticsStations.length} station(s) with no logistics assigned: ${codes}${more}</div>`, cls:"amber", icon:"ti-truck-off" });
     }
 
     // Surplus Piling Up — one row per station listing every ware whose stock
