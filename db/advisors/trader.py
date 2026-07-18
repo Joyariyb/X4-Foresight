@@ -410,6 +410,7 @@ def stranded_delivery_findings(conn, scan_id, avg_prices) -> list[dict]:
         priority = hours * (1 + value_est / 1000.0)
         slots = {
             'ship_name':    r['ship_name'] or r['ship_code'],
+            'ship_code':    r['ship_code'],
             'ware_name':    r['ware_name'],
             'from_station': r['from_station_name'] or 'its last stop',
             'hours':        round(hours, 1),

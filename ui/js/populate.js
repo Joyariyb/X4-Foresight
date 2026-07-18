@@ -157,10 +157,19 @@
       .filter(f => f.domain === "economy" && f.type === "overflow_risk"
         && f.slots.hours <= OVERFLOW_ALERT_HOURS);
 
+    // Stranded Deliveries — sourced from the Trader advisor's stranded_delivery
+    // findings (db/advisors/trader.py's stranded_delivery_findings()): a ship
+    // has been holding pickup cargo past STRANDED_HOURS_THRESHOLD with no
+    // delivery destination assigned. Single source of truth like the other
+    // advisor-backed alerts above — no separate raw-order check here.
+    const strandedDeliveries = ((data.advisors || {}).findings || [])
+      .filter(f => f.domain === "trader" && f.type === "stranded_delivery");
+
     const alertCount = (hostilePresence.length > 0 ? 1 : 0)
       + (buildups.length > 0 ? 1 : 0) + (compositionGaps.length > 0 ? 1 : 0)
       + (outranged.length > 0 ? 1 : 0) + (waiting.length > 0 ? 1 : 0)
-      + (damagedFleet.length > 0 ? 1 : 0) + (storageOverflow.length > 0 ? 1 : 0);
+      + (damagedFleet.length > 0 ? 1 : 0) + (storageOverflow.length > 0 ? 1 : 0)
+      + (strandedDeliveries.length > 0 ? 1 : 0);
     document.getElementById("nav-alerts").textContent = alertCount;
 
     // Hostiles Present — enemy NPC ships sitting in a sector where the player
@@ -1106,6 +1115,16 @@
     // above), so every code in these messages jumps to the Fleet tab via
     // jumpToShip() — same .ship-link affordance used on the Crew/Economy tabs.
     const shipLink = code => `<span class="ship-link" onclick="jumpToShip('${code}','player')">${code}</span>`;
+
+    // Stranded Deliveries — one tile per ship+ware, same terse pattern as the
+    // advisor-backed tiles above. Always amber: a missing delivery order is a
+    // fix-it-when-convenient paperwork gap, not damage or hostile action.
+    strandedDeliveries.forEach(f => {
+      const msg = `<div class="alert-title">${shipLink(f.slots.ship_code)} · ${f.slots.ware_name}</div>
+        <div class="alert-sub">Holding cargo ${f.slots.hours}h, no delivery destination</div>
+        <div class="alert-actions">${adviseBtn(f, "trader")}</div>`;
+      alerts.push({ msg, cls: "amber", icon: "ti-package-off" });
+    });
 
     // Wrapped in a single <div>: bare text mixed with inline .ship-link spans
     // as DIRECT children of the flex-column .alert tile gets split into one
