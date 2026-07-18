@@ -51,3 +51,4 @@ ds-bundle/
 # Design system (React lib — lives outside the main app's git history)
 design-system/
 
+docs/ALERT_PROMPTS.md

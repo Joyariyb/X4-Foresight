@@ -5,7 +5,9 @@
 # Or as an editable install:       pip install -e .[desktop,dev]
 
 [build-system]
-requires = ["setuptools>=68"]
+# >=77 because the SPDX-string `license` field below (PEP 639) isn't
+# understood by older setuptools.
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -13,6 +15,11 @@ name = "x4-foresight"
 version = "0.1.0"
 description = "Save-file scanner and Empire Intelligence dashboard for X4: Foundations"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Joyariyb", email = "joyariyb@gmail.com" },
+]
 requires-python = ">=3.12"
 dependencies = [
     "lxml>=5.0",
@@ -21,6 +28,10 @@ dependencies = [
     # which loads its own package list in ui/web/js/scan-worker.js).
     "isal>=1.8",
 ]
+
+[project.urls]
+Homepage = "https://joyariyb.github.io/X4-Foresight/"
+Repository = "https://github.com/Joyariyb/X4-Foresight"
 
 [project.optional-dependencies]
 # PyQt6-WebEngine is a separate PyPI package from PyQt6 — both are needed for ui/main_ui.py.
