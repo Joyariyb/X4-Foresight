@@ -238,6 +238,44 @@
       return [{ code: s.code, wares }];
     });
 
+    // Mining Supply Gap — a station drawing on a solid/liquid (asteroid/gas-
+    // field) raw resource through input_rates, with no miner on its own
+    // fleet roster and no mining delivery logged recently, is depending
+    // entirely on outside supply nobody is actually running. Minability is
+    // read off cargo_type rather than a hardcoded ware list — solid/liquid
+    // transport types are always raw resources (ore/ice/silicon, hydrogen/
+    // helium/methane/nividium), container types are always manufactured
+    // goods a miner can't gather. cargo_type is ware-level, not station-
+    // level, but _stations() (export/jsonexport.py) only carries it per
+    // inventory entry, and _parse_storage() (scanner/handlers/station.py)
+    // drops any ware sitting at zero stock — exactly the case this alert
+    // watches for — so the map below is built once across every station's
+    // inventory rather than trusting one station's own (possibly-empty)
+    // entries.
+    const wareCargoType = {};
+    stations.forEach(s => {
+      Object.entries(s.inventory || {}).forEach(([wareId, inv]) => {
+        if (!(wareId in wareCargoType)) wareCargoType[wareId] = inv.cargo_type;
+      });
+    });
+    // Same "already quietly covered" tolerance as No Logistics Assigned above —
+    // a delivery already en route on a slow leg shouldn't false-positive.
+    const MINING_RECENT_HOURS = 6;
+    const allMining = data.mining_deliveries || [];
+    const miningGapStations = stations.flatMap(s => {
+      if (((s.assigned_fleet || {}).miners || 0) > 0) return [];
+      const rates = s.input_rates || {};
+      const minedWares = Object.keys(rates).filter(wareName => {
+        const cargoType = wareCargoType[wareName.toLowerCase().replace(/\s+/g, '')];
+        return cargoType === "solid" || cargoType === "liquid";
+      });
+      if (minedWares.length === 0) return [];
+      const hasRecentDelivery = allMining.some(m => m.station_code === s.code
+        && (m.time_ago_s || 0) <= MINING_RECENT_HOURS * 3600);
+      if (hasRecentDelivery) return [];
+      return [{ code: s.code, wares: minedWares }];
+    });
+
     // The badge counts alert *categories*, not individual tiles — a fleet of
     // twenty idle ships is one problem to look at, not twenty.
     const alertCount = (hostilePresence.length > 0 ? 1 : 0)
@@ -247,7 +285,8 @@
       + (strandedDeliveries.length > 0 ? 1 : 0) + (stationDamageActive ? 1 : 0)
       + (stallsByStation.size > 0 ? 1 : 0) + (starvedByStation.size > 0 ? 1 : 0)
       + (underfundedStations.length > 0 ? 1 : 0) + (underEquipped.length > 0 ? 1 : 0)
-      + (pileUpByStation.size > 0 ? 1 : 0) + (noLogisticsStations.length > 0 ? 1 : 0);
+      + (pileUpByStation.size > 0 ? 1 : 0) + (noLogisticsStations.length > 0 ? 1 : 0)
+      + (miningGapStations.length > 0 ? 1 : 0);
     document.getElementById("nav-alerts").textContent = alertCount;
 
     const alertsList = document.getElementById("alerts-list");
@@ -398,6 +437,19 @@
       }).join(", ");
       const more = noLogisticsStations.length > 6 ? ` (+${noLogisticsStations.length-6} more)` : "";
       alerts.push({ msg:`<div class="alert-sub">${noLogisticsStations.length} station(s) with no logistics assigned: ${codes}${more}</div>`, cls:"amber", icon:"ti-truck-off" });
+    }
+
+    // Mining Supply Gap — one row listing every affected station code with the
+    // raw resource(s) it draws on that nobody is assigned to gather, same
+    // "name (detail)" list pattern as No Logistics Assigned above. Amber only:
+    // it's an unassigned-miner gap to fix, not damage or a fight being lost.
+    if (miningGapStations.length > 0) {
+      const codes = miningGapStations.slice(0,6).map(({code, wares}) => {
+        const shown = wares.slice(0,3).join(", ") + (wares.length > 3 ? ` +${wares.length-3}` : "");
+        return `${stationLink(code)} (${shown})`;
+      }).join(", ");
+      const more = miningGapStations.length > 6 ? ` (+${miningGapStations.length-6} more)` : "";
+      alerts.push({ msg:`<div class="alert-sub">${miningGapStations.length} station(s) with no mining supply: ${codes}${more}</div>`, cls:"amber", icon:"ti-pick" });
     }
 
     // Surplus Piling Up — one row per station listing every ware whose stock
