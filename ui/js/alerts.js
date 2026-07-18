@@ -97,6 +97,29 @@
       });
     });
 
+    // Input Starvation — read straight from data.stations[].input_rates
+    // (export/jsonexport.py's _stations(), computed by input_rates_from_modules()
+    // in data/production.py). Keyed by CONSUMED ware rather than produced ware
+    // like Production Stalling above: this is the station's true combined draw
+    // on each raw input across every production line sharing it, not just one
+    // line's own consumption, so it also catches shared-input depletion that
+    // Production Stalling's per-produced-ware runway can be optimistic about.
+    // input_rates is {} on scans from before the station_input_rates table
+    // existed, so this naturally no-ops on those rather than needing a
+    // separate guard.
+    const INPUT_STARVATION_RED_HOURS = 2;
+    const INPUT_STARVATION_AMBER_HOURS = 6;
+    const starvedByStation = new Map(); // station code -> { red: [wareName (Nh)...], amber: [...] }
+    stations.forEach(s => {
+      const rates = s.input_rates || {};
+      Object.entries(rates).forEach(([wareName, r]) => {
+        if (r.runtime_hours == null || r.runtime_hours >= INPUT_STARVATION_AMBER_HOURS) return;
+        const sev = r.runtime_hours < INPUT_STARVATION_RED_HOURS ? "red" : "amber";
+        if (!starvedByStation.has(s.code)) starvedByStation.set(s.code, { red: [], amber: [] });
+        starvedByStation.get(s.code)[sev].push(`${wareName} (${r.runtime_hours.toFixed(1)}h)`);
+      });
+    });
+
     // The badge counts alert *categories*, not individual tiles — a fleet of
     // twenty idle ships is one problem to look at, not twenty.
     const alertCount = (hostilePresence.length > 0 ? 1 : 0)
@@ -104,7 +127,7 @@
       + (outranged.length > 0 ? 1 : 0) + (waiting.length > 0 ? 1 : 0)
       + (damagedFleet.length > 0 ? 1 : 0) + (storageOverflow.length > 0 ? 1 : 0)
       + (strandedDeliveries.length > 0 ? 1 : 0) + (stationDamageActive ? 1 : 0)
-      + (stallsByStation.size > 0 ? 1 : 0);
+      + (stallsByStation.size > 0 ? 1 : 0) + (starvedByStation.size > 0 ? 1 : 0);
     document.getElementById("nav-alerts").textContent = alertCount;
 
     const alertsList = document.getElementById("alerts-list");
@@ -212,6 +235,21 @@
       if (sev.amber.length > 0) {
         const wares = sev.amber.slice(0,6).join(", ") + (sev.amber.length > 6 ? ` (+${sev.amber.length-6} more)` : "");
         alerts.push({ msg:`<div class="alert-title">${stationLink(code)}</div><div class="alert-sub">Stalling soon: ${wares}</div>`, cls:"amber", icon:"ti-player-pause" });
+      }
+    });
+
+    // Input Starvation — one row per station per severity, listing the
+    // starving wares with their own remaining hours (unlike Production
+    // Stalling's plain ware list, since here the number itself is the point —
+    // these thresholds are wide enough that "how soon" varies a lot within a row).
+    starvedByStation.forEach((sev, code) => {
+      if (sev.red.length > 0) {
+        const wares = sev.red.slice(0,6).join(", ") + (sev.red.length > 6 ? ` (+${sev.red.length-6} more)` : "");
+        alerts.push({ msg:`<div class="alert-title">${stationLink(code)}</div><div class="alert-sub">Starving: ${wares}</div>`, cls:"red", icon:"ti-gas-station-off" });
+      }
+      if (sev.amber.length > 0) {
+        const wares = sev.amber.slice(0,6).join(", ") + (sev.amber.length > 6 ? ` (+${sev.amber.length-6} more)` : "");
+        alerts.push({ msg:`<div class="alert-title">${stationLink(code)}</div><div class="alert-sub">Low input: ${wares}</div>`, cls:"amber", icon:"ti-gas-station-off" });
       }
     });
 
