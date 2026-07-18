@@ -140,10 +140,11 @@
       f.type === "hostile_presence" && f.slots.verdict !== "Covered");
     const buildups = militaryFindings.filter(f => f.type === "buildup");
     const compositionGaps = militaryFindings.filter(f => f.type === "composition_gap");
+    const outranged = militaryFindings.filter(f => f.type === "outranged");
 
     const alertCount = (hostilePresence.length > 0 ? 1 : 0)
       + (buildups.length > 0 ? 1 : 0) + (compositionGaps.length > 0 ? 1 : 0)
-      + (waiting.length > 0 ? 1 : 0);
+      + (outranged.length > 0 ? 1 : 0) + (waiting.length > 0 ? 1 : 0);
     document.getElementById("nav-alerts").textContent = alertCount;
 
     // Hostiles Present — enemy NPC ships sitting in a sector where the player
@@ -1040,6 +1041,17 @@
         <div class="alert-sub">${f.slots.small_count} strike craft, only ${f.slots.anti_small_pct}% of your DPS tracks them · ${f.slots.faction_name}</div>
         <div class="alert-actions">${adviseBtn(f)}</div>`;
       alerts.push({ msg, cls: "amber", icon: "ti-puzzle" });
+    });
+
+    // Outranged — sectors where hostile capital hulls (L/XL) out-reach the
+    // whole defence (outranged_findings() in military.py). Standoff-bombardment
+    // risk rather than a fight already being lost, so amber like the other
+    // loadout-mismatch alerts.
+    outranged.forEach(f => {
+      const msg = `<div class="alert-title">${f.slots.sector_name}</div>
+        <div class="alert-sub">${f.slots.capital_count} capital(s) reach ${f.slots.their_range_km} km vs your ${f.slots.our_range_km} km · ${f.slots.faction_name}</div>
+        <div class="alert-actions">${adviseBtn(f)}</div>`;
+      alerts.push({ msg, cls: "amber", icon: "ti-target-arrow" });
     });
 
     // Ship codes are player ships (`waiting` is filtered from `players`
