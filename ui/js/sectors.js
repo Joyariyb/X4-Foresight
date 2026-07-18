@@ -271,16 +271,39 @@
       html += '</div>';
     }
 
-    // NPC station presence by faction.
+    // NPC station presence by faction, one collapsible <details> per faction
+    // (closed by default, same idiom as "Your Ships" above). Expanding lists
+    // the faction's individual stations; a station is only clickable through
+    // to the NPC Inspector if it's in allNpcTradePartners (npc-stations.js) —
+    // that list is capped to NPC_TRADE_RANGE_MAX_JUMPS server-side, so a
+    // station further out has no inspector data to show.
     const facs = _npcBySector[macro] || [];
     if (facs.length) {
+      const reachable = new Set(allNpcTradePartners.map(s => s.object_id));
       html += '<div class="sd-section-title">Station Presence</div><div class="sd-list">';
       for (const f of facs) {
         const fc = FACTION_COLOURS[f.owner_id] || '#6e7681';
-        html += `<div class="sd-fac-row">`
+        html += `<details class="sd-fac"><summary class="sd-fac-sum">`
+              + `<i class="ti ti-chevron-right sd-fac-chev"></i>`
               + `<span class="sr-dot" style="background:${fc}"></span>`
               + `<span class="sd-fac-name">${_ownerLabel(f.owner_name)}</span>`
-              + `<span class="sd-fac-count">${f.count}</span></div>`;
+              + `<span class="sd-fac-count">${f.count}</span></summary>`
+              + `<div class="sd-fac-list">`;
+        for (const st of (f.stations || [])) {
+          const icon = npcStationIcon(st.station_type);
+          if (reachable.has(st.object_id)) {
+            html += `<div class="sd-fac-sta-row" onclick="goToNpcStation('${st.object_id}')">`
+                  + `<i class="ti ${icon}"></i>`
+                  + `<span class="sd-fac-sta-name">${st.name || st.code || 'Station'}</span>`
+                  + `<span class="sd-fac-sta-type">${st.station_type || ''}</span></div>`;
+          } else {
+            html += `<div class="sd-fac-sta-row sd-fac-sta-row--muted" data-text-tip="Outside NPC trade range — no inspector data">`
+                  + `<i class="ti ${icon}"></i>`
+                  + `<span class="sd-fac-sta-name">${st.name || st.code || 'Station'}</span>`
+                  + `<span class="sd-fac-sta-type">${st.station_type || ''}</span></div>`;
+          }
+        }
+        html += '</div></details>';
       }
       html += '</div>';
     }

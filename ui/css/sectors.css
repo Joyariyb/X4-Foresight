@@ -57,16 +57,34 @@
     .sd-stat-value { font-family: var(--font-data); font-size: 1.6rem; color: var(--text-primary); }
     .sd-section-title { font-family: var(--font-label); font-weight: 600; font-size: 1.1rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-label); margin: 0 0 0.8rem; }
     .sd-list { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 2.2rem; }
-    .sd-conn-row, .sd-fac-row { display: flex; align-items: center; gap: 0.8rem; font-family: var(--font-label); font-size: 1.3rem; color: var(--text-primary); }
+    .sd-conn-row, .sd-fac-sum { display: flex; align-items: center; gap: 0.8rem; font-family: var(--font-label); font-size: 1.3rem; color: var(--text-primary); }
     .sd-conn-row { cursor: pointer; padding: 0.3rem 0; }
     .sd-conn-row:hover .sd-conn-name { color: var(--color-primary); }
     .sd-conn-row .sr-dot { width: 0.8rem; height: 0.8rem; border-radius: 50%; flex-shrink: 0; }
     .sd-conn-name { flex: 1; }
     .sd-conn-cost { font-family: var(--font-data); font-size: 1.1rem; color: var(--color-primary); }
-    .sd-fac-row { padding: 0.2rem 0; }
-    .sd-fac-row .sr-dot { width: 0.8rem; height: 0.8rem; border-radius: 50%; flex-shrink: 0; }
+
+    /* Station Presence — one collapsible <details> per faction, default
+       closed, same idiom as "Your Ships" below. Expanding lists that
+       faction's stations in the sector; a station only links through to the
+       NPC Inspector when it's within trade range (sd-fac-sta-row vs the
+       muted --muted variant for out-of-range stations). */
+    .sd-fac { padding: 0.2rem 0; }
+    .sd-fac-sum { cursor: pointer; list-style: none; user-select: none; padding: 0.2rem 0; }
+    .sd-fac-sum::-webkit-details-marker { display: none; }
+    .sd-fac-chev { font-size: 1.4rem; color: var(--text-label); transition: transform var(--duration-short); flex-shrink: 0; }
+    .sd-fac[open] .sd-fac-chev { transform: rotate(90deg); }
+    .sd-fac-sum .sr-dot { width: 0.8rem; height: 0.8rem; border-radius: 50%; flex-shrink: 0; }
     .sd-fac-name { flex: 1; }
     .sd-fac-count { font-family: var(--font-data); font-size: 1.2rem; color: var(--text-primary); }
+    .sd-fac-list { display: flex; flex-direction: column; gap: 0.2rem; margin: 0.4rem 0 0.4rem 2.2rem; }
+    .sd-fac-sta-row { display: flex; align-items: center; gap: 0.7rem; padding: 0.3rem 0; font-family: var(--font-label); font-size: 1.2rem; color: var(--text-primary); cursor: pointer; }
+    .sd-fac-sta-row i { font-size: 1.3rem; color: var(--color-primary); flex-shrink: 0; }
+    .sd-fac-sta-row:hover .sd-fac-sta-name { color: var(--color-primary); }
+    .sd-fac-sta-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sd-fac-sta-type { font-family: var(--font-label); font-size: 1.05rem; color: var(--text-label); white-space: nowrap; }
+    .sd-fac-sta-row--muted { cursor: default; opacity: 0.55; }
+    .sd-fac-sta-row--muted i, .sd-fac-sta-row--muted:hover .sd-fac-sta-name { color: var(--text-label); }
 
     /* Resources as a 3-column grid: name | yield | amount. display:contents on
        the rows lets every cell line up in the shared columns, so the right-hand

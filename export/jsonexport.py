@@ -540,24 +540,45 @@ def _npc_trade_partners(conn, scan_id, distances_from_player) -> list[dict]:
 
 def _npc_station_counts(conn, scan_id) -> dict:
     """
-    Returns {sector_macro: [{owner_id, owner_name, count}, ...]} for all NPC
-    stations seen in this scan, sorted per sector by count descending.
-    Used by the galaxy map hover panel to show faction presence per sector.
+    Returns {sector_macro: [{owner_id, owner_name, count, stations}, ...]}
+    for all NPC stations seen in this scan, sorted per sector by count
+    descending. Used by the galaxy map hover panel (owner_id/owner_name/count
+    only) and the Sectors tab's Station Presence expander (stations list too)
+    to show faction presence per sector.
+
+    stations carries just enough per station (object_id, name, code,
+    station_type) to render an expandable row and, if the station is also in
+    _npc_trade_partners' range-limited set, hand its object_id to the NPC
+    Station Inspector — not full trade/ware data, which stays scoped to that
+    narrower set to keep this galaxy-wide payload bounded.
     """
     rows = conn.execute(
-        "SELECT sector_macro, owner_id, owner_name, COUNT(*) AS count "
+        "SELECT sector_macro, owner_id, owner_name, object_id, name, code, station_type "
         "FROM npc_stations WHERE last_scan_id = ? AND sector_macro IS NOT NULL "
-        "GROUP BY sector_macro, owner_id "
-        "ORDER BY sector_macro, count DESC",
+        "ORDER BY sector_macro, owner_id, name",
         (scan_id,),
     ).fetchall()
-    result: dict = {}
+    by_sector_faction: dict = {}
     for r in rows:
-        result.setdefault(r['sector_macro'], []).append({
+        key = (r['sector_macro'], r['owner_id'])
+        entry = by_sector_faction.setdefault(key, {
             'owner_id':   r['owner_id'],
             'owner_name': r['owner_name'],
-            'count':      r['count'],
+            'count':      0,
+            'stations':   [],
         })
+        entry['count'] += 1
+        entry['stations'].append({
+            'object_id':    r['object_id'],
+            'name':         r['name'],
+            'code':         r['code'],
+            'station_type': r['station_type'],
+        })
+    result: dict = {}
+    for (macro, _owner_id), entry in by_sector_faction.items():
+        result.setdefault(macro, []).append(entry)
+    for macro in result:
+        result[macro].sort(key=lambda e: e['count'], reverse=True)
     return result
 
 
