@@ -141,10 +141,12 @@
     const buildups = militaryFindings.filter(f => f.type === "buildup");
     const compositionGaps = militaryFindings.filter(f => f.type === "composition_gap");
     const outranged = militaryFindings.filter(f => f.type === "outranged");
+    const damagedFleet = militaryFindings.filter(f => f.type === "damaged_fleet");
 
     const alertCount = (hostilePresence.length > 0 ? 1 : 0)
       + (buildups.length > 0 ? 1 : 0) + (compositionGaps.length > 0 ? 1 : 0)
-      + (outranged.length > 0 ? 1 : 0) + (waiting.length > 0 ? 1 : 0);
+      + (outranged.length > 0 ? 1 : 0) + (waiting.length > 0 ? 1 : 0)
+      + (damagedFleet.length > 0 ? 1 : 0);
     document.getElementById("nav-alerts").textContent = alertCount;
 
     // Hostiles Present — enemy NPC ships sitting in a sector where the player
@@ -1052,6 +1054,24 @@
         <div class="alert-sub">${f.slots.capital_count} capital(s) reach ${f.slots.their_range_km} km vs your ${f.slots.our_range_km} km · ${f.slots.faction_name}</div>
         <div class="alert-actions">${adviseBtn(f)}</div>`;
       alerts.push({ msg, cls: "amber", icon: "ti-target-arrow" });
+    });
+
+    // Damaged Fleet — combat ships under DAMAGED_HULL_PCT (75%) hull, undocked
+    // (damaged_fleet_findings() in military.py), so every finding here has
+    // already taken 25%+ damage. Severity is relative damage (hull_pct), not
+    // priority_score's absolute missing HP — "badly hurt" should mean the
+    // ship itself is close to lost, not that it's expensive, so a fighter at
+    // 30% hull reads the same urgency as a destroyer at 30% hull. 40% hull is
+    // the halfway point of this alert's whole 0-75% range: below it the ship
+    // has taken more damage than it has left (red), above it there's still
+    // more hull than damage (amber).
+    const DAMAGED_FLEET_RED_HULL_PCT = 40;
+    damagedFleet.forEach(f => {
+      const cls = f.slots.hull_pct < DAMAGED_FLEET_RED_HULL_PCT ? "red" : "amber";
+      const msg = `<div class="alert-title">${f.slots.ship_name}</div>
+        <div class="alert-sub">${f.slots.hull_pct}% hull · ${f.slots.role} · ${f.slots.sector_name}</div>
+        <div class="alert-actions">${adviseBtn(f)}</div>`;
+      alerts.push({ msg, cls, icon: "ti-heart-broken" });
     });
 
     // Ship codes are player ships (`waiting` is filtered from `players`
