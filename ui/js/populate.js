@@ -126,9 +126,22 @@
     document.getElementById("ov-pilot").textContent  = player.name || "—";
     document.getElementById("nav-ships").textContent = fleet.total || "—";
 
-    const hostile  = players.filter(s => HOSTILE_ORIGINS.has(s.hull_origin_name));
     const waiting  = players.filter(s => s.ship_order === "Waiting");
-    const alertCount = (hostile.length > 0 ? 1 : 0) + (waiting.length > 0 ? 1 : 0);
+
+    // Hostile Presence / Force Build-Up — sourced from the Military advisor
+    // findings (db/advisors/military.py) rather than a separate hull-origin
+    // check, so the "is this actually a threat" force comparison (theirs vs.
+    // the player's, per sector) lives in one place. 'Covered' verdicts mean
+    // the player's present force there already wins that fight, so those are
+    // excluded — only sectors where the hostiles are at least a threat.
+    const militaryFindings = ((data.advisors || {}).findings || [])
+      .filter(f => f.domain === "military");
+    const hostilePresence = militaryFindings.filter(f =>
+      f.type === "hostile_presence" && f.slots.verdict !== "Covered");
+    const buildups = militaryFindings.filter(f => f.type === "buildup");
+
+    const alertCount = (hostilePresence.length > 0 ? 1 : 0)
+      + (buildups.length > 0 ? 1 : 0) + (waiting.length > 0 ? 1 : 0);
     document.getElementById("nav-alerts").textContent = alertCount;
 
     // Hostiles Present — enemy NPC ships sitting in a sector where the player
@@ -985,22 +998,56 @@
     const alertsList = document.getElementById("alerts-list");
     const alerts = [];
 
-    if (hostile.length > 0) {
-      const byOrigin = {};
-      hostile.forEach(s => { byOrigin[s.hull_origin_name] = (byOrigin[s.hull_origin_name]||0)+1; });
-      const summary = Object.entries(byOrigin).map(([o,c])=>`${o} x${c}`).join(", ");
-      alerts.push({ msg:`${hostile.length} ships with hostile-faction hulls: ${summary}`, cls:"red", icon:"ti-alert-triangle" });
-    }
+    // Alert tiles stay terse (sector + severity) rather than mirroring the
+    // advisor's full finding text — the "Advise" button is the deep link to
+    // that reasoning (AdvisorsFeed.jumpToFinding() switches to the Military
+    // advisor tab, expands that exact card's evidence drawer, and scrolls it
+    // into view).
+    const adviseBtn = f => `<button class="alert-advise" onclick="AdvisorsFeed.jumpToFinding('${f.id}','military')">Advise</button>`;
 
+    // Hostile Presence — one tile per (sector, hostile faction) where their
+    // force is at least a match for the player's present defence there.
+    // Undefended/Outmatched (we'd lose that fight) render red; Contested
+    // (could go either way) renders amber.
+    hostilePresence.forEach(f => {
+      const cls = (f.slots.verdict === "Outmatched" || f.slots.verdict === "Undefended")
+        ? "red" : "amber";
+      const msg = `<div class="alert-title">${f.slots.sector_name}</div>
+        <div class="alert-sub">${f.slots.verdict} · ${f.slots.faction_name}</div>
+        <div class="alert-actions">${adviseBtn(f)}${AdvisorsFeed.counterIconHtml(f)}</div>`;
+      alerts.push({ msg, cls, icon: "ti-alert-triangle" });
+    });
+
+    // Force Build-Up — sectors where hostile combat strength has risen every
+    // tracked scan (staging, not a raid); see buildup_findings() for the
+    // run-length/growth gates. Early-warning, so amber rather than red even
+    // though nothing here has been filtered by "would we currently win".
+    buildups.forEach(f => {
+      const msg = `<div class="alert-title">${f.slots.sector_name}</div>
+        <div class="alert-sub">Building up · ${f.slots.faction_name} (${f.slots.growth}×)</div>
+        <div class="alert-actions">${adviseBtn(f)}</div>`;
+      alerts.push({ msg, cls: "amber", icon: "ti-trending-up-2" });
+    });
+
+    // Ship codes are player ships (`waiting` is filtered from `players`
+    // above), so every code in these messages jumps to the Fleet tab via
+    // jumpToShip() — same .ship-link affordance used on the Crew/Economy tabs.
+    const shipLink = code => `<span class="ship-link" onclick="jumpToShip('${code}','player')">${code}</span>`;
+
+    // Wrapped in a single <div>: bare text mixed with inline .ship-link spans
+    // as DIRECT children of the flex-column .alert tile gets split into one
+    // anonymous flex item per run, each picking up the tile's own gap — the
+    // wrapper makes the whole message one flex item so it just wraps as a
+    // normal paragraph instead.
     if (waiting.length > 0) {
-      const codes = waiting.slice(0,6).map(s=>s.code).join(", ");
+      const codes = waiting.slice(0,6).map(s=>shipLink(s.code)).join(", ");
       const more  = waiting.length > 6 ? ` (+${waiting.length-6} more)` : "";
-      alerts.push({ msg:`${waiting.length} ships idling (Waiting order): ${codes}${more}`, cls:"amber", icon:"ti-clock" });
+      alerts.push({ msg:`<div class="alert-sub">${waiting.length} ships idling (Waiting order): ${codes}${more}</div>`, cls:"amber", icon:"ti-clock" });
     }
 
     const idleMiners = waiting.filter(s => MINER_ROLES.has(s.role));
     if (idleMiners.length > 0) {
-      alerts.push({ msg:`${idleMiners.length} idle miner(s): ${idleMiners.map(s=>s.code).join(", ")}`, cls:"amber", icon:"ti-shovel" });
+      alerts.push({ msg:`<div class="alert-sub">${idleMiners.length} idle miner(s): ${idleMiners.map(s=>shipLink(s.code)).join(", ")}</div>`, cls:"amber", icon:"ti-shovel" });
     }
 
     alertsList.innerHTML = alerts.length === 0

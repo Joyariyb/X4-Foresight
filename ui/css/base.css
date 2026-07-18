@@ -16,6 +16,14 @@
       --red-dim:      rgba(248,81,73,0.10);
       --green:        #3fb950;
       --green-dim:    rgba(63,185,80,0.10);
+      /* "-strong" is a 4th opacity step (~0.25 alpha) alongside -dim/-line,
+         for tiles whose colour IS the surface (e.g. the Alerts squares) rather
+         than a subtle tint behind text — -dim (0.1) reads as near-black at
+         that scale. Still clearly translucent (surface shows through), just
+         a stronger tint than -dim so the tile's colour reads at a glance. */
+      --amber-strong: rgba(210,153,34,0.25);
+      --red-strong:   rgba(248,81,73,0.25);
+      --green-strong: rgba(63,185,80,0.25);
       --purple:       #a371f7;
       --yellow:       #e3b341;
       --lime:         #39ff14;
@@ -69,10 +77,13 @@
       /* ── SEMANTIC FEEDBACK ── */
       --color-positive:     var(--green);
       --color-positive-dim: var(--green-dim);
+      --color-positive-strong: var(--green-strong);
       --color-warning:      var(--amber);
       --color-warning-dim:  var(--amber-dim);
+      --color-warning-strong: var(--amber-strong);
       --color-negative:     var(--red);
       --color-negative-dim: var(--red-dim);
+      --color-negative-strong: var(--red-strong);
       --color-alert:        var(--lime);
       --color-special:      var(--purple);
       --color-highlight:    var(--yellow);

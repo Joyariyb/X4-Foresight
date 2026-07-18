@@ -62,6 +62,39 @@
       _navAfterJump();
     }
 
+    // Which sidebar item switchTab() flashes active for each view — mirrors
+    // the onclick on each sb-* item in body.html (sb-military/-traders/
+    // -economic), since jumpToFinding() below is a second entry point into
+    // the same tab switch.
+    const VIEW_NAV = { economic: 'sb-economic', military: 'sb-military', trader: 'sb-traders' };
+
+    // Jump straight to one advisor card from elsewhere in the UI (currently:
+    // the Alerts tab's "Advise" button on its Hostile Presence/Force Build-Up
+    // tiles) — switches to that finding's view, expands its evidence drawer,
+    // and scrolls/flashes it into view. Same scroll+flash affordance as
+    // jumpToShip() (station-helpers.js).
+    function jumpToFinding(id, view) {
+      _navRecord();
+      switchTab(`advisors-${view}`, document.getElementById(VIEW_NAV[view]));
+      _navAfterJump();
+      _view = view;
+      _filter = 'all';
+      _open = new Set([id]);
+      AdvisorsEvidence.resetView();
+      render();
+      requestAnimationFrame(() => {
+        const card = document.querySelector(`.adv-card[data-finding-id="${id}"]`);
+        if (!card) return;
+        card.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        card.style.transition = '';
+        card.style.background = 'var(--color-negative-dim)';
+        requestAnimationFrame(() => {
+          card.style.transition = 'background 1.5s';
+          card.style.background = '';
+        });
+      });
+    }
+
     const _meta = f => TYPE_META[f.type] || FALLBACK_META;
     // Everything below renders one VIEW's slice of the merged findings list;
     // the full list stays untouched so switching tabs is a pure re-render.
@@ -137,6 +170,16 @@
         </div>`;
     }
 
+    // Exported so other tabs (currently: the Alerts tab's Hostile Presence
+    // tiles) can stamp the exact same icon/colour/tooltip instead of a
+    // second hand-rolled copy — '' when the finding has no counters (e.g.
+    // every buildup finding, which never sets f.counters).
+    function counterIconHtml(f) {
+      return f.counters && f.counters.length
+        ? `<i class="ti ti-swords adv-counter" data-adv-counter-tip="${encodeURIComponent(_counterTipHtml(f))}"></i>`
+        : '';
+    }
+
     function _cardHtml(f, rank, maxScore) {
       const m = _meta(f);
       // Rail fill is score relative to the view's TOP finding (not the
@@ -144,11 +187,9 @@
       // filter does. Floored at 6% so even the weakest finding shows a tick.
       const pct  = Math.max(6, Math.round(f.priority_score / maxScore * 100));
       const open = _open.has(f.id);
-      const counters = f.counters && f.counters.length
-        ? `<i class="ti ti-swords adv-counter" data-adv-counter-tip="${encodeURIComponent(_counterTipHtml(f))}"></i>`
-        : '';
+      const counters = counterIconHtml(f);
       return `
-        <div class="adv-card adv--${m.tone}${open ? ' open' : ''}">
+        <div class="adv-card adv--${m.tone}${open ? ' open' : ''}" data-finding-id="${f.id}">
           <div class="adv-rail"><div class="adv-rail-fill" style="height:${pct}%"></div></div>
           <div class="adv-card-main" onclick="AdvisorsFeed.toggle('${f.id}')">
             <div class="adv-card-head">
@@ -234,5 +275,5 @@
       return true;
     });
 
-    return { setData, setFilter, toggle, setEvidenceView, render, openHelp };
+    return { setData, setFilter, toggle, setEvidenceView, render, openHelp, jumpToFinding, counterIconHtml };
   })();

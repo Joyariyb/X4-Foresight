@@ -22,11 +22,32 @@
     .card .val.green { color: var(--color-positive); }
 
     /* ── ALERTS ── */
-    .alert { display: flex; align-items: flex-start; gap: 1rem; padding: 0.8rem 1.2rem; border-radius: var(--radius-md); font-size: 1.2rem; font-family: var(--font-data); margin-bottom: 0.6rem; }
-    .alert i { font-size: 1.6rem; flex-shrink: 0; margin-top: 1px; }
-    .alert.red    { background: var(--color-negative-dim);   border: 1px solid var(--color-negative-line);  color: var(--color-negative); }
-    .alert.amber  { background: var(--color-warning-dim); border: 1px solid var(--color-warning-line); color: var(--color-warning); }
-    .alert.green  { background: var(--color-positive-dim); border: 1px solid var(--color-positive-line);  color: var(--color-positive); }
+    /* Square tiles rather than full-width rows: the grid lets several
+       conditions sit side by side and each tile reads at a glance from its
+       colour alone. #alerts-list is the grid; .alert is the tile. */
+    #alerts-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 1rem; }
+    .alert { aspect-ratio: 1 / 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 0.8rem; padding: 1.4rem; border-radius: var(--radius-md); font-size: 1.2rem; font-family: var(--font-data); }
+    .alert i { font-size: 2.6rem; flex-shrink: 0; }
+    /* -strong fill (~0.25 alpha, see base.css) instead of -dim: at tile scale
+       -dim reads as near-black, so the tile needs a bit more tint to carry
+       the colour — still clearly translucent, just stronger than -dim.
+       Border stays on the standard -line token but at 2px so the outline
+       reads stronger against the tile. Icon + text both take the semantic
+       colour, per the documented trio pattern (UI_STANDARDS.md §2). */
+    .alert.red    { background: var(--color-negative-strong); border: 2px solid var(--color-negative-line); color: var(--color-negative); }
+    .alert.amber  { background: var(--color-warning-strong);  border: 2px solid var(--color-warning-line);  color: var(--color-warning); }
+    .alert.green  { background: var(--color-positive-strong); border: 2px solid var(--color-positive-line); color: var(--color-positive); }
+    /* Hostile Presence / Force Build-Up tiles: sector name + severity, not
+       the advisor's full finding text — the "Advise" button is the deep
+       link to that reasoning (AdvisorsFeed.jumpToFinding() in populate.js). */
+    .alert-title  { font-family: var(--font-label); font-weight: 600; font-size: 1.5rem; letter-spacing: 0.04em; }
+    .alert-sub    { font-family: var(--font-body); font-size: 1.1rem; }
+    .alert-advise { font-family: var(--font-label); font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase; background: none; border: 1px solid currentColor; color: inherit; border-radius: var(--radius-sm); padding: 0.3rem 1rem; cursor: pointer; transition: background var(--duration-short) var(--ease-standard); }
+    .alert-advise:hover { background: var(--state-hover); }
+    /* .adv-counter (advisors.css) already carries its own colour/hover/tooltip
+       — reused as-is here, not restyled, so the sword icon reads identically
+       to the one on the Military advisor card it deep-links to. */
+    .alert-actions { margin-top: 0.2rem; display: flex; align-items: center; gap: 0.6rem; }
 
     /* ── PANELS ── */
     .panel { background: var(--surface-2); border: 1px solid var(--outline); border-radius: var(--radius-md); overflow: hidden; }
