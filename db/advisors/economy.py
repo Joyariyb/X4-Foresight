@@ -9,7 +9,10 @@ from .advisors import _finding
 
 # A station whose surplus will overflow its cargo bay within this many
 # in-game hours is worth flagging now, while there's still time to react.
-OVERFLOW_HOURS_THRESHOLD = 24.0
+# Game hours track real hours 1:1 (no time-acceleration factor anywhere in
+# this pipeline), so this is also "how far ahead in real time" — kept short
+# for the same reason the Alerts tab narrows further still (see populate.js).
+OVERFLOW_HOURS_THRESHOLD = 5.0
 
 # 3 phrasings per finding type so the feed doesn't read as copy-pasted.
 TEMPLATES: dict[str, list[str]] = {

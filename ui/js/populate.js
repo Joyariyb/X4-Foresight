@@ -143,10 +143,24 @@
     const outranged = militaryFindings.filter(f => f.type === "outranged");
     const damagedFleet = militaryFindings.filter(f => f.type === "damaged_fleet");
 
+    // Storage Overflow — sourced from the Economic advisor's overflow_risk
+    // findings (db/advisors/economy.py's overflow_risk_findings()), same
+    // hand-off pattern as the military-sourced alerts above: this is the
+    // single source of truth for "a station's about to cap out on a ware",
+    // so no separate raw cargo-percentage check belongs here. The advisor's
+    // own window (OVERFLOW_HOURS_THRESHOLD, 5h) is "worth mentioning";
+    // Alerts narrows further to OVERFLOW_ALERT_HOURS since game hours track
+    // real hours 1:1 here and this tab is for "needs attention now".
+    const OVERFLOW_ALERT_HOURS = 1;
+    const OVERFLOW_ALERT_RED_HOURS = 0.5;
+    const storageOverflow = ((data.advisors || {}).findings || [])
+      .filter(f => f.domain === "economy" && f.type === "overflow_risk"
+        && f.slots.hours <= OVERFLOW_ALERT_HOURS);
+
     const alertCount = (hostilePresence.length > 0 ? 1 : 0)
       + (buildups.length > 0 ? 1 : 0) + (compositionGaps.length > 0 ? 1 : 0)
       + (outranged.length > 0 ? 1 : 0) + (waiting.length > 0 ? 1 : 0)
-      + (damagedFleet.length > 0 ? 1 : 0);
+      + (damagedFleet.length > 0 ? 1 : 0) + (storageOverflow.length > 0 ? 1 : 0);
     document.getElementById("nav-alerts").textContent = alertCount;
 
     // Hostiles Present — enemy NPC ships sitting in a sector where the player
@@ -1008,7 +1022,7 @@
     // that reasoning (AdvisorsFeed.jumpToFinding() switches to the Military
     // advisor tab, expands that exact card's evidence drawer, and scrolls it
     // into view).
-    const adviseBtn = f => `<button class="alert-advise" onclick="AdvisorsFeed.jumpToFinding('${f.id}','military')">Advise</button>`;
+    const adviseBtn = (f, view = "military") => `<button class="alert-advise" onclick="AdvisorsFeed.jumpToFinding('${f.id}','${view}')">Advise</button>`;
 
     // Hostile Presence — one tile per (sector, hostile faction) where their
     // force is at least a match for the player's present defence there.
@@ -1072,6 +1086,20 @@
         <div class="alert-sub">${f.slots.hull_pct}% hull · ${f.slots.role} · ${f.slots.sector_name}</div>
         <div class="alert-actions">${adviseBtn(f)}</div>`;
       alerts.push({ msg, cls, icon: "ti-heart-broken" });
+    });
+
+    // Storage Overflow — stations about to cap out on a surplus ware within
+    // OVERFLOW_ALERT_HOURS (1h). Terse tile per finding (station + the
+    // at-risk ware), same as the military tiles above; the "Advise" button is
+    // the deep link to the Economic advisor card with the full reasoning.
+    // Under OVERFLOW_ALERT_RED_HOURS (30min) renders red — same red/amber
+    // split idea as Damaged Fleet above, just on time-to-cap instead of hull.
+    storageOverflow.forEach(f => {
+      const cls = f.slots.hours <= OVERFLOW_ALERT_RED_HOURS ? "red" : "amber";
+      const msg = `<div class="alert-title">${f.slots.station_name}</div>
+        <div class="alert-sub">${f.slots.ware_name}</div>
+        <div class="alert-actions">${adviseBtn(f, "economic")}</div>`;
+      alerts.push({ msg, cls, icon: "ti-database-exclamation" });
     });
 
     // Ship codes are player ships (`waiting` is filtered from `players`

@@ -19,11 +19,11 @@ def _finding(export, ftype, id_):
 def test_overflow_risk(export):
     # Overflow Test Station: one energycells production module vastly
     # outproduces its small (50000 m3) storage bay, so time_to_cap comes out
-    # well under the 24h threshold with no need for implausible cargo values.
+    # well under the 5h threshold with no need for implausible cargo values.
     f = _finding(export, 'overflow_risk', 'overflow:[0x6000]:energycells')
     assert f['domain'] == 'economy'
     assert f['slots']['station_name'] == 'Overflow Test Station'
-    assert f['slots']['hours'] < 24
+    assert f['slots']['hours'] < 5
     assert f['priority_score'] > 0
     # Renders without a KeyError for whichever template variant was picked.
     assert f['slots']['ware_name'] in f['body']
