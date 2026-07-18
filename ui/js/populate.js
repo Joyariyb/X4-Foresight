@@ -1,15 +1,6 @@
   // Core role: Ingests scanner JSON export, adapts field names to UI conventions, and populates all tab data models.
 
   function populate(data) {
-    // Rendering code reads the export's own field names (ship_order,
-    // hull_origin_name, hull_max, owner_id, …) directly. What populate() adds
-    // IN PLACE is only *derived* data the export doesn't carry: resolved
-    // sector names, nested crew skills, and the ship→pilot join.
-
-    // Equipment/hull catalog (Designs tab + Resource Library) is loaded
-    // independently by scan-loader.js's loadResourceLibrary() — it's static,
-    // not derived from the save, so scan payloads no longer carry it.
-
     // Keep the picker button label in sync whenever a scan loads.
     if (data.meta && data.meta.scan_id != null) {
       _currentScanId = data.meta.scan_id;
@@ -17,6 +8,61 @@
       if (label) label.textContent = _currentScanId;
     }
 
+    // Each populate*() section below owns one tab (or tab family) and reads
+    // from `ctx` — the shared handles normalizeScanData() derives once — so a
+    // section's dependencies are visible in its opening destructure line
+    // instead of implied by hundreds of lines of shared function scope.
+    const ctx = normalizeScanData(data);
+
+    populateFeeds(data, ctx);
+    populateOverviewTab(data, ctx);
+
+    // Alerts tab + sidebar badge — derivation rules and tile rendering both
+    // live in alerts.js. `waiting` is passed in (not re-derived there) so the
+    // Waiting summary card and the idle-ships alert stay one definition.
+    renderAlerts(data, ctx.waiting);
+
+    populateFleetTab(ctx);
+    populateCrewTab();
+
+    // Faction tag/name maps are shared: the NPC fleet strip and the Diplomacy
+    // tab must label the same faction identically.
+    const maps = factionNameMaps(ctx.rep);
+    populateNpcFleetTabs(ctx, maps);
+    populateDiplomacyTab(data, ctx, maps);
+
+    populateStationsTab(ctx);
+    populateRepTable(ctx.rep);
+
+    // Trends tab — cross-scan trajectory + changes feed. Guarded so an older
+    // export without a `trends` section (or a shell that didn't load trends.js)
+    // degrades to an empty tab instead of throwing mid-populate.
+    if (typeof renderTrends === 'function') renderTrends(data);
+
+    renderNpcStations(data);
+    renderUniverseMap(data);
+    // renderUniverseMap repopulates the shared sector maps; if the Sectors tab
+    // is already open, rebuild it against the new scan (and refresh the detail).
+    if (document.getElementById('tab-sectors')?.classList.contains('active')) {
+      renderSectorsList();
+      if (_selectedSector) showSectorDetail(_selectedSector);
+    }
+
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("shell").style.display   = "flex";
+  }
+
+  // ── Scan normalization ────────────────────────────────────────────────
+  // Rendering code reads the export's own field names (ship_order,
+  // hull_origin_name, hull_max, owner_id, …) directly. What this adds IN
+  // PLACE is only *derived* data the export doesn't carry: resolved sector
+  // names, nested crew skills, and the ship→pilot join. Returns the shared
+  // handles the populate*() sections read.
+  //
+  // Equipment/hull catalog (Designs tab + Resource Library) is loaded
+  // independently by scan-loader.js's loadResourceLibrary() — it's static,
+  // not derived from the save, so scan payloads no longer carry it.
+  function normalizeScanData(data) {
     const player = data.player || {};
 
     // sector_macro → readable name (ships/crew only carry the macro).
@@ -101,6 +147,20 @@
     const allMining = data.mining_deliveries || [];
     warePrices      = data.ware_prices    || {};
 
+    const waiting = players.filter(s => s.ship_order === "Waiting");
+
+    // Global store for the Crew tab AND for renderFleet's pilot name links —
+    // filled here so it's ready before populateFleetTab() renders the table.
+    allCrewData = data.crew || [];
+
+    return { player, fleet, players, npcShips: npcList,
+             stations, rep, allTrades, allMining, waiting };
+  }
+
+  // ── Feed hand-offs (Events / Missions / Advisors) ─────────────────────
+  function populateFeeds(data, ctx) {
+    const { players: playerShips, npcShips: npcList, stations, rep } = ctx;
+
     // Captains Log data — the feed renders on tab open (and re-renders here in
     // case the Events tab is the one currently visible during a re-scan).
     // The entity arrays let the feed resolve an event's component= link to the
@@ -122,16 +182,14 @@
     // in now, the sidebar's Advisors > Economic item re-renders on open.
     AdvisorsFeed.setData(data.advisors);
     AdvisorsFeed.render();
+  }
+
+  // ── Overview tab (summary cards + topbar counters) ────────────────────
+  function populateOverviewTab(data, ctx) {
+    const { player, fleet, stations, rep, npcShips: npcList, waiting } = ctx;
 
     document.getElementById("ov-pilot").textContent  = player.name || "—";
     document.getElementById("nav-ships").textContent = fleet.total || "—";
-
-    const waiting  = players.filter(s => s.ship_order === "Waiting");
-
-    // Alerts tab + sidebar badge — derivation rules and tile rendering both
-    // live in alerts.js. `waiting` is passed in (not re-derived there) so the
-    // Waiting summary card below and the idle-ships alert stay one definition.
-    renderAlerts(data, waiting);
 
     // Hostiles Present — enemy NPC ships sitting in a sector where the player
     // owns a station (npc_ships is already bounded to those sectors at export
@@ -166,6 +224,11 @@
         <div class="val ${c.cls}">${c.value}</div>
       </div>`;
     }).join("");
+  }
+
+  // ── Fleet tab (role/order breakdowns + player ship table) ─────────────
+  function populateFleetTab(ctx) {
+    const { fleet, players } = ctx;
 
     // Fleet by role
     const byRole = fleet.by_role || {};
@@ -190,16 +253,18 @@
         </tr>`;
       }).join("");
 
-    // Store ships for re-use by setSort(), then do the initial render
-    // using the default sort key and direction.
-    // Crew data must be loaded before renderFleet so pilot name links can resolve.
-    allCrewData = data.crew || [];
-
+    // Store ships for re-use by setSort(), then do the initial render using
+    // the default sort key and direction. (allCrewData is already stored by
+    // normalizeScanData — renderFleet's pilot name links resolve from it.)
     allPlayerShips = players;
     renderFleet(allPlayerShips, currentSortKey, currentSortDir);
     updateFleetSortHeaders();
     document.getElementById('ft-count-player').textContent = players.length;
+  }
 
+  // ── Crew tab (role counts + roster) ───────────────────────────────────
+  // Reads the allCrewData store normalizeScanData() filled.
+  function populateCrewTab() {
     const crewCounts = { manager: 0, pilot: 0, service: 0, marine: 0 };
     allCrewData.forEach(c => { if (crewCounts[c.role] !== undefined) crewCounts[c.role]++; });
     document.getElementById('crew-count-all').textContent     = allCrewData.length;
@@ -209,15 +274,14 @@
     document.getElementById('crew-count-marine').textContent  = crewCounts.marine;
     crewRoleFilter = 'all';
     renderCrewRoster();
+  }
 
-    // Build NPC faction sub-tabs and panels, sorted by ship count descending.
-    const npcShips = ships.npc_ships || [];
-    const byFaction = {};
-    npcShips.forEach(s => { (byFaction[s.owner_id] = byFaction[s.owner_id] || []).push(s); });
-    const sortedFactions = Object.entries(byFaction).sort((a, b) => b[1].length - a[1].length);
-
-    // Supplement the hardcoded tag map with any tags found in the live rep data,
-    // so factions added by future DLC are picked up automatically.
+  // ── Faction tag/name maps ─────────────────────────────────────────────
+  // Supplement the hardcoded tag map with any tags found in the live rep data,
+  // so factions added by future DLC are picked up automatically. Shared by
+  // populateNpcFleetTabs and populateDiplomacyTab so both label a faction
+  // identically.
+  function factionNameMaps(rep) {
     const tagMap  = Object.assign({}, FACTION_LABELS);
     const nameMap = Object.assign({}, FACTION_FULL_NAMES_FALLBACK);
     rep.forEach(f => {
@@ -227,6 +291,18 @@
         nameMap[f.faction_id] = m[2];
       }
     });
+    return { tagMap, nameMap };
+  }
+
+  // ── Fleet tab: NPC faction sub-tabs and panels ────────────────────────
+  function populateNpcFleetTabs(ctx, maps) {
+    const { npcShips } = ctx;
+    const { tagMap, nameMap } = maps;
+
+    // Build NPC faction sub-tabs and panels, sorted by ship count descending.
+    const byFaction = {};
+    npcShips.forEach(s => { (byFaction[s.owner_id] = byFaction[s.owner_id] || []).push(s); });
+    const sortedFactions = Object.entries(byFaction).sort((a, b) => b[1].length - a[1].length);
 
     const subtabs   = document.getElementById('fleet-subtabs');
     const npcPanels = document.getElementById('fleet-npc-panels');
@@ -280,10 +356,17 @@
 
       renderNpcFleet(fShips, factionId);
     });
+  }
 
-    // Build Diplomacy faction sub-tabs and panels — same pattern as the Naval
-    // strip above. Tab order: the player's standing with each subject faction,
-    // descending, so allies come first and Xenon anchors the end.
+  // ── Diplomacy tab (per-faction standings + relations matrix) ──────────
+  // Builds Diplomacy faction sub-tabs and panels — same pattern as the Naval
+  // strip in populateNpcFleetTabs. Tab order: the player's standing with each
+  // subject faction, descending, so allies come first and Xenon anchors the
+  // end.
+  function populateDiplomacyTab(data, ctx, maps) {
+    const { player, rep } = ctx;
+    const { tagMap, nameMap } = maps;
+
     const relRows = data.faction_relations || [];
     const relByFaction = {};
     relRows.forEach(r => { (relByFaction[r.faction_id] = relByFaction[r.faction_id] || []).push(r); });
@@ -445,9 +528,22 @@
     // Land on Player after a rebuild: syncs the trigger label/colour and the
     // active panel (the menu item now exists to copy styling from).
     switchDiploTab('player');
+  }
 
-    // Stations
-    document.getElementById("stations-grid").innerHTML = stations.map(s => {
+  // ── Stations tab ──────────────────────────────────────────────────────
+  function populateStationsTab(ctx) {
+    document.getElementById("stations-grid").innerHTML =
+      ctx.stations.map(s => stationCardHtml(s, ctx)).join("");
+  }
+
+  // One full station card: header + health bars + stat tiles + the
+  // production/docked tab pair, plus the economy and production-flow slider
+  // panels. Everything is derived from the one station row `s`; ctx supplies
+  // the cross-cutting lists (ship lookups for the docked rows, trade/mining
+  // logs for the economy panels).
+  function stationCardHtml(s, ctx) {
+      const { players, npcShips, allTrades, allMining } = ctx;
+
       const factionTag = stationFactionTag(s);
       const typeLabel  = stationTypeLabel(s);
 
@@ -967,9 +1063,10 @@
           ${productionFlowSvg(s)}
         </div>
       </div>`;
-    }).join("");
+  }
 
-    // Faction standings
+  // ── Faction standings table ───────────────────────────────────────────
+  function populateRepTable(rep) {
     document.querySelector("#rep-table tbody").innerHTML = rep.map(f => {
       const col   = { Allied:"var(--color-positive)", Friendly:"var(--color-primary)", Neutral:"var(--text-secondary)", Hostile:"var(--color-warning)", "At War":"var(--color-negative)" }[f.tier] || "var(--text-secondary)";
       const boost = f.booster ? sign(f.booster) : "—";
@@ -982,23 +1079,6 @@
         <td class="mono" style="color:var(--text-brand)">${boost}</td>
       </tr>`;
     }).join("");
-
-    // Trends tab — cross-scan trajectory + changes feed. Guarded so an older
-    // export without a `trends` section (or a shell that didn't load trends.js)
-    // degrades to an empty tab instead of throwing mid-populate.
-    if (typeof renderTrends === 'function') renderTrends(data);
-
-    renderNpcStations(data);
-    renderUniverseMap(data);
-    // renderUniverseMap repopulates the shared sector maps; if the Sectors tab
-    // is already open, rebuild it against the new scan (and refresh the detail).
-    if (document.getElementById('tab-sectors')?.classList.contains('active')) {
-      renderSectorsList();
-      if (_selectedSector) showSectorDetail(_selectedSector);
-    }
-
-    document.getElementById("loading").style.display = "none";
-    document.getElementById("shell").style.display   = "flex";
   }
 
 
