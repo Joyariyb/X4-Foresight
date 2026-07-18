@@ -135,6 +135,30 @@
       return total > 0 && s.account_amount != null && s.account_amount < total * STATION_UNDERFUNDED_PCT;
     });
 
+    // Under-Equipped Ships — read straight from data.ships[] (export/jsonexport.py's
+    // _ships(): `hardpoints` is the hull's slot layout {type: {size: count}} from
+    // SHIP_STATS, `loadout` is what's actually fitted), same raw-scan-data pattern
+    // as Station Damaged/Underfunded above — no advisor finding backs this, it's a
+    // straight hardpoints-vs-loadout comparison. Restricted to MILITARY_ROLES: an
+    // unarmed freighter is normal, an unarmed Frigate isn't. A ship still under
+    // construction hasn't been fitted out yet by design, so it's excluded rather
+    // than flagged. Each entry keeps its specific gap(s) (guns vs. shields) rather
+    // than just the ship, since "no weapons" and "no shields" call for different
+    // fixes and a ship can be missing both at once.
+    const underEquipped = (data.ships || []).flatMap(s => {
+      if (s.under_construction || !MILITARY_ROLES.has(s.role)) return [];
+      const hp = s.hardpoints || {};
+      const loadout = s.loadout || [];
+      const hasGunHardpoints = !!(hp.weapon || hp.turret);
+      const hasFittedGuns = loadout.some(e => e.slot === "weapon" || e.slot === "turret");
+      const hasShieldHardpoints = !!hp.shield;
+      const hasFittedShields = loadout.some(e => e.slot === "shield");
+      const gaps = [];
+      if (hasGunHardpoints && !hasFittedGuns) gaps.push("no weapons");
+      if (hasShieldHardpoints && !hasFittedShields) gaps.push("no shields");
+      return gaps.length > 0 ? [{ ship: s, gaps }] : [];
+    });
+
     // The badge counts alert *categories*, not individual tiles — a fleet of
     // twenty idle ships is one problem to look at, not twenty.
     const alertCount = (hostilePresence.length > 0 ? 1 : 0)
@@ -143,7 +167,7 @@
       + (damagedFleet.length > 0 ? 1 : 0) + (storageOverflow.length > 0 ? 1 : 0)
       + (strandedDeliveries.length > 0 ? 1 : 0) + (stationDamageActive ? 1 : 0)
       + (stallsByStation.size > 0 ? 1 : 0) + (starvedByStation.size > 0 ? 1 : 0)
-      + (underfundedStations.length > 0 ? 1 : 0);
+      + (underfundedStations.length > 0 ? 1 : 0) + (underEquipped.length > 0 ? 1 : 0);
     document.getElementById("nav-alerts").textContent = alertCount;
 
     const alertsList = document.getElementById("alerts-list");
@@ -323,6 +347,17 @@
     const idleMiners = waiting.filter(s => MINER_ROLES.has(s.role));
     if (idleMiners.length > 0) {
       alerts.push({ msg:`<div class="alert-sub">${idleMiners.length} idle miner(s): ${idleMiners.map(s=>shipLink(s.code)).join(", ")}</div>`, cls:"amber", icon:"ti-shovel" });
+    }
+
+    // Under-Equipped Ships — one row listing every offending ship code with its
+    // specific gap(s) attached, same "name (detail)" suffix pattern as Input
+    // Starvation's per-ware "(Nh)" above. Always amber: a missing loadout is a
+    // fix-it gap, not damage or hostile action.
+    if (underEquipped.length > 0) {
+      const codes = underEquipped.slice(0,6)
+        .map(u => `${shipLink(u.ship.code)} (${u.gaps.join(", ")})`).join(", ");
+      const more  = underEquipped.length > 6 ? ` (+${underEquipped.length-6} more)` : "";
+      alerts.push({ msg:`<div class="alert-sub">${underEquipped.length} ship(s) under-equipped: ${codes}${more}</div>`, cls:"amber", icon:"ti-sword-off" });
     }
 
     alertsList.innerHTML = alerts.length === 0
