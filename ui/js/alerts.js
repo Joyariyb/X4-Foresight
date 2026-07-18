@@ -68,13 +68,43 @@
     });
     const stationDamageActive = damagedStationsRed.length > 0 || damagedStationsAmber.length > 0;
 
+    // Production Stalling — read straight from data.stations[].production_runtimes
+    // (export/jsonexport.py's _stations(), computed by production_analytics_from_modules()
+    // in data/production.py), same raw-scan-data pattern as Station Damaged above:
+    // no advisor finding backs this, it's a direct read of numbers the scanner
+    // already computed. `minutes` (runtime_minutes) is null for wares with no
+    // inputs (e.g. Energy Cells — never alerts) and 0 means the limiting input is
+    // already out of stock. `time_to_cap_hours` is null unless the ware has a
+    // positive surplus AND cargo data was available, and 0 means the bay is
+    // already full with nowhere for output to go. Either already-halted case
+    // renders red; landing within PRODUCTION_STALL_AMBER_HOURS of either limit
+    // renders amber. This deliberately overlaps the Storage Overflow alert below
+    // on the cap side (different, tighter threshold here) — Storage Overflow only
+    // fires when the ware has NPC market value, so a valueless ware stalling out
+    // would otherwise never surface.
+    const PRODUCTION_STALL_AMBER_HOURS = 1.5;
+    const stallsByStation = new Map(); // station code -> { red: [wareName...], amber: [...] }
+    stations.forEach(s => {
+      const runtimes = s.production_runtimes || {};
+      Object.entries(runtimes).forEach(([wareName, r]) => {
+        const minutesHalted = r.minutes === 0;
+        const capHalted = r.time_to_cap_hours === 0;
+        const minutesSoon = r.minutes != null && r.minutes > 0 && r.minutes <= PRODUCTION_STALL_AMBER_HOURS * 60;
+        const capSoon = r.time_to_cap_hours != null && r.time_to_cap_hours > 0 && r.time_to_cap_hours <= PRODUCTION_STALL_AMBER_HOURS;
+        if (!(minutesHalted || capHalted || minutesSoon || capSoon)) return;
+        if (!stallsByStation.has(s.code)) stallsByStation.set(s.code, { red: [], amber: [] });
+        stallsByStation.get(s.code)[(minutesHalted || capHalted) ? "red" : "amber"].push(wareName);
+      });
+    });
+
     // The badge counts alert *categories*, not individual tiles — a fleet of
     // twenty idle ships is one problem to look at, not twenty.
     const alertCount = (hostilePresence.length > 0 ? 1 : 0)
       + (buildups.length > 0 ? 1 : 0) + (compositionGaps.length > 0 ? 1 : 0)
       + (outranged.length > 0 ? 1 : 0) + (waiting.length > 0 ? 1 : 0)
       + (damagedFleet.length > 0 ? 1 : 0) + (storageOverflow.length > 0 ? 1 : 0)
-      + (strandedDeliveries.length > 0 ? 1 : 0) + (stationDamageActive ? 1 : 0);
+      + (strandedDeliveries.length > 0 ? 1 : 0) + (stationDamageActive ? 1 : 0)
+      + (stallsByStation.size > 0 ? 1 : 0);
     document.getElementById("nav-alerts").textContent = alertCount;
 
     const alertsList = document.getElementById("alerts-list");
@@ -170,6 +200,20 @@
       const more  = damagedStationsAmber.length > 6 ? ` (+${damagedStationsAmber.length-6} more)` : "";
       alerts.push({ msg:`<div class="alert-sub">${damagedStationsAmber.length} station(s) damaged: ${codes}${more}</div>`, cls:"amber", icon:"ti-alert-triangle" });
     }
+
+    // Production Stalling — one row per station per severity, listing the
+    // affected wares (a station can have one ware already halted and another
+    // just stalling soon at the same time, so red/amber never mix in one row).
+    stallsByStation.forEach((sev, code) => {
+      if (sev.red.length > 0) {
+        const wares = sev.red.slice(0,6).join(", ") + (sev.red.length > 6 ? ` (+${sev.red.length-6} more)` : "");
+        alerts.push({ msg:`<div class="alert-title">${stationLink(code)}</div><div class="alert-sub">Stalled: ${wares}</div>`, cls:"red", icon:"ti-player-pause" });
+      }
+      if (sev.amber.length > 0) {
+        const wares = sev.amber.slice(0,6).join(", ") + (sev.amber.length > 6 ? ` (+${sev.amber.length-6} more)` : "");
+        alerts.push({ msg:`<div class="alert-title">${stationLink(code)}</div><div class="alert-sub">Stalling soon: ${wares}</div>`, cls:"amber", icon:"ti-player-pause" });
+      }
+    });
 
     // Storage Overflow — stations about to cap out on a surplus ware within
     // OVERFLOW_ALERT_HOURS (1h). Terse tile per finding (station + the
