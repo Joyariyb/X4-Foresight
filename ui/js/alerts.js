@@ -120,6 +120,21 @@
       });
     });
 
+    // Station Underfunded — read straight from data.stations[].account_amount vs
+    // budget.total (export/jsonexport.py's _stations(); budget.total comes from
+    // estimate_station_budget() in scanner/budget.py, roughly 2h of the station's
+    // own input costs), same raw-scan-data pattern as Station Damaged/Production
+    // Stalling/Input Starvation above — no advisor finding backs this. A station
+    // with budget.total == 0 (nothing to restock, e.g. a pure-output shipyard)
+    // can't be "underfunded" by this measure, so it's excluded rather than
+    // flagged against a zero threshold. Below ~10% of budget means the account
+    // can't cover even one more restock cycle.
+    const STATION_UNDERFUNDED_PCT = 0.10;
+    const underfundedStations = stations.filter(s => {
+      const total = (s.budget || {}).total || 0;
+      return total > 0 && s.account_amount != null && s.account_amount < total * STATION_UNDERFUNDED_PCT;
+    });
+
     // The badge counts alert *categories*, not individual tiles — a fleet of
     // twenty idle ships is one problem to look at, not twenty.
     const alertCount = (hostilePresence.length > 0 ? 1 : 0)
@@ -127,7 +142,8 @@
       + (outranged.length > 0 ? 1 : 0) + (waiting.length > 0 ? 1 : 0)
       + (damagedFleet.length > 0 ? 1 : 0) + (storageOverflow.length > 0 ? 1 : 0)
       + (strandedDeliveries.length > 0 ? 1 : 0) + (stationDamageActive ? 1 : 0)
-      + (stallsByStation.size > 0 ? 1 : 0) + (starvedByStation.size > 0 ? 1 : 0);
+      + (stallsByStation.size > 0 ? 1 : 0) + (starvedByStation.size > 0 ? 1 : 0)
+      + (underfundedStations.length > 0 ? 1 : 0);
     document.getElementById("nav-alerts").textContent = alertCount;
 
     const alertsList = document.getElementById("alerts-list");
@@ -252,6 +268,17 @@
         alerts.push({ msg:`<div class="alert-title">${stationLink(code)}</div><div class="alert-sub">Low input: ${wares}</div>`, cls:"amber", icon:"ti-gas-station-off" });
       }
     });
+
+    // Station Underfunded — one row listing affected station codes with their
+    // current balances, same bucketed-list pattern as Station Damaged above.
+    // Amber only (no red split): a low account balance is a heads-up to
+    // resupply credits, not damage or a fight already lost.
+    if (underfundedStations.length > 0) {
+      const codes = underfundedStations.slice(0,6)
+        .map(s => `${stationLink(s.code)} (${fmtCredits(s.account_amount)})`).join(", ");
+      const more  = underfundedStations.length > 6 ? ` (+${underfundedStations.length-6} more)` : "";
+      alerts.push({ msg:`<div class="alert-sub">${underfundedStations.length} station(s) underfunded: ${codes}${more}</div>`, cls:"amber", icon:"ti-wallet-off" });
+    }
 
     // Storage Overflow — stations about to cap out on a surplus ware within
     // OVERFLOW_ALERT_HOURS (1h). Terse tile per finding (station + the

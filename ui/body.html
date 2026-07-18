@@ -1361,7 +1361,7 @@
 
           <section class="help-topic" id="help-alerts" data-help-group="Alerts"
                    data-help-title="Alerts" data-help-icon="ti-alert-triangle"
-                   data-help-blurb="The twelve conditions that populate this tab and how they differ from the topbar's Alerts badge count."
+                   data-help-blurb="The thirteen conditions that populate this tab and how they differ from the topbar's Alerts badge count."
                    >
         <div class="sec-header"><div class="sec-title">Alerts · Help</div><div class="sec-line"></div></div>
         <div class="adv-help-note">
@@ -1369,7 +1369,7 @@
           <p>Fully recomputed on every scan — there's no dismiss or acknowledge
             action, so an alert simply stops appearing once the underlying
             condition clears. Shows a single green "No alerts detected" message
-            when none of the twelve below are true.</p>
+            when none of the thirteen below are true.</p>
         </div>
         <div class="adv-help-list">
           <div class="adv-help-card adv--negative">
@@ -1462,6 +1462,18 @@
           </div>
           <div class="adv-help-card adv--warning">
             <div class="adv-help-body">
+              <div class="adv-help-head"><i class="ti ti-wallet-off adv-icon"></i><span class="adv-type">Station Underfunded</span></div>
+              <p>Read straight from each station's account balance against its
+                own estimated supply budget (roughly 2 hours of its input
+                costs), not an advisor finding. Stations with nothing budgeted
+                (pure-output builds with no inputs to restock) are excluded.
+                Balance below about 10% of that budget means the station can't
+                afford to restock itself. One row listing the affected station
+                codes with their current balances.</p>
+            </div>
+          </div>
+          <div class="adv-help-card adv--warning">
+            <div class="adv-help-body">
               <div class="adv-help-head"><i class="ti ti-clock adv-icon"></i><span class="adv-type">Idling Ships</span></div>
               <p>Any ship currently on the "Waiting" order — idle capacity doing
                 nothing. Lists up to 6 ship codes plus a "+N more" count beyond
@@ -1504,10 +1516,11 @@
           <p>The topbar's Alerts badge is a coarser count than this tab's list —
             it adds at most one point each for hostile presence, force build-up,
             composition gap, outranged, idling ships, damaged fleet, station
-            damage, production stalling, input starvation, storage overflow and
-            stranded deliveries (max 11 total), regardless of how many sectors,
-            ships or stations are actually involved, so a badge of "2" just
-            means two of those eleven conditions are currently true.</p>
+            damage, production stalling, input starvation, station underfunded,
+            storage overflow and stranded deliveries (max 12 total), regardless
+            of how many sectors, ships or stations are actually involved, so a
+            badge of "2" just means two of those twelve conditions are
+            currently true.</p>
         </div>
           </section>
 
