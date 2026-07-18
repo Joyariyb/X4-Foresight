@@ -276,6 +276,41 @@
       return [{ code: s.code, wares: minedWares }];
     });
 
+    // Trade Gone Quiet — an operational station with posted offers (it's
+    // actually trying to trade) but nothing in the trade log for a long
+    // stretch. station_trades only spans the window the game's own log
+    // still remembers (see Surplus Piling Up's tradeWindowHours note above),
+    // so a station with zero entries there is either genuinely quiet or its
+    // last trade fell outside that window — either way, "no evidence of a
+    // recent trade" is the right read. TRADE_SILENCE_HOURS is picked wide on
+    // purpose (a normal station can go quiet for a while between runs)
+    // specifically to avoid flagging ordinary lulls the idle-ship checks
+    // don't catch (a hauler can be busy elsewhere while its home station's
+    // own offers go unfilled). A save with only one scan on record, or one
+    // younger than the threshold itself, hasn't been observed long enough to
+    // call anything quiet, so the check no-ops on both rather than guessing.
+    const TRADE_SILENCE_HOURS = 8;
+    const lastTradeHoursByStation = new Map();
+    stationTrades.forEach(t => {
+      const hrs = (t.time_ago_s || 0) / 3600;
+      const prev = lastTradeHoursByStation.get(t.station_code);
+      if (prev === undefined || hrs < prev) lastTradeHoursByStation.set(t.station_code, hrs);
+    });
+    const meta = data.meta || {};
+    const saveOldEnough = meta.scans_total !== 1
+      && (meta.game_time_s || 0) >= TRADE_SILENCE_HOURS * 3600;
+    const quietStations = saveOldEnough
+      ? stations.filter(s => s.status !== "Under Construction" && (s.offers || []).length > 0)
+          .flatMap(s => {
+            const hrs = lastTradeHoursByStation.has(s.code) ? lastTradeHoursByStation.get(s.code) : null;
+            if (hrs !== null && hrs < TRADE_SILENCE_HOURS) return [];
+            return [{ code: s.code, hours: hrs }];
+          })
+      : [];
+    // Worst (longest-quiet, including never-seen) first, same "most urgent
+    // first" ordering as No Logistics Assigned's soonest-to-deplete sort.
+    quietStations.sort((a, b) => (b.hours ?? Infinity) - (a.hours ?? Infinity));
+
     // The badge counts alert *categories*, not individual tiles — a fleet of
     // twenty idle ships is one problem to look at, not twenty.
     const alertCount = (hostilePresence.length > 0 ? 1 : 0)
@@ -286,7 +321,7 @@
       + (stallsByStation.size > 0 ? 1 : 0) + (starvedByStation.size > 0 ? 1 : 0)
       + (underfundedStations.length > 0 ? 1 : 0) + (underEquipped.length > 0 ? 1 : 0)
       + (pileUpByStation.size > 0 ? 1 : 0) + (noLogisticsStations.length > 0 ? 1 : 0)
-      + (miningGapStations.length > 0 ? 1 : 0);
+      + (miningGapStations.length > 0 ? 1 : 0) + (quietStations.length > 0 ? 1 : 0);
     document.getElementById("nav-alerts").textContent = alertCount;
 
     const alertsList = document.getElementById("alerts-list");
@@ -450,6 +485,21 @@
       }).join(", ");
       const more = miningGapStations.length > 6 ? ` (+${miningGapStations.length-6} more)` : "";
       alerts.push({ msg:`<div class="alert-sub">${miningGapStations.length} station(s) with no mining supply: ${codes}${more}</div>`, cls:"amber", icon:"ti-pick" });
+    }
+
+    // Trade Gone Quiet — one row listing every affected station code with
+    // hours since its last logged trade, same "name (detail)" list pattern
+    // as No Logistics/Mining Supply Gap above. A station with zero entries
+    // in the visible trade-log window has no age to report, so it renders
+    // as "no recent trades" instead of a fabricated number. Amber only:
+    // it's a logistics gap to look into, not damage or a fight being lost.
+    if (quietStations.length > 0) {
+      const codes = quietStations.slice(0,6).map(({code, hours}) => {
+        const label = hours === null ? "no recent trades" : `${hours.toFixed(1)}h ago`;
+        return `${stationLink(code)} (${label})`;
+      }).join(", ");
+      const more = quietStations.length > 6 ? ` (+${quietStations.length-6} more)` : "";
+      alerts.push({ msg:`<div class="alert-sub">${quietStations.length} station(s) gone quiet: ${codes}${more}</div>`, cls:"amber", icon:"ti-zzz" });
     }
 
     // Surplus Piling Up — one row per station listing every ware whose stock

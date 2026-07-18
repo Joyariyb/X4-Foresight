@@ -1361,7 +1361,7 @@
 
           <section class="help-topic" id="help-alerts" data-help-group="Alerts"
                    data-help-title="Alerts" data-help-icon="ti-alert-triangle"
-                   data-help-blurb="The sixteen conditions that populate this tab and how they differ from the topbar's Alerts badge count."
+                   data-help-blurb="The seventeen conditions that populate this tab and how they differ from the topbar's Alerts badge count."
                    >
         <div class="sec-header"><div class="sec-title">Alerts · Help</div><div class="sec-line"></div></div>
         <div class="adv-help-note">
@@ -1369,7 +1369,7 @@
           <p>Fully recomputed on every scan — there's no dismiss or acknowledge
             action, so an alert simply stops appearing once the underlying
             condition clears. Shows a single green "No alerts detected" message
-            when none of the sixteen below are true.</p>
+            when none of the seventeen below are true.</p>
         </div>
         <div class="adv-help-list">
           <div class="adv-help-card adv--negative">
@@ -1502,6 +1502,21 @@
           </div>
           <div class="adv-help-card adv--warning">
             <div class="adv-help-body">
+              <div class="adv-help-head"><i class="ti ti-zzz adv-icon"></i><span class="adv-type">Trade Gone Quiet</span></div>
+              <p>An operational station with active buy/sell offers posted but
+                nothing logged in its trade history for over 8 in-game hours —
+                read straight from the trade log against each station's offer
+                list, not an advisor finding. A station with no trade at all
+                in the log's visible window renders as "no recent trades"
+                rather than a guessed age. Skipped on a save with only one
+                scan taken, or one younger than 8 hours played, since there's
+                no window long enough yet to call a station quiet. One row
+                listing the affected station codes with hours since their
+                last trade.</p>
+            </div>
+          </div>
+          <div class="adv-help-card adv--warning">
+            <div class="adv-help-body">
               <div class="adv-help-head"><i class="ti ti-building-warehouse adv-icon"></i><span class="adv-type">Surplus Piling Up</span></div>
               <p>A produced ware's net surplus (production rate minus internal
                 consumption) growing faster than the trade log shows it
@@ -1576,10 +1591,10 @@
             composition gap, outranged, idling ships, damaged fleet, station
             damage, production stalling, input starvation, station underfunded,
             no logistics assigned, surplus piling up, storage overflow,
-            stranded deliveries, under-equipped ships and mining supply gap
-            (max 16 total), regardless of how many sectors, ships or stations
-            are actually involved, so a badge of "2" just means two of those
-            sixteen conditions are currently true.</p>
+            stranded deliveries, under-equipped ships, mining supply gap and
+            trade gone quiet (max 17 total), regardless of how many sectors,
+            ships or stations are actually involved, so a badge of "2" just
+            means two of those seventeen conditions are currently true.</p>
         </div>
           </section>
 
