@@ -18,6 +18,7 @@ npc_demand_by_ware.
 from __future__ import annotations
 from scanner.galaxy_map import distances_from
 from .advisors import _finding
+from db.trends import _role_bucket
 
 # The arbitrage and reputation-locked rules scout further afield than the
 # reactive economy rules (a tip 6 jumps out is still worth surfacing, just
@@ -55,7 +56,11 @@ REPUTATION_BLOCK_THRESHOLD = -10
 STRANDED_HOURS_THRESHOLD = 2.0
 
 # A player with this much banked and less than the ratio below actively
-# trading is sitting on idle capital worth flagging.
+# trading is sitting on idle capital worth flagging. The ratio is measured
+# against the CIVILIAN fleet (everything _role_bucket doesn't call 'combat'),
+# not the whole fleet — a carrier group never trades regardless of how much
+# cash is banked, so counting warships toward the denominator understated the
+# ratio and made the finding fire on fleets that were actually fully tasked.
 IDLE_CREDITS_THRESHOLD = 5_000_000
 TRADER_SHIP_RATIO_THRESHOLD = 0.2
 TRADER_ROLES = ('Freighter', 'Transport')
@@ -419,7 +424,7 @@ def stranded_delivery_findings(conn, scan_id, avg_prices) -> list[dict]:
             'hours':        round(hours, 1),
         }
         evidence = {
-            'ship_id': r['ship_id'], 'ware_id': r['ware_id'],
+            'ship_id': r['ship_id'], 'code': r['ship_code'], 'ware_id': r['ware_id'],
             'amount': r['amount'], 'time_ago_s': r['time_ago_s'],
             'value_estimate': round(value_est),
         }

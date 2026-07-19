@@ -73,9 +73,10 @@
         return `<div class="adv-ev-key">Ware</div><div class="adv-ev-val">${f.slots.ware_name || v}</div>`;
       }
       if (k === 'ship_id' && f.slots.ship_name) {
-        // ship_id findings (damaged_fleet) are always player ships — the
-        // ships table has no NPC rows — so jumpToShip's faction arg is left
-        // at its 'player' default, same as jumpToDesign's fleet-tab jumps.
+        // ship_id findings (damaged_fleet, stranded_delivery) are always
+        // player ships — the ships table has no NPC rows — so jumpToShip's
+        // faction arg is left at its 'player' default, same as jumpToDesign's
+        // fleet-tab jumps.
         const code = f.evidence.code;
         const val = code
           ? `<span class="adv-ship-link" onclick="event.stopPropagation(); jumpToShip('${code}')"><i class="ti ti-rocket"></i>${f.slots.ship_name}</span>`
