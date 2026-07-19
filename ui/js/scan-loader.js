@@ -9,6 +9,7 @@
         HULL_CATALOG      = data.hull_catalog      || HULL_CATALOG;
         SECTOR_CATALOG    = data.sector_catalog    || SECTOR_CATALOG;
         SOFTWARE_CATALOG  = data.software_catalog  || SOFTWARE_CATALOG;
+        ITEM_CATALOG      = data.item_catalog      || ITEM_CATALOG;
         populate(data);
       })
       .catch(e => {
@@ -316,12 +317,12 @@
     });
   }
 
-  // Equipment/hull/sector/software catalogs are static (shipped with the
+  // Equipment/hull/sector/software/item catalogs are static (shipped with the
   // program, not derived from any save) — fetched once via its own scan-
   // independent bridge call so Resource Library and the universe map's
   // interactive overlay work even before a scan has ever been run. Scan
   // payloads no longer carry this data (see populate.js), so this is the
-  // sole writer of EQUIPMENT_CATALOG/HULL_CATALOG/SECTOR_CATALOG/SOFTWARE_CATALOG.
+  // sole writer of EQUIPMENT_CATALOG/HULL_CATALOG/SECTOR_CATALOG/SOFTWARE_CATALOG/ITEM_CATALOG.
   function loadResourceLibrary() {
     if (!_bridge) return;
     _bridge.get_resource_library(function(jsonStr) {
@@ -331,6 +332,7 @@
         HULL_CATALOG = data.hull_catalog || {};
         SECTOR_CATALOG = data.sector_catalog || {};
         SOFTWARE_CATALOG = data.software_catalog || {};
+        ITEM_CATALOG = data.item_catalog || {};
         // This callback races the list_scans one: if the empty-DB skeleton
         // map already rendered without the catalog, re-render so the static
         // sectors appear. Never rerun a render that had real scan data.

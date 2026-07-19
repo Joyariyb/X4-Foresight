@@ -6,6 +6,7 @@
   let EQUIPMENT_CATALOG = {}; // Set by scan-loader.js's loadResourceLibrary(): macro → {name, stats, price}
   let HULL_CATALOG = {}; // Set by scan-loader.js's loadResourceLibrary(): macro → {name, class, hardpoints, price}
   let SOFTWARE_CATALOG = {}; // Set by scan-loader.js's loadResourceLibrary(): ware id → {name, description, price}
+  let ITEM_CATALOG = {}; // Set by scan-loader.js's loadResourceLibrary(): macro → {category, class, name, description, price, ...stats}
 
   // 'ingame' truncates stats like in-game tooltips; 'true' shows raw computed values.
   // Persisted across sessions (verification preference, not per-design state).

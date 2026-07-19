@@ -14,6 +14,7 @@ from db.trends import compute_trends, compute_changes
 from db.advisors.combine import compute_advisors
 from data.equipment_stats import EQUIPMENT_STATS, EQUIPMENT_ALIASES
 from data.factions import FACTION_NAMES
+from data.item_stats import ITEM_STATS
 from data.sector_stats import (SECTOR_NAMES, SECTOR_OWNERS, SECTOR_RESOURCES,
                                SECTOR_SUNLIGHT)
 from data.ship_stats import SHIP_STATS
@@ -871,6 +872,7 @@ def resource_library_export() -> dict:
         'hull_catalog': _hull_catalog(),
         'sector_catalog': _sector_catalog(),
         'software_catalog': dict(SOFTWARE_STATS),
+        'item_catalog': dict(ITEM_STATS),
     }
 
 

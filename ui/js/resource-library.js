@@ -28,6 +28,10 @@
     turret: {faction:'',size:'',type:''}, shield: {faction:'',size:'',type:''},
     engine: {faction:'',size:'',type:''}, thruster: {faction:'',size:'',type:''} };
 
+  // Items tab's one filter: satellite/mine/probe/spacesuit, or '' for all.
+  // Reset in switchResLibCat like every other category's filter state.
+  let reslibItemCatFilter = '';
+
   // Equipment categories (weapon/turret/shield/engine/thruster) now mirror the
   // hull List/Comparison split. The two-item picks themselves live in
   // equipment-comparison.js (reslibEquipCmpA/B), this is just which sub-view is
@@ -37,6 +41,12 @@
   const RESLIB_CAT_LABELS = {
     hull: 'Hulls', weapon: 'Weapons', turret: 'Turrets', shield: 'Shields',
     engine: 'Engines', thruster: 'Thrusters', software: 'Software', item: 'Items',
+  };
+
+  // Items tab sub-categories (gamefiles/generate_items.py's "category" field),
+  // for the filter dropdown and the row badge.
+  const ITEM_CAT_LABELS = {
+    satellite: 'Satellites', mine: 'Mines', probe: 'Resource Probes', spacesuit: 'Spacesuit Gear',
   };
 
   // Fallback role guesser for rare hulls without <ship type=...> in their macro (covers ~91%).
@@ -234,6 +244,7 @@
     reslibSortKey   = null;
     reslibSortDir   = 1;
     reslibHullView  = 'list';
+    reslibItemCatFilter = '';
     reslibFilters[cat] = { faction: '', size: '', type: '' };
     // Drop any comparison picks from the previous category — a weapon macro
     // wouldn't resolve against, say, the shield catalog (see equipment-comparison.js).
@@ -275,6 +286,15 @@
           ? `<div class="sec-header"><div class="sec-title">${singular} Comparison</div><div class="sec-line"></div></div>`
           : reslibFiltersHtml(reslibCat);
         header.innerHTML = tabs + row2;
+        return;
+      }
+      if (reslibCat === 'item') {
+        const cats = [...new Set(Object.values(ITEM_CATALOG).map(it => it.category))].sort();
+        const options = ['<option value="">All Categories</option>'].concat(
+          cats.map(c => `<option value="${c}" ${reslibItemCatFilter === c ? 'selected' : ''}>${ITEM_CAT_LABELS[c] || c}</option>`)
+        ).join('');
+        header.innerHTML = `<div class="sec-header"><div class="sec-title">${RESLIB_CAT_LABELS[reslibCat]}</div><div class="sec-line"></div></div>
+          <div class="reslib-filters"><div class="reslib-fbox"><select onchange="reslibSetItemCatFilter(this.value)">${options}</select></div></div>`;
         return;
       }
       header.innerHTML = `<div class="sec-header"><div class="sec-title">${RESLIB_CAT_LABELS[reslibCat]}</div><div class="sec-line"></div></div>`;
@@ -426,15 +446,6 @@
     thruster: [['strafe','Strafe',v=>designCr(v),true], ['pitch','Pitch',v=>designCr(v),true], ['yaw','Yaw',v=>designCr(v),true], ['roll','Roll',v=>designCr(v),true]],
   };
 
-  // Placeholder copy for the one remaining category with no data source yet.
-  const RESLIB_PLACEHOLDER = {
-    item: {
-      icon: 'ti-box',
-      title: 'Items not catalogued yet',
-      body: 'Inventory items (deployables, consumables, etc.) aren’t read out of the game files yet — only hulls and hardpoint equipment are. This page is reserved for them.',
-    },
-  };
-
   function reslibShowEmpty(icon, title, body) {
     document.getElementById('reslib-panel').style.display = 'none';
     document.getElementById('reslib-inspector').style.display = 'none';
@@ -449,12 +460,6 @@
   function renderResLib() {
     const cat = reslibCat;
 
-    if (RESLIB_PLACEHOLDER[cat]) {
-      const p = RESLIB_PLACEHOLDER[cat];
-      reslibShowEmpty(p.icon, p.title, p.body);
-      return;
-    }
-
     if (cat === 'hull') {
       if (reslibHullView === 'inspect') { renderResLibHullInspector(); return; }
       if (reslibHullView === 'compare') { renderResLibHullCompare(); return; }
@@ -462,6 +467,7 @@
       return;
     }
     if (cat === 'software') { renderResLibSoftware(); return; }
+    if (cat === 'item') { renderResLibItems(); return; }
     if (reslibEquipView === 'compare') { renderResLibEquipCompare(); return; }
     renderResLibEquipment(cat);
   }
@@ -502,6 +508,84 @@
         <td class="mono">${s.price != null ? designCr(s.price) : '—'}</td>
       </tr>`;
     }).join('');
+  }
+
+  function reslibSetItemCatFilter(cat) {
+    reslibItemCatFilter = cat;
+    renderResLibHeader();   // the <select>'s own selected option needs a rebuild too
+    renderResLib();
+  }
+
+  // Deployables/EVA gear (satellites, mines, resource probes, spacesuit
+  // weapons/thrusters) -- unlike weapon/shield/engine these four don't share
+  // one hardpoint slot shape, so there's no single per-column stat table the
+  // way RESLIB_EQUIP_COLUMNS builds one. Each row gets a one-line "key stat"
+  // summary picked per category instead, with the full breakdown (see
+  // gamefiles/generate_items.py for what each field means) in the hover tip.
+  function itemKeyStat(it) {
+    switch (it.category) {
+      case 'satellite': return it.detection_range_m != null ? (it.detection_range_m / 1000).toFixed(0) + ' km detection' : '—';
+      case 'mine':       return it.explosion_damage != null ? designCr(it.explosion_damage) + ' dmg' : '—';
+      case 'probe':      return it.lifetime_s != null ? (it.lifetime_s / 3600).toFixed(1) + ' h lifetime' : '—';
+      case 'spacesuit':
+        // Weapons show damage, the bomb launcher/thrusters have no damage of
+        // their own so fall through to whichever stat they do carry.
+        if (it.damage_hull != null)    return designCr(it.damage_hull) + ' dmg';
+        if (it.thrust_forward != null) return it.thrust_forward.toFixed(2) + ' thrust';
+        if (it.reload_rate != null)    return it.reload_rate.toFixed(1) + '/s reload';
+        return '—';
+      default: return '—';
+    }
+  }
+
+  function itemTipHtml(it) {
+    const rows = [];
+    if (it.hull_max != null)            rows.push(`Hull: ${it.hull_max}`);
+    if (it.detection_range_m != null)   rows.push(`Detection range: ${(it.detection_range_m / 1000).toFixed(0)} km`);
+    if (it.explosion_damage != null)    rows.push(`Explosion damage: ${designCr(it.explosion_damage)}`);
+    if (it.proximity_trigger_m != null) rows.push(`Proximity trigger: ${it.proximity_trigger_m} m`);
+    if (it.on_collision)                rows.push('Detonates on contact');
+    if (it.friendfoe != null)           rows.push(it.friendfoe ? 'Ignores friendly targets' : 'Detonates on any target');
+    if (it.decay_delay_s != null)       rows.push(`Decays every ${it.decay_delay_s}s`);
+    if (it.lifetime_s != null)          rows.push(`Lifetime: ${(it.lifetime_s / 3600).toFixed(1)} h`);
+    if (it.damage_hull != null)         rows.push(`Damage: ${designCr(it.damage_hull)}${it.repair ? ' (repair)' : ''}`);
+    if (it.range_m != null)             rows.push(`Range: ${it.range_m} m`);
+    if (it.reload_rate != null)         rows.push(`Reload: ${it.reload_rate.toFixed(2)}/s`);
+    if (it.thrust_forward != null)      rows.push(`Forward thrust: ${it.thrust_forward}`);
+    if (it.boost_thrust != null)        rows.push(`Boost thrust: ${it.boost_thrust}${it.boost_duration ? ' for ' + it.boost_duration + 's' : ''}`);
+    const stats = rows.length
+      ? `<div style="margin-top:0.4rem;font-size:0.85em;color:var(--text-secondary)">${rows.join('<br>')}</div>` : '';
+    const desc = it.description ? `<div>${it.description}</div>` : '';
+    return `<div style="max-width:28rem">${desc}${stats}</div>`;
+  }
+
+  function renderResLibItems() {
+    if (!Object.keys(ITEM_CATALOG).length) {
+      reslibShowEmpty('ti-box', 'No item catalog loaded', 'Run a scan first — the item catalog ships inside the scan export.');
+      return;
+    }
+    document.getElementById('reslib-panel').style.display = '';
+    document.getElementById('reslib-inspector').style.display = 'none';
+    document.getElementById('reslib-compare').style.display = 'none';
+    document.getElementById('reslib-empty').style.display = 'none';
+
+    const all = Object.entries(ITEM_CATALOG).map(([id, it]) => ({ id, ...it }));
+    const filtered = reslibItemCatFilter ? all.filter(it => it.category === reslibItemCatFilter) : all;
+    const rows = reslibSortRows(filtered, reslibSortKey, reslibSortDir, r => r.name);
+
+    document.getElementById('reslib-thead').innerHTML = `<tr>
+      ${reslibSortHeader('name','Name', reslibSortKey==='name')}
+      ${reslibSortHeader('category','Category', reslibSortKey==='category')}
+      <th>Stats</th>
+      ${reslibSortHeader('price','Price', reslibSortKey==='price')}
+    </tr>`;
+
+    document.getElementById('reslib-tbody').innerHTML = rows.map(it => `<tr data-item-tip="${encodeURIComponent(itemTipHtml(it))}">
+        <td style="color:var(--text-primary)">${it.name}</td>
+        <td>${ITEM_CAT_LABELS[it.category] || it.category}</td>
+        <td class="mono">${itemKeyStat(it)}</td>
+        <td class="mono">${it.price != null ? designCr(it.price) : '—'}</td>
+      </tr>`).join('');
   }
 
   function reslibSortHeader(key, label, active) {
@@ -866,6 +950,15 @@
   // nowrap alert-coloured single-line text.
   registerTip('softwareTip', (el, _e, tip) => {
     tip.innerHTML         = decodeURIComponent(el.dataset.softwareTip);
+    tip.style.color       = '';
+    tip.style.whiteSpace  = 'normal';
+    return true;
+  });
+
+  // Items row hover: description + a stat breakdown line, same pattern as
+  // softwareTip above.
+  registerTip('itemTip', (el, _e, tip) => {
+    tip.innerHTML         = decodeURIComponent(el.dataset.itemTip);
     tip.style.color       = '';
     tip.style.whiteSpace  = 'normal';
     return true;
