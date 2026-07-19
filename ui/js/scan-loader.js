@@ -239,6 +239,12 @@
       `;
       row.addEventListener('click', () => {
         _currentScanId = s.scan_id;
+        // Update the highlight immediately - loadScan()'s populate() callback
+        // fixes the label but never touches these row elements, so without
+        // this the previously-selected row stays highlighted until the menu
+        // is next rebuilt (e.g. after a new scan or delete).
+        menu.querySelectorAll('.scan-picker-row').forEach(r => r.classList.remove('active'));
+        row.classList.add('active');
         loadScan(s.scan_id);
         document.getElementById('scan-picker-menu').style.display = 'none';
       });

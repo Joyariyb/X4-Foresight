@@ -174,8 +174,21 @@
        OS dropdown. */
     .reslib-filters { display: flex; gap: 0.8rem; margin: 0.8rem 0; flex-wrap: wrap; }
     .reslib-fbox { border: 1px solid var(--outline); border-radius: var(--radius-md); background: var(--surface-1); padding: 0.4rem 0.8rem; max-width: 30rem; width: 100%; }
-    .reslib-fbox select { background: var(--surface-1); border: none; color: var(--text-primary); font-family: var(--font-label); font-size: 1.3rem; cursor: pointer; width: 100%; }
+    .reslib-fbox select { background: var(--surface-1); border: none; color: var(--text-secondary); font-family: var(--font-label); font-size: 1.3rem; cursor: pointer; width: 100%; }
     .reslib-fbox select:focus { outline: none; }
+    .reslib-fbox select:hover { color: var(--text-primary); }
+    /* Faction dropdown is the generic .beqf-trigger shell (resource-library.js),
+       which defaults to the smaller .font-data look used elsewhere it's reused
+       (e.g. Ship Builder's equipment filter). Here it sits beside the native
+       Size/Type <select> boxes styled above, so it borrows their font/size/
+       padding/border to read as one matched row instead of a mismatched pair. */
+    #reslib-fac-dd { max-width: 30rem; width: 100%; }
+    #reslib-fac-dd .beqf-trigger {
+      border-radius: var(--radius-md); background: var(--surface-1);
+      padding: 0.4rem 0.8rem; font-family: var(--font-label); font-size: 1.3rem;
+      justify-content: space-between; width: 100%; box-sizing: border-box;
+    }
+    #reslib-fac-dd .beqf-trigger:hover { border-color: var(--outline); color: var(--text-primary); }
 
     /* Hull Inspector — collapsed-by-default "N Size Slot Hardpoints" sub-card
        per mount size (.dsub-box base styling from fleet-designs.css; this is
