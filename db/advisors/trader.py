@@ -168,7 +168,9 @@ def station_siting_findings(conn, scan_id, distances_from_player, avg_prices) ->
         graph.setdefault(b, []).append((a, cost))
     # Each buyer record carries station_name/price alongside amount so the
     # "Buyers" evidence panel can list who's behind the demand number, not
-    # just its total — the aggregate alone isn't auditable.
+    # just its total — the aggregate alone isn't auditable. station_id rides
+    # along too so the UI can jump straight to that station's NPC inspector
+    # (goToNpcStation() in npc-station-inspector.js), same object_id it keys on.
     demand_ws: dict[str, dict[str, list[dict]]] = {}
     for r in conn.execute(
             "SELECT ns.sector_macro, w.ware_id, w.buy_amount, w.buy_price, "
@@ -181,6 +183,7 @@ def station_siting_findings(conn, scan_id, distances_from_player, avg_prices) ->
         demand_ws.setdefault(r['ware_id'], {}).setdefault(
             r['sector_macro'], []).append({
                 'station_name': r['station_name'] or r['station_id'],
+                'station_id': r['station_id'],
                 'amount': r['buy_amount'],
                 # buy_price is in cents (see save-format.md); avg_price it's
                 # compared against (ware_avg_prices) is in whole credits, same

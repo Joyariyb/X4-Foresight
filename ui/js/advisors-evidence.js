@@ -189,13 +189,16 @@
     // behind that card's demand_depth figure — what they want and what
     // they're paying, so the aggregate number is auditable down to the
     // station that contributed it. Hovering a row pops the price-vs-average
-    // gauge above instead of cramming it into the row itself.
+    // gauge above instead of cramming it into the row itself. Clicking jumps
+    // to that station's NPC inspector, same goToNpcStation() cross-tab jump
+    // NPC_STATION_KEYS evidence rows use — a no-op if the buyer is outside
+    // NPC_TRADE_RANGE_MAX_JUMPS of the player (see goToNpcStation's comment).
     function _buyersHtml(buyers, avgPrice) {
       if (!buyers || !buyers.length) {
         return `<div class="adv-ev-empty">No reachable buyers for this ware yet.</div>`;
       }
       const rows = buyers.map(b => `
-          <div class="adv-buyer-row" data-buyer-tip="${encodeURIComponent(_buyerTipHtml(b, avgPrice))}">
+          <div class="adv-buyer-row" data-buyer-tip="${encodeURIComponent(_buyerTipHtml(b, avgPrice))}" onclick="event.stopPropagation(); goToNpcStation('${b.station_id}')">
             <span class="adv-buyer-name">${b.station_name}</span>
             <span class="adv-buyer-amount">${b.amount.toLocaleString()} wanted</span>
             <span class="adv-buyer-price">${b.price.toLocaleString()} Cr/unit</span>
