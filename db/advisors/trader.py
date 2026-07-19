@@ -123,15 +123,15 @@ TEMPLATES: dict[str, list[str]] = {
         "{from_station} for {hours}h without a delivery order.",
     ],
     'idle_trade_capital': [
-        "You're sitting on {credits} Cr with only {traders} of {total} ships "
-        "({pct}%) doing any trading — consider building or buying more "
-        "traders to put that capital to work.",
-        "{credits} Cr in reserve and just {pct}% of your fleet ({traders}/"
-        "{total}) is trading — more haulers would turn that idle capital "
-        "into income.",
+        "You're sitting on {credits} Cr with only {traders} of {total} "
+        "civilian ships ({pct}%) doing any trading — consider building or "
+        "buying more traders to put that capital to work.",
+        "{credits} Cr in reserve and just {pct}% of your civilian fleet "
+        "({traders}/{total}) is trading — more haulers would turn that idle "
+        "capital into income.",
         "Idle capital: {credits} Cr banked while only {traders} of your "
-        "{total} ships trade ({pct}%) — expand the trade fleet to make it "
-        "earn.",
+        "{total} civilian ships trade ({pct}%) — expand the trade fleet to "
+        "make it earn.",
     ],
 }
 
@@ -442,13 +442,14 @@ def idle_trade_capital_findings(conn, scan_id) -> list[dict]:
     credits = (row['player_credits'] or 0) if row else 0
     if credits < IDLE_CREDITS_THRESHOLD:
         return []
-    total = conn.execute(
-        "SELECT COUNT(*) AS n FROM ships WHERE scan_id = ?", (scan_id,)).fetchone()['n']
+    roles = [r['role'] for r in conn.execute(
+        "SELECT role FROM ships WHERE scan_id = ?", (scan_id,))]
+    # Combat ships are excluded from both counts: they're never going to trade,
+    # so they shouldn't dilute the ratio just because they're parked in the fleet.
+    total = sum(1 for role in roles if _role_bucket(role) != 'combat')
     if not total:
         return []
-    traders = conn.execute(
-        "SELECT COUNT(*) AS n FROM ships WHERE scan_id = ? AND role IN (?, ?)",
-        (scan_id, *TRADER_ROLES)).fetchone()['n']
+    traders = sum(1 for role in roles if role in TRADER_ROLES)
     ratio = traders / total
     if ratio >= TRADER_SHIP_RATIO_THRESHOLD:
         return []
