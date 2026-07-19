@@ -141,7 +141,7 @@
       ).join('') + `</div>`;
     }
 
-    return `<div class="dhull" style="--dhull-border:${hexA(facColour, 0.35)};--dhull-glow:${hexA(facColour, 0.1)};max-width:30rem">
+    return `<div class="dhull" style="--dhull-border:${hexA(facColour, 0.35)};--dhull-glow:${hexA(facColour, 0.1)}">
       <div class="dhull-hd"><i class="ti ${m.icon}" style="color:${m.color}"></i><span class="lbl">${label}</span></div>
       <div class="dhull-id">${designBadge(equipFactionName(e))}<span class="dhull-nm">${e.name || macro}${mk}</span></div>
       ${rows}
@@ -219,7 +219,7 @@
 
     const singular = SLOT_SINGULAR[slot] || 'Item';
     const m = SLOT_META[slot] || {};
-    const placeholder = (letter) => `<div class="dhull hcmp-empty-card" style="max-width:300px">
+    const placeholder = (letter) => `<div class="dhull hcmp-empty-card">
       <div class="dhull-hd"><i class="ti ${m.icon}" style="color:${m.color}"></i><span class="lbl">${singular} ${letter}</span></div>
       <div class="hcmp-empty-msg">Select ${singular.toLowerCase()} above</div>
     </div>`;

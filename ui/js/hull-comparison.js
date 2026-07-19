@@ -153,11 +153,11 @@
 
     // Same .dhull framing as a real card (dashed border swapped in via CSS)
     // so picking/clearing a hull doesn't reflow the other two columns.
-    const placeholderA = `<div class="dhull hcmp-empty-card" style="max-width:300px">
+    const placeholderA = `<div class="dhull hcmp-empty-card">
       <div class="dhull-hd"><i class="ti ti-ufo"></i><span class="lbl">Hull A</span></div>
       <div class="hcmp-empty-msg">Select a hull above</div>
     </div>`;
-    const placeholderB = `<div class="dhull hcmp-empty-card" style="max-width:300px">
+    const placeholderB = `<div class="dhull hcmp-empty-card">
       <div class="dhull-hd"><i class="ti ti-ufo"></i><span class="lbl">Hull B</span></div>
       <div class="hcmp-empty-msg">Select a hull above</div>
     </div>`;

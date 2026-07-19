@@ -115,7 +115,13 @@
        only has to track "top vs bottom" rather than re-learn a colour key
        per pair of hulls compared. */
     .hcmp-wrap    { display: flex; gap: 1.6rem; flex-wrap: wrap; align-items: flex-start; }
+    /* Every picker dropped into a comparison column (native .reslib-fbox
+       select for hulls, custom .reslib-eqcmp-dd for equipment) ships its own
+       max-width for use outside this layout — override it here so whichever
+       picker a column holds stretches to match the .dhull card underneath it,
+       instead of each comparison view needing its own width fix. */
     .hcmp-col     { display: flex; flex-direction: column; gap: 0.8rem; flex: 1; min-width: 26rem; max-width: 32rem; }
+    .hcmp-col > :first-child { max-width: none; }
     .hcmp-summary { flex: 1; min-width: 28rem; border: 1px solid var(--outline); border-radius: var(--radius-lg); background: var(--surface-1); padding: 1.2rem; }
     .hcmp-summary-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.8rem; min-height: 20rem; color: var(--text-secondary); text-align: center; }
     .hcmp-summary-empty i { font-size: 2.8rem; color: var(--color-primary); opacity: 0.5; }

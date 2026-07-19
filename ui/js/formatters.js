@@ -8,6 +8,19 @@
     return n.toLocaleString() + " Cr";
   }
 
+  // Same K/M abbreviation as fmtCredits but unit-less, for stat-card values
+  // (hull HP, price, etc.) that need to stay short in a fixed-width mono
+  // column rather than showing the "Cr" suffix. Callers that abbreviate
+  // should also set a title="" with the full toLocaleString() value so the
+  // exact figure is still one hover away.
+  function fmtCompact(n) {
+    n = parseFloat(n);
+    if (isNaN(n)) return "—";
+    if (n >= 1e6) return (n/1e6).toFixed(1) + "M";
+    if (n >= 1e5) return (n/1e3).toFixed(1) + "k";
+    return n.toLocaleString();
+  }
+
   function hullBadge(origin) {
     if (!origin) return '<span class="badge">—</span>';
     // Coloured from FACTION_COLOURS (same source as designBadge() in

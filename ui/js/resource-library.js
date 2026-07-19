@@ -390,7 +390,11 @@
     document.getElementById('reslib-empty').style.display = 'none';
 
     const defs = RESLIB_EQUIP_COLUMNS[slot] || [];
-    let rows = all.map(([macro, e]) => ({ macro, ...e }));
+    // Unpriced macros are tutorial/story/scenario placeholders the game never
+    // sells (confirmed this session: every unpriced entry is a _tutorial/_story/
+    // _scenario/superseded variant) -- they'd otherwise show up as unexplained
+    // duplicate-name rows with blank size/price next to the real, purchasable item.
+    let rows = all.filter(([, e]) => e.price != null).map(([macro, e]) => ({ macro, ...e }));
     rows = reslibSortRows(rows, reslibSortKey, reslibSortDir, r => r.name || r.macro);
 
     const isMissile = e => e.class === 'missilelauncher' || e.class === 'missileturret';
@@ -449,8 +453,8 @@
       <div class="dhull-stats">
         <div class="dhull-stat"><span class="dhs-lbl">Type</span><span class="dhs-val">${hullTypeLabel(type)}</span></div>
         <div class="dhull-stat"><span class="dhs-lbl">Size</span><span class="dhs-val">${SIZE_WORD[size] || size.toUpperCase()}</span></div>
-        <div class="dhull-stat"><span class="dhs-lbl">Hull HP</span><span class="dhs-val">${h.max_hull != null ? designCr(h.max_hull) : '—'}</span></div>
-        <div class="dhull-stat"><span class="dhs-lbl">Price</span><span class="dhs-val">${h.price != null ? designCr(h.price) : '—'}</span></div>
+        <div class="dhull-stat"><span class="dhs-lbl">Hull HP</span><span class="dhs-val" title="${h.max_hull != null ? designCr(h.max_hull) : ''}">${h.max_hull != null ? fmtCompact(h.max_hull) : '—'}</span></div>
+        <div class="dhull-stat"><span class="dhs-lbl">Price</span><span class="dhs-val" title="${h.price != null ? designCr(h.price) + ' Cr' : ''}">${h.price != null ? fmtCompact(h.price) : '—'}</span></div>
       </div>
       <div class="dhull-stats">
         <div class="dhull-stat"><span class="dhs-lbl">Crew</span><span class="dhs-val">${h.crew_capacity != null ? designCr(h.crew_capacity) : '—'}</span></div>
