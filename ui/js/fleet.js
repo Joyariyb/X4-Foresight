@@ -226,11 +226,6 @@
         ['engine',   'Engine'],
         ['thruster', 'Thruster'],
       ];
-      const FACTION = {
-        argon:'Argon', paranid:'Paranid', teladi:'Teladi', split:'Split',
-        terran:'Terran', boron:'Boron', xenon:'Xenon', khaak:"Kha'ak",
-        pirate:'Pirate', yaki:'Yaki',
-      };
       const sections = SLOT_ORDER.map(([slot, label]) => {
         // Skip unresolved internal parts (raw macros still end in "_macro"), so a
         // deployable's hidden engine never shows a raw id in the tooltip.
@@ -238,8 +233,8 @@
         if (!items.length) return '';
         const rows = items.map(e => {
           const mk  = e.mk ? ` Mk${e.mk}` : '';
-          const fac = FACTION[e.race]
-            ? `<span style="color:var(--text-secondary);font-size:1rem;margin-right:0.8rem">${FACTION[e.race]}</span>` : '';
+          const fac = RACE_FULL_NAMES[e.race]
+            ? `<span style="color:var(--text-secondary);font-size:1rem;margin-right:0.8rem">${RACE_FULL_NAMES[e.race]}</span>` : '';
           return `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:1.2rem;padding:1px 0">
                     <span style="color:var(--text-secondary);font-size:1.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.name}${mk}</span>
                     <span style="flex-shrink:0;white-space:nowrap">${fac}<span style="color:var(--text-brand);font-size:1rem">×${e.count}</span></span>

@@ -417,13 +417,8 @@
   // in JS and get reapplied each render instead.
   let beqfOpen = false;
 
-  // Full names for the maker races that show up in EQUIPMENT_CATALOG (e.race),
-  // used by the equipment-list faction filter dropdown.
-  const RACE_FULL_NAMES = {
-    argon: 'Argon', paranid: 'Paranid', teladi: 'Teladi', split: 'Split',
-    terran: 'Terran', boron: 'Boron', xenon: 'Xenon', khaak: "Kha'ak",
-    pirate: 'Pirate', yaki: 'Yaki', generic: 'Generic',
-  };
+  // RACE_FULL_NAMES lives in constants.js — also read by fleet.js,
+  // equipment-comparison.js, and resource-library.js.
   // Equipment with no maker (e.g. most thrusters) carries no e.race at all —
   // bucket it under 'generic' so the faction filter can target it explicitly,
   // matching the neutral "GEN" badge designBadge() already shows for it.
@@ -747,55 +742,12 @@
     holyorderfanatic: 'Holy Order Faithful',
   };
 
-  // Maps faction owner IDs to their in-game tag codes (mirrors data/factions.py).
-  const FACTION_LABELS = {
-    argon: 'ARG',      antigone: 'ANT',    hatikvah: 'HAT',
-    paranid: 'PAR',    trinity: 'TRI',     split: 'ZYA',
-    fallensplit: 'FAF', freesplit: 'FRF',  teladi: 'TEL',
-    ministry: 'MIN',   xenon: 'XEN',       khaak: 'KHK',
-    buccaneers: 'BUC', scaleplate: 'SCA',  loanshark: 'RIP',
-    holyorder: 'HOP',  holyorderfanatic: 'HOF', yaki: 'YAK',
-    pioneers: 'PIO',   terran: 'TER',      boron: 'BOR',
-    scavenger: 'SCG',  ownerless: 'OWN',   civilian: 'CIV',
-  };
-
-  // Faction colour palette, keyed by owner ID.
-  // Grouped by political bloc to keep related factions visually similar.
-  const FACTION_COLOURS = {
-    // Argon bloc — blues
-    argon:            '#388bfd',
-    antigone:         '#58a6ff',
-    hatikvah:         '#79c0ff',
-    // Paranid bloc — purples
-    paranid:          '#a371f7',
-    holyorder:        '#bc8cff',
-    holyorderfanatic: '#d2a8ff',
-    trinity:          '#8957e5',
-    // Teladi bloc — greens
-    teladi:           '#70d890',
-    ministry:         '#56d364',
-    scaleplate:       '#3fb950',
-    // Split bloc — oranges
-    split:            '#e3673a',
-    freesplit:        '#f0883e',
-    fallensplit:      '#c75c32',
-    // Terran bloc — cyan
-    terran:           '#39d5f0',
-    pioneers:         '#d29922',
-    // Hostiles — red
-    xenon:            '#f85149',
-    khaak:            '#f85149',
-    // Fringe factions — amber/muted
-    yaki:             '#e3b341',
-    buccaneers:       '#e3b341',
-    loanshark:        '#ff7b72',
-    boron:            '#76e3ea',
-    scavenger:        '#6e7681',
-    ownerless:        '#6e7681',
-    civilian:         '#6e7681',
-  };
-
-  const HOSTILE_FACTIONS = new Set(['xenon', 'khaak']);
+  // FACTION_LABELS / FACTION_COLOURS live in constants.js — shared well
+  // beyond this file (populate.js, universe-map.js, station-helpers.js,
+  // sectors.js, resource-library.js).
+  //
+  // (No local HOSTILE_FACTIONS here — it was an unused exact duplicate of
+  // constants.js's LOCKED_REP_FACTIONS; use that instead.)
 
 
   // ── Tooltip content builders ───────────────────────────────

@@ -16,6 +16,80 @@
   const ORDER_COLOURS = { Trading:"var(--color-positive)", Delivering:"var(--color-positive)", Mining:"var(--color-warning)", Escorting:"var(--color-primary)", Waiting:"var(--text-brand)" };
   const SIZE_COLOURS  = { XL:"var(--color-special)", L:"var(--color-warning)", M:"var(--color-primary)", S:"var(--text-secondary)" };
 
+  // Maps faction owner IDs to their in-game tag codes (mirrors data/factions.py).
+  // Shared by populate.js, designs-builder.js, and resource-library.js — not
+  // just the Ship Builder, despite where it used to live.
+  const FACTION_LABELS = {
+    argon: 'ARG',      antigone: 'ANT',    hatikvah: 'HAT',
+    paranid: 'PAR',    trinity: 'TRI',     split: 'ZYA',
+    fallensplit: 'FAF', freesplit: 'FRF',  teladi: 'TEL',
+    ministry: 'MIN',   xenon: 'XEN',       khaak: 'KHK',
+    buccaneers: 'BUC', scaleplate: 'SCA',  loanshark: 'RIP',
+    holyorder: 'HOP',  holyorderfanatic: 'HOF', yaki: 'YAK',
+    pioneers: 'PIO',   terran: 'TER',      boron: 'BOR',
+    scavenger: 'SCG',  ownerless: 'OWN',   civilian: 'CIV',
+  };
+
+  // Faction colour palette, keyed by owner ID. Grouped by political bloc to
+  // keep related factions visually similar. Consumed well beyond the Ship
+  // Builder it was originally written for — populate.js, universe-map.js,
+  // station-helpers.js, and sectors.js all key into it too.
+  const FACTION_COLOURS = {
+    // Argon bloc — blues
+    argon:            '#388bfd',
+    antigone:         '#58a6ff',
+    hatikvah:         '#79c0ff',
+    // Paranid bloc — purples
+    paranid:          '#a371f7',
+    holyorder:        '#bc8cff',
+    holyorderfanatic: '#d2a8ff',
+    trinity:          '#8957e5',
+    // Teladi bloc — greens
+    teladi:           '#70d890',
+    ministry:         '#56d364',
+    scaleplate:       '#3fb950',
+    // Split bloc — oranges
+    split:            '#e3673a',
+    freesplit:        '#f0883e',
+    fallensplit:      '#c75c32',
+    // Terran bloc — cyan
+    terran:           '#39d5f0',
+    pioneers:         '#d29922',
+    // Hostiles — red
+    xenon:            '#f85149',
+    khaak:            '#f85149',
+    // Fringe factions — amber/muted
+    yaki:             '#e3b341',
+    buccaneers:       '#e3b341',
+    loanshark:        '#ff7b72',
+    boron:            '#76e3ea',
+    scavenger:        '#6e7681',
+    ownerless:        '#6e7681',
+    civilian:         '#6e7681',
+  };
+
+  // Per-crew-role colour, hex (not a CSS var) so callers can do hex-alpha
+  // tricks like `${col}22` for badge backgrounds. Also read by fleet.js's
+  // renderFleet(), not just the Crew tab.
+  const ROLE_COLOURS = {
+    manager: '#a371f7',
+    pilot:   '#d29922',
+    service: '#3fb950',
+    marine:  '#f85149',
+  };
+
+  // Full names for the maker races that show up in EQUIPMENT_CATALOG (e.race).
+  // Used by designs-builder.js's equipment-list faction filter, fleet.js's
+  // loadout tooltip, equipment-comparison.js, and resource-library.js — a
+  // fleet.js copy of this table (missing 'generic') used to drift alongside
+  // this one under a different name; use this table everywhere instead of
+  // re-declaring a local one.
+  const RACE_FULL_NAMES = {
+    argon: 'Argon', paranid: 'Paranid', teladi: 'Teladi', split: 'Split',
+    terran: 'Terran', boron: 'Boron', xenon: 'Xenon', khaak: "Kha'ak",
+    pirate: 'Pirate', yaki: 'Yaki', generic: 'Generic',
+  };
+
   // Mount/hull-class size scale, smallest first — the one place every size
   // sort and comparison in the app agrees on ordering (designs-builder.js,
   // resource-library.js, hull-comparison.js). Class letters otherwise sort

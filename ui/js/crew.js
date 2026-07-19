@@ -3,13 +3,7 @@
   let filteredCrewData = [];
   let crewRoleFilter   = 'all';
 
-  // Hex values so we can do hex-alpha tricks like `${col}22` for badge backgrounds.
-  const ROLE_COLOURS = {
-    manager: '#a371f7',
-    pilot:   '#d29922',
-    service: '#3fb950',
-    marine:  '#f85149',
-  };
+  // ROLE_COLOURS lives in constants.js — fleet.js's renderFleet() reads it too.
 
   const ROLE_PRIMARY = {
     manager: 'management',
