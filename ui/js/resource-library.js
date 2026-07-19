@@ -17,7 +17,16 @@
   // the full compatible-equipment catalog stays in the collapsed section
   // below. Null when reached from the Hull List (plain hull browsing).
   let reslibInspectShip  = null;
-  let reslibHullFilters  = { faction: '', size: '', type: '' };
+  // Faction/Size/Type filter state, one bucket per filterable category (hull
+  // + every equipment slot that has a stat table). For weapon/turret, Type
+  // holds the Energy/Kinetic/Ordnance/Mining/Special firing category rather
+  // than the fine-grained per-weapon-identity token (see EQUIP_FIRING_GROUPS
+  // below). Reset to empty whenever the category changes (switchResLibCat)
+  // so switching tabs never carries over a stale filter that would silently
+  // hide everything.
+  let reslibFilters = { hull: {faction:'',size:'',type:''}, weapon: {faction:'',size:'',type:''},
+    turret: {faction:'',size:'',type:''}, shield: {faction:'',size:'',type:''},
+    engine: {faction:'',size:'',type:''}, thruster: {faction:'',size:'',type:''} };
 
   // Equipment categories (weapon/turret/shield/engine/thruster) now mirror the
   // hull List/Comparison split. The two-item picks themselves live in
@@ -67,6 +76,137 @@
     return hullFactionOf(macro);
   };
 
+  // Equipment macros follow <slot>_<race>_<size>_<type...>_<NN>_mk<N>_macro
+  // (weapon_arg_m_ion_01_mk1_macro) — same trick as hullTypeOf() above, just
+  // skipping the size token when it's present (a few macros, e.g. the
+  // stationary Laser Tower, omit it). A handful of one-off ship-specific
+  // weapons name a hull role instead of a weapon family (battleship/
+  // flagship/expeditionary/yacht/destroyer) — those collapse into 'special'
+  // rather than each getting their own dropdown entry. Confirmed against the
+  // wiki's own "Destroyer/Battleship Main Batteries" headings: every macro
+  // that collapses here (Behemoth, Phoenix, Odysseus, Terran, Sapporo
+  // Launcher Array, Erlking, Obliterator...) is wiki-listed as "Unique to
+  // each ship class. Can't mix and match cross-faction ships and guns" — so
+  // even Sapporo Launcher Array (class:missilelauncher) stays Main Battery
+  // rather than being sorted into 'ordnance' by its mechanic.
+  const EQUIP_SIZE_TOKENS = new Set(['xs', 's', 'm', 'l', 'xl']);
+  const EQUIP_SPECIAL_TYPES = new Set(['battleship', 'flagship', 'expeditionary', 'yacht', 'destroyer']);
+  function equipTypeOf(macro) {
+    const parts = macro.split('_').slice(1, -1); // drop leading slot + trailing 'macro'
+    let i = EQUIP_SIZE_TOKENS.has(parts[1]) ? 2 : 1; // skip race, then size if present
+    const out = [];
+    for (; i < parts.length; i++) {
+      if (parts[i] === 'story' || /^mk\d/.test(parts[i]) || /^\d+$/.test(parts[i])) break;
+      out.push(parts[i]);
+    }
+    const t = out.join('_') || 'special';
+    return EQUIP_SPECIAL_TYPES.has(t) ? 'special' : t;
+  }
+  const EQUIP_TYPE_LABELS = {
+    special: 'Special', lasertower: 'Laser Tower', shieldpierce: 'Shield Pierce',
+    combattutorial: 'Combat Tutorial', allround: 'All-Round',
+  };
+  const equipTypeLabel = t => EQUIP_TYPE_LABELS[t] ||
+    t.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+  // For weapon/turret, the Type filter shows firing categories instead of
+  // the fine-grained per-weapon-identity token equipTypeOf() returns above —
+  // the individual weapon names (Bolt Repeater vs Beam Emitter vs Plasma
+  // Cannon...) turned out to be too granular to browse by. Grouped instead
+  // by the sci-fi genre's own three-way split (Energy/Kinetic/Ordnance), not
+  // an X4-specific one: directed-energy weapons, solid-slug kinetics, and
+  // explosive/guided ordnance. 'sticky' (Split's Thermal Disintegrator) reads
+  // like ordnance from its macro name, but the wiki files it under BeamGun
+  // Forward Weapons -- shield-piercing sticky/DoT ammo fired from a direct
+  // gun, not an explosive -- so it sits in Energy instead. Mining and Main
+  // Battery (the one-off capital-ship guns, see EQUIP_SPECIAL_TYPES above)
+  // round it out as their own buckets since neither is really a "firing
+  // type". Thruster keeps the fine-grained type — firing category is
+  // meaningless there. Engine gets its own collapse down to Combat/Travel/
+  // All-Round/Special (see engineCategoryOf below) rather than this one,
+  // since "firing category" doesn't apply to engines either.
+  const RESLIB_CATEGORY_CATS = new Set(['weapon', 'turret']);
+  // Shields don't get a Type filter at all: 80 of the 94 catalogued shield
+  // macros are plain 'standard', and the rest (racer/virtual/mothership/
+  // xperimental/combattutorial tokens) are non-purchasable variants tied to
+  // one unique ship or a dev/tutorial fixture, not a real browsable shield
+  // category. Egosoft's own Shield Generators reference groups shields
+  // purely by size + faction — never by a third axis — so Resource Library
+  // matches that instead of surfacing a near-useless dropdown.
+  const RESLIB_NO_TYPE_FILTER = new Set(['shield']);
+  const EQUIP_FIRING_GROUPS = {
+    energy:   ['laser', 'beam', 'scrapbeam', 'lasertower', 'ion', 'plasma', 'arc', 'disabler', 'shieldpierce', 'disruptor', 'burst', 'charge', 'sticky'],
+    kinetic:  ['railgun', 'gatling', 'cannon', 'shotgun'],
+    ordnance: ['dumbfire', 'guided', 'torpedo', 'flak'],
+    mining:   ['mining'],
+  };
+  const EQUIP_TYPE_TO_CATEGORY = Object.fromEntries(
+    Object.entries(EQUIP_FIRING_GROUPS).flatMap(([g, types]) => types.map(t => [t, g]))
+  );
+  // Category is meant to read the way the weapon *appears to the player*,
+  // not how it's mechanically built -- so a handful of macros get hardcoded
+  // past the token default rather than bent into it:
+  //  - Boron reuses the flak/railgun/gatling tokens for weapons it brands
+  //    "Ion" (Ion Flak Turret, Ion Atomiser, Ion Pulse Turret/Railgun, Ion
+  //    Gatling). Ion reads as Energy to a player regardless of the
+  //    underlying mechanic, but flak/railgun/gatling are shared tokens used
+  //    by dozens of other factions' non-Ion weapons that must stay put, so
+  //    this can't be a token-level rule.
+  //  - Blast Mortar (weapon_gen_s_cannon_01) deals 50/50 direct+explosive
+  //    damage and detonates on impact/range per the wiki -- mechanically
+  //    closer to Flak than a solid-slug kinetic gun despite being sold as
+  //    "the Plasma Cannon's big brother".
+  // NOTE: the two Pirate "battleship" turrets (turret_pir_l/m_battleship_01_
+  // laser/gatling_*) look like they embed a real type token past where
+  // equipTypeOf() stops reading, but they're the Erlking L/M Turret --
+  // exclusive to a single lore-significant capital ship, wiki-listed
+  // alongside Behemoth/Phoenix/Odysseus as a Main Battery variant, and
+  // described as drawing power from "the Erlking's power core" to
+  // outperform a normal turret of the same class. Left as Main Battery
+  // (the EQUIP_SPECIAL_TYPES 'battleship' default) rather than overridden.
+  // Ray Ion Projector (weapon_bor_l_beam_01) looks like an ordinary
+  // purchasable Boron beam cannon by its data (plain 'beam' token, has a
+  // price/price_min/price_max like any other market item) -- but the wiki
+  // files it under "Destroyer Main Batteries" alongside Behemoth/Phoenix/
+  // Odysseus, "Unique to each ship class. Can't mix and match cross-faction
+  // ships and guns." Trusting the wiki's own grouping over the data shape.
+  const EQUIP_CATEGORY_OVERRIDES = {
+    turret_bor_l_flak_01_mk1_macro:    'energy',   // Ion Flak Turret
+    weapon_bor_m_flak_01_mk1_macro:    'energy',   // Ion Atomiser
+    turret_bor_m_railgun_01_mk1_macro: 'energy',   // Ion Pulse Turret
+    weapon_bor_m_railgun_01_mk1_macro: 'energy',   // Ion Pulse Railgun
+    weapon_bor_s_gatling_01_mk1_macro: 'energy',   // Ion Gatling
+    weapon_gen_s_cannon_01_mk1_macro:  'ordnance', // Blast Mortar
+    weapon_gen_s_cannon_01_mk2_macro:  'ordnance',
+    weapon_bor_l_beam_01_mk1_macro:    'special',  // Ray Ion Projector
+  };
+  const equipCategoryOf = (t, macro) => EQUIP_CATEGORY_OVERRIDES[macro] || EQUIP_TYPE_TO_CATEGORY[t] || 'special';
+  const EQUIP_CATEGORY_LABELS = { energy: 'Energy', kinetic: 'Kinetic', ordnance: 'Ordnance', mining: 'Mining', special: 'Main Battery' };
+  const equipCategoryLabel = c => EQUIP_CATEGORY_LABELS[c] || c;
+
+  // Engine Type is read off the in-game display name, not equipTypeOf()'s
+  // macro-derived token — Egosoft's own data disagrees with the macro name
+  // often enough that the token can't be trusted: engine_bor_l_travel_01_mk1
+  // and engine_bor_xl_travel_01_mk1 are 'travel'-tokened but named "All-round
+  // Engine"; engine_xen_m/s_virtual_01_mk1 are 'virtual'-tokened but named
+  // "Combat Engine"; engine_ter_l_allround_02_mk1 is 'allround'-tokened but
+  // named "Frontier Engine" (a unique story reward, not a real all-round
+  // choice). Matching the name a player actually sees avoids all three
+  // landing in the wrong filter bucket. Everything that isn't clearly named
+  // All-round/Combat/Travel (racer/mothership/spacesuit/virtual/weak/unique
+  // engines) falls into 'special', same reasoning as EQUIP_SPECIAL_TYPES
+  // above. Reuses equipTypeLabel for display: it already maps 'allround' to
+  // 'All-Round' and 'special' to 'Special', and title-cases everything else.
+  const ENGINE_NAME_TYPES = [
+    [/^all-round/i, 'allround'],
+    [/^combat/i, 'combat'],
+    [/^travel/i, 'travel'],
+  ];
+  const engineCategoryOf = name => {
+    for (const [re, cat] of ENGINE_NAME_TYPES) if (re.test(name || '')) return cat;
+    return 'special';
+  };
+
   // Visibility is pure CSS (.reslib-wrap:hover .reslib-menu) — this just keeps
   // the fixed-position menu's coordinates pinned to the sidebar item, since
   // position:fixed can't use the usual left:100% trick (see layout.css).
@@ -94,7 +234,7 @@
     reslibSortKey   = null;
     reslibSortDir   = 1;
     reslibHullView  = 'list';
-    reslibHullFilters = { faction: '', size: '', type: '' };
+    reslibFilters[cat] = { faction: '', size: '', type: '' };
     // Drop any comparison picks from the previous category — a weapon macro
     // wouldn't resolve against, say, the shield catalog (see equipment-comparison.js).
     reslibEquipView = 'list';
@@ -127,12 +267,12 @@
           <div class="fleet-subtab ${reslibEquipView === 'list' ? 'active' : ''}" onclick="reslibShowEquipList()"><i class="ti ti-list"></i> ${singular} List</div>
           <div class="fleet-subtab ${reslibEquipView === 'compare' ? 'active' : ''}" onclick="reslibShowEquipCompare()"><i class="ti ti-arrows-left-right"></i> ${singular} Comparison</div>
         </div>`;
-        // Match the hull header: a "<Category> Comparison" title under the tabs
-        // on the compare view; the List view's tabs stand on their own (no
-        // filter row exists for equipment).
+        // Match the hull header: a "<Category> Comparison" title under the
+        // tabs on the compare view; the List view gets the same Faction/Size/
+        // Type filter row hulls use, built by the shared reslibFiltersHtml().
         const row2 = reslibEquipView === 'compare'
           ? `<div class="sec-header"><div class="sec-title">${singular} Comparison</div><div class="sec-line"></div></div>`
-          : '';
+          : reslibFiltersHtml(reslibCat);
         header.innerHTML = tabs + row2;
         return;
       }
@@ -146,7 +286,7 @@
       <div class="fleet-subtab ${reslibHullView === 'compare' ? 'active' : ''}" onclick="reslibShowHullCompare()"><i class="ti ti-arrows-left-right"></i> Hull Comparison</div>
     </div>`;
 
-    const row2 = reslibHullView === 'list' ? reslibHullFiltersHtml() : reslibHullView === 'compare' ? (() => {
+    const row2 = reslibHullView === 'list' ? reslibFiltersHtml('hull') : reslibHullView === 'compare' ? (() => {
       return `<div class="sec-header"><div class="sec-title">Hull Comparison</div><div class="sec-line"></div></div>`;
     })() : (() => {
       const h = HULL_CATALOG[reslibInspectMacro] || {};
@@ -156,37 +296,63 @@
     header.innerHTML = tabs + row2;
   }
 
-  // Distinct Faction/Size/Type values actually present in the loaded hull
-  // catalog, so the dropdowns never offer an option that would filter to
-  // nothing (e.g. a faction with no purchasable hulls this scan).
-  function reslibHullFilterOptions() {
+  // Distinct Faction/Size/Type values actually present in the loaded catalog
+  // for the given category, so the dropdowns never offer an option that
+  // would filter to nothing (e.g. a faction with no purchasable hulls this
+  // scan). Hulls read HULL_CATALOG directly; every equipment slot reads
+  // EQUIPMENT_CATALOG filtered to that slot, applying the same price != null
+  // filter renderResLibEquipment() uses to drop tutorial/story placeholders
+  // (see the comment there) so those never surface as a Type option either.
+  function reslibFilterOptions(cat) {
     const factions = new Set(), sizes = new Set(), types = new Set();
-    for (const macro of Object.keys(HULL_CATALOG)) {
-      const h = HULL_CATALOG[macro];
-      factions.add(hullFactionFor(macro, h));
-      sizes.add(sizeFromClass(h.class));
-      types.add(hullTypeFor(macro, h));
+    if (cat === 'hull') {
+      for (const macro of Object.keys(HULL_CATALOG)) {
+        const h = HULL_CATALOG[macro];
+        factions.add(hullFactionFor(macro, h));
+        sizes.add(sizeFromClass(h.class));
+        types.add(hullTypeFor(macro, h));
+      }
+    } else {
+      for (const [macro, e] of Object.entries(EQUIPMENT_CATALOG)) {
+        if (e.slot !== cat || e.price == null) continue;
+        factions.add(RACE_FULL_NAMES[e.race] || e.race);
+        sizes.add(e.size);
+        if (RESLIB_NO_TYPE_FILTER.has(cat)) continue;
+        // Weapon/turret Types are the Energy/Kinetic/Ordnance/Mining/Special
+        // firing categories (EQUIP_FIRING_GROUPS), not the fine-grained
+        // per-weapon-identity token — every other equipment slot keeps the
+        // fine-grained type since firing category is meaningless for them.
+        types.add(cat === 'engine' ? engineCategoryOf(e.name)
+          : RESLIB_CATEGORY_CATS.has(cat) ? equipCategoryOf(equipTypeOf(macro), macro) : equipTypeOf(macro));
+      }
     }
     return { faction: [...factions].sort(), size: [...sizes].sort(bySizeDesc), type: [...types].sort() };
   }
 
-  function reslibHullFiltersHtml() {
-    const opts = reslibHullFilterOptions();
+  function reslibFiltersHtml(cat) {
+    const opts = reslibFilterOptions(cat);
+    const sizeFmt = v => SIZE_WORD[v] || (v || '').toUpperCase();
+    const typeFmt = cat === 'hull' ? hullTypeLabel : RESLIB_CATEGORY_CATS.has(cat) ? equipCategoryLabel : equipTypeLabel;
     const select = (key, label, values, fmt) => {
+      const current = reslibFilters[cat][key];
       const options = [`<option value="">All ${label}</option>`].concat(
-        values.map(v => `<option value="${v}" ${reslibHullFilters[key] === v ? 'selected' : ''}>${fmt ? fmt(v) : v}</option>`)
+        values.map(v => `<option value="${v}" ${current === v ? 'selected' : ''}>${fmt ? fmt(v) : v}</option>`)
       ).join('');
-      return `<div class="reslib-fbox"><select onchange="reslibSetHullFilter('${key}', this.value)">${options}</select></div>`;
+      return `<div class="reslib-fbox"><select onchange="reslibSetFilter('${cat}', '${key}', this.value)">${options}</select></div>`;
     };
+    // Shields have no real "type" split (see RESLIB_NO_TYPE_FILTER above) —
+    // Faction + Size cover everything the game's own Shield Generators
+    // reference groups by, so the Type dropdown is dropped rather than
+    // filled with a near-useless single "Standard" bucket.
     return `<div class="reslib-filters">
-      ${reslibFactionDD(opts.faction)}
-      ${select('size', 'Sizes', opts.size, v => SIZE_WORD[v] || v.toUpperCase())}
-      ${select('type', 'Types', opts.type, hullTypeLabel)}
+      ${reslibFactionDD(cat, opts.faction)}
+      ${select('size', 'Sizes', opts.size, sizeFmt)}
+      ${RESLIB_NO_TYPE_FILTER.has(cat) ? '' : select('type', 'Types', opts.type, typeFmt)}
     </div>`;
   }
 
-  function reslibSetHullFilter(key, value) {
-    reslibHullFilters[key] = value;
+  function reslibSetFilter(cat, key, value) {
+    reslibFilters[cat][key] = value;
     renderResLib();
   }
 
@@ -198,14 +364,14 @@
   let reslibFacOpen = false;
   const reslibEscJs = s => String(s).replace(/'/g, "\\'");
 
-  function reslibFactionDD(factions) {
-    const selected = reslibHullFilters.faction;
+  function reslibFactionDD(cat, factions) {
+    const selected = reslibFilters[cat].faction;
     const triggerInner = selected ? `${designBadge(selected)}<span>${selected}</span>` : '<span>All Factions</span>';
     const rows = ['', ...factions].map(fac => {
       const isSel = selected === fac;
       const label = fac === '' ? 'All Factions' : fac;
       const badge = fac === '' ? '' : designBadge(fac);
-      return `<div class="beqf-item ${isSel ? 'sel' : ''}" onclick="reslibSetHullFactionFilter('${reslibEscJs(fac)}')">${badge}<span>${label}</span></div>`;
+      return `<div class="beqf-item ${isSel ? 'sel' : ''}" onclick="reslibSetFactionFilter('${cat}', '${reslibEscJs(fac)}')">${badge}<span>${label}</span></div>`;
     }).join('');
     return `<div class="beqf-dd" id="reslib-fac-dd">
       <div class="beqf-trigger" onclick="reslibToggleFacDD(event)">${triggerInner}<i class="ti ti-chevron-down"></i></div>
@@ -224,8 +390,8 @@
   document.addEventListener('click', (e) => {
     if (!e.target.closest('#reslib-fac-dd')) reslibCloseFacDD();
   });
-  function reslibSetHullFactionFilter(faction) {
-    reslibHullFilters.faction = faction;
+  function reslibSetFactionFilter(cat, faction) {
+    reslibFilters[cat].faction = faction;
     reslibCloseFacDD();
     renderResLibHeader();   // trigger badge/label is custom markup, needs a full rebuild
     renderResLib();
@@ -342,7 +508,7 @@
       type: hullTypeFor(macro, h), max_hull: h.max_hull, price: h.price,
       purchasable: h.purchasable !== false, hardpoints: h.hardpoints || {},
     }));
-    const f = reslibHullFilters;
+    const f = reslibFilters.hull;
     if (f.faction) rows = rows.filter(r => r.faction === f.faction);
     if (f.size)    rows = rows.filter(r => r.size === f.size);
     if (f.type)    rows = rows.filter(r => r.type === f.type);
@@ -400,7 +566,22 @@
     // sells (confirmed this session: every unpriced entry is a _tutorial/_story/
     // _scenario/superseded variant) -- they'd otherwise show up as unexplained
     // duplicate-name rows with blank size/price next to the real, purchasable item.
-    let rows = all.filter(([, e]) => e.price != null).map(([macro, e]) => ({ macro, ...e }));
+    let rows = all.filter(([, e]) => e.price != null)
+      .map(([macro, e]) => {
+        // Weapon/turret Type is the firing category (Energy/Kinetic/...); Engine
+        // collapses to Combat/Travel/All-Round/Special (see engineCategoryOf);
+        // every other slot keeps the fine-grained per-macro type (see
+        // reslibFilterOptions). Shields skip this entirely — no Type filter,
+        // see RESLIB_NO_TYPE_FILTER.
+        const type = RESLIB_NO_TYPE_FILTER.has(slot) ? null
+          : slot === 'engine' ? engineCategoryOf(e.name)
+          : RESLIB_CATEGORY_CATS.has(slot) ? equipCategoryOf(equipTypeOf(macro), macro) : equipTypeOf(macro);
+        return { macro, ...e, faction: RACE_FULL_NAMES[e.race] || e.race, type };
+      });
+    const f = reslibFilters[slot];
+    if (f.faction) rows = rows.filter(r => r.faction === f.faction);
+    if (f.size)    rows = rows.filter(r => r.size === f.size);
+    if (f.type)    rows = rows.filter(r => r.type === f.type);
     rows = reslibSortRows(rows, reslibSortKey, reslibSortDir, r => r.name || r.macro);
 
     const isMissile = e => e.class === 'missilelauncher' || e.class === 'missileturret';
@@ -413,6 +594,12 @@
       ${defs.map(([k, label]) => reslibSortHeader(k, label, reslibSortKey===k)).join('')}
       ${reslibSortHeader('price','Price', reslibSortKey==='price')}
     </tr>`;
+
+    if (!rows.length) {
+      document.getElementById('reslib-tbody').innerHTML =
+        `<tr><td colspan="${3 + defs.length}" style="text-align:center;color:var(--text-secondary);padding:3rem">No ${RESLIB_CAT_LABELS[slot] || slot} match the selected filters.</td></tr>`;
+      return;
+    }
 
     document.getElementById('reslib-tbody').innerHTML = rows.map(e => {
       const tint = SIZE_TINT[(e.size || '').toUpperCase()] || { c: 'var(--text-secondary)', bg: 'transparent' };
