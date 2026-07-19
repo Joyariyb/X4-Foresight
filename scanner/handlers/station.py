@@ -3,7 +3,8 @@
 from __future__ import annotations
 import re
 from data.factions import FACTION_NAMES
-from data.production import production_analytics_from_modules, input_rates_from_modules
+from data.production import (production_analytics_from_modules, input_rates_from_modules,
+                             input_breakdown_rows_from_modules)
 from data.wares import WARE_NAMES, WARE_VOLUME, WARE_TRANSPORT
 from data.station_stats import STATION_STATS
 from ..entities import Station, StationModule, CargoStorage, CrewMember
@@ -157,7 +158,8 @@ class StationHandler:
                     'liquid':    cargo_liquid,
                 },
             ),
-            input_rates = input_rates_from_modules(modules, inventory),
+            input_rates     = input_rates_from_modules(modules, inventory),
+            input_breakdown = input_breakdown_rows_from_modules(modules),
         )
 
         ctx.stations.append(station)

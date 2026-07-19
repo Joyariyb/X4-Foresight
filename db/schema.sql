@@ -542,6 +542,21 @@ CREATE TABLE IF NOT EXISTS station_input_rates (
     PRIMARY KEY (scan_id, station_id, ware_id)
 );
 
+-- Per-scan input attribution per station: which produced ware's modules are
+-- responsible for each slice of input demand. station_input_rates above is the
+-- station-wide total; this is its per-lane split (recipe × module count, so it
+-- is exact). Drives the per-module input chips on the UI's production-flow panel.
+CREATE TABLE IF NOT EXISTS station_input_breakdown (
+    scan_id            INTEGER NOT NULL REFERENCES scans(scan_id) ON DELETE CASCADE,
+    station_id         TEXT    NOT NULL,
+    produced_ware_id   TEXT    NOT NULL,   -- the lane: ware these modules produce
+    produced_ware_name TEXT,
+    input_ware_id      TEXT    NOT NULL,   -- the recipe input being consumed
+    input_ware_name    TEXT,
+    rate               REAL,               -- units/hr of this input, these modules only
+    PRIMARY KEY (scan_id, station_id, produced_ware_id, input_ware_id)
+);
+
 -- Galaxy connectivity graph: sector-to-sector links (one row per undirected edge).
 -- Cost 1=gate/accelerator (counts toward jump range); cost 0=superhighway (free).
 -- Unique among REFERENCE tables: topology is ONE coherent graph, so cleared+rewritten each scan.

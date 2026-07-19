@@ -197,6 +197,18 @@ def _write_stations(cur, scan_id, ctx) -> None:
               ir['consumption_rate'], ir['stock_units'], ir['runtime_hours'])
              for ir in s.input_rates],
         )
+        # Per-(produced ware, input ware) attribution — the per-lane split of
+        # station_input_rates. Explicit column list for the same reason as above.
+        cur.executemany(
+            "INSERT INTO station_input_breakdown"
+            "(scan_id, station_id, produced_ware_id, produced_ware_name,"
+            " input_ware_id, input_ware_name, rate)"
+            " VALUES(?,?,?,?,?,?,?)",
+            [(scan_id, s.object_id,
+              ib['produced_ware_id'], ib['produced_ware_name'],
+              ib['input_ware_id'], ib['input_ware_name'], ib['rate'])
+             for ib in s.input_breakdown],
+        )
 
 
 def _write_ships(cur, scan_id, ctx) -> None:

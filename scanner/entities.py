@@ -185,6 +185,10 @@ class Station:
     # Per-consumed-ware input rates from input_rates_from_modules():
     # consumption_rate, stock_units, runtime_hours. Stored in station_input_rates.
     input_rates:          list[dict] = field(default_factory=list)
+    # Per-(produced ware, input ware) rate rows from
+    # input_breakdown_rows_from_modules() — the per-lane attribution the
+    # aggregate input_rates can't express. Stored in station_input_breakdown.
+    input_breakdown:      list[dict] = field(default_factory=list)
     # inventory             → own table: station_inventory             (scan_id, station_id, ware_id, ware_name, amount, volume_m3)
     # modules               → own table: station_modules               (scan_id, station_id, macro, category, produces)
     # offers                → own table: station_offers                (scan_id, station_id, ware_id, ware_name, is_buying, is_selling, price, amount, desired, illegal)

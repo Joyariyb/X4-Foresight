@@ -104,17 +104,19 @@ def inputs_per_cycle(ware_id: str, count: int = 1) -> dict[str, int]:
     return {WARE_NAMES.get(iid, iid): qty * count for iid, qty in raw.items()}
 
 
-def _consumed_per_hour_by_id(modules) -> dict[str, float]:
-    """Returns {ware_id: units_per_hour} every production module consumes, combined.
+def input_breakdown_from_modules(modules) -> dict[str, dict[str, float]]:
+    """Returns {produced_ware_id: {input_ware_id: units_per_hour}} per station.
 
-    Walks every production module (identified by its macro) and sums up how many
-    units of each INPUT ware all the modules collectively consume per hour,
-    picking the faction-specific recipe when one exists. Shared core of
-    consumption_rates_from_modules, input_rates_from_modules and
-    production_analytics_from_modules so the three can never drift apart on
-    recipe handling.
+    The per-lane attribution the aggregate tables can't express: which produced
+    ware's modules are responsible for each slice of input demand. Recipes are
+    known per module macro, so this is exact — not an estimate. Modules
+    producing the same ware merge into one entry (the UI draws one lane per
+    produced ware, so a finer split would have nowhere to go).
+
+    Shared core of _consumed_per_hour_by_id, so the station-wide totals are
+    always the column sums of this breakdown and the two can never disagree.
     """
-    consumed: dict[str, float] = {}  # ware_id → units/hr
+    breakdown: dict[str, dict[str, float]] = {}
 
     for m in modules:
         match = PROD_MACRO_RE.match(_get_macro(m))
@@ -130,9 +132,44 @@ def _consumed_per_hour_by_id(modules) -> dict[str, float]:
         inputs = stats['methods'].get(method) or stats['methods'].get('default', {})
         cycles_per_hr = 3600.0 / stats['time']
 
+        per = breakdown.setdefault(ware, {})
         for in_ware, in_amt in inputs.items():
-            consumed[in_ware] = consumed.get(in_ware, 0.0) + in_amt * cycles_per_hr
+            per[in_ware] = per.get(in_ware, 0.0) + in_amt * cycles_per_hr
 
+    return breakdown
+
+
+def input_breakdown_rows_from_modules(modules) -> list[dict]:
+    """Flattens input_breakdown_from_modules into rows ready for
+    station_input_breakdown: one row per (produced ware, input ware) pair.
+
+    Each dict: produced_ware_id, produced_ware_name, input_ware_id,
+    input_ware_name, rate (units/hr).
+    """
+    return [
+        {
+            'produced_ware_id':   prod_id,
+            'produced_ware_name': WARE_NAMES.get(prod_id, prod_id),
+            'input_ware_id':      in_id,
+            'input_ware_name':    WARE_NAMES.get(in_id, in_id),
+            'rate':               rate,
+        }
+        for prod_id, per in input_breakdown_from_modules(modules).items()
+        for in_id, rate in per.items()
+    ]
+
+
+def _consumed_per_hour_by_id(modules) -> dict[str, float]:
+    """Returns {ware_id: units_per_hour} every production module consumes, combined.
+
+    Column sums of input_breakdown_from_modules — kept as a thin wrapper so
+    consumption_rates_from_modules, input_rates_from_modules and
+    production_analytics_from_modules can never drift apart on recipe handling.
+    """
+    consumed: dict[str, float] = {}  # ware_id → units/hr
+    for per in input_breakdown_from_modules(modules).values():
+        for in_ware, rate in per.items():
+            consumed[in_ware] = consumed.get(in_ware, 0.0) + rate
     return consumed
 
 

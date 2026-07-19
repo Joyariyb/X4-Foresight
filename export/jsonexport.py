@@ -105,10 +105,12 @@ def _station_transport_types(conn) -> dict[str, str]:
     return {r['ware_id']: r['transport_type'] for r in rows}
 
 
-def _stations(conn, scan_id) -> list[dict]:
+def _stations(conn, scan_id, game_time) -> list[dict]:
     # Load both lookups once up front — avoids repeated queries inside the loop.
     transport    = _station_transport_types(conn)
     fleet_by_stn = _fleet_by_station(conn, scan_id)
+    # game_time drives the last-hour supply-source split (input_sources below):
+    # trade ledgers store absolute game_time_s, so "last hour" is game_time-3600.
 
     _EMPTY_FLEET = {'total': 0, 'traders': 0, 'miners': 0, 'combat': 0, 'other': 0}
 
@@ -212,6 +214,54 @@ def _stations(conn, scan_id) -> list[dict]:
                 (scan_id, sid))
             if r['ware_name']
         }
+        # Per-lane input attribution: {produced_ware_name: {input_ware_name: rate}}.
+        # The per-module input chips on the flow panel draw from this; stations
+        # scanned before the table existed export {} and the UI falls back to
+        # the aggregate input rail.
+        d['input_breakdown'] = {}
+        for r in conn.execute(
+                "SELECT produced_ware_name, input_ware_name, rate "
+                "FROM station_input_breakdown WHERE scan_id=? AND station_id=?",
+                (scan_id, sid)):
+            if r['produced_ware_name'] and r['input_ware_name']:
+                d['input_breakdown'].setdefault(
+                    r['produced_ware_name'], {})[r['input_ware_name']] = r['rate']
+
+        # Last-hour supply split per ware: {ware_name: {bought, mined, transferred}}
+        # in units. Drives the input chips' Source tooltip row. The three ledgers
+        # are persistent (keyed by last_scan_id, absolute game_time_s), so filter
+        # to rows still current in this scan and within the last game-hour.
+        cutoff = game_time - 3600
+        d['input_sources'] = {}
+
+        def _src(ware_name, key, units):
+            entry = d['input_sources'].setdefault(
+                ware_name, {'bought': 0, 'mined': 0, 'transferred': 0})
+            entry[key] += units
+
+        for r in conn.execute(
+                "SELECT ware_name, SUM(amount) AS units FROM trade_history "
+                "WHERE last_scan_id=? AND station_id=? AND direction='In' "
+                "AND game_time_s>=? GROUP BY ware_name",
+                (scan_id, sid, cutoff)):
+            _src(r['ware_name'], 'bought', r['units'])
+        for r in conn.execute(
+                "SELECT ware_name, SUM(amount) AS units FROM trade_history_mining "
+                "WHERE last_scan_id=? AND station_id=? AND game_time_s>=? "
+                "GROUP BY ware_name",
+                (scan_id, sid, cutoff)):
+            _src(r['ware_name'], 'mined', r['units'])
+        # Internal transfers store both stations without a receiver flag, so
+        # direction is a heuristic: if this station was a party to the transfer
+        # and consumes the ware, treat it as inbound supply. Good enough for a
+        # tooltip indicator; not suitable for accounting.
+        for r in conn.execute(
+                "SELECT ware_name, SUM(amount) AS units FROM trade_history_internal "
+                "WHERE last_scan_id=? AND (station_a_id=? OR station_b_id=?) "
+                "AND game_time_s>=? GROUP BY ware_name",
+                (scan_id, sid, sid, cutoff)):
+            _src(r['ware_name'], 'transferred', r['units'])
+
         # Ships that call this station home, bucketed by role.  The UI shows the
         # total in the Ships stat cell and the breakdown on hover.
         d['assigned_fleet'] = fleet_by_stn.get(sid, _EMPTY_FLEET)
@@ -919,7 +969,7 @@ def to_export(conn: sqlite3.Connection, scan_id: int | None = None) -> dict:
         # names per sector, unlike npc_trade_partners' reputation/range-
         # filtered subset above.
         'sector_wares':          _sector_wares(conn, scan_id),
-        'stations':              _stations(conn, scan_id),
+        'stations':              _stations(conn, scan_id, game_time),
         'ships':                 ships,
         'fleet_summary':         _fleet_summary(ships),
         # NPC ships operating in the player's station sectors + a digested
