@@ -59,6 +59,14 @@ SIZE_BANDS = ((1500.0, 'M-class'), (float('inf'), 'L-class'))
 # hydrogen, helium) need different ships, so the card names the right one.
 MINER_TYPE_BY_TRANSPORT = {'solid': 'Solid miner', 'liquid': 'Liquid miner'}
 
+# Wreck/debris-field wares that carry a mineable entry in sector_resources but
+# aren't something a mining ship can actually work — same junk data
+# universe-map.js's _U_WARE_EXCLUDE filters out of the resource-ware picker,
+# just applied here too since every advisor rule shares _nearest_deposits().
+# Without this, e.g. a mine_vs_buy card would tell a player to "assign a
+# miner" to a Khaak-scrap field no miner order can target.
+NON_MINEABLE_WARES = frozenset({'rawscrap', 'rawkhaakscrap'})
+
 # ── Rule 2 (mine vs buy) tuning ──────────────────────────────────────────────
 # How far back to total a station's purchases of a mineable ware. Longer than
 # the rule-1 mining window: a buy-vs-mine case is about a spending *habit*, not
@@ -143,13 +151,13 @@ TEMPLATES: dict[str, list[str]] = {
     'idle_miner': [
         "{ship_name} ({ship_display}) is {order} in {sector_name} with "
         "{cargo_max} m3 of mining capacity sitting idle — assign it a mining "
-        "route to put that {miner_type} to work.",
+        "route to put that {miner_type} to work.{target_note}",
         "Idle miner: {ship_name} ({cargo_max} m3) has been {order} in "
         "{sector_name} with no mining order — a {miner_type} doing nothing is "
-        "lost throughput.",
+        "lost throughput.{target_note}",
         "{ship_name} is parked ({order}) in {sector_name} while its "
         "{cargo_max} m3 bay stays empty — give this {miner_type} a mining "
-        "assignment.",
+        "assignment.{target_note}",
     ],
     'miner_exposed': [
         "{ship_name} ({ship_display}) is out mining in {sector_name}, where "
@@ -183,9 +191,9 @@ TEMPLATES: dict[str, list[str]] = {
         "you have a {yield_label} deposit {jumps} jump(s) away in "
         "{deposit_sector_name}. A {miner_type} could mine and sell it for "
         "~{value_cr} Cr.",
-        "{ware_name} sells to {npc_name} at {price} Cr/unit, within reach of "
-        "your {yield_label} {deposit_sector_name} deposit — put a {miner_type} "
-        "on it for ~{value_cr} Cr of open demand.",
+        "{npc_name} buys {ware_name} at {price} Cr/unit, {jumps} jump(s) from "
+        "your {yield_label} {ware_name} deposit in {deposit_sector_name} — put "
+        "a {miner_type} on it for ~{value_cr} Cr of open demand.",
     ],
 }
 
@@ -208,6 +216,8 @@ def _nearest_deposits(conn, scan_id, distances_from_player) -> dict[str, dict]:
             "JOIN sectors sec ON sec.sector_macro = sr.sector_macro "
             "WHERE sr.last_scan_id = ? AND sec.is_discovered = 1",
             (scan_id,)):
+        if r['ware'] in NON_MINEABLE_WARES:
+            continue
         jumps = distances_from_player.get(r['sector_macro'])
         if jumps is None or jumps > DEPOSIT_MAX_JUMPS:
             continue
@@ -400,13 +410,68 @@ def mine_vs_buy_findings(conn, scan_id, distances_from_player) -> list[dict]:
 
 # ── Rule 3: idle miner (a mining ship parked with no mining order) ───────────
 
+def _needy_stations_by_transport(conn, scan_id) -> dict[str, list[dict]]:
+    """transport_type -> player stations with an unmet mining need for that
+    cargo class, most urgent first. Reuses rule 1's own definition of "needs a
+    miner" (station_input_rates: running low, no recent mining delivery) so an
+    idle-miner recommendation never points at a station rule 1 wouldn't also
+    flag — just without the deposit-reachability gate, since the ship pointed
+    at it already exists and doesn't need a fresh deposit to be mined from."""
+    row = conn.execute(
+        "SELECT game_time_s FROM scans WHERE scan_id = ?", (scan_id,)).fetchone()
+    if not row:
+        return {}
+    cutoff_s = (row['game_time_s'] or 0) - MINING_LOOKBACK_HOURS * 3600
+    recently_mined = {
+        (r['station_id'], r['ware_id']) for r in conn.execute(
+            "SELECT DISTINCT station_id, ware_id FROM trade_history_mining "
+            "WHERE game_time_s >= ?", (cutoff_s,))}
+
+    by_transport: dict[str, list[dict]] = {}
+    for r in conn.execute(
+            "SELECT ir.station_id, ir.ware_id, ir.ware_name, "
+            "       ir.consumption_rate, ir.runtime_hours, "
+            "       s.code, s.name AS station_name, "
+            "       sec.sector_name, wm.transport_type "
+            "FROM station_input_rates ir "
+            "JOIN stations s ON s.object_id = ir.station_id AND s.scan_id = ir.scan_id "
+            "LEFT JOIN sectors sec ON sec.sector_macro = s.sector_macro "
+            "LEFT JOIN ware_metadata wm ON wm.ware_id = ir.ware_id "
+            "WHERE ir.scan_id = ? AND ir.consumption_rate > 0 "
+            "  AND ir.runtime_hours IS NOT NULL AND ir.runtime_hours <= ?",
+            (scan_id, STARVE_RUNTIME_HOURS)):
+        transport = r['transport_type']
+        if transport not in MINER_TYPE_BY_TRANSPORT:
+            continue  # container/other cargo — no miner role carries it
+        if (r['station_id'], r['ware_id']) in recently_mined:
+            continue  # already being mined — not a target to redirect one to
+        by_transport.setdefault(transport, []).append(dict(r))
+
+    # Most urgent (soonest to run dry, scaled by draw) first, same weighting
+    # rule 1's own priority score uses.
+    for candidates in by_transport.values():
+        candidates.sort(
+            key=lambda c: -(c['consumption_rate']
+                             * (1.0 + 1.0 / max(c['runtime_hours'], 0.1))))
+    return by_transport
+
+
 def idle_miner_findings(conn, scan_id) -> list[dict]:
     """Player miners whose current order means they're doing nothing (see
     IDLE_MINER_ORDERS) — parked capacity that could be feeding a station.
 
     Priority is the idle bay size, same proxy logistics.idle_hauler uses for the
     same reason: without knowing what THIS ship would earn per trip, the biggest
-    idle capacity is the biggest missed throughput."""
+    idle capacity is the biggest missed throughput.
+
+    Where a matching cargo-class need exists (a station running dry on a ware
+    this ship's role can carry), the card names that station too — otherwise
+    the advice is "go mine something" with no target, which isn't actionable."""
+    needy = _needy_stations_by_transport(conn, scan_id)
+    # Which stations a target has already been handed to this call, so two
+    # idle miners of the same type don't both get pointed at the single
+    # neediest station while a second one goes unmentioned.
+    claimed: set[str] = set()
     rows = conn.execute(
         "SELECT sh.object_id, sh.code, sh.name, sh.role, sh.ship_order, "
         "       sh.cargo_max_m3, sh.sector_macro, "
@@ -424,6 +489,28 @@ def idle_miner_findings(conn, scan_id) -> list[dict]:
             continue
         cargo_max = r['cargo_max_m3']
         priority = cargo_max
+
+        # Match this ship's role (solid/liquid) to a station running dry on
+        # that cargo class, skipping any station already handed to an
+        # earlier idle miner in this same pass.
+        role = r['role'] or ''
+        transport = ('liquid' if 'Liquid' in role
+                     else 'solid' if 'Solid' in role else None)
+        target = None
+        for candidate in needy.get(transport, ()):
+            if candidate['station_id'] not in claimed:
+                target = candidate
+                claimed.add(candidate['station_id'])
+                break
+
+        target_note = ''
+        if target is not None:
+            target_note = (
+                f" {target['station_name'] or target['code']} in "
+                f"{target['sector_name'] or 'an unknown sector'} needs "
+                f"{target['ware_name']} (~{round(target['runtime_hours'], 1)}h "
+                f"of stock left) — send it there.")
+
         slots = {
             'ship_name':    r['code'] or r['object_id'],
             'ship_display': r['name'] or r['code'] or 'unnamed',
@@ -431,12 +518,19 @@ def idle_miner_findings(conn, scan_id) -> list[dict]:
             'sector_name':  r['sector_name'] or 'an unknown sector',
             'cargo_max':    round(cargo_max),
             'miner_type':   _miner_type_from_role(r['role']),
+            'target_note':  target_note,
         }
         evidence = {
             'ship_id': r['object_id'], 'code': r['code'], 'role': r['role'],
             'ship_order': order, 'cargo_max_m3': cargo_max,
             'sector_macro': r['sector_macro'],
         }
+        if target is not None:
+            evidence.update({
+                'target_station_id': target['station_id'],
+                'target_station_code': target['code'],
+            })
+            slots['target_station_name'] = target['station_name'] or target['code']
         findings.append(_finding(
             f"idleminer:{r['object_id']}",
             'miner', 'idle_miner', priority, slots, evidence, TEMPLATES))
@@ -524,22 +618,29 @@ def mining_oversupply_findings(conn, scan_id) -> list[dict]:
         return []
     cutoff_s = (row['game_time_s'] or 0) - OVERSUPPLY_DELIVERY_HOURS * 3600
 
-    # Recent mining deliveries grouped by (station, transport type): how many
-    # distinct miners are feeding it and a sample ware name for the card.
+    # Recent mining deliveries grouped by (station, transport type): the
+    # distinct miners feeding it and a sample ware name for the card. We keep
+    # each ship (code + name), not just a count, so the drawer can LINK every
+    # miner — those are exactly the ships to pull off a bay that's already
+    # bouncing loads. Keyed by ship_id so a miner's repeated deliveries collapse
+    # to one entry; ship_code is what the UI's jumpToShip() navigates by.
     deliveries: dict[tuple[str, str], dict] = {}
     for r in conn.execute(
             "SELECT thm.station_id, wm.transport_type, thm.ware_name, "
-            "       COUNT(DISTINCT thm.ship_id) AS miners "
+            "       thm.ship_id, thm.ship_code, thm.ship_name "
             "FROM trade_history_mining thm "
             "LEFT JOIN ware_metadata wm ON wm.ware_id = thm.ware_id "
-            "WHERE thm.game_time_s >= ? "
-            "GROUP BY thm.station_id, wm.transport_type",
+            "WHERE thm.game_time_s >= ?",
             (cutoff_s,)):
         tt = r['transport_type']
         if tt not in ('solid', 'liquid'):
             continue
-        deliveries[(r['station_id'], tt)] = {
-            'miners': r['miners'] or 0, 'ware_name': r['ware_name'] or tt}
+        d = deliveries.setdefault((r['station_id'], tt), {
+            'ware_name': r['ware_name'] or tt, 'miners': {}})
+        if r['ship_id'] and r['ship_id'] not in d['miners']:
+            d['miners'][r['ship_id']] = {
+                'code': r['ship_code'],
+                'name': r['ship_name'] or r['ship_code'] or r['ship_id']}
 
     findings = []
     for r in conn.execute(
@@ -553,19 +654,25 @@ def mining_oversupply_findings(conn, scan_id) -> list[dict]:
         d = deliveries.get((r['station_id'], r['cargo_type']))
         if not d:
             continue  # full, but nothing being mined into it — not a miner issue
+        miners = list(d['miners'].values())
+        miner_count = len(miners)
         # Fuller bay + more miners hammering it = more throughput being wasted.
-        priority = (r['pct'] / 100.0) * (1 + d['miners'])
+        priority = (r['pct'] / 100.0) * (1 + miner_count)
         slots = {
             'station_name': r['station_name'] or r['code'],
             'cargo_type':   r['cargo_type'],
             'fill_pct':     round(r['pct']),
-            'miner_count':  d['miners'],
+            'miner_count':  miner_count,
             'ware_name':    d['ware_name'],
         }
         evidence = {
             'station_id': r['station_id'], 'code': r['code'],
             'cargo_type': r['cargo_type'], 'fill_pct': round(r['pct'], 1),
-            'delivering_miners': d['miners'],
+            'delivering_miners': miner_count,
+            # The ships feeding the full bay — a list of {code, name} the drawer
+            # renders as clickable ship links (see advisors-evidence.js), so the
+            # player can jump straight to one and reassign it.
+            'delivering_miner_ships': miners,
         }
         findings.append(_finding(
             f"miningover:{r['station_id']}:{r['cargo_type']}",

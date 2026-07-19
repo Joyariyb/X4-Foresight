@@ -94,6 +94,11 @@
     .adv-ship-link .ti { font-size: 1.1rem; }
     .adv-ship-link:hover { text-shadow: 0 0 0.6rem var(--color-primary); text-decoration: underline; }
 
+    /* mining_oversupply's "Delivering Miners" row stacks several .adv-ship-link chips (one
+       per delivering miner). Column layout keeps each ship on its own line so
+       long "Name (CODE)" labels stay readable instead of running together. */
+    .adv-miner-list { display: flex; flex-direction: column; gap: 0.4rem; align-items: flex-start; }
+
     /* "Pricing" row's vs-average visual (market_opportunity/pricing_gap) —
        lives INSIDE .adv-evidence as an ordinary key/value row (no box/
        background of its own), so it reads as part of the same evidence

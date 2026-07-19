@@ -40,7 +40,11 @@ def miner_db(tmp_path):
         [('sec_gas', 'methane', 'high', 40000),
          ('sec_ore', 'ore', 'medium', 50000),
          ('sec_ore', 'silicon', 'high', 30000),
-         ('sec_far', 'refined', 'high', 20000)])   # only deposit is out of range
+         ('sec_far', 'refined', 'high', 20000),    # only deposit is out of range
+         # Wreck-field junk: carries a mineable entry but no miner order can
+         # actually work it -> must never surface as a deposit.
+         ('sec_home', 'rawscrap', 'veryhigh', 999999),
+         ('sec_home', 'rawkhaakscrap', 'high', 999999)])
 
     conn.executemany(
         "INSERT OR IGNORE INTO ware_metadata (ware_id, name, transport_type, volume_m3) "
@@ -176,6 +180,15 @@ def test_out_of_range_deposit_ignored(miner_db):
     assert 'mininggap:[0xA1]:refined' not in {f['id'] for f in findings}
 
 
+def test_scrap_wares_excluded_from_deposits(miner_db):
+    """rawscrap/rawkhaakscrap carry a mineable entry in sector_resources (Khaak
+    wreck fields) but no miner order can actually target them — every rule
+    built on _nearest_deposits() must never surface them as a deposit."""
+    deposits = miner._nearest_deposits(miner_db, 1, DISTANCES)
+    assert 'rawscrap' not in deposits
+    assert 'rawkhaakscrap' not in deposits
+
+
 def test_lookback_window_boundary(miner_db):
     """Moving methane's only delivery to just inside the window suppresses it;
     just outside, it fires again — the 1h cutoff is the switch."""
@@ -242,6 +255,27 @@ def test_idle_miner_fires_on_parked_miners(miner_db):
     assert 'idleminer:[0xS4]' in by_id
 
 
+def test_idle_miner_recommends_matching_needy_station(miner_db):
+    """PSD-162 is a Liquid miner idle in sec_gas; STV-1 needs methane (liquid,
+    running dry, unfed — the exact rule-1 fixture case) -> the card should name
+    STV-1 as where to send it."""
+    findings = miner.idle_miner_findings(miner_db, 1)
+    by_id = {f['id']: f for f in findings}
+
+    f = by_id['idleminer:[0xS1]']
+    assert f['slots']['target_station_name'] == 'Station TV'
+    assert 'Station TV' in f['slots']['target_note']
+    assert 'Methane' in f['slots']['target_note']
+    assert f['evidence']['target_station_id'] == '[0xA1]'
+    assert f['evidence']['target_station_code'] == 'STV-1'
+
+    # DRL-004 is a Solid miner idle in sec_home — no unfed solid need in the
+    # fixture (ore was mined recently, silicon is well-stocked) -> no target.
+    g = by_id['idleminer:[0xS4]']
+    assert g['slots']['target_note'] == ''
+    assert 'target_station_id' not in g['evidence']
+
+
 def test_idle_miner_ignores_working_and_docked(miner_db):
     """Mining/Trading miners are busy; a Docked one may be mid-cycle — none fire."""
     ids = {f['id'] for f in miner.idle_miner_findings(miner_db, 1)}
@@ -296,6 +330,12 @@ def test_mining_oversupply_fires_on_full_bay_still_fed(miner_db):
     assert f['slots']['fill_pct'] == 95
     assert f['slots']['miner_count'] == 2
     assert f['slots']['cargo_type'] == 'solid'
+    # Both delivering miners are carried through as linkable {code, name}
+    # entries (the drawer's "Delivering Miners" list), not just counted. This
+    # fixture has no ship_code/ship_name, so name falls back to the ship id.
+    assert f['evidence']['delivering_miners'] == 2
+    ship_names = {m['name'] for m in f['evidence']['delivering_miner_ships']}
+    assert ship_names == {'[0xS2]', '[0xS7]'}
 
 
 def test_mining_oversupply_needs_active_deliveries(miner_db):

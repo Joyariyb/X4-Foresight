@@ -176,6 +176,12 @@ def station_siting_findings(conn, scan_id, distances_from_player, avg_prices) ->
     # just its total — the aggregate alone isn't auditable. station_id rides
     # along too so the UI can jump straight to that station's NPC inspector
     # (goToNpcStation() in npc-station-inspector.js), same object_id it keys on.
+    # ns.last_scan_id = scan_id is required: X4 reassigns a station's object_id
+    # across sessions, so npc_stations can hold stale rows for the same
+    # physical station under an old id — without this filter a stale id could
+    # win here and never match jsonexport._npc_trade_partners' own
+    # last_scan_id filter, silently breaking the jump (see advisors.
+    # npc_demand_by_ware's docstring for the full story).
     demand_ws: dict[str, dict[str, list[dict]]] = {}
     for r in conn.execute(
             "SELECT ns.sector_macro, w.ware_id, w.buy_amount, w.buy_price, "
@@ -183,8 +189,9 @@ def station_siting_findings(conn, scan_id, distances_from_player, avg_prices) ->
             "FROM npc_stations ns "
             "JOIN npc_station_wares w ON w.station_id = ns.object_id "
             "JOIN reputation rep ON rep.faction_id = ns.owner_id AND rep.scan_id = ? "
-            "WHERE w.is_buying = 1 AND w.buy_amount > 0 AND rep.value >= ?",
-            (scan_id, REPUTATION_BLOCK_THRESHOLD)):
+            "WHERE w.is_buying = 1 AND w.buy_amount > 0 AND rep.value >= ? "
+            "  AND ns.last_scan_id = ?",
+            (scan_id, REPUTATION_BLOCK_THRESHOLD, scan_id)):
         demand_ws.setdefault(r['ware_id'], {}).setdefault(
             r['sector_macro'], []).append({
                 'station_name': r['station_name'] or r['station_id'],
@@ -326,22 +333,28 @@ def galaxy_arbitrage_findings(conn, scan_id, distances_from_player) -> list[dict
     # sells this ware now surfaces on BOTH sides with the correct figures for
     # each, instead of one merged row whose single price/amount was whichever
     # offer parsed last.
+    # ns.last_scan_id = scan_id excludes stale duplicate rows a station picks
+    # up when X4 reassigns its object_id across sessions — see advisors.
+    # npc_demand_by_ware's docstring for why an unfiltered pick can point
+    # goToNpcStation() at an id the NPC Trade Partners export never included.
     sells = conn.execute(
         "SELECT ns.object_id, ns.code, ns.name AS station_name, ns.sector_macro, "
         "       w.ware_id, w.ware_name, w.sell_price AS price, w.sell_amount AS amount "
         "FROM npc_stations ns "
         "JOIN npc_station_wares w ON w.station_id = ns.object_id "
         "JOIN reputation r ON r.faction_id = ns.owner_id AND r.scan_id = ? "
-        "WHERE w.is_selling = 1 AND w.sell_price IS NOT NULL AND r.value >= ?",
-        (scan_id, REPUTATION_BLOCK_THRESHOLD)).fetchall()
+        "WHERE w.is_selling = 1 AND w.sell_price IS NOT NULL AND r.value >= ? "
+        "  AND ns.last_scan_id = ?",
+        (scan_id, REPUTATION_BLOCK_THRESHOLD, scan_id)).fetchall()
     buys = conn.execute(
         "SELECT ns.object_id, ns.code, ns.name AS station_name, ns.sector_macro, "
         "       w.ware_id, w.buy_price AS price, w.buy_amount AS amount "
         "FROM npc_stations ns "
         "JOIN npc_station_wares w ON w.station_id = ns.object_id "
         "JOIN reputation r ON r.faction_id = ns.owner_id AND r.scan_id = ? "
-        "WHERE w.is_buying = 1 AND w.buy_price IS NOT NULL AND r.value >= ?",
-        (scan_id, REPUTATION_BLOCK_THRESHOLD)).fetchall()
+        "WHERE w.is_buying = 1 AND w.buy_price IS NOT NULL AND r.value >= ? "
+        "  AND ns.last_scan_id = ?",
+        (scan_id, REPUTATION_BLOCK_THRESHOLD, scan_id)).fetchall()
 
     def _reachable(rows):
         out: dict[str, list] = {}

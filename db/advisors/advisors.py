@@ -102,6 +102,14 @@ def npc_demand_by_ware(conn, scan_id, distances_from_player,
     route starts from the surplus station, not from wherever the camera
     happens to be — so a mission deep in Xenon territory must not blank a
     trade opportunity next to a station that hasn't moved.
+
+    ns.last_scan_id must match the current scan: X4 reassigns a station's
+    internal object_id across game sessions, so npc_stations can carry
+    several stale rows for the same physical station under different ids.
+    Without this filter the "best offer" pick can land on a stale object_id
+    that jsonexport._npc_trade_partners (which DOES filter by last_scan_id)
+    never exported — breaking the card's goToNpcStation() jump even though
+    the station is visible, under its other id, on the NPC Stations tab.
     """
     # buy_price/buy_amount are the station's OWN buy offer — aliased to
     # price/amount so the demand-depth logic below reads the same names it
@@ -115,8 +123,9 @@ def npc_demand_by_ware(conn, scan_id, distances_from_player,
         "FROM npc_stations ns "
         "JOIN npc_station_wares w ON w.station_id = ns.object_id "
         "JOIN reputation r ON r.faction_id = ns.owner_id AND r.scan_id = ? "
-        "WHERE w.is_buying = 1 AND w.buy_amount IS NOT NULL AND r.value >= -10",
-        (scan_id,))
+        "WHERE w.is_buying = 1 AND w.buy_amount IS NOT NULL AND r.value >= -10 "
+        "  AND ns.last_scan_id = ?",
+        (scan_id, scan_id))
     out: dict[str, list[dict]] = {}
     for r in rows:
         jumps = distances_from_player.get(r['sector_macro'])

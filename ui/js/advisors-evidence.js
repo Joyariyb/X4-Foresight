@@ -14,6 +14,9 @@
     const PLAYER_STATION_KEYS = {
       station_id:  { nameSlot: 'station_name', codeKey: 'code' },
       homebase_id: { nameSlot: 'station_name', codeKey: 'station_code' },
+      // idle_miner's recommended redirect target (see _needy_stations_by_transport
+      // in miner.py) — same link pattern, just a different id/code/name triple.
+      target_station_id: { nameSlot: 'target_station_name', codeKey: 'target_station_code' },
     };
     // Evidence keys that reference an NPC station: id key -> readable-name
     // slot. The raw value IS the object_id goToNpcStation() (npc-station-
@@ -52,6 +55,29 @@
         const name = f.slots.sector_name || v;
         return `<div class="adv-ev-key">Sector</div>
           <div class="adv-ev-val"><span class="adv-sector-link" onclick="event.stopPropagation(); goToSector('${v}')"><i class="ti ti-map-pin"></i>${name}</span></div>`;
+      }
+      // The nearest-deposit sector (miner rules: mining_supply_gap, mine_vs_buy,
+      // mineral_demand). Raw `v` is the sector macro; every rule that emits it
+      // also emits a resolved `deposit_sector_name` slot, so we show that name
+      // and jump to the sector rather than dead-ending on the macro string —
+      // same goToSector() jump as `sector_macro` above.
+      if (k === 'deposit_sector') {
+        const name  = f.slots.deposit_sector_name || v;
+        const label = EVIDENCE_LABELS[k] || 'Deposit';
+        return `<div class="adv-ev-key">${label}</div>
+          <div class="adv-ev-val"><span class="adv-sector-link" onclick="event.stopPropagation(); goToSector('${v}')"><i class="ti ti-map-pin"></i>${name}</span></div>`;
+      }
+      // mining_oversupply's delivering miners — a list of {code, name}, each a
+      // clickable jump to the Fleet tab (jumpToShip by code, same as the
+      // ship_id row below). These are the ships to reassign off a full bay, so
+      // the drawer links every one rather than just stating a count.
+      if (k === 'delivering_miner_ships' && Array.isArray(v)) {
+        const label = EVIDENCE_LABELS[k] || 'Delivering Miners';
+        const links = v.map(m => m.code
+          ? `<span class="adv-ship-link" onclick="event.stopPropagation(); jumpToShip('${m.code}')"><i class="ti ti-rocket"></i>${m.name} (${m.code})</span>`
+          : `<span>${m.name}</span>`).join('');
+        return `<div class="adv-ev-key">${label}</div>
+          <div class="adv-ev-val"><div class="adv-miner-list">${links}</div></div>`;
       }
       if (PLAYER_STATION_KEYS[k]) {
         const { nameSlot, codeKey } = PLAYER_STATION_KEYS[k];
