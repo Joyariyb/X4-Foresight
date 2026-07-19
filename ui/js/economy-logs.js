@@ -1,11 +1,12 @@
-  // Core role: Renders the Economy "Logs" sub-panel — Trade Log and Mining Log
-  // display windows, each with their own selectable data view above the table,
-  // mirroring the button-driven graph pattern used by the cashflow chart.
+  // Core role: Renders the Economy "Logs" sub-panel — Trade Log, Mining Log
+  // and In Transit display windows, each with their own selectable data view
+  // above the table, mirroring the button-driven graph pattern used by the
+  // cashflow chart.
 
   // Per-station UI state: which log window is showing, and the trade log's
   // direction filter. Keyed by safeCode (same sanitised key economy-chart.js
   // and cashflow-chart.js use) so it survives re-renders across scans.
-  const econLogModeByStation = {};      // 'trade' | 'mining', default 'trade'
+  const econLogModeByStation = {};      // 'trade' | 'mining' | 'transit', default 'trade'
   const econLogDirectionByStation = {}; // 'all' | 'buy' | 'sell', default 'all'
 
   // Cached per-station trade rows so mode/direction toggles can rebuild the
@@ -131,10 +132,12 @@
     allTrades = allTrades || [];
 
     // Mining deliveries have no counterparty, so this pie resolves them along
-    // two other axes instead — see miningPieSvg below.
-    if ((econLogModeByStation[safeCode] || 'trade') === 'mining') {
-      return miningPieSvg(safeCode, stationCode, allMining || []);
-    }
+    // two other axes instead — see miningPieSvg below. In-transit cargo has
+    // no counterparty either (nothing has been sold yet), so it gets its own
+    // ware-grouped pie — see transitPieSvg below.
+    const mode = econLogModeByStation[safeCode] || 'trade';
+    if (mode === 'mining')  return miningPieSvg(safeCode, stationCode, allMining || []);
+    if (mode === 'transit') return transitPieSvg(stationCode);
 
     // Seed the colour map once from the station's full, unwindowed trade
     // history so colours stay stable as the user pans the scrubber (mirrors
@@ -446,10 +449,14 @@
 
   // Mining pie slice hover — ship or resource name, delivery value, % share,
   // and (like the trade pie) a breakdown along the other axis: a ship slice
-  // breaks down by resource, a resource slice breaks down by ship.
+  // breaks down by resource, a resource slice breaks down by ship. Also
+  // reused by the In Transit pie, which overrides the value row's label and
+  // unit (units in flight, not credits) via valueLabel/unit in the tip data.
   function miningPieTipHtml(d) {
     const fmt = n => Math.round(n).toLocaleString();
     const swatch = col => `<span style="display:inline-block;width:0.8rem;height:0.8rem;border-radius:var(--radius-sm);background:${col};flex-shrink:0"></span>`;
+    const valueLabel = d.valueLabel || 'Delivery value';
+    const unit = d.unit !== undefined ? d.unit : ' Cr';
     const subHtml = (d.sub || []).map(s => `
       <div style="display:flex;justify-content:space-between;gap:1.2rem;padding:1px 0">
         <span style="color:var(--text-secondary);font-size:0.95rem">${s.name}</span>
@@ -461,8 +468,8 @@
         <span style="color:${d.colour};font-family:var(--font-data);font-size:1.2rem">${d.pct}%</span>
       </div>
       <div style="display:flex;justify-content:space-between;gap:1.2rem;padding:1px 0">
-        <span style="color:var(--text-brand);font-size:1rem">Delivery value</span>
-        <span style="color:var(--color-alert);font-family:var(--font-data);font-size:1.1rem">${fmt(d.value)} Cr</span>
+        <span style="color:var(--text-brand);font-size:1rem">${valueLabel}</span>
+        <span style="color:var(--color-alert);font-family:var(--font-data);font-size:1.1rem">${fmt(d.value)}${unit}</span>
       </div>
       ${subHtml ? `<div style="margin-top:0.5rem;padding-top:0.4rem;border-top:1px solid var(--outline)">
         <div style="font-size:0.85rem;color:var(--text-brand);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.2rem">${d.subLabel}</div>
@@ -473,6 +480,124 @@
 
   registerTip('miningPieTip', (el, _e, tip) => {
     tip.innerHTML = miningPieTipHtml(JSON.parse(decodeURIComponent(el.dataset.miningPieTip)));
+    tip.style.color = '';
+    tip.style.whiteSpace = 'normal';
+    return true;
+  });
+
+  // Ware breakdown pie for the In Transit pane — loaded cargo hasn't sold
+  // yet, so there are no credits to size slices by; they size by units
+  // instead, grouped by ware with a per-destination breakdown in the hover
+  // tooltip (mirrors the trade pie's counterparty→ware nesting). Geometry is
+  // copied verbatim from economyPieSvg (economy-chart.js), same as the two
+  // pies above.
+  function transitPieSvg(stationCode) {
+    const rows = (typeof deliveriesByStation !== 'undefined'
+                  && deliveriesByStation[stationCode]) || [];
+    if (!rows.length) return logPieEmptyState('No deliveries', 'in transit');
+
+    // Per-ware unit totals, plus a per-destination breakdown of each bucket
+    // so the tooltip can show where that ware is headed.
+    const byKey = {};
+    rows.forEach(d => {
+      const key    = d.ware_name || 'Unknown';
+      const subKey = d.dest_station_name || 'Destination unknown';
+      const val = d.amount || 0;
+      if (!byKey[key]) byKey[key] = { total: 0, sub: {} };
+      byKey[key].total += val;
+      byKey[key].sub[subKey] = (byKey[key].sub[subKey] || 0) + val;
+    });
+
+    const lines = Object.entries(byKey)
+      .filter(([, v]) => v.total > 0)
+      .map(([name, v]) => ({ name, value: v.total, sub: v.sub }))
+      .sort((a, b) => b.value - a.value);
+
+    if (!lines.length) return logPieEmptyState('No deliveries', 'in transit');
+
+    // ── Geometry — copied verbatim from economyPieSvg (economy-chart.js) ────
+    const cx = 150, cy = 150, r = 92;
+    const lift = 7; // px a slice translates outward on hover (also sizes the sheen)
+    const polar = (cxx, cyy, rad, deg) => {
+      const a = (deg - 90) * Math.PI / 180; // -90 so 0° starts at the top
+      return [cxx + rad * Math.cos(a), cyy + rad * Math.sin(a)];
+    };
+
+    const pieTotal = lines.reduce((sum, l) => sum + l.value, 0);
+
+    let angle = 0;
+    const slices = [];
+    lines.forEach(ln => {
+      const frac  = ln.value / pieTotal;
+      const start = angle;
+      const end   = angle + frac * 360;
+      angle = end;
+      const mid   = (start + end) / 2;
+      const col   = WARE_COLOURS[ln.name] || CHART_LINE;
+
+      let path;
+      if (frac >= 0.999) {
+        path = `M ${cx} ${cy - r} A ${r} ${r} 0 1 1 ${cx - 0.01} ${cy - r} Z`;
+      } else {
+        const [x1, y1] = polar(cx, cy, r, start);
+        const [x2, y2] = polar(cx, cy, r, end);
+        const largeArc = (end - start) > 180 ? 1 : 0;
+        path = `M ${cx} ${cy} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
+      }
+
+      const pct = (frac * 100).toFixed(1);
+      // Destination breakdown within this ware's bucket, most units first.
+      const subBreakdown = Object.entries(ln.sub)
+        .sort((a, b) => b[1] - a[1])
+        .map(([name, val]) => ({ name, pct: ((val / ln.value) * 100).toFixed(1) }));
+      const tip = encodeURIComponent(JSON.stringify({
+        name: ln.name, value: ln.value, pct, colour: col,
+        valueLabel: 'Units in transit', unit: '',
+        subLabel: 'Destination', sub: subBreakdown,
+      }));
+      // Per-slice outward unit vector along the mid-angle, exposed as CSS vars
+      // so the :hover rule can lift the slice toward the viewer for a 3D "pop".
+      const [ux, uy] = polar(0, 0, 1, mid);
+      // Not clickable — ware_id isn't exported for click-through, same as the
+      // mining pie's resource slices.
+      slices.push(
+        `<path class="pie-slice" d="${path}" fill="${col}" stroke="var(--surface-2)" stroke-width="1.5"
+               style="--dx:${(ux*lift).toFixed(2)}px;--dy:${(uy*lift).toFixed(2)}px" data-transit-pie-tip="${tip}"></path>`
+      );
+    });
+
+    // Centre hole + total label make it a donut and give the figure a home.
+    const hole = r * 0.5;
+
+    return `
+      <div style="padding:0">
+        <svg viewBox="-55 -25 410 350" style="width:100%;height:auto;display:block" overflow="visible">
+          <defs>
+            <radialGradient id="pieSheen" cx="0.36" cy="0.30" r="0.75">
+              <stop offset="0%"   stop-color="#fff" stop-opacity="0.42"/>
+              <stop offset="42%"  stop-color="#fff" stop-opacity="0.06"/>
+              <stop offset="62%"  stop-color="#000" stop-opacity="0"/>
+              <stop offset="100%" stop-color="#000" stop-opacity="0.42"/>
+            </radialGradient>
+            <radialGradient id="pieHole" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="60%"  stop-color="#000" stop-opacity="0"/>
+              <stop offset="100%" stop-color="#000" stop-opacity="0.55"/>
+            </radialGradient>
+          </defs>
+          <g class="pie-ring">${slices.join('')}</g>
+          <circle cx="${cx}" cy="${cy}" r="${r + lift}" fill="url(#pieSheen)" style="pointer-events:none"></circle>
+          <circle cx="${cx}" cy="${cy}" r="${hole}" fill="var(--surface-2)"></circle>
+          <circle cx="${cx}" cy="${cy}" r="${hole}" fill="url(#pieHole)" style="pointer-events:none"></circle>
+          <text x="${cx}" y="${cy - 5}" text-anchor="middle" fill="var(--text-secondary)"
+                font-size="9" style="font-family:var(--font-data);letter-spacing:0.08em;text-transform:uppercase;opacity:0.7">Units in transit</text>
+          <text x="${cx}" y="${cy + 12}" text-anchor="middle" fill="var(--color-alert)"
+                font-size="15" style="font-family:var(--font-data)">${Math.round(pieTotal).toLocaleString()}</text>
+        </svg>
+      </div>`;
+  }
+
+  registerTip('transitPieTip', (el, _e, tip) => {
+    tip.innerHTML = miningPieTipHtml(JSON.parse(decodeURIComponent(el.dataset.transitPieTip)));
     tip.style.color = '';
     tip.style.whiteSpace = 'normal';
     return true;
@@ -514,31 +639,65 @@
     return true;
   });
 
-  // Entry point — called by populate.js when it builds a station card, and
-  // again internally on every mode/direction toggle. Rebuilds and caches.
-  //
   // Courier cargo loaded at this station but not sold yet — rows the trade log
-  // cannot show (the SELL leg hasn't been logged). deliveriesByStation is
+  // cannot show (the SELL leg hasn't been logged), surfaced as their own In
+  // Transit tab alongside the Trade and Mining logs. deliveriesByStation is
   // built by populate() from the export's in_progress_deliveries section,
-  // keyed by the loading station's display code.
+  // keyed by the loading station's display code. Unlike the other two tabs
+  // this is a snapshot of right now rather than a history, so the scrubber
+  // window doesn't apply (and isn't shown in this mode — see economyLogsHtml).
   function _inTransitHtml(stationCode) {
-    const rows = (typeof deliveriesByStation !== 'undefined'
-                  && deliveriesByStation[stationCode]) || [];
-    if (!rows.length) return '';
-    const lines = rows.map(d => `
-      <div style="display:flex;align-items:center;gap:0.6rem;padding:0.25rem 0.6rem 0.35rem">
-        <i class="ti ti-package-export" style="color:var(--color-positive)"></i>
-        <span class="mono">${d.amount.toLocaleString()} ${d.ware_name}</span>
-        <span style="color:var(--text-secondary)">→ ${d.dest_station_name || 'destination unknown'}</span>
-        <span class="mono" style="color:var(--text-secondary);margin-left:auto">${d.ship_name} [${d.ship_code}] · ${_tradeLogAgo(d.time_ago_s)}</span>
-      </div>`).join('');
+    const rows = ((typeof deliveriesByStation !== 'undefined'
+                   && deliveriesByStation[stationCode]) || []).slice();
+    rows.sort((a, b) => a.time_ago_s - b.time_ago_s); // most recent pickup first
+
+    if (!rows.length) {
+      return `<div class="econlog-box" style="display:flex;align-items:center;justify-content:center;text-align:center;font-family:var(--font-data);font-size:1.1rem;color:var(--text-brand)">No deliveries in transit</div>`;
+    }
+
+    const trRows = rows.map(d => {
+      const ship = d.ship_name || d.ship_code || '—';
+      // Couriers loading at a player station are always player-owned.
+      const shipHtml = d.ship_code
+        ? `<span class="ship-link" onclick="jumpToShip('${d.ship_code}','player')">${ship}</span>`
+        : ship;
+      const wareColour = WARE_COLOURS[d.ware_name] || CHART_LINE;
+      // Destination station link — player stations jump via goToStation()
+      // (keyed by display code, resolved through stationCodeById since
+      // dest_station_id is a raw object_id); anything else is assumed to be
+      // an NPC station and goes through goToNpcStation() instead, which
+      // no-ops harmlessly if the station isn't a tracked trade partner.
+      const destHtml = (() => {
+        if (!d.dest_station_id) return `<span style="color:var(--text-label)">destination unknown</span>`;
+        const playerCode = (typeof stationCodeById !== 'undefined') && stationCodeById[d.dest_station_id];
+        const onclick = playerCode
+          ? `goToStation('${playerCode}')`
+          : `goToNpcStation('${d.dest_station_id}')`;
+        return `<span class="ship-link" onclick="${onclick}">${d.dest_station_name || 'Unknown station'}</span>`;
+      })();
+      return `<tr>
+        <td class="mono">${_tradeLogAgo(d.time_ago_s)}</td>
+        <td>${shipHtml}</td>
+        <td style="color:${wareColour}">${d.ware_name}</td>
+        <td class="mono" style="text-align:right">${d.amount.toLocaleString()}</td>
+        <td>${destHtml}</td>
+      </tr>`;
+    }).join('');
+
     return `
-      <div style="border:1px solid var(--color-positive-line);background:var(--color-positive-dim);border-radius:var(--radius-md);margin-bottom:0.625cqw">
-        <div style="font-family:var(--font-label);color:var(--text-label);text-transform:uppercase;letter-spacing:0.08em;padding:0.35rem 0.6rem 0">In transit</div>
-        ${lines}
+      <div class="econlog-box">
+        <table class="data-table">
+          <thead><tr>
+            <th>Time</th><th>Ship</th><th>Ware</th>
+            <th style="text-align:right">Units</th><th>Destination</th>
+          </tr></thead>
+          <tbody>${trRows}</tbody>
+        </table>
       </div>`;
   }
 
+  // Entry point — called by populate.js when it builds a station card, and
+  // again internally on every mode/direction toggle. Rebuilds and caches.
   // Wrapped in the same .econ-row/.econ-pie/.econ-graph structure as the
   // Breakdown panel (pie left, graph right) so the row's flex-split — and
   // therefore each side's width at any window size — comes out identical.
@@ -575,13 +734,14 @@
         <div id="logpie-${safeCode}" class="econ-pie">${economyLogPieSvg(safeCode, stationCode, allTrades, allMining)}</div>
         <div class="econ-graph">
           <div style="display:flex;align-items:center;gap:0.9375cqw;margin-bottom:0.625cqw">
-            <button class="cf-toggle-btn ${mode === 'trade'  ? 'active' : ''}" onclick="setEconLogMode('${safeCode}','trade')"><i class="ti ti-arrows-exchange"></i> Trade Log</button>
-            <button class="cf-toggle-btn ${mode === 'mining' ? 'active' : ''}" onclick="setEconLogMode('${safeCode}','mining')"><i class="ti ti-triangle"></i> Mining Log</button>
+            <button class="cf-toggle-btn ${mode === 'trade'   ? 'active' : ''}" onclick="setEconLogMode('${safeCode}','trade')"><i class="ti ti-arrows-exchange"></i> Trade Log</button>
+            <button class="cf-toggle-btn ${mode === 'mining'  ? 'active' : ''}" onclick="setEconLogMode('${safeCode}','mining')"><i class="ti ti-triangle"></i> Mining Log</button>
+            <button class="cf-toggle-btn ${mode === 'transit' ? 'active' : ''}" onclick="setEconLogMode('${safeCode}','transit')"><i class="ti ti-package-export"></i> In Transit</button>
           </div>
-          ${mode === 'trade'
-            ? _inTransitHtml(stationCode) + _tradeLogHtml(safeCode, stationCode, allTrades)
-            : _miningLogHtml(safeCode, stationCode, allMining)}
-          ${hasLogs ? _logScrubberHtml(safeCode) : ''}
+          ${mode === 'trade'   ? _tradeLogHtml(safeCode, stationCode, allTrades)
+            : mode === 'mining' ? _miningLogHtml(safeCode, stationCode, allMining)
+            : _inTransitHtml(stationCode)}
+          ${hasLogs && mode !== 'transit' ? _logScrubberHtml(safeCode) : ''}
         </div>
       </div>`;
   }

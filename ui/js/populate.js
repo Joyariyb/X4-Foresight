@@ -108,6 +108,14 @@
       if (d.ship_id) deliveryByShip[d.ship_id] = d;
     });
 
+    // Player station object_id → display code, so the In Transit pane's
+    // destination link (economy-logs.js) can jump straight to the destination
+    // card when it's a player station. dest_station_id is a raw object_id, not
+    // a code, and NPC destinations aren't in this map at all — the click
+    // handler falls back to goToNpcStation() for those.
+    stationCodeById = {};
+    (data.stations || []).forEach(s => { if (s.object_id && s.code) stationCodeById[s.object_id] = s.code; });
+
     playerShips.forEach(s => {
       normShip(s);
       const p = s.pilot_id ? crewById[s.pilot_id] : null;
