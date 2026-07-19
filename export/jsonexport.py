@@ -17,6 +17,7 @@ from data.factions import FACTION_NAMES
 from data.sector_stats import (SECTOR_NAMES, SECTOR_OWNERS, SECTOR_RESOURCES,
                                SECTOR_SUNLIGHT)
 from data.ship_stats import SHIP_STATS
+from data.software_stats import SOFTWARE_STATS
 from data.station_stats import STATION_STATS
 from data.wares import WARE_NAMES
 
@@ -869,6 +870,7 @@ def resource_library_export() -> dict:
         'equipment_catalog': dict(EQUIPMENT_STATS),
         'hull_catalog': _hull_catalog(),
         'sector_catalog': _sector_catalog(),
+        'software_catalog': dict(SOFTWARE_STATS),
     }
 
 

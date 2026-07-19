@@ -1,5 +1,5 @@
   // Core role: Read-only sortable tables for equipment catalog and hull statistics (hulls, weapons, shields, engines).
-  // Reuses EQUIPMENT_CATALOG and HULL_CATALOG globals from designs-builder.js; no backend computation.
+  // Reuses EQUIPMENT_CATALOG, HULL_CATALOG and SOFTWARE_CATALOG globals from designs-builder.js; no backend computation.
 
   let reslibCat     = 'hull';
   let reslibSortKey = null;
@@ -258,9 +258,10 @@
     const header = document.getElementById('reslib-header');
     if (reslibCat !== 'hull') {
       // Equipment categories with a stat-column definition (everything except
-      // the not-yet-catalogued Software/Items placeholders) get the same
-      // List/Comparison tab switch the hull header has, in place of a static
-      // title. Software/Items fall through to the plain title below.
+      // Software, which has no comparable stats, and the not-yet-catalogued
+      // Items placeholder) get the same List/Comparison tab switch the hull
+      // header has, in place of a static title. Software/Items fall through
+      // to the plain title below.
       if (RESLIB_EQUIP_COLUMNS[reslibCat]) {
         const singular = SLOT_SINGULAR[reslibCat] || RESLIB_CAT_LABELS[reslibCat];
         const tabs = `<div class="fleet-subtabs">
@@ -425,13 +426,8 @@
     thruster: [['strafe','Strafe',v=>designCr(v),true], ['pitch','Pitch',v=>designCr(v),true], ['yaw','Yaw',v=>designCr(v),true], ['roll','Roll',v=>designCr(v),true]],
   };
 
-  // Placeholder copy for the two categories with no data source yet.
+  // Placeholder copy for the one remaining category with no data source yet.
   const RESLIB_PLACEHOLDER = {
-    software: {
-      icon: 'ti-cpu',
-      title: 'Software not catalogued yet',
-      body: 'Ship and station software (trade/mining/scan upgrades, etc.) isn’t read out of the game files yet — only hulls and hardpoint equipment are. This page is reserved for it.',
-    },
     item: {
       icon: 'ti-box',
       title: 'Items not catalogued yet',
@@ -465,8 +461,47 @@
       renderResLibHulls();
       return;
     }
+    if (cat === 'software') { renderResLibSoftware(); return; }
     if (reslibEquipView === 'compare') { renderResLibEquipCompare(); return; }
     renderResLibEquipment(cat);
+  }
+
+  // Software wares (docking/scanning/trading/targeting upgrades) have no
+  // per-item macro to read stats from -- every software_* ware shares one
+  // dummy component macro, so unlike weapon/shield/engine there's no size,
+  // faction, or stat column to build a filter bar or comparison view around
+  // (see gamefiles/generate_software.py). Just a flat, sortable Name/Price
+  // list with the game's own tooltip description on hover.
+  function renderResLibSoftware() {
+    if (!Object.keys(SOFTWARE_CATALOG).length) {
+      reslibShowEmpty('ti-radar-2', 'No software catalog loaded', 'Run a scan first — the software catalog ships inside the scan export.');
+      return;
+    }
+    document.getElementById('reslib-panel').style.display = '';
+    document.getElementById('reslib-inspector').style.display = 'none';
+    document.getElementById('reslib-compare').style.display = 'none';
+    document.getElementById('reslib-empty').style.display = 'none';
+
+    const rows = reslibSortRows(
+      Object.entries(SOFTWARE_CATALOG).map(([id, s]) => ({ id, ...s })),
+      reslibSortKey, reslibSortDir, r => r.name);
+
+    document.getElementById('reslib-thead').innerHTML = `<tr>
+      ${reslibSortHeader('name','Name', reslibSortKey==='name')}
+      ${reslibSortHeader('price','Price', reslibSortKey==='price')}
+    </tr>`;
+
+    document.getElementById('reslib-tbody').innerHTML = rows.map(s => {
+      // Mk2/Mk3 tiers with genuinely no description text (see generate_software.py)
+      // get no tip attribute at all rather than an empty hover popover.
+      const tipAttr = s.description
+        ? ` data-software-tip="${encodeURIComponent(`<div style="max-width:28rem">${s.description}</div>`)}"`
+        : '';
+      return `<tr${tipAttr}>
+        <td style="color:var(--text-primary)">${s.name}</td>
+        <td class="mono">${s.price != null ? designCr(s.price) : '—'}</td>
+      </tr>`;
+    }).join('');
   }
 
   function reslibSortHeader(key, label, active) {
@@ -823,3 +858,15 @@
         <div style="flex:1;min-width:28rem">${sections}</div>
       </div>`;
   }
+
+  // ── Tooltip registration ──────────────────────────────────────────
+  // Software row hover: pre-rendered HTML (the description, already wrapped
+  // to a max-width), encoded at stamp time -- same eventTip/missionTip
+  // pattern. Colour reset + normal wrapping because #hull-tip defaults to
+  // nowrap alert-coloured single-line text.
+  registerTip('softwareTip', (el, _e, tip) => {
+    tip.innerHTML         = decodeURIComponent(el.dataset.softwareTip);
+    tip.style.color       = '';
+    tip.style.whiteSpace  = 'normal';
+    return true;
+  });
