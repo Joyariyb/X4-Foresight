@@ -480,7 +480,7 @@
   // list with the game's own tooltip description on hover.
   function renderResLibSoftware() {
     if (!Object.keys(SOFTWARE_CATALOG).length) {
-      reslibShowEmpty('ti-radar-2', 'No software catalog loaded', 'Run a scan first — the software catalog ships inside the scan export.');
+      reslibShowEmpty('ti-radar-2', 'No software catalog loaded', 'The software catalog is static and needs no scan — if you\'re seeing this, the app is still connecting to its data source.');
       return;
     }
     document.getElementById('reslib-panel').style.display = '';
@@ -561,7 +561,7 @@
 
   function renderResLibItems() {
     if (!Object.keys(ITEM_CATALOG).length) {
-      reslibShowEmpty('ti-box', 'No item catalog loaded', 'Run a scan first — the item catalog ships inside the scan export.');
+      reslibShowEmpty('ti-box', 'No item catalog loaded', 'The item catalog is static and needs no scan — if you\'re seeing this, the app is still connecting to its data source.');
       return;
     }
     document.getElementById('reslib-panel').style.display = '';
@@ -614,7 +614,7 @@
 
   function renderResLibHulls() {
     if (!Object.keys(HULL_CATALOG).length) {
-      reslibShowEmpty('ti-radar-2', 'No hull catalog loaded', 'Run a scan first — the hull catalog ships inside the scan export.');
+      reslibShowEmpty('ti-radar-2', 'No hull catalog loaded', 'The hull catalog is static and needs no scan — if you\'re seeing this, the app is still connecting to its data source.');
       return;
     }
     document.getElementById('reslib-panel').style.display = '';
@@ -672,7 +672,7 @@
   function renderResLibEquipment(slot) {
     const all = Object.entries(EQUIPMENT_CATALOG).filter(([, e]) => e.slot === slot);
     if (!Object.keys(EQUIPMENT_CATALOG).length) {
-      reslibShowEmpty('ti-radar-2', 'No equipment catalog loaded', 'Run a scan first — the equipment catalog ships inside the scan export.');
+      reslibShowEmpty('ti-radar-2', 'No equipment catalog loaded', 'The equipment catalog is static and needs no scan — if you\'re seeing this, the app is still connecting to its data source.');
       return;
     }
     document.getElementById('reslib-panel').style.display = '';

@@ -65,7 +65,7 @@ inserting phases.
   list.
 - **`export/jsonexport.py` is the only place export shape is defined.**
   `to_export()` builds the big per-scan JSON; `resource_library_export()`
-  builds the static equipment/hull catalog (no scan needed).
+  builds the static equipment/hull/sector/software/item catalogs (no scan needed).
 - **`export/bridge_api.py` is shared shell plumbing.** The five operations
   both UI shells need (`get_empire_data`, `list_scans`, `delete_scan`,
   `delete_all_scans`, `get_resource_library`) live here once. Desktop

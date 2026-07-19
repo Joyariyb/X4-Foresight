@@ -339,6 +339,14 @@
         if (_uLastMapData && !(_uLastMapData.sectors || []).length) {
           renderUniverseMap(_uLastMapData);
         }
+        // Same race on the Resource Library tab: if it was opened before this
+        // callback resolved, renderResLib() would have hit the empty-catalog
+        // branch and shown "still connecting". Re-render now that the
+        // catalogs are actually populated so it doesn't stay stuck there.
+        const reslibEmpty = document.getElementById('reslib-empty');
+        if (reslibEmpty && reslibEmpty.style.display !== 'none') {
+          renderResLib();
+        }
       } catch(e) { /* Resource Library stays empty */ }
     });
   }
