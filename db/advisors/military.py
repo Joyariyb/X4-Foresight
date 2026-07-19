@@ -27,6 +27,7 @@ for the full rationale and merge_anchors() for the tie-break rules.
 from __future__ import annotations
 from .advisors import _finding, ADVISOR_MAX_JUMPS
 from .force import sector_forces, ttk_seconds, merge_profiles, combat_strength
+from scanner.ship_names import ship_display_name
 
 # Every rule below is gated (or, for buildup, merely reported) on a MERGED
 # jumps dict — see advisors.merge_anchors(). Each sector's jump count is
@@ -751,7 +752,7 @@ def damaged_fleet_findings(conn, scan_id) -> list[dict]:
     a docked damaged ship is assumed "being handled" rather than guessed at.
     """
     rows = conn.execute(
-        "SELECT sh.object_id, sh.code, sh.name, sh.role, sh.hull_hp, "
+        "SELECT sh.object_id, sh.code, sh.name, sh.macro, sh.role, sh.hull_hp, "
         "       sh.hull_max, sh.hull_pct, sh.shield_pct, sh.sector_macro, "
         "       sec.sector_name "
         "FROM ships sh "
@@ -771,7 +772,11 @@ def damaged_fleet_findings(conn, scan_id) -> list[dict]:
         if priority <= 0:
             continue
         slots = {
-            'ship_name':   r['name'] or r['code'],
+            # Same resolution jsonexport.py's _ships() applies to the Fleet tab:
+            # raw sh.name is often an unresolved "{page,id}" language token for
+            # ships the player never renamed, so falling back to it (or worse,
+            # straight to the bare code) showed a code instead of a real name.
+            'ship_name':   ship_display_name(r['macro'] or '', r['name']),
             'role':        r['role'] or 'combat ship',
             'hull_pct':    round(r['hull_pct']),
             'sector_name': r['sector_name'] or 'an unknown sector',

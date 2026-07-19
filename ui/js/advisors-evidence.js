@@ -73,7 +73,14 @@
         return `<div class="adv-ev-key">Ware</div><div class="adv-ev-val">${f.slots.ware_name || v}</div>`;
       }
       if (k === 'ship_id' && f.slots.ship_name) {
-        return `<div class="adv-ev-key">Ship</div><div class="adv-ev-val">${f.slots.ship_name}</div>`;
+        // ship_id findings (damaged_fleet) are always player ships — the
+        // ships table has no NPC rows — so jumpToShip's faction arg is left
+        // at its 'player' default, same as jumpToDesign's fleet-tab jumps.
+        const code = f.evidence.code;
+        const val = code
+          ? `<span class="adv-ship-link" onclick="event.stopPropagation(); jumpToShip('${code}')"><i class="ti ti-rocket"></i>${f.slots.ship_name}</span>`
+          : f.slots.ship_name;
+        return `<div class="adv-ev-key">Ship</div><div class="adv-ev-val">${val}</div>`;
       }
       // sell_price_cents/buy_price_cents (galaxy_arbitrage) are stored in cents
       // like every other *_cents evidence key — convert to Cr/unit here rather
