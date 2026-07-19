@@ -113,12 +113,8 @@
   // design objects; alphabetical-by-type is the tiebreaker everywhere so the
   // order stays stable when the primary key ties.
   let designsSortBy = 'used';
-  const SIZE_RANK = { xs: 0, s: 1, m: 2, l: 3, xl: 4 };
-  // Largest-first comparator for mount-size keys ('l','m',...) — shared by the
-  // design card and blueprint builder so a category's size groups (and their
-  // "fitted/cap SIZE" header fractions) always list big mounts before small ones.
-  const sizeRank = s => SIZE_RANK[(s || '').toLowerCase()] ?? -1;
-  const bySizeDesc = (a, b) => sizeRank(b) - sizeRank(a);
+  // SIZE_RANK / sizeRank / bySizeDesc live in constants.js — shared with
+  // resource-library.js and hull-comparison.js.
   // Border/fill colour per mount size, used to give each size's "inner box"
   // (design card sub-groups, builder size groups) its own tint — same hue
   // language as SIZE_TINT/SIZE_COLOURS elsewhere, but as plain hex since the

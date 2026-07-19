@@ -16,6 +16,18 @@
   const ORDER_COLOURS = { Trading:"var(--color-positive)", Delivering:"var(--color-positive)", Mining:"var(--color-warning)", Escorting:"var(--color-primary)", Waiting:"var(--text-brand)" };
   const SIZE_COLOURS  = { XL:"var(--color-special)", L:"var(--color-warning)", M:"var(--color-primary)", S:"var(--text-secondary)" };
 
+  // Mount/hull-class size scale, smallest first — the one place every size
+  // sort and comparison in the app agrees on ordering (designs-builder.js,
+  // resource-library.js, hull-comparison.js). Class letters otherwise sort
+  // alphabetically (l, m, s, xl, xs), which scatters XL next to S instead of
+  // after L.
+  const SIZE_RANK = { xs: 0, s: 1, m: 2, l: 3, xl: 4 };
+  const sizeRank = s => SIZE_RANK[(s || '').toLowerCase()] ?? -1;
+  // Largest-first comparator for mount-size keys ('l','m',...) — shared by the
+  // design card and blueprint builder so a category's size groups (and their
+  // "fitted/cap SIZE" header fractions) always list big mounts before small ones.
+  const bySizeDesc = (a, b) => sizeRank(b) - sizeRank(a);
+
   // Tabler-icon class per ship role / order / summary card — shared by
   // populate.js, fleet.js and faction-tabs.js (same consumers as the colour
   // maps above, so they live together here).

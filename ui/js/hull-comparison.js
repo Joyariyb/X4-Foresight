@@ -14,32 +14,72 @@
   function reslibSetCompareHull(slot, macro) {
     if (slot === 'a') reslibCompareMacroA = macro || null;
     else reslibCompareMacroB = macro || null;
+    reslibHullDDOpen[slot] = false;   // collapse the menu once a pick is made
     renderResLibHullCompare();
   }
 
-  // <select> grouped by faction (same grouping hullFactionFor() already
-  // gives the List tab's Faction filter), alphabetical within each group —
-  // a plain native select is enough here since this is a single pick, not
-  // the multi-axis filter the heavier .beqf-dd faction dropdown exists for.
+  // Open/closed state for the two pickers (a and b) — same plumbing as
+  // reslibEquipDDOpen in equipment-comparison.js.
+  let reslibHullDDOpen = { a: false, b: false };
+
+  function reslibToggleHullDD(slot, e) {
+    if (e) e.stopPropagation();
+    const other = slot === 'a' ? 'b' : 'a';
+    reslibHullDDOpen[other] = false;
+    document.getElementById(`reslib-hcmp-menu-${other}`)?.classList.remove('open');
+    reslibHullDDOpen[slot] = !reslibHullDDOpen[slot];
+    document.getElementById(`reslib-hcmp-menu-${slot}`)?.classList.toggle('open', reslibHullDDOpen[slot]);
+  }
+  function reslibCloseHullDD() {
+    reslibHullDDOpen.a = reslibHullDDOpen.b = false;
+    document.getElementById('reslib-hcmp-menu-a')?.classList.remove('open');
+    document.getElementById('reslib-hcmp-menu-b')?.classList.remove('open');
+  }
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.reslib-hcmp-dd')) reslibCloseHullDD();
+  });
+
+  // Custom .beqf-dd picker grouped by faction (same grouping hullFactionFor()
+  // already gives the List tab's Faction filter), alphabetical within each
+  // group. Mirrors reslibEquipCompareSelect() in equipment-comparison.js so
+  // the two comparison pickers read as the same control — a size-tinted
+  // badge (S/M/L/XL, same SIZE_TINT/sizeFromClass the Hull List table uses)
+  // is something a native <option> can't right-justify, which is why the
+  // equipment picker moved off <select> in the first place.
   function reslibHullCompareSelect(slot, currentMacro) {
     const byFaction = new Map();
     for (const [macro, h] of Object.entries(HULL_CATALOG)) {
       const fac = hullFactionFor(macro, h);
       if (!byFaction.has(fac)) byFaction.set(fac, []);
-      byFaction.get(fac).push({ macro, name: h.name || macro });
+      byFaction.get(fac).push({ macro, h, name: h.name || macro });
     }
-    const groups = [...byFaction.keys()].sort().map(fac => {
-      const opts = byFaction.get(fac)
+    const sizeBadge = (h) => {
+      const sz = sizeFromClass(h.class).toUpperCase();
+      const tint = SIZE_TINT[sz] || SIZE_TINT.S;
+      return `<span class="hcmp-size-badge ecmp-opt-size" style="color:${tint.c};border-color:${tint.c}">${sz}</span>`;
+    };
+    const sections = [...byFaction.keys()].sort().map(fac => {
+      const items = byFaction.get(fac)
         .sort((a, b) => a.name.localeCompare(b.name))
-        .map(o => `<option value="${o.macro}" ${o.macro === currentMacro ? 'selected' : ''}>${o.name}</option>`)
-        .join('');
-      return `<optgroup label="${fac}">${opts}</optgroup>`;
+        .map(o => `<div class="beqf-item ecmp-opt ${o.macro === currentMacro ? 'sel' : ''}" onclick="reslibSetCompareHull('${slot}', '${o.macro}')">
+          <span class="ecmp-opt-name">${o.name}</span>${sizeBadge(o.h)}
+        </div>`).join('');
+      return `<div class="ecmp-dd-sec">${fac}</div>${items}`;
     }).join('');
-    return `<div class="reslib-fbox">
-      <select onchange="reslibSetCompareHull('${slot}', this.value)">
-        <option value="" ${currentMacro ? '' : 'selected'}>Select a hull…</option>
-        ${groups}
-      </select>
+
+    const cur = currentMacro ? HULL_CATALOG[currentMacro] : null;
+    const triggerInner = cur
+      ? `<span class="ecmp-opt-name">${cur.name || currentMacro}</span>${sizeBadge(cur)}`
+      : `<span class="ecmp-opt-name ecmp-dd-ph">Select a hull…</span>`;
+
+    return `<div class="beqf-dd reslib-hcmp-dd" id="reslib-hcmp-dd-${slot}">
+      <div class="beqf-trigger ecmp-trigger" onclick="reslibToggleHullDD('${slot}', event)">${triggerInner}<i class="ti ti-chevron-down"></i></div>
+      <div class="beqf-menu ${reslibHullDDOpen[slot] ? 'open' : ''}" id="reslib-hcmp-menu-${slot}">
+        <div class="beqf-item ecmp-opt ${cur ? '' : 'sel'}" onclick="reslibSetCompareHull('${slot}', '')">
+          <span class="ecmp-opt-name ecmp-dd-ph">Select a hull…</span>
+        </div>
+        ${sections}
+      </div>
     </div>`;
   }
 

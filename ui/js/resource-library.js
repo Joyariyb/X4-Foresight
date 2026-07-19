@@ -309,9 +309,15 @@
   }
 
   function reslibSortRows(rows, key, dir, fallbackName) {
+    // 'size' values are class letters (xs/s/m/l/xl) — a plain string compare
+    // sorts them alphabetically (l, m, s, xl, xs), scattering XL next to S
+    // instead of after L. Rank them through the same SIZE_RANK scale the
+    // Ship Builder uses (designs-builder.js) so every size list in the app
+    // agrees on one order.
+    const rankOf = v => (key === 'size' && v != null) ? sizeRank(v) : v;
     return rows.sort((a, b) => {
-      const av = key ? a[key] : null;
-      const bv = key ? b[key] : null;
+      const av = key ? rankOf(a[key]) : null;
+      const bv = key ? rankOf(b[key]) : null;
       if (av == null && bv == null) return fallbackName(a).localeCompare(fallbackName(b));
       if (av == null) return 1;
       if (bv == null) return -1;

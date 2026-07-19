@@ -115,11 +115,12 @@
        only has to track "top vs bottom" rather than re-learn a colour key
        per pair of hulls compared. */
     .hcmp-wrap    { display: flex; gap: 1.6rem; flex-wrap: wrap; align-items: flex-start; }
-    /* Every picker dropped into a comparison column (native .reslib-fbox
-       select for hulls, custom .reslib-eqcmp-dd for equipment) ships its own
-       max-width for use outside this layout — override it here so whichever
-       picker a column holds stretches to match the .dhull card underneath it,
-       instead of each comparison view needing its own width fix. */
+    /* Every picker dropped into a comparison column (.reslib-hcmp-dd for
+       hulls, .reslib-eqcmp-dd for equipment — both built on the same
+       .beqf-dd shell) ships its own max-width for use outside this layout —
+       override it here so whichever picker a column holds stretches to
+       match the .dhull card underneath it, instead of each comparison view
+       needing its own width fix. */
     .hcmp-col     { display: flex; flex-direction: column; gap: 0.8rem; flex: 1; min-width: 26rem; max-width: 32rem; }
     .hcmp-col > :first-child { max-width: none; }
     .hcmp-summary { flex: 1; min-width: 28rem; border: 1px solid var(--outline); border-radius: var(--radius-lg); background: var(--surface-1); padding: 1.2rem; }
@@ -215,10 +216,10 @@
        the left (flex:1, ellipsised) and an .hcmp-size-badge pushed to the
        right. These rules just widen the shell to span the column and restyle
        the trigger to read like the old .reslib-fbox <select> it replaces. */
-    .reslib-eqcmp-dd { width: 100%; max-width: 30rem; }
+    .reslib-eqcmp-dd, .reslib-hcmp-dd { width: 100%; max-width: 30rem; }
     .ecmp-trigger { width: 100%; padding: 0.45rem 0.9rem; font-family: var(--font-label); font-size: 1.3rem; color: var(--text-primary); background: var(--surface-1); }
     .ecmp-trigger .ti-chevron-down { color: var(--text-label); }
-    #reslib-eqcmp-menu-a, #reslib-eqcmp-menu-b { width: 100%; min-width: 0; max-width: 30rem; }
+    #reslib-eqcmp-menu-a, #reslib-eqcmp-menu-b, #reslib-hcmp-menu-a, #reslib-hcmp-menu-b { width: 100%; min-width: 0; max-width: 30rem; }
     .ecmp-opt-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
     .ecmp-opt-size { flex-shrink: 0; }
     .ecmp-dd-ph { color: var(--text-label); }

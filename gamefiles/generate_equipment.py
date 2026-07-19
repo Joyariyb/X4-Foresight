@@ -630,7 +630,7 @@ def gen_equipment_py(records: list[dict], aliases: dict[str, str]) -> str:
     )
 
 
-def dedupe_variant_records(records: list[dict]) -> tuple[list[dict], dict[str, str]]:
+def dedupe_variant_records(records: list[dict], aliases: dict[str, str]) -> tuple[list[dict], dict[str, str]]:
     """Collapses X4's own duplicate ware listings into one catalog entry.
 
     X4 ships several equipment families (most visibly every M-size turret/
@@ -650,6 +650,16 @@ def dedupe_variant_records(records: list[dict]) -> tuple[list[dict], dict[str, s
     separate, e.g. the one turret_arg_m_plasma_01/02 pair whose rotation
     speed actually differs.
 
+    price/price_min/price_max are excluded from that conflict check when the
+    pair is one X4 already links via a macro alias= attribute (present in
+    `aliases`, collected by load_equipment()) -- e.g.
+    shield_arg_m_standard_01_mk2_macro declares
+    alias="shield_arg_m_standard_02_mk2_macro" right in the XML, so the game
+    itself says these are the same item, and the ~1% price gap between them
+    is just wares.xml rolling each <ware>'s price range independently, not a
+    real stat difference. Un-aliased pairs still treat a price mismatch as a
+    genuine conflict, same as any other field.
+
     Returns (deduped_records, extra_aliases). extra_aliases maps each
     dropped macro id to its replacement, merged into EQUIPMENT_ALIASES
     alongside the XML alias= ones -- so a save referencing the dropped
@@ -662,6 +672,7 @@ def dedupe_variant_records(records: list[dict]) -> tuple[list[dict], dict[str, s
 
     kept: list[dict] = []
     extra_aliases: dict[str, str] = {}
+    price_fields = {"price", "price_min", "price_max"}
 
     for group in groups.values():
         if len(group) == 1:
@@ -670,8 +681,11 @@ def dedupe_variant_records(records: list[dict]) -> tuple[list[dict], dict[str, s
         group = sorted(group, key=lambda r: r["macro"])
         anchor = group[0]
         for rec in group[1:]:
+            xml_linked = (aliases.get(anchor["macro"]) == rec["macro"]
+                          or aliases.get(rec["macro"]) == anchor["macro"])
             conflicts = {k: (anchor[k], rec[k]) for k in set(anchor) & set(rec)
-                         if k != "macro" and anchor[k] != rec[k]}
+                         if k != "macro" and anchor[k] != rec[k]
+                         and not (xml_linked and k in price_fields)}
             if conflicts:
                 kept.append(rec)   # genuinely different item -- keep separate
                 print(f"[dedupe] {anchor['macro']} vs {rec['macro']} both named "
@@ -720,7 +734,7 @@ def main() -> int:
     # docstring) before emitting -- one catalog row per real item, not one
     # per <ware> entry.
     before = len(records)
-    records, extra_aliases = dedupe_variant_records(records)
+    records, extra_aliases = dedupe_variant_records(records, aliases)
     aliases.update(extra_aliases)
     if before - len(records):
         print(f"Merged {before - len(records)} duplicate-listing records into "
