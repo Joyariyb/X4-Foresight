@@ -6,7 +6,8 @@
 # DESIGN: generate-and-commit for reviewable diffs on game patches.
 #
 # Weapon damage is one hop away: weapon/turret/launcher macros reference bullet/missile macros which hold the damage values.
-# Mines and spacesuit bomb launcher are excluded (not ship-hardpoint equipment).
+# Mines and all spacesuit (player EVA) gear -- hand weapons, thrusters, bomb
+# launcher -- are excluded (not ship-hardpoint equipment).
 
 import pathlib
 import re
@@ -365,6 +366,12 @@ def load_equipment(idx: CatalogIndex, bullets: dict[str, dict], prices: dict[str
         macro = macro_el.get("name", "").lower()
         cls   = macro_el.get("class", "")
         if not macro:
+            continue
+        if "spacesuit" in macro:
+            # Player EVA gear (hand weapons, EVA thrusters) -- same "not a
+            # ship-hardpoint item" reasoning as the bomblauncher exclusion
+            # below, but these carry class="weapon"/"engine" like real ship
+            # equipment so they'd otherwise sail through the classifier.
             continue
 
         ident = root.find(".//identification")
