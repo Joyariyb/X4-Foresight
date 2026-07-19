@@ -60,6 +60,7 @@
     if (!_navGuard) { _navStack.length = 0; _updateBackBtn(); }
     document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
     document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".sb-item").forEach(s => s.classList.remove("active"));
     document.getElementById("tab-" + name).classList.add("active");
     if (clickedEl) clickedEl.classList.add("active");
   }

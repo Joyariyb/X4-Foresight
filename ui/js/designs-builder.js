@@ -717,7 +717,7 @@
         <div class="bfield" style="flex:1;min-width:200px"><span class="blbl">Blueprint name</span>
           <input class="binput" value="${(builderState.name || '').replace(/"/g, '&quot;')}" oninput="builderSetName(this.value)"></div>
         <div class="bfield"><span class="blbl">Hull</span>${builderHullSelect()}</div>
-        <button class="bsave" onclick="builderSave()"><i class="ti ti-device-floppy" style="font-size:13px;vertical-align:-2px"></i> Save</button>
+        <!-- <button class="bsave" onclick="builderSave()"><i class="ti ti-device-floppy" style="font-size:13px;vertical-align:-2px"></i> Save</button> -->
       </div>
       <div class="btwo"><div>${left}</div>${right}</div>
       <div style="display:flex;align-items:baseline;gap:10px;border-top:1px solid var(--outline);margin-top:10px;padding-top:9px">
@@ -726,10 +726,10 @@
       </div>`;
   }
 
-  function builderSave() {
-    // Persistence (ship_designs table + bridge save/load) is the next batch.
-    alert('Saving blueprints lands in the next step (persistence).');
-  }
+  // function builderSave() {
+  //   // Persistence (ship_designs table + bridge save/load) is the next batch.
+  //   alert('Saving blueprints lands in the next step (persistence).');
+  // }
 
 
   // Full faction names for factions that don't appear in the reputation data
