@@ -55,6 +55,7 @@
     const HELP_TOPIC = {
       military: 'help-advisors-military',
       trader:   'help-advisors-trader',
+      miner:    'help-advisors-miner',
     };
     function openHelp() {
       _navRecord();
@@ -66,7 +67,7 @@
     // the onclick on each sb-* item in body.html (sb-military/-traders/
     // -economic), since jumpToFinding() below is a second entry point into
     // the same tab switch.
-    const VIEW_NAV = { economic: 'sb-economic', military: 'sb-military', trader: 'sb-traders' };
+    const VIEW_NAV = { economic: 'sb-economic', military: 'sb-military', trader: 'sb-traders', miner: 'sb-miners' };
 
     // Jump straight to one advisor card from elsewhere in the UI (currently:
     // the Alerts tab's "Advise" button on its Hostile Presence/Force Build-Up
@@ -130,6 +131,8 @@
       const arbGain     = sum(['galaxy_arbitrage'], 'gain');
       const strandedCnt = vf.filter(f => f.type === 'stranded_delivery').length;
       const idleCredits = sum(['idle_trade_capital'], 'credits');
+      // Miner-only cell: how many stations are starving for a mineable input.
+      const starving    = vf.filter(f => f.type === 'mining_supply_gap').length;
       const cells = [
         ['Findings', vf.length.toLocaleString()],
         perHour ? ['Cr/hr at Stake', perHour.toLocaleString()] : null,
@@ -143,6 +146,7 @@
         arbGain     ? ['Arbitrage Cr at Stake', arbGain.toLocaleString()] : null,
         strandedCnt ? ['Stranded Deliveries', strandedCnt.toLocaleString()] : null,
         idleCredits ? ['Idle Credits Cr', idleCredits.toLocaleString()] : null,
+        starving ? ['Stations Starving', starving.toLocaleString()] : null,
       ].filter(Boolean);
       return `<div class="adv-stats">${cells.map(([label, value]) => `
           <div class="adv-stat">

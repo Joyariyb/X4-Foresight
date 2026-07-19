@@ -93,16 +93,15 @@
       <div class="sb-divider"></div>
       <div class="sb-heading">Advisors</div>
       <!-- Live advisors render the export's `advisors` findings, each tab
-           filtering its own domain slice (js/advisors-feed.js render(view)).
-           Miners are still WIP. -->
+           filtering its own domain slice (js/advisors-feed.js render(view)). -->
       <div class="sb-item" id="sb-military" onclick="switchTab('advisors-military', null); AdvisorsFeed.render('military')">
         <span class="sb-item-label"><i class="ti ti-sword"></i> Military</span>
       </div>
       <div class="sb-item" id="sb-traders" onclick="switchTab('advisors-trader', null); AdvisorsFeed.render('trader')">
         <span class="sb-item-label"><i class="ti ti-package"></i> Traders</span>
       </div>
-      <div class="sb-item" id="sb-miners">
-        <span class="sb-item-label"><i class="ti ti-shovel"></i> Miners <span style="color:var(--color-negative)">&mdash; WIP</span></span>
+      <div class="sb-item" id="sb-miners" onclick="switchTab('advisors-miner', null); AdvisorsFeed.render('miner')">
+        <span class="sb-item-label"><i class="ti ti-shovel"></i> Miners</span>
       </div>
       <div class="sb-item" id="sb-economic" onclick="switchTab('advisors-economic', null); AdvisorsFeed.render('economic')">
         <span class="sb-item-label"><i class="ti ti-report-money"></i> Economic</span>
@@ -722,6 +721,15 @@
       <div class="tab-panel" id="tab-advisors-trader">
         <div class="sec-header"><div class="sec-title">Trader Advisor</div><div class="sec-line"></div></div>
         <div id="advisors-trader-root"></div>
+      </div>
+
+      <!-- ADVISORS · MINER TAB — same feed renderer, filtered to the miner
+           domain (AdvisorsFeed.render('miner')). These rules reason about the
+           mining SHIPS that feed player stations raw inputs — where a station
+           is starving for a mineable ware with no miner delivering it. -->
+      <div class="tab-panel" id="tab-advisors-miner">
+        <div class="sec-header"><div class="sec-title">Miner Advisor</div><div class="sec-line"></div></div>
+        <div id="advisors-miner-root"></div>
       </div>
 
       <!-- HELP TAB — the app-wide help hub. The DOM is the topic registry:
@@ -1895,6 +1903,90 @@
                 your reputation with them is too low to trade at all. Highlights the
                 single best-value ware per blocked faction so improving relations has
                 a concrete payoff attached.</p>
+            </div>
+          </div>
+        </div>
+          </section>
+
+          <section class="help-topic" id="help-advisors-miner" data-help-group="Advisors"
+                   data-help-title="Miner Advisor" data-help-icon="ti-shovel"
+                   data-help-blurb="Mining-ship supply gaps — where a station is starving for a mineable input with no miner delivering it.">
+        <div class="sec-header"><div class="sec-title">Miner Advisor · Help</div><div class="sec-line"></div></div>
+        <div class="adv-help-note">
+          <i class="ti ti-info-circle"></i>
+          <p>Where the Economic and Trader tabs reason about money, the Miner tab
+            reasons about the mining ships that feed your stations their raw inputs.
+            The priority rail works the same as the other tabs — fill height is a
+            finding's score relative to the single highest-scoring miner finding this
+            scan.</p>
+        </div>
+        <div class="adv-help-list">
+          <div class="adv-help-card adv--warning">
+            <div class="adv-rail"><div class="adv-rail-fill" style="height:100%"></div></div>
+            <div class="adv-help-body">
+              <div class="adv-help-head"><i class="ti ti-shovel adv-icon"></i><span class="adv-type">Mining Supply Gap</span></div>
+              <p>A player station consumes a mineable ware, is running its stock down
+                (a few hours left), and has had no mining delivery logged in the last
+                hour — so nothing is replenishing it. Fires only when a workable
+                deposit sits within reach, so the card can name where to send the ship
+                and recommend a miner type and rough size for the station's hourly
+                draw. Priority weighs both the size of that draw and how soon the
+                buffer runs dry.</p>
+            </div>
+          </div>
+          <div class="adv-help-card adv--positive">
+            <div class="adv-rail"><div class="adv-rail-fill" style="height:100%"></div></div>
+            <div class="adv-help-body">
+              <div class="adv-help-head"><i class="ti ti-coin adv-icon"></i><span class="adv-type">Mine vs Buy</span></div>
+              <p>A player station has spent real credits buying a mineable ware from
+                NPC sellers over the last couple of hours, while a workable deposit for
+                it sits within reach. Mined ware costs nothing at the source, so the
+                spend is money a nearby miner would save you — the priority is that
+                spend. A small one-off top-up won't trip it; only a sustained buy does.</p>
+            </div>
+          </div>
+          <div class="adv-help-card adv--special">
+            <div class="adv-rail"><div class="adv-rail-fill" style="height:100%"></div></div>
+            <div class="adv-help-body">
+              <div class="adv-help-head"><i class="ti ti-player-pause adv-icon"></i><span class="adv-type">Idle Miner</span></div>
+              <p>One of your mining ships is parked (Waiting or idle) with no mining
+                order — capacity doing nothing. Priority is the size of the idle cargo
+                bay, since without knowing what the ship would earn per trip, the
+                biggest idle capacity is the biggest missed throughput.</p>
+            </div>
+          </div>
+          <div class="adv-help-card adv--negative">
+            <div class="adv-rail"><div class="adv-rail-fill" style="height:100%"></div></div>
+            <div class="adv-help-body">
+              <div class="adv-help-head"><i class="ti ti-alert-triangle adv-icon"></i><span class="adv-type">Miner Exposed</span></div>
+              <p>A free-flying player miner is in a sector holding a meaningful hostile
+                fleet (the Military tab's hostility threshold), with no station to
+                shelter at. Miners are defenceless and the Military rules only watch
+                your station sectors, so this covers the roaming ones. Priority is the
+                hostile ship count. Note enemy ships are only tracked in your station
+                sectors, so a miner deep in unowned hostile space won't trip it.</p>
+            </div>
+          </div>
+          <div class="adv-help-card adv--warning">
+            <div class="adv-rail"><div class="adv-rail-fill" style="height:100%"></div></div>
+            <div class="adv-help-body">
+              <div class="adv-help-head"><i class="ti ti-stack-2 adv-icon"></i><span class="adv-type">Mining Oversupply</span></div>
+              <p>A station's solid or liquid storage is nearly full while miners are
+                still delivering that cargo type — incoming loads about to bounce. The
+                inverse of Mining Supply Gap. Keyed by storage type, not ware, because
+                caps are per-type. Priority weighs how full the bay is and how many
+                miners are still feeding it.</p>
+            </div>
+          </div>
+          <div class="adv-help-card adv--positive">
+            <div class="adv-rail"><div class="adv-rail-fill" style="height:100%"></div></div>
+            <div class="adv-help-body">
+              <div class="adv-help-head"><i class="ti ti-trending-up adv-icon"></i><span class="adv-type">Mineral Demand</span></div>
+              <p>A reachable NPC is buying a mineable ware you have a workable deposit
+                for — a miner could mine it for free and sell it. One card per ware
+                (its best-value reachable buyer), gated so only demand worth diverting
+                a ship for shows. Unlike the Economic tab's Market Opportunity, this
+                needs only a deposit, not existing surplus production.</p>
             </div>
           </div>
         </div>

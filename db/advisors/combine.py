@@ -15,7 +15,7 @@ from __future__ import annotations
 import sqlite3
 
 from .advisors import ware_avg_prices, npc_demand_by_ware, merge_anchors
-from . import economy, logistics, military, trader
+from . import economy, logistics, military, miner, trader
 
 
 def compute_advisors(conn: sqlite3.Connection, scan_id: int | None = None,
@@ -68,6 +68,13 @@ def compute_advisors(conn: sqlite3.Connection, scan_id: int | None = None,
     findings += trader.galaxy_arbitrage_findings(conn, scan_id, distances_from_player)
     findings += trader.stranded_delivery_findings(conn, scan_id, avg_prices)
     findings += trader.idle_trade_capital_findings(conn, scan_id)
+    findings += miner.mining_supply_gap_findings(conn, scan_id, distances_from_player)
+    findings += miner.mine_vs_buy_findings(conn, scan_id, distances_from_player)
+    findings += miner.idle_miner_findings(conn, scan_id)
+    findings += miner.miner_exposed_findings(conn, scan_id)
+    findings += miner.mining_oversupply_findings(conn, scan_id)
+    findings += miner.mineral_demand_findings(
+        conn, scan_id, distances_from_player, demand_by_ware)
     findings += military.hostile_presence_findings(
         conn, scan_id, military_jumps, military_anchor, forces)
     findings += military.composition_gap_findings(

@@ -11,9 +11,10 @@
     // height, and trader's own mixed units (Cr, Cr/hr, credits banked) never
     // fight either of the others.
     const VIEWS = {
-      economic: { root: 'advisors-root',          match: f => f.domain !== 'military' && f.domain !== 'trader' },
+      economic: { root: 'advisors-root',          match: f => f.domain !== 'military' && f.domain !== 'trader' && f.domain !== 'miner' },
       military: { root: 'advisors-military-root', match: f => f.domain === 'military' },
       trader:   { root: 'advisors-trader-root',   match: f => f.domain === 'trader' },
+      miner:    { root: 'advisors-miner-root',    match: f => f.domain === 'miner' },
     };
 
     // Finding type → presentation. `tone` picks the semantic colour trio via
@@ -33,10 +34,16 @@
       galaxy_arbitrage:       { label: 'Galaxy Arbitrage',     icon: 'ti-arrows-exchange',   tone: 'positive' },
       stranded_delivery:      { label: 'Stranded Delivery',    icon: 'ti-alert-circle',      tone: 'warning'  },
       idle_trade_capital:     { label: 'Idle Trade Capital',   icon: 'ti-cash',              tone: 'info'     },
+      mining_supply_gap:      { label: 'Mining Supply Gap',    icon: 'ti-shovel',            tone: 'warning'  },
+      mine_vs_buy:            { label: 'Mine vs Buy',          icon: 'ti-coin',              tone: 'positive' },
+      idle_miner:             { label: 'Idle Miner',           icon: 'ti-player-pause',      tone: 'special'  },
+      miner_exposed:          { label: 'Miner Exposed',        icon: 'ti-alert-triangle',    tone: 'negative' },
+      mining_oversupply:      { label: 'Mining Oversupply',    icon: 'ti-stack-2',           tone: 'warning'  },
+      mineral_demand:         { label: 'Mineral Demand',       icon: 'ti-trending-up',       tone: 'positive' },
     };
     const FALLBACK_META = { label: 'Finding', icon: 'ti-clipboard-list', tone: 'info' };
 
-    const DOMAIN_LABELS = { economy: 'Economy', logistics: 'Logistics', military: 'Military', trader: 'Trader' };
+    const DOMAIN_LABELS = { economy: 'Economy', logistics: 'Logistics', military: 'Military', trader: 'Trader', miner: 'Miner' };
 
     // Evidence keys → readable labels. Anything not listed falls back to the
     // raw key with underscores spaced — a new rule's evidence still renders.
@@ -93,6 +100,22 @@
       anchor:             'Proximity Anchor',
       recharge_max:       'Reservoir Capacity',
       yield_level:        'Yield Level',
+      consumption_rate:   'Consumed /hr',
+      stock_units:        'Stock Units',
+      runtime_hours:      'Hours of Stock Left',
+      need_m3_per_hr:     'Volume Need m³/hr',
+      deposit_sector:     'Nearest Deposit',
+      deposit_yield:      'Deposit Yield',
+      deposit_jumps:      'Jumps to Deposit',
+      bought_units:       'Units Bought',
+      spend_cr:           'Spent on Buying Cr',
+      role:               'Ship Role',
+      ship_order:         'Current Order',
+      hostile_ship_count: 'Hostile Ships in Sector',
+      cargo_type:         'Storage Type',
+      fill_pct:           'Fill %',
+      delivering_miners:  'Miners Delivering',
+      value_cr:           'Standing Demand Cr',
       sell_station_id:    'Sell Station',
       buy_station_id:     'Buy Station',
       sell_jumps:         'Jumps to Seller',
